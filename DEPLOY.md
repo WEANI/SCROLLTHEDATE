@@ -27,7 +27,7 @@ Aucune n'est dans le repo (`.env` est gitignore). À copier dans
 
 | Variable | Valeur | Note |
 |---|---|---|
-| `DATABASE_URL` | `postgresql://postgres:<mot-de-passe>@db.ehenrzyesyptcyadwdjq.supabase.co:5432/postgres` — mot de passe dans le `.env` local (jamais commité), à recopier depuis là ou depuis Supabase → Project Settings → Database. | Supabase "SCROLL THE DATE". Si erreur de connexion (IPv6), remplacer par le **Session Pooler** Supabase (Project Settings → Database → Connection string → Session pooler, port 5432, IPv4). |
+| `DATABASE_URL` | `postgresql://postgres.ehenrzyesyptcyadwdjq:<mot-de-passe>@aws-1-eu-west-1.pooler.supabase.com:5432/postgres` — mot de passe dans le `.env` local (jamais commité). | **Session Pooler Supabase**, pas la connexion directe : Railway est IPv4-only par défaut et la connexion directe Supabase (`db.<ref>.supabase.co:5432`) est IPv6-only. Le shard de ce projet est `aws-1-` (vérifié par connexion réelle — la doc générique Supabase montre souvent `aws-0-`, ne pas supposer). |
 | `APP_ID` | `felicity-local` (ou autre) | Libre en l'absence de vraie intégration Kimi. |
 | `APP_SECRET` | à générer : `openssl rand -hex 32` | **Ne pas réutiliser la valeur dev** (`dev-local-secret-change-me`) — sert à signer les JWT de session. |
 | `KIMI_AUTH_URL` | `https://auth.kimi.com` | Doit être une URL valide (le code fait `new URL()` au chargement) même si le service reste injoignable — voir point 3. |
