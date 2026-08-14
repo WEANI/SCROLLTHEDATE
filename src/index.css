@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 4% 10%;
+    --foreground: 20 9% 95%;
+    --card: 240 5% 17%;
+    --card-foreground: 20 9% 95%;
+    --popover: 240 5% 17%;
+    --popover-foreground: 20 9% 95%;
+    --primary: 11 51% 57%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 20%;
+    --secondary-foreground: 20 9% 95%;
+    --muted: 240 4% 20%;
+    --muted-foreground: 240 2% 62%;
+    --accent: 11 51% 57%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 48% 52%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5% 23%;
+    --input: 240 5% 23%;
+    --ring: 11 51% 57%;
+    --radius: 0.625rem;
+    --sidebar-background: 240 6% 17%;
+    --sidebar-foreground: 240 2% 62%;
+    --sidebar-primary: 11 51% 57%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 23%;
+    --sidebar-accent-foreground: 20 9% 95%;
+    --sidebar-border: 240 5% 23%;
+    --sidebar-ring: 11 51% 57%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+  body {
+    @apply bg-anthracite-950 text-white font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .font-display {
+    font-feature-settings: "ss01";
+  }
+  ::selection {
+    background: #c96f5a;
+    color: #ffffff;
+  }
+}
+
+@layer utilities {
+  /* Grain photographique subtil sur sections sombres */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.06;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .grain {
+    position: relative;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .text-outline-terracotta {
+    -webkit-text-stroke: 1px #e8b4a4;
+    color: transparent;
+  }
+  .animate-halo {
+    animation: halo-breathe 4s ease-in-out infinite alternate;
+  }
+  .animate-badge-pulse {
+    animation: badge-pulse 2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes halo-breathe {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.15);
+  }
+}
+
+@keyframes badge-pulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.04);
+  }
+}
