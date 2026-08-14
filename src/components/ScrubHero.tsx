@@ -114,6 +114,16 @@ export default function ScrubHero({
       end: () => `+=${window.innerHeight * ((durationVh - 100) / 100)}`,
       pin: stage,
       pinSpacing: true,
+      // Les sections épinglées de la home (ce héros, HowItWorks, Advantages)
+      // ne sont pas créées dans l'ordre de la page : ce composant utilise
+      // `useEffect` alors que les suivants utilisent `useGSAP`
+      // (= useLayoutEffect, qui s'exécute AVANT). Les triggers d'en dessous
+      // calculaient donc leurs start/end avant que le pin-spacer de ce héros
+      // n'existe, et se retrouvaient décalés d'une hauteur de pin vers le
+      // haut — la section suivante s'épinglait trop tôt et recouvrait la
+      // précédente. `refreshPriority` force le recalcul de haut en bas :
+      // valeur la plus haute = le plus haut dans la page.
+      refreshPriority: 3,
       onUpdate: (self) => {
         state.target = self.progress
       },
@@ -172,10 +182,13 @@ export default function ScrubHero({
         cta.style.pointerEvents = t > 0.5 ? 'auto' : 'none'
       }
 
-      // Indicateur scroll
+      // Indicateur scroll — masqué dès que le CTA persistant apparaît (sinon
+      // les deux se chevauchent, tous deux centrés en bas de la section
+      // épinglée). Sans CTA (ex. page Démo), il reste visible jusqu'à 97 %.
       if (fillRef.current) fillRef.current.style.transform = `scaleY(${p})`
       if (indicatorRef.current) {
-        indicatorRef.current.style.opacity = p > 0.02 && p < 0.97 ? '1' : '0'
+        const upperBound = persistent ? persistentFrom : 0.97
+        indicatorRef.current.style.opacity = p > 0.02 && p < upperBound ? '1' : '0'
       }
     }
 

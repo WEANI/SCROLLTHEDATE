@@ -52,12 +52,21 @@ export default function HowItWorks() {
           end: '+=300%',
           pin: true,
           scrub: 1,
+          // Cf. ScrubHero : force le recalcul des sections épinglées de haut
+          // en bas (héros = 3, ici = 2, Advantages = 1).
+          refreshPriority: 2,
           onUpdate: (self) => {
             setActive(Math.min(STEPS.length - 1, Math.floor(self.progress * STEPS.length)))
           },
         },
       })
 
+      // fromTo({ yPercent: 100 }) applique lui-même l'état initial "hors
+      // écran" dès le montage (immediateRender, avant peinture via
+      // useLayoutEffect) — ne PAS fixer aussi un transform inline en JSX sur
+      // la carte : GSAP ne le remplace pas, il l'empile (translate ×2), donc
+      // les cartes 2/3/4 finissaient décalées d'un écran entier et restaient
+      // invisibles.
       for (let i = 1; i < STEPS.length; i++) {
         tl.fromTo(
           `.step-card-${i}`,
@@ -85,7 +94,7 @@ export default function HowItWorks() {
               step.dark ? 'bg-anthracite-800' : 'bg-anthracite-900',
               i > 0 && 'shadow-[0_-24px_64px_rgba(0,0,0,0.45)]',
             )}
-            style={{ zIndex: i + 1, transform: i > 0 ? 'translateY(100%)' : undefined }}
+            style={{ zIndex: i + 1 }}
           >
             <div className="grain mx-auto grid w-full max-w-[1440px] items-center gap-12 px-6 lg:grid-cols-2 lg:px-12">
               <div>

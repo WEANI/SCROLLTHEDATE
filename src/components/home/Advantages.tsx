@@ -44,6 +44,9 @@ export default function Advantages() {
           end: '+=250%',
           pin: true,
           scrub: 1,
+          // Cf. ScrubHero : force le recalcul des sections épinglées de haut
+          // en bas (héros = 3, HowItWorks = 2, ici = 1).
+          refreshPriority: 1,
         },
       })
 
