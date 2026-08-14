@@ -6,6 +6,21 @@ import './demo-hero.css'
 const TRACK_HEIGHT_VH = 900
 
 /**
+ * Chapitre actif pour une progression donnée, d'après les fenêtres
+ * [from, to) de chaque chapitre (cf. demoContent.ts). Renvoie -1 entre deux
+ * fenêtres (le "silence" volontaire pendant la bague/le diamant) : aucun
+ * overlay ne s'affiche alors, la vidéo respire seule.
+ */
+function findActiveChapterIndex(p: number): number {
+  for (let i = 0; i < HERO_CHAPTERS.length; i++) {
+    const ch = HERO_CHAPTERS[i]
+    const isLast = i === HERO_CHAPTERS.length - 1
+    if (p >= ch.from && (p < ch.to || (isLast && p <= ch.to))) return i
+  }
+  return -1
+}
+
+/**
  * Hero scrub — nouvelle architecture (brief « 2 sections »). Section
  * épinglée en `position: sticky` (pas de pin GSAP : plus simple, pas de
  * pin-spacer à mesurer/désynchroniser). Toutes les informations du
@@ -25,7 +40,7 @@ export default function DemoHeroScrub() {
   const [videoFailed, setVideoFailed] = useState(false)
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
   const [progressPct, setProgressPct] = useState(0)
-  const [activeIdx, setActiveIdx] = useState(0)
+  const [activeIdx, setActiveIdx] = useState(-1)
   const [showCue, setShowCue] = useState(true)
 
   useEffect(() => {
@@ -53,8 +68,7 @@ export default function DemoHeroScrub() {
     const applyProgress = (p: number) => {
       setProgressPct(p * 100)
       setShowCue(p < 0.03)
-      const n = HERO_CHAPTERS.length
-      setActiveIdx(Math.round(p * (n - 1)))
+      setActiveIdx(findActiveChapterIndex(p))
 
       const video = videoRef.current
       if (video && !videoFailed && Number.isFinite(video.duration) && video.duration > 0) {
@@ -192,51 +206,46 @@ export default function DemoHeroScrub() {
 function ChapterContent({ chapter, className }: { chapter: (typeof HERO_CHAPTERS)[number]; className?: string }) {
   return (
     <div className={className}>
-      {chapter.kind === 'seal' && (
-        <div className="mb-5 flex h-[60px] w-[60px] items-center justify-center rounded-full border border-[#C97A5C] font-display text-[19px] italic text-[#C97A5C]">
-          {chapter.eyebrow === 'Faire-part' ? 'A&T' : null}
-        </div>
-      )}
+      {/* Encadré flouté : le texte se lit sur n'importe quelle image de la
+          vidéo derrière, sans jamais figer le fond en plein cadre. */}
+      <div className={cn('dhx-card text-center', chapter.kind === 'list' && 'text-left')}>
+        {chapter.eyebrow && (
+          <p className="mb-4 text-center text-[11px] uppercase tracking-[0.24em] text-[#C97A5C]">
+            {chapter.eyebrow}
+          </p>
+        )}
 
-      {chapter.eyebrow && chapter.kind !== 'list' && (
-        <p className="mb-4 text-[11px] uppercase tracking-[0.24em] text-[#C97A5C]">{chapter.eyebrow}</p>
-      )}
+        {chapter.segments && (
+          <p className="font-display mb-2 text-[clamp(30px,6vw,46px)] font-normal leading-[1.12] text-[#F5EEE4]">
+            {chapter.segments.map((seg, i) => (
+              <span key={i} className={cn(seg.accent && 'italic text-[#C97A5C]')}>
+                {seg.text}
+                {i < chapter.segments!.length - 1 ? ' ' : ''}
+              </span>
+            ))}
+          </p>
+        )}
 
-      {chapter.segments && (
-        <p className="font-display mb-2 text-[clamp(32px,6.4vw,50px)] font-normal leading-[1.12] text-[#F5EEE4]">
-          {chapter.segments.map((seg, i) => (
-            <span key={i} className={cn(seg.accent && 'italic text-[#C97A5C]')}>
-              {seg.text}
-              {i < chapter.segments!.length - 1 ? ' ' : ''}
-            </span>
-          ))}
-        </p>
-      )}
+        {chapter.rule && <div className="mx-auto my-[18px] h-px w-9 bg-[#C97A5C] opacity-70" />}
 
-      {chapter.rule && <div className="mx-auto my-[18px] h-px w-9 bg-[#C97A5C] opacity-70" />}
+        {chapter.sub && <p className="text-center text-[14px] font-light text-[#B8AC9C]">{chapter.sub}</p>}
 
-      {chapter.sub && <p className="text-[14px] font-light text-[#B8AC9C]">{chapter.sub}</p>}
-
-      {chapter.kind === 'list' && (
-        <>
-          {chapter.eyebrow && (
-            <p className="mb-4 text-[11px] uppercase tracking-[0.24em] text-[#C97A5C]">{chapter.eyebrow}</p>
-          )}
+        {chapter.kind === 'list' && (
           <div className="text-[14px] font-light leading-[2.1] text-[#F5EEE4]">
             {chapter.items?.map((item) => (
               <div key={item}>{item}</div>
             ))}
           </div>
-        </>
-      )}
+        )}
 
-      {chapter.kind === 'card' && chapter.card && (
-        <div className="w-[84%] max-w-[340px] rounded-[2px] border border-[rgba(255,244,232,0.10)] bg-[#241E17] px-[30px] py-[38px] text-center">
-          <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[#C97A5C]">{chapter.card.mono}</p>
-          <h2 className="font-display mb-2 text-[32px] font-normal italic text-[#F5EEE4]">{chapter.card.title}</h2>
-          <p className="text-[13px] font-light text-[#B8AC9C]">{chapter.card.sub}</p>
-        </div>
-      )}
+        {chapter.kind === 'card' && chapter.card && (
+          <>
+            <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[#C97A5C]">{chapter.card.mono}</p>
+            <h2 className="font-display mb-2 text-[32px] font-normal italic text-[#F5EEE4]">{chapter.card.title}</h2>
+            <p className="text-[13px] font-light text-[#B8AC9C]">{chapter.card.sub}</p>
+          </>
+        )}
+      </div>
     </div>
   )
 }

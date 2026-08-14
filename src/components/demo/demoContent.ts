@@ -14,7 +14,10 @@ export const RSVP_DEADLINE_LABEL = '1er mai 2026'
 
 export interface HeroChapter {
   id: number
-  kind: 'seal' | 'text' | 'list' | 'card'
+  kind: 'text' | 'list' | 'card'
+  /** Fenêtre de progression [from, to) du scrub où ce chapitre est affiché. */
+  from: number
+  to: number
   eyebrow?: string
   /** Segments du titre : texte brut ou accentué (Fraunces italique corail). */
   segments?: { text: string; accent?: boolean }[]
@@ -24,41 +27,46 @@ export interface HeroChapter {
   card?: { mono: string; title: string; sub: string }
 }
 
-/** Les 8 temps forts du scrub — un seul affiché à la fois (crossfade). */
+/**
+ * Aucun overlay avant que l'enveloppe ne soit ouverte (cachet qui craque
+ * puis pli qui se déplie, ~0 à 2,5s sur les deux montages, cf.
+ * contact-sheets) : le tout premier chapitre n'apparaît qu'une fois ce
+ * geste terminé.
+ */
+export const TEXT_START = 0.14
+
+/**
+ * Fenêtre de scroll (fraction de progression) volontairement muette : la
+ * vidéo montre la bague en gros plan puis la séquence macro du diamant
+ * (~9s à ~15s sur les deux montages, cf. contact-sheets), aucun overlay ne
+ * doit s'y afficher pour laisser l'image respirer. Les chapitres sont donc
+ * répartis avant/après ce silence plutôt qu'uniformément sur tout le scrub.
+ */
+export const SILENT_FROM = 0.5
+export const SILENT_TO = 0.8
+
+/** Les 4 temps forts du scrub — un seul affiché à la fois (crossfade). */
 export const HERO_CHAPTERS: HeroChapter[] = [
   {
     id: 0,
-    kind: 'seal',
-    eyebrow: 'Faire-part',
-    segments: [{ text: 'Vous avez reçu' }, { text: 'quelque chose', accent: true }],
-    sub: "Faites glisser pour découvrir l'histoire d'Anna & Théo",
-  },
-  {
-    id: 1,
     kind: 'text',
+    from: TEXT_START,
+    to: 0.24,
     eyebrow: 'Se marient',
     segments: [{ text: 'Anna' }, { text: '&', accent: true }, { text: 'Théo' }],
     rule: true,
     sub: 'Un genou à terre, une marée montante',
   },
   {
-    id: 2,
-    kind: 'text',
-    eyebrow: 'Le jour J',
-    segments: [{ text: '20' }, { text: 'juin', accent: true }, { text: '2026' }],
-    sub: "Un samedi, à l'heure dorée",
-  },
-  {
-    id: 3,
-    kind: 'text',
-    eyebrow: 'Le lieu',
-    segments: [{ text: 'Domaine' }, { text: 'de la Baie', accent: true }],
-    sub: VENUE_LOCATION,
-  },
-  {
-    id: 4,
+    // Date, lieu et déroulé réunis dans une seule carte.
+    id: 1,
     kind: 'list',
-    eyebrow: 'Déroulé',
+    from: 0.24,
+    to: 0.4,
+    eyebrow: 'Le grand jour',
+    segments: [{ text: '20' }, { text: 'juin', accent: true }, { text: '2026' }],
+    rule: true,
+    sub: `${VENUE_NAME} — ${VENUE_LOCATION}`,
     items: [
       '16h30 — cérémonie face à la mer',
       '18h00 — cocktail sur la terrasse',
@@ -66,24 +74,20 @@ export const HERO_CHAPTERS: HeroChapter[] = [
     ],
   },
   {
-    id: 5,
+    id: 2,
     kind: 'text',
+    from: 0.4,
+    to: SILENT_FROM,
     eyebrow: 'Dress code',
     segments: [{ text: 'Élégance', accent: true }, { text: 'côtière' }],
     sub: 'Camaïeu terracotta, lin, sable',
   },
+  // → silence de SILENT_FROM à SILENT_TO : bague en gros plan puis diamant, aucun texte.
   {
-    id: 6,
-    kind: 'list',
-    eyebrow: 'À savoir',
-    items: [
-      'Domaine accessible en voiture, parking sur place',
-      `Réponse souhaitée avant le ${RSVP_DEADLINE_LABEL}`,
-    ],
-  },
-  {
-    id: 7,
+    id: 3,
     kind: 'card',
+    from: SILENT_TO,
+    to: 1,
     card: {
       mono: COUPLE_INITIALS,
       title: 'Anna & Théo',

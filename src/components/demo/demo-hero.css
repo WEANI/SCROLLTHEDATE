@@ -80,6 +80,20 @@
     transform 0.6s ease;
 }
 
+/* Encadré flouté derrière le texte des overlays — lisible sur n'importe
+   quelle image de la vidéo (visage, mer, bague, etc.) sans figer le fond en
+   plein cadre : seul le texte est encadré, la vidéo reste visible autour. */
+.dhx-card {
+  max-width: 88%;
+  background: rgba(23, 19, 15, 0.55);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(245, 238, 228, 0.12);
+  border-radius: 20px;
+  padding: 30px 30px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
 .dhx-chevron {
   width: 1px;
   height: 22px;
