@@ -39,8 +39,10 @@ export default function App() {
         <Route path="commander" element={<Commander />} />
         <Route path="merci" element={<Merci />} />
         <Route path="demo" element={<Demo />} />
-        <Route path="login" element={<Login />} />
       </Route>
+
+      {/* Login — clair, hors Layout public sombre (comme /espace et /admin) */}
+      <Route path="/login" element={<Login />} />
 
       {/* Espace client — shell clair dédié (hors Layout public) */}
       <Route path="/espace" element={<ClientShell />}>

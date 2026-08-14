@@ -2,6 +2,7 @@ import { trpc } from "@/providers/trpc";
 import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { LOGIN_PATH } from "@/const";
+import { supabase } from "@/lib/supabaseClient";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -13,7 +14,6 @@ export function useAuth(options?: UseAuthOptions) {
     options ?? {};
 
   const navigate = useNavigate();
-
   const utils = trpc.useUtils();
 
   const {
@@ -26,14 +26,22 @@ export function useAuth(options?: UseAuthOptions) {
     retry: false,
   });
 
-  const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: async () => {
-      await utils.invalidate();
-      navigate(redirectPath);
-    },
-  });
+  // Supabase gère sa session en local (localStorage) et la rafraîchit en
+  // arrière-plan. À chaque changement (login, logout, refresh de token), on
+  // resynchronise `auth.me` — c'est ce qui déclenche l'upsert de la ligne
+  // `users` locale côté backend (voir api/context.ts).
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      utils.auth.me.invalidate();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [utils]);
 
-  const logout = useCallback(() => logoutMutation.mutate(), [logoutMutation]);
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    await utils.invalidate();
+    navigate(redirectPath);
+  }, [utils, navigate, redirectPath]);
 
   useEffect(() => {
     if (redirectOnUnauthenticated && !isLoading && !user) {
@@ -48,11 +56,11 @@ export function useAuth(options?: UseAuthOptions) {
     () => ({
       user: user ?? null,
       isAuthenticated: !!user,
-      isLoading: isLoading || logoutMutation.isPending,
+      isLoading,
       error,
       logout,
       refresh: refetch,
     }),
-    [user, isLoading, logoutMutation.isPending, error, logout, refetch],
+    [user, isLoading, error, logout, refetch],
   );
 }

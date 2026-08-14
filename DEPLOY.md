@@ -28,29 +28,31 @@ Aucune n'est dans le repo (`.env` est gitignore). À copier dans
 | Variable | Valeur | Note |
 |---|---|---|
 | `DATABASE_URL` | `postgresql://postgres.ehenrzyesyptcyadwdjq:<mot-de-passe>@aws-1-eu-west-1.pooler.supabase.com:5432/postgres` — mot de passe dans le `.env` local (jamais commité). | **Session Pooler Supabase**, pas la connexion directe : Railway est IPv4-only par défaut et la connexion directe Supabase (`db.<ref>.supabase.co:5432`) est IPv6-only. Le shard de ce projet est `aws-1-` (vérifié par connexion réelle — la doc générique Supabase montre souvent `aws-0-`, ne pas supposer). |
-| `APP_ID` | `felicity-local` (ou autre) | Libre en l'absence de vraie intégration Kimi. |
-| `APP_SECRET` | à générer : `openssl rand -hex 32` | **Ne pas réutiliser la valeur dev** (`dev-local-secret-change-me`) — sert à signer les JWT de session. |
-| `KIMI_AUTH_URL` | `https://auth.kimi.com` | Doit être une URL valide (le code fait `new URL()` au chargement) même si le service reste injoignable — voir point 3. |
-| `KIMI_OPEN_URL` | `https://open.kimi.com` | Idem. |
-| `VITE_KIMI_AUTH_URL` | vide ou `https://auth.kimi.com` | Exposée au frontend, injectée au **build**. |
-| `VITE_APP_ID` | `felicity-local` | Idem, injectée au build. |
-| `OWNER_UNION_ID` | vide ou le unionId admin | Optionnel — auto-attribution du rôle admin au 1er login. |
+| `SUPABASE_URL` | `https://ehenrzyesyptcyadwdjq.supabase.co` | Backend — vérifie les tokens Supabase Auth. |
+| `SUPABASE_SERVICE_ROLE_KEY` | dans le `.env` local | **Jamais** préfixée `VITE_` (bypass RLS). |
+| `VITE_SUPABASE_URL` | `https://ehenrzyesyptcyadwdjq.supabase.co` | Exposée au frontend, injectée au **build**. |
+| `VITE_SUPABASE_ANON_KEY` | dans le `.env` local | Clé publique, safe côté client. |
+| `OWNER_EMAIL` | l'email qui doit devenir admin | Reçoit le rôle "admin" automatiquement à sa première connexion réelle. |
 
 `PORT` est fourni automatiquement par Railway, ne pas le définir manuellement.
 
-## 3. Ce qui fonctionnera / ne fonctionnera pas après déploiement
+## 3. Authentification (Supabase Auth)
 
-- ✅ **Site public** (Accueil avec héros scroll-scrub, Offres, Démo) — 100 %
-  fonctionnel, aucune dépendance bloquante.
-- ✅ **API/DB** — toutes les routes tRPC qui lisent/écrivent Supabase
-  fonctionnent (vérifié en local en conditions de prod).
-- ❌ **Connexion, `/espace`, `/admin`** — l'authentification est branchée sur
-  l'OAuth propriétaire "Kimi" (la plateforme qui a généré ce code). Sans vrai
-  `APP_ID`/`APP_SECRET` Kimi enregistrés avec l'URL de callback Railway
-  (`https://<ton-domaine>.up.railway.app/api/oauth/callback`), le login ne
-  peut pas aboutir. Il faudra soit obtenir ces identifiants, soit remplacer ce
-  bloc auth par un système propre (email magic link, Supabase Auth, etc.) —
-  travail séparé, pas fait ici.
+Depuis le retrait de l'OAuth Kimi, l'auth est gérée par Supabase Auth
+(email + mot de passe, voir `src/pages/Login.tsx`) : ça fonctionne aussi bien
+en local qu'en prod, aucune dépendance à une redirection OAuth externe.
+
+- ✅ **Site public, connexion, `/espace`, `/admin`** — tout fonctionne une fois
+  les variables ci-dessus renseignées.
+- Comportement par défaut de Supabase : un email de confirmation est envoyé à
+  l'inscription, il faut cliquer le lien avant de pouvoir se connecter (géré
+  par le service email intégré de Supabase, pas de config SMTP nécessaire à
+  faible volume).
+- Si les emails de confirmation/réinitialisation redirigent mal : vérifier
+  **Supabase Dashboard → Authentication → URL Configuration** et y ajouter le
+  domaine Railway (`https://<ton-domaine>.up.railway.app`) dans les Redirect
+  URLs — réglage à faire manuellement dans le dashboard, aucun outil ne
+  l'automatise ici.
 
 ## 4. Après le premier déploiement
 

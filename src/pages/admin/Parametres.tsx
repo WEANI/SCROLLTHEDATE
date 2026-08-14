@@ -273,7 +273,7 @@ function TabProfil({ push }: { push: Push }) {
           <div>
             <p className="text-sm font-medium text-ink">{user?.email ?? "—"}</p>
             <p className="text-xs text-neutral-500">
-              Compte administrateur · connexion OAuth
+              Compte administrateur · connexion par email
             </p>
           </div>
         </div>
@@ -1075,11 +1075,11 @@ function TabSecurite({ push }: { push: Push }) {
             <div>
               <p className="text-sm font-medium text-ink">Mot de passe</p>
               <p className="text-xs text-neutral-500">
-                Votre compte utilise la connexion OAuth (Kimi) — aucun mot de passe
-                local n'est stocké.
+                Authentification par email et mot de passe (Supabase Auth). Utilisez
+                « Mot de passe oublié » sur l'écran de connexion pour le modifier.
               </p>
             </div>
-            <Pill tone="info">OAuth</Pill>
+            <Pill tone="info">Supabase Auth</Pill>
           </div>
           <div className="flex items-center justify-between gap-4 rounded-xl border border-neutral-200 px-4 py-3">
             <div>

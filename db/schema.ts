@@ -11,6 +11,7 @@ import {
   jsonb,
   boolean,
   timestamp,
+  uuid,
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
@@ -93,7 +94,9 @@ export const users = pgTable(
   "users",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    unionId: varchar("unionId", { length: 255 }).notNull().unique(),
+    // Lien vers Supabase Auth (auth.users.id). Nullable : les comptes de
+    // démo du seed n'ont pas de compte Supabase Auth associé.
+    authUserId: uuid("authUserId").unique(),
     name: varchar("name", { length: 255 }),
     email: varchar("email", { length: 320 }),
     avatar: text("avatar"),

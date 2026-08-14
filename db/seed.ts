@@ -22,34 +22,35 @@ import {
 // ---------------------------------------------------------------------------
 // Seed Félicity
 //
-// Rôle admin : le graft assigne `role: "admin"` automatiquement au premier
-// login OAuth de l'utilisateur dont le unionId == OWNER_UNION_ID (env, défini
-// par le portail). On pré-insère ici un compte admin avec ce unionId pour que
-// les dashboards aient un admin en base dès le seed.
-// Les 2 clients démo ont des unionId fictifs ("demo-*") : leurs données sont
-// visibles côté admin, et un vrai compte OAuth peut être provisionné au login.
+// Auth : Supabase Auth (voir api/context.ts, api/queries/users.ts). Le rôle
+// "admin" est attribué automatiquement à la première connexion réelle de
+// l'utilisateur dont l'email == OWNER_EMAIL (env). Les comptes de démo
+// ci-dessous n'ont pas de compte Supabase Auth associé (authUserId = null) —
+// ce sont juste des fixtures pour peupler les dashboards. Quand le vrai
+// propriétaire se connecte, une ligne distincte (avec authUserId) est créée ;
+// ce n'est pas un problème pour la démo, tout le reste référence `users.id`.
 // ---------------------------------------------------------------------------
 
-const OWNER_UNION_ID = process.env.OWNER_UNION_ID ?? "";
-
 async function upsertUser(data: {
-  unionId: string;
   name: string;
   email: string;
   role: "user" | "admin";
 }) {
   const db = getDb();
-  await db
+  const existing = await db.query.users.findFirst({
+    where: eq(users.email, data.email),
+  });
+  if (existing) {
+    await db
+      .update(users)
+      .set({ name: data.name, role: data.role, lastSignInAt: new Date() })
+      .where(eq(users.id, existing.id));
+    return { ...existing, name: data.name, role: data.role };
+  }
+  const [row] = await db
     .insert(users)
     .values({ ...data, lastSignInAt: new Date() })
-    .onConflictDoUpdate({
-      target: users.unionId,
-      set: { name: data.name, email: data.email, role: data.role },
-    });
-  const row = await db.query.users.findFirst({
-    where: eq(users.unionId, data.unionId),
-  });
-  if (!row) throw new Error(`upsertUser failed for ${data.unionId}`);
+    .returning();
   return row;
 }
 
@@ -69,19 +70,16 @@ async function seed() {
 
   // --- Utilisateurs ---------------------------------------------------------
   const admin = await upsertUser({
-    unionId: OWNER_UNION_ID || "demo-admin",
     name: "Élise Félicity",
     email: "elise@felicity.fr",
     role: "admin",
   });
   const annaTheo = await upsertUser({
-    unionId: "demo-anna-theo",
     name: "Anna & Théo",
     email: "anna.theo@demo.felicity.fr",
     role: "user",
   });
   const mehdiSarah = await upsertUser({
-    unionId: "demo-mehdi-sarah",
     name: "Mehdi & Sarah",
     email: "mehdi.sarah@demo.felicity.fr",
     role: "user",

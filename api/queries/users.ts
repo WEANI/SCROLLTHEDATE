@@ -4,15 +4,20 @@ import type { InsertUser } from "@db/schema";
 import { getDb } from "./connection";
 import { env } from "../lib/env";
 
-export async function findUserByUnionId(unionId: string) {
+export async function findUserByAuthId(authUserId: string) {
   const rows = await getDb()
     .select()
     .from(schema.users)
-    .where(eq(schema.users.unionId, unionId))
+    .where(eq(schema.users.authUserId, authUserId))
     .limit(1);
   return rows.at(0);
 }
 
+/**
+ * Crée/met à jour la ligne `users` locale à partir d'un utilisateur Supabase
+ * Auth authentifié. Le rôle "admin" est attribué automatiquement au premier
+ * login si l'email correspond à `OWNER_EMAIL`.
+ */
 export async function upsertUser(data: InsertUser) {
   const values = { ...data };
   const updateSet: Partial<InsertUser> = {
@@ -22,8 +27,9 @@ export async function upsertUser(data: InsertUser) {
 
   if (
     values.role === undefined &&
-    values.unionId &&
-    values.unionId === env.ownerUnionId
+    values.email &&
+    env.ownerEmail &&
+    values.email.toLowerCase() === env.ownerEmail
   ) {
     values.role = "admin";
     updateSet.role = "admin";
@@ -32,5 +38,5 @@ export async function upsertUser(data: InsertUser) {
   await getDb()
     .insert(schema.users)
     .values(values)
-    .onConflictDoUpdate({ target: schema.users.unionId, set: updateSet });
+    .onConflictDoUpdate({ target: schema.users.authUserId, set: updateSet });
 }
