@@ -97,7 +97,11 @@ export default function Products() {
                 )}
               />
               {product.recommended && (
-                <span className="animate-badge-pulse absolute right-8 top-8 rounded-full bg-terracotta-500 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white">
+                // Bloc normal au-dessus du titre sur mobile (jamais de
+                // chevauchement possible, quelle que soit la largeur du
+                // titre) ; repasse en pastille flottante en haut à droite
+                // à partir de lg, où la carte est assez large pour ça.
+                <span className="animate-badge-pulse mb-4 inline-block self-start rounded-full bg-terracotta-500 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white lg:absolute lg:right-8 lg:top-8 lg:mb-0">
                   Le plus choisi
                 </span>
               )}

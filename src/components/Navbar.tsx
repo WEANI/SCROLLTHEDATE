@@ -64,6 +64,7 @@ export default function Navbar() {
   }
 
   return (
+    <>
     <header
       className={cn(
         'fixed inset-x-0 top-0 z-50 transition-colors duration-500',
@@ -156,9 +157,17 @@ export default function Navbar() {
           {open ? <X size={24} /> : <Menu size={24} />}
         </motion.button>
       </motion.nav>
+    </header>
 
-      {/* Menu mobile plein écran */}
-      <AnimatePresence>
+    {/* Menu mobile plein écran — hors du <header> : celui-ci reçoit
+        `backdrop-blur-md` quand le menu est ouvert, et un `backdrop-filter`
+        sur un ancêtre transforme celui-ci en containing block pour ses
+        descendants `position: fixed` (comportement CSS standard, comme
+        `transform`/`filter`/`perspective`). Le panneau se retrouvait
+        positionné par rapport à la boîte du header (~81px) au lieu du
+        viewport entier, réduit à un bandeau transparent au travers duquel
+        on voyait le contenu de la page. */}
+    <AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -235,6 +244,6 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+    </>
   )
 }
