@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -383,7 +383,7 @@ function TabScenarios({ project }: { project: Project360 }) {
           Propositions ({project.scenarioProposals.length}/3)
         </h3>
         <Link
-          to={`/admin/projets?projet=${project.id}`}
+          to={`/admin/projets?projet=${project.id}&studio=1`}
           className="rounded-full bg-terracotta-500 px-4 py-2 text-[12px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400"
         >
           {project.scenarioProposals.length === 0 ? "Créer les scénarios" : "Ouvrir l'éditeur"}
@@ -642,6 +642,17 @@ export default function ProjectDrawer({ projectId, onClose, studio, initialTab }
   const utils = trpc.useUtils();
   const [tab, setTab] = useState<TabId>(initialTab ?? "resume");
   const [pendingStatus, setPendingStatus] = useState<ProjectStatus | null>(null);
+
+  // `initialTab` n'est utilisé par useState que lors du tout premier rendu :
+  // ce composant reste monté en permanence (Projets.tsx le rend
+  // inconditionnellement), donc rouvrir la fiche sur un autre projet — ou
+  // demander directement l'onglet Studio via un raccourci — ne changeait
+  // jamais l'onglet affiché sans cet effet. C'était la cause du bug
+  // « impossible d'ajouter des scénarios » : le raccourci "Créer les
+  // scénarios" ramenait toujours sur l'onglet Résumé au lieu de Studio.
+  useEffect(() => {
+    if (projectId !== null) setTab(initialTab ?? "resume");
+  }, [projectId, initialTab]);
 
   const { data: project, isLoading } = trpc.projects.adminGet.useQuery(
     { projectId: projectId ?? 0 },

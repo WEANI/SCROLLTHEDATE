@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { motion } from "framer-motion";
 import { Clock, FolderKanban, Loader2, PenLine, Send } from "lucide-react";
@@ -214,17 +214,26 @@ function WorkQueues({
 export default function Projets() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: projects, isLoading } = trpc.projects.adminList.useQuery();
-  const [studioRequested, setStudioRequested] = useState(false);
 
   const openProjectId = searchParams.get("projet") ? Number(searchParams.get("projet")) : null;
+  // Dérivé de l'URL plutôt que d'un state local : reste correct aussi bien
+  // pour les clics internes (WorkQueues, table) que pour une navigation
+  // entrante depuis un autre onglet/page (ex. le lien "Créer les
+  // scénarios" de TabScenarios, qui pointe vers ?projet=…&studio=1).
+  const studioRequested = searchParams.get("studio") === "1";
 
   const setOpenProject = (id: number | null, studio = false) => {
-    setStudioRequested(studio);
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        if (id === null) next.delete("projet");
-        else next.set("projet", String(id));
+        if (id === null) {
+          next.delete("projet");
+          next.delete("studio");
+        } else {
+          next.set("projet", String(id));
+          if (studio) next.set("studio", "1");
+          else next.delete("studio");
+        }
         return next;
       },
       { replace: true },
