@@ -144,6 +144,7 @@ async function seed() {
     { id: "jourj.dress_code", step: 3, type: "text", label: "Dress code", showOnInvite: true },
     { id: "jourj.infos_pratiques", step: 3, type: "textarea", label: "Infos pratiques (navette, parking, enfants…)", showOnInvite: true },
     { id: "style.ambiance", step: 4, type: "choice", label: "Ambiance souhaitée (Éditorial / Cinéma / Minimal)", required: true },
+    { id: "style.theme_couleurs", step: 4, type: "text", label: "Thème et couleurs du mariage", placeholder: "Bohème chic — terracotta, sauge, lin", help: "La palette qui inspire le montage et le faire-part", showOnInvite: true },
     { id: "style.musiques", step: 4, type: "text", label: "Musiques que vous aimez (3 max)" },
     { id: "style.a_eviter", step: 4, type: "textarea", label: "Ce que vous ne voulez surtout pas" },
   ];
