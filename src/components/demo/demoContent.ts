@@ -10,7 +10,36 @@ export const COUPLE_INITIALS = 'A&T'
 export const WEDDING_DATE_LABEL = 'Samedi 20 juin 2026'
 export const VENUE_NAME = 'Domaine de la Baie'
 export const VENUE_LOCATION = "Presqu'île de Crozon, Finistère"
+export const VENUE_ADDRESS = '14 chemin des Embruns, 29160 Crozon'
 export const RSVP_DEADLINE_LABEL = '1er mai 2026'
+
+/** Déroulé — partagé entre l'overlay "Le grand jour" du hero et la page infos. */
+export const SCHEDULE_ITEMS = [
+  { time: '16h30', label: 'Cérémonie face à la mer' },
+  { time: '18h00', label: 'Cocktail sur la terrasse' },
+  { time: '20h00', label: 'Dîner & soirée' },
+]
+
+export const DRESS_CODE = {
+  title: 'Élégance côtière',
+  sub: 'Camaïeu terracotta, lin, sable',
+  detail:
+    "On évite le blanc (réservé à la mariée) et les talons fins — la cérémonie se déroule sur le sable. Une touche de lin ou de lumière dorée est toujours bienvenue.",
+}
+
+/** Hébergements suggérés — page infos complètes uniquement (option payante). */
+export const LODGING_OPTIONS = [
+  { name: 'Hôtel de la Pointe', distance: '5 min du domaine', note: 'Vue mer, chambres doubles dès 140€' },
+  { name: 'Gîte du Phare', distance: '10 min du domaine', note: 'Idéal pour les groupes, jusqu’à 8 personnes' },
+  { name: 'Camping des Dunes', distance: '15 min du domaine', note: 'Emplacements & mobil-homes, option économique' },
+]
+
+export const PRACTICAL_INFO = [
+  'Parking gratuit sur place, arrivée conseillée 20 min avant la cérémonie.',
+  'Navette depuis la gare de Brest sur demande — précisez-le en répondant au RSVP.',
+  'Les enfants sont les bienvenus ; un espace leur est dédié pendant le dîner.',
+  'Cérémonie en extérieur : une allée abritée est prévue en cas de pluie.',
+]
 
 export interface HeroChapter {
   id: number
@@ -67,11 +96,7 @@ export const HERO_CHAPTERS: HeroChapter[] = [
     segments: [{ text: '20' }, { text: 'juin', accent: true }, { text: '2026' }],
     rule: true,
     sub: `${VENUE_NAME} — ${VENUE_LOCATION}`,
-    items: [
-      '16h30 — cérémonie face à la mer',
-      '18h00 — cocktail sur la terrasse',
-      '20h00 — dîner & soirée',
-    ],
+    items: SCHEDULE_ITEMS.map((s) => `${s.time} — ${s.label}`),
   },
   {
     id: 2,
@@ -80,7 +105,7 @@ export const HERO_CHAPTERS: HeroChapter[] = [
     to: SILENT_FROM,
     eyebrow: 'Dress code',
     segments: [{ text: 'Élégance', accent: true }, { text: 'côtière' }],
-    sub: 'Camaïeu terracotta, lin, sable',
+    sub: DRESS_CODE.sub,
   },
   // → silence de SILENT_FROM à SILENT_TO : bague en gros plan puis diamant, aucun texte.
   {

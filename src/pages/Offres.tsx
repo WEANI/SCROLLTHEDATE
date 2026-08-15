@@ -167,6 +167,8 @@ const OPTION_DESCRIPTIONS: Record<string, string> = {
   revisions: "On ajuste jusqu'à ce que ce soit parfait.",
   'sous-titres': 'Pour vos invités anglophones (et les oreilles fatiguées).',
   'version-courte': 'Un format vertical de 15 s prêt pour Instagram & TikTok.',
+  'page-infos':
+    'Programme, lieu, dress code, hébergements — une page dédiée, accessible depuis le bouton RSVP.',
 }
 
 const GARANTIES = [

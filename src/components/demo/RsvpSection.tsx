@@ -2,6 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Minus, PartyPopper, Plus } from 'lucide-react'
+import { Link } from 'react-router'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/providers/trpc'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -494,7 +495,7 @@ function RsvpForm() {
 /* Section 2 — RSVP sobre : un seul CTA qui ouvre le formulaire.        */
 /* Fond `--bg-alt`, pas de photo, pas de lien d'hébergement (cf. brief).*/
 /* ------------------------------------------------------------------ */
-export default function RsvpSection() {
+export default function RsvpSection({ showInfosLink = true }: { showInfosLink?: boolean }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -513,13 +514,24 @@ export default function RsvpSection() {
           {' '}{DEADLINE_LABEL}
         </p>
 
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="mt-9 inline-flex items-center justify-center rounded-full bg-[#C97A5C] px-9 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-[#17130F] transition-colors hover:bg-[#DD8A6B]"
-        >
-          Confirmer ma présence
-        </button>
+        {showInfosLink && (
+          <Link
+            to="/demo/infos"
+            className="mt-6 inline-flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-[0.08em] text-[#B8AC9C] underline-offset-4 transition-colors hover:text-[#C97A5C] hover:underline"
+          >
+            Voir toutes les informations du mariage →
+          </Link>
+        )}
+
+        <div className="mt-9">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center justify-center rounded-full bg-[#C97A5C] px-9 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-[#17130F] transition-colors hover:bg-[#DD8A6B]"
+          >
+            Confirmer ma présence
+          </button>
+        </div>
 
         <p className="mt-10 text-[10px] uppercase tracking-[0.2em] text-[rgba(184,172,156,0.6)]">
           Créé avec Félicity

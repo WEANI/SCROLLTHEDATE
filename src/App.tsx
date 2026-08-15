@@ -7,6 +7,7 @@ import Offres from '@/pages/Offres'
 import Commander from '@/pages/Commander'
 import Merci from '@/pages/Merci'
 import Demo from '@/pages/Demo'
+import DemoInfos from '@/pages/DemoInfos'
 import ClientShell from '@/components/espace/ClientShell'
 import TableauDeBord from '@/pages/espace/TableauDeBord'
 import Questionnaire from '@/pages/espace/Questionnaire'
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="commander" element={<Commander />} />
         <Route path="merci" element={<Merci />} />
         <Route path="demo" element={<Demo />} />
+        <Route path="demo/infos" element={<DemoInfos />} />
       </Route>
 
       {/* Login — clair, hors Layout public sombre (comme /espace et /admin) */}

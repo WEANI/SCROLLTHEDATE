@@ -37,6 +37,7 @@ export const FALLBACK_OPTIONS: CheckoutOption[] = [
   { id: 'revisions', label: 'Révisions illimitées', priceCents: 6000 },
   { id: 'sous-titres', label: 'Sous-titres FR/EN', priceCents: 4000 },
   { id: 'version-courte', label: 'Version courte réseaux', priceCents: 9000 },
+  { id: 'page-infos', label: 'Page infos complètes', priceCents: 3000 },
 ]
 
 export const FALLBACK_TEXTS: Required<SiteTexts> = {
