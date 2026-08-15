@@ -4,6 +4,7 @@ import { adminQuery, authedQuery, createRouter } from "./middleware";
 import {
   addMedia,
   addVoiceNote,
+  deleteMedia,
   findMediaByProject,
   findVoiceNotesByProject,
   updateMediaStatus,
@@ -53,6 +54,22 @@ export const mediaRouter = createRouter({
     const project = await requireCurrentProject(ctx.user.id);
     return findMediaByProject(project.id);
   }),
+
+  deleteMine: authedQuery
+    .input(z.object({ mediaId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const project = await requireCurrentProject(ctx.user.id);
+      const removed = await deleteMedia(input.mediaId, project.id);
+      if (!removed)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Média introuvable",
+        });
+      await logAudit(project.id, actorOf(ctx.user), "media.deleted", {
+        mediaId: input.mediaId,
+      });
+      return { success: true };
+    }),
 
   adminUpdateStatus: adminQuery
     .input(

@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import {
   media,
   messages,
@@ -45,6 +45,19 @@ export async function updateMediaStatus(
   status: Media["status"],
 ) {
   await getDb().update(media).set({ status }).where(eq(media.id, mediaId));
+}
+
+/**
+ * Supprime un média, scopé au projet propriétaire (le client ne peut
+ * supprimer que ses propres fichiers). Renvoie `true` si une ligne a
+ * effectivement été supprimée.
+ */
+export async function deleteMedia(mediaId: number, projectId: number) {
+  const deleted = await getDb()
+    .delete(media)
+    .where(and(eq(media.id, mediaId), eq(media.projectId, projectId)))
+    .returning({ id: media.id });
+  return deleted.length > 0;
 }
 
 // ------------------------------------------------------------ voiceNotes ----

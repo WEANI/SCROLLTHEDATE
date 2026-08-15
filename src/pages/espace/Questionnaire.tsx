@@ -9,6 +9,7 @@ import {
   Loader2,
   Mic,
   Plus,
+  Trash2,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -21,6 +22,16 @@ import {
   SectionCard,
   StatusBadge,
 } from '@/components/espace/shared'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import {
   formatDurationLong,
   WHATSAPP_URL,
@@ -341,6 +352,12 @@ export default function Questionnaire() {
     onSuccess: () => utils.voiceNotes.list.invalidate(),
   })
   const addMediaMutation = trpc.media.addMedia.useMutation()
+  const deleteMediaMutation = trpc.media.deleteMine.useMutation({
+    onSuccess: async () => {
+      await utils.media.listMine.invalidate()
+      setDeleteTarget(null)
+    },
+  })
   const rsvpSave = trpc.rsvp.saveConfig.useMutation()
 
   // --- Réponses + autosave ---------------------------------------------------
@@ -488,6 +505,7 @@ export default function Questionnaire() {
 
   // --- Médiathèque ------------------------------------------------------------
   const [mediaFilter, setMediaFilter] = useState<'all' | 'photo' | 'video'>('all')
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; filename: string } | null>(null)
   const [pending, setPending] = useState<
     { key: string; filename: string; type: 'photo' | 'video'; previewUrl: string; progress: number; error?: string }[]
   >([])
@@ -899,6 +917,14 @@ export default function Questionnaire() {
                   ) : (
                     <video src={m.url} className="h-full w-full object-cover" muted preload="metadata" />
                   )}
+                  <button
+                    type="button"
+                    aria-label="Supprimer ce fichier"
+                    onClick={() => setDeleteTarget({ id: m.id, filename: m.filename ?? `fichier-${m.id}` })}
+                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-500 opacity-0 shadow backdrop-blur transition-all hover:bg-error hover:text-white group-hover:opacity-100 focus-visible:opacity-100"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                   <span className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2 rounded-lg bg-white/90 px-2 py-1.5 backdrop-blur">
                     <span className="min-w-0 truncate text-[11px] font-medium text-ink">
                       {m.filename ?? `fichier-${m.id}`}
@@ -926,6 +952,37 @@ export default function Questionnaire() {
               </p>
             )}
           </SectionCard>
+
+          {/* Confirmation de suppression d'un média */}
+          <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer ce fichier ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {deleteTarget ? `« ${deleteTarget.filename} » sera définitivement supprimé.` : ''}{' '}
+                  Cette action est irréversible.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleteMediaMutation.isPending}>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={deleteMediaMutation.isPending}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (deleteTarget) deleteMediaMutation.mutate({ mediaId: deleteTarget.id })
+                  }}
+                  className="bg-error text-white hover:bg-error/90"
+                >
+                  {deleteMediaMutation.isPending ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
     </div>
