@@ -43,6 +43,7 @@ export const videosRouter = createRouter({
       z.object({
         projectId: z.number().int().positive(),
         url: z.string().min(1),
+        posterUrl: z.string().min(1).optional(),
         watermark: z.boolean().default(true),
         status: z.enum(["draft", "sent", "final"]).default("sent"),
       }),
@@ -56,6 +57,7 @@ export const videosRouter = createRouter({
         projectId: input.projectId,
         version,
         url: input.url,
+        posterUrl: input.posterUrl,
         watermark: input.watermark,
         status: input.status,
       });

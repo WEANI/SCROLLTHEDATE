@@ -6,36 +6,46 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/providers/trpc'
-import { PAYLOAD_FIELDS, RSVP_CTA_LABEL, SLUG } from './edwigeWilfriedContent'
-
-const RSVP_STORAGE_KEY = `felicity-fp-rsvp-${SLUG}`
 
 type Attending = 'yes' | 'no'
 
+export interface PayloadField {
+  label: string
+  value: string
+}
+
 /**
  * Bloc payload — le faire-part fonctionnel (skill Étape 5.B.1), sous le
- * hero. Texte du formulaire posé **verbatim** (date · lieu · heure · dress
- * code, cf. edwigeWilfriedContent.ts) — jamais reformulé. Hébergement /
- * infos pratiques non renseignés par le couple : la section correspondante
- * est simplement omise (pas de bloc vide), cf. instructions §2.B.1.
- * CTA RSVP par défaut (aucune formule dédiée fournie), qui ouvre un
- * formulaire court réutilisant le pattern déjà en prod sur `/demo`
- * (Dialog + confirmation, dégradé en local si le slug n'existe pas côté
- * backend).
+ * hero. Texte du formulaire posé **verbatim** — jamais reformulé.
+ * Hébergement / infos pratiques non renseignés : le champ correspondant est
+ * simplement absent de `fields` plutôt que de laisser un bloc vide (cf.
+ * instructions §2.B.1). Formulaire RSVP court en Dialog, dégradé en local
+ * si le slug n'existe pas côté backend.
  */
-export default function PayloadSection() {
+export default function PayloadSection({
+  slug,
+  coupleNames,
+  fields,
+  rsvpCtaLabel = 'Répondre à l’invitation',
+}: {
+  slug: string
+  coupleNames: string
+  fields: PayloadField[]
+  rsvpCtaLabel?: string
+}) {
   const [open, setOpen] = useState(false)
+  const rsvpStorageKey = `felicity-fp-rsvp-${slug}`
 
   return (
     <section className="relative bg-[#FBF7F1] px-6 py-24 text-center lg:py-32" aria-label="Informations du mariage">
       <div className="mx-auto max-w-[560px]">
         <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#B9776C]">Le faire-part</p>
         <h2 className="font-display mt-4 text-[clamp(1.9rem,4.4vw,2.6rem)] font-normal italic leading-[1.15] text-[#2E2620]">
-          Edwige &amp; Wilfried se marient
+          {coupleNames} se marient
         </h2>
 
         <dl className="mt-12 flex flex-col gap-6 text-left sm:mt-14">
-          {PAYLOAD_FIELDS.map((field) => (
+          {fields.map((field) => (
             <div
               key={field.label}
               className="flex flex-col gap-1 rounded-2xl border border-[#E8C9C4]/60 bg-white/70 px-6 py-5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
@@ -54,7 +64,7 @@ export default function PayloadSection() {
             onClick={() => setOpen(true)}
             className="inline-flex items-center justify-center rounded-full bg-[#B9776C] px-9 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#A6675C]"
           >
-            {RSVP_CTA_LABEL}
+            {rsvpCtaLabel}
           </button>
         </div>
       </div>
@@ -65,18 +75,18 @@ export default function PayloadSection() {
           className="max-w-lg border-none bg-transparent p-0 shadow-none [&_[data-slot=dialog-close]]:top-6 [&_[data-slot=dialog-close]]:right-6 [&_[data-slot=dialog-close]]:text-ink/50"
         >
           <VisuallyHidden>
-            <DialogTitle>{RSVP_CTA_LABEL}</DialogTitle>
+            <DialogTitle>{rsvpCtaLabel}</DialogTitle>
           </VisuallyHidden>
-          <RsvpForm />
+          <RsvpForm slug={slug} coupleNames={coupleNames} storageKey={rsvpStorageKey} />
         </DialogContent>
       </Dialog>
     </section>
   )
 }
 
-function RsvpForm() {
+function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames: string; storageKey: string }) {
   const publicQuery = trpc.rsvp.getPublic.useQuery(
-    { slug: SLUG },
+    { slug },
     { retry: false, refetchOnWindowFocus: false, staleTime: Infinity },
   )
   const backendDown = publicQuery.isError
@@ -90,7 +100,7 @@ function RsvpForm() {
   const [localOnly, setLocalOnly] = useState(false)
   const [done, setDone] = useState<Attending | null>(() => {
     try {
-      const raw = window.localStorage.getItem(RSVP_STORAGE_KEY)
+      const raw = window.localStorage.getItem(storageKey)
       if (!raw) return null
       return (JSON.parse(raw) as { attending?: Attending }).attending ?? 'yes'
     } catch {
@@ -100,7 +110,7 @@ function RsvpForm() {
 
   const saveLocal = (payload: { guestName: string; email: string; attending: Attending; message: string }) => {
     try {
-      window.localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify({ ...payload, at: new Date().toISOString() }))
+      window.localStorage.setItem(storageKey, JSON.stringify({ ...payload, at: new Date().toISOString() }))
     } catch {
       /* stockage indisponible — ignorer */
     }
@@ -122,7 +132,7 @@ function RsvpForm() {
 
     try {
       await submitMutation.mutateAsync({
-        slug: SLUG,
+        slug,
         guestName: payload.guestName,
         email: payload.email || undefined,
         attending: payload.attending,
@@ -170,8 +180,8 @@ function RsvpForm() {
             <h2 className="font-display mt-6 text-[2rem] font-light tracking-[-0.01em] text-ink">Merci&nbsp;!</h2>
             <p className="mt-3 max-w-sm text-[15px] leading-[1.65] text-ink/70">
               {done === 'yes'
-                ? 'Votre réponse est bien arrivée. Edwige & Wilfried ont hâte de vous accueillir à Dubaï.'
-                : 'Votre réponse est bien arrivée. Vous manquerez à Edwige & Wilfried.'}
+                ? `Votre réponse est bien arrivée. ${coupleNames} ont hâte de vous accueillir.`
+                : `Votre réponse est bien arrivée. Vous manquerez à ${coupleNames}.`}
             </p>
             {localOnly && (
               <p className="mt-4 rounded-full bg-neutral-100 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
@@ -184,7 +194,7 @@ function RsvpForm() {
                 setDone(null)
                 setLocalOnly(false)
                 try {
-                  window.localStorage.removeItem(RSVP_STORAGE_KEY)
+                  window.localStorage.removeItem(storageKey)
                 } catch {
                   /* ignorer */
                 }
@@ -263,7 +273,7 @@ function RsvpForm() {
 
             <div className="mt-5">
               <label htmlFor="fp-rsvp-message" className={labelClass}>
-                Un mot pour Edwige &amp; Wilfried (facultatif)
+                Un mot pour {coupleNames} (facultatif)
               </label>
               <textarea
                 id="fp-rsvp-message"

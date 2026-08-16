@@ -46,5 +46,6 @@ export interface HeroVideoConfig {
   desktopSrc: string
   /** Optionnel — si absent, `desktopSrc` sert aussi sur mobile (un seul montage livré). */
   mobileSrc?: string
-  posterSrc: string
+  /** Optionnel — un projet réel peut ne pas encore avoir d'affiche définie pour sa vidéo finale. */
+  posterSrc?: string
 }

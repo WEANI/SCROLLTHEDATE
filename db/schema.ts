@@ -299,6 +299,8 @@ export const videoVersions = pgTable(
       .references(() => projects.id),
     version: integer("version").notNull(),
     url: text("url").notNull(),
+    /** Image d'affiche du hero scrub (poster du <video>) — optionnelle, la version finale livrée au client en a une. */
+    posterUrl: text("posterUrl"),
     watermark: boolean("watermark").default(true).notNull(),
     status: videoVersionStatusEnum("status").default("draft").notNull(),
     // Commentaire timecodé du client : [{ timecode, comment }]

@@ -140,7 +140,9 @@ export default function HeroScrub({
   if (reducedMotion) {
     return (
       <section className="relative overflow-hidden" style={{ background: theme.frameBg }} aria-label={ariaLabel}>
-        <img src={video.posterSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+        {video.posterSrc && (
+          <img src={video.posterSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+        )}
         <div className="relative z-10 mx-auto flex max-w-xl flex-col items-center gap-14 px-6 py-28 text-center" style={themeVars}>
           {chapters.map((ch) => (
             <ChapterContent key={ch.id} chapter={ch} className="static opacity-100 visible translate-y-0" />
@@ -162,7 +164,11 @@ export default function HeroScrub({
       <div className="hs-frame" style={themeVars}>
         <div className="hs-stage">
           {videoFailed ? (
-            <img src={video.posterSrc} alt="" className="hs-video" />
+            video.posterSrc ? (
+              <img src={video.posterSrc} alt="" className="hs-video" />
+            ) : (
+              <div className="hs-video" style={{ background: theme.frameBg }} />
+            )
           ) : (
             <video
               ref={videoRef}

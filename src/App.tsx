@@ -9,6 +9,7 @@ import Merci from '@/pages/Merci'
 import Demo from '@/pages/Demo'
 import DemoInfos from '@/pages/DemoInfos'
 import FairePartEdwigeWilfried from '@/pages/FairePartEdwigeWilfried'
+import FairePart from '@/pages/FairePart'
 import ClientShell from '@/components/espace/ClientShell'
 import TableauDeBord from '@/pages/espace/TableauDeBord'
 import Questionnaire from '@/pages/espace/Questionnaire'
@@ -48,8 +49,13 @@ export default function App() {
       <Route path="/login" element={<Login />} />
 
       {/* Faire-part client livrés — hors Layout public (pas de Navbar/Footer
-          marketing devant les invités), cf. FairePartEdwigeWilfried. */}
+          marketing devant les invités). /edwige-wilfried reste une page
+          câblée en dur (skill FELICITI) ; /faire-part/:slug est la vraie
+          page dynamique, alimentée par projects.getPublicInvite —
+          react-router priorise le segment statique sur le paramétré, les
+          deux coexistent sans conflit. */}
       <Route path="/faire-part/edwige-wilfried" element={<FairePartEdwigeWilfried />} />
+      <Route path="/faire-part/:slug" element={<FairePart />} />
 
       {/* Espace client — shell clair dédié (hors Layout public) */}
       <Route path="/espace" element={<ClientShell />}>

@@ -5,7 +5,14 @@ import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { MINIMAL_THEME } from '@/components/hero-scrub/themes'
-import { HERO_CHAPTERS } from '@/components/faire-part/edwigeWilfriedContent'
+import {
+  HERO_CHAPTERS,
+  PAYLOAD_FIELDS,
+  RSVP_CTA_LABEL,
+  SLUG,
+} from '@/components/faire-part/edwigeWilfriedContent'
+
+const COUPLE_NAMES = 'Edwige & Wilfried'
 
 /**
  * Faire-part « Edwige & Wilfried » — première page livrée depuis le
@@ -55,9 +62,14 @@ export default function FairePartEdwigeWilfried() {
         trackHeightVh={700}
         ariaLabel="Faire-part — Edwige & Wilfried"
       />
-      <PayloadSection />
+      <PayloadSection
+        slug={SLUG}
+        coupleNames={COUPLE_NAMES}
+        fields={PAYLOAD_FIELDS}
+        rsvpCtaLabel={RSVP_CTA_LABEL}
+      />
       <PhotosSection />
-      <ClosingSection />
+      <ClosingSection coupleNames={COUPLE_NAMES} />
     </div>
   )
 }

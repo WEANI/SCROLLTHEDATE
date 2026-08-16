@@ -5,7 +5,7 @@ import { Link } from 'react-router'
  * livrée au couple, pas une page marketing du site public : pas de footer
  * commercial (offres/tarifs), une signature discrète suffit.
  */
-export default function ClosingSection() {
+export default function ClosingSection({ coupleNames }: { coupleNames: string }) {
   return (
     <footer className="border-t border-[#E8C9C4]/50 bg-[#FBF7F1] px-6 py-14 text-center">
       <Link to="/" className="inline-flex items-center gap-2" aria-label="Félicity — accueil">
@@ -15,7 +15,7 @@ export default function ClosingSection() {
         </span>
       </Link>
       <p className="mx-auto mt-3 max-w-xs text-[12px] font-light leading-[1.6] text-[#8A7D6D]">
-        Créé avec félicité pour Edwige &amp; Wilfried.
+        Créé avec félicité pour {coupleNames}.
       </p>
     </footer>
   )
