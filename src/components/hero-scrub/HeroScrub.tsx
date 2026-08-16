@@ -274,6 +274,12 @@ function ChapterContent({ chapter, className }: { chapter: HeroChapter; classNam
       {/* Encadré flouté : le texte se lit sur n'importe quelle image de la
           vidéo derrière, sans jamais figer le fond en plein cadre. */}
       <div className={cn('hs-card text-center', chapter.kind === 'list' && 'text-left')}>
+        {chapter.lead && (
+          <p className="mb-4 text-center text-[15px] font-light leading-relaxed" style={{ color: 'var(--hs-text-secondary)' }}>
+            {chapter.lead}
+          </p>
+        )}
+
         {chapter.eyebrow && (
           <p
             className="mb-4 text-center text-[11px] uppercase tracking-[0.24em]"
@@ -284,17 +290,39 @@ function ChapterContent({ chapter, className }: { chapter: HeroChapter; classNam
         )}
 
         {chapter.segments && (
-          <p
-            className="font-display mb-2 text-[clamp(30px,6vw,46px)] font-normal leading-[1.12]"
+          <div
+            className={cn(
+              'font-display mb-2 font-normal leading-[1.12]',
+              // cqw (largeur de .hs-stage, cf. container-type dans
+              // hero-scrub.css) — jamais vw (largeur viewport), qui a déjà
+              // fait déborder "décembre" puis "Couleurs" sur desktop, où le
+              // viewport est bien plus large que la colonne 9:16 réelle.
+              chapter.titleSize === 'lg' ? 'text-[clamp(32px,19cqw,56px)]' : 'text-[clamp(28px,18cqw,46px)]',
+            )}
             style={{ color: 'var(--hs-text-primary)' }}
           >
-            {chapter.segments.map((seg, i) => (
-              <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
-                {seg.text}
-                {i < chapter.segments!.length - 1 ? ' ' : ''}
-              </span>
-            ))}
-          </p>
+            {chapter.segmentLayout === 'stack' ? (
+              <p>
+                {chapter.segments.map((seg, i) => (
+                  <span key={i}>
+                    <span className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                      {seg.text}
+                    </span>
+                    {i < chapter.segments!.length - 1 && <br />}
+                  </span>
+                ))}
+              </p>
+            ) : (
+              <p>
+                {chapter.segments.map((seg, i) => (
+                  <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                    {seg.text}
+                    {i < chapter.segments!.length - 1 ? ' ' : ''}
+                  </span>
+                ))}
+              </p>
+            )}
+          </div>
         )}
 
         {chapter.rule && (
@@ -302,9 +330,30 @@ function ChapterContent({ chapter, className }: { chapter: HeroChapter; classNam
         )}
 
         {chapter.sub && (
-          <p className="text-center text-[14px] font-light" style={{ color: 'var(--hs-text-secondary)' }}>
+          <p
+            className={cn('text-center font-light', chapter.subSize === 'md' ? 'text-[18px]' : 'text-[14px]')}
+            style={{ color: 'var(--hs-text-secondary)' }}
+          >
             {chapter.sub}
           </p>
+        )}
+
+        {chapter.subLines && (
+          <div>
+            {chapter.subLines.map((line, i) => (
+              <div key={i}>
+                {i > 0 && (
+                  <div className="mx-auto my-[10px] h-px w-9 opacity-70" style={{ background: 'var(--hs-accent)' }} />
+                )}
+                <p
+                  className={cn('text-center font-light', chapter.subSize === 'md' ? 'text-[18px]' : 'text-[14px]')}
+                  style={{ color: 'var(--hs-text-secondary)' }}
+                >
+                  {line}
+                </p>
+              </div>
+            ))}
+          </div>
         )}
 
         {chapter.kind === 'list' && (

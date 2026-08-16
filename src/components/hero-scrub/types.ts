@@ -10,10 +10,20 @@ export interface HeroChapter {
   /** Fenêtre de progression [from, to] du scrub où ce chapitre est affiché. */
   from: number
   to: number
+  /** Paragraphe libre affiché avant l'eyebrow/le titre, casse normale (pas de majuscules forcées) — ex. phrase de clôture. */
+  lead?: string
   eyebrow?: string
   /** Segments du titre : texte brut ou accentué (couleur d'accent du thème). */
   segments?: { text: string; accent?: boolean }[]
+  /** 'inline' (défaut) : les segments s'enchaînent et ne retombent à la ligne que si la largeur l'impose. 'stack' : chaque segment sur sa propre ligne, garanti (ex. "&" seul entre deux prénoms, quelle que soit la largeur du cadre). */
+  segmentLayout?: 'inline' | 'stack'
+  /** 'md' (défaut, clamp jusqu'à 46px) ou 'lg' (clamp jusqu'à 56px) — vérifier l'absence de débordement à l'écran avant de choisir 'lg' sur un mot long. */
+  titleSize?: 'md' | 'lg'
   sub?: string
+  /** Alternative à `sub` : plusieurs lignes, chacune séparée par le même filet que `rule`. */
+  subLines?: string[]
+  /** Taille de `sub`/`subLines` — 'sm' (défaut, 14px) ou 'md' (18px). */
+  subSize?: 'sm' | 'md'
   rule?: boolean
   items?: string[]
   card?: { mono: string; title: string; sub: string }

@@ -39,6 +39,13 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  /* Établit un contexte de container query : la taille des titres du hero
+     (cf. clamp(...cqw...) sur .font-display dans HeroScrub.tsx) se calcule
+     sur LA LARGEUR RÉELLE DE CETTE COLONNE 9:16, jamais sur celle, bien plus
+     large, du viewport (vw) — sinon un desktop court-mais-large peut forcer
+     un texte dimensionné pour un grand écran dans une colonne vidéo étroite
+     et le faire déborder du cadre (constaté à plusieurs reprises). */
+  container-type: inline-size;
 }
 
 .hs-video {
