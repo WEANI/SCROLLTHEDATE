@@ -1,8 +1,10 @@
 /**
  * Contenu du faire-part démo « Anna & Théo » — nouvelle architecture à 2
- * sections (hero scrub vidéo + RSVP). Remplace l'ancien templates.ts : plus
- * de système de templates (éditorial/cinéma/minimal), une seule charte.
+ * sections (hero scrub vidéo + RSVP). Rendu par le composant partagé
+ * HeroScrub (cf. src/components/hero-scrub/) avec le thème "cinema".
  */
+
+import type { HeroChapter } from '@/components/hero-scrub/types'
 
 export const DEMO_SLUG = 'anna-theo'
 
@@ -40,21 +42,6 @@ export const PRACTICAL_INFO = [
   'Les enfants sont les bienvenus ; un espace leur est dédié pendant le dîner.',
   'Cérémonie en extérieur : une allée abritée est prévue en cas de pluie.',
 ]
-
-export interface HeroChapter {
-  id: number
-  kind: 'text' | 'list' | 'card'
-  /** Fenêtre de progression [from, to) du scrub où ce chapitre est affiché. */
-  from: number
-  to: number
-  eyebrow?: string
-  /** Segments du titre : texte brut ou accentué (Fraunces italique corail). */
-  segments?: { text: string; accent?: boolean }[]
-  sub?: string
-  rule?: boolean
-  items?: string[]
-  card?: { mono: string; title: string; sub: string }
-}
 
 /**
  * Aucun overlay avant que l'enveloppe ne soit ouverte (cachet qui craque

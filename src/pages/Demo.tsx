@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
 import DemoBanner from '@/components/demo/DemoBanner'
-import DemoHeroScrub from '@/components/demo/DemoHeroScrub'
 import RsvpSection from '@/components/demo/RsvpSection'
+import HeroScrub from '@/components/hero-scrub/HeroScrub'
+import { CINEMA_THEME } from '@/components/hero-scrub/themes'
+import { HERO_CHAPTERS } from '@/components/demo/demoContent'
 
 /**
  * Page démo — faire-part « Anna & Théo » (20 juin 2026), nouvelle
@@ -24,7 +26,18 @@ export default function Demo() {
 
       {/* Héros plein écran : sort du padding du Layout via -mt-20. */}
       <div className="-mt-20">
-        <DemoHeroScrub />
+        <HeroScrub
+          theme={CINEMA_THEME}
+          chapters={HERO_CHAPTERS}
+          video={{
+            desktopSrc: '/demo-scrub-desktop.mp4',
+            mobileSrc: '/demo-scrub-mobile.mp4',
+            posterSrc: '/demo-scrub-poster.jpg',
+          }}
+          trackHeightVh={900}
+          ariaLabel="Faire-part — Anna & Théo"
+          showWatermark
+        />
       </div>
 
       <RsvpSection />

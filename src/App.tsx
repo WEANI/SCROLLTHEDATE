@@ -8,6 +8,7 @@ import Commander from '@/pages/Commander'
 import Merci from '@/pages/Merci'
 import Demo from '@/pages/Demo'
 import DemoInfos from '@/pages/DemoInfos'
+import FairePartEdwigeWilfried from '@/pages/FairePartEdwigeWilfried'
 import ClientShell from '@/components/espace/ClientShell'
 import TableauDeBord from '@/pages/espace/TableauDeBord'
 import Questionnaire from '@/pages/espace/Questionnaire'
@@ -45,6 +46,10 @@ export default function App() {
 
       {/* Login — clair, hors Layout public sombre (comme /espace et /admin) */}
       <Route path="/login" element={<Login />} />
+
+      {/* Faire-part client livrés — hors Layout public (pas de Navbar/Footer
+          marketing devant les invités), cf. FairePartEdwigeWilfried. */}
+      <Route path="/faire-part/edwige-wilfried" element={<FairePartEdwigeWilfried />} />
 
       {/* Espace client — shell clair dédié (hors Layout public) */}
       <Route path="/espace" element={<ClientShell />}>

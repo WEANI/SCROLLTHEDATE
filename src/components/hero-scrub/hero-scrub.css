@@ -1,0 +1,107 @@
+/**
+ * Styles du hero scrub — partagés par tous les thèmes (cf. themes.ts). Les
+ * couleurs ne sont jamais codées en dur ici : elles viennent des variables
+ * CSS `--hs-*` posées en `style` inline sur `.hs-frame` par HeroScrub.tsx à
+ * partir du thème choisi. Un seul jeu de règles pour /demo (Cinéma) comme
+ * pour chaque faire-part client réel (Minimal, futurs thèmes…). Classes
+ * préfixées `hs-` (Hero Scrub).
+ */
+
+.hs-frame {
+  position: sticky;
+  top: 0;
+  left: 0;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hs-frame-bg);
+}
+
+.hs-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--hs-vignette);
+  pointer-events: none;
+}
+
+/* Colonne 9:16 centrée sur desktop ; plein cadre dès que l'écran est plus
+   étroit que ce ratio (mobile). */
+.hs-stage {
+  position: relative;
+  z-index: 2;
+  width: min(56.25dvh, 100vw);
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hs-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hs-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 9%;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease,
+    visibility 0s linear 0.7s;
+  pointer-events: none;
+}
+.hs-overlay.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+}
+
+/* Encadré flouté derrière le texte des overlays — lisible sur n'importe
+   quelle image de la vidéo, sans jamais figer le fond en plein cadre : seul
+   le texte est encadré, la vidéo reste visible autour. */
+.hs-card {
+  max-width: 88%;
+  background: var(--hs-card-bg);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--hs-card-border);
+  border-radius: 20px;
+  padding: 32px 32px;
+  box-shadow: var(--hs-card-shadow);
+}
+
+.hs-chevron {
+  width: 1px;
+  height: 22px;
+  background: linear-gradient(var(--hs-accent), transparent);
+  animation: hs-pulse 1.8s ease-in-out infinite;
+}
+@keyframes hs-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
