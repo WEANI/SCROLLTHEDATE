@@ -196,12 +196,30 @@ export default function HeroScrub({
                 // affiche indéfiniment malgré un scrub qui semble fonctionner
                 // partout ailleurs (desktop, Android). Muet + immédiatement
                 // remis en pause : jamais de lecture visible.
+                //
+                // Le pause() DOIT être synchrone, pas chaîné en `.then()` sur
+                // la promesse de play() : sur certains mobiles/réseaux, cette
+                // promesse peut mettre plusieurs secondes à se résoudre — le
+                // temps qu'elle résolve, la vidéo (muette, donc jamais
+                // bloquée par l'autoplay policy) a déjà joué jusqu'à la toute
+                // fin, se bloque sur son dernier plan, et n'accepte plus
+                // aucun seek ensuite (constaté en conditions réelles : le
+                // scrub restait figé sur l'aérien final dès le tout début du
+                // scroll). Appeler pause() tout de suite après play(), sans
+                // attendre sa promesse, interrompt la lecture en quelques
+                // millisecondes au lieu de la laisser filer jusqu'au bout.
                 const vid = e.currentTarget
-                const p = vid.play()
-                if (p && typeof p.then === 'function') {
-                  p.then(() => vid.pause()).catch(() => {
-                    /* lecture bloquée — le scrub par seek reste tenté normalement */
-                  })
+                try {
+                  const p = vid.play()
+                  vid.pause()
+                  vid.currentTime = 0
+                  if (p && typeof p.then === 'function') {
+                    p.catch(() => {
+                      /* lecture bloquée — le scrub par seek reste tenté normalement */
+                    })
+                  }
+                } catch {
+                  /* play()/pause() indisponible — le scrub par seek reste tenté normalement */
                 }
               }}
               onError={(e) => {
