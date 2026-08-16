@@ -9,7 +9,10 @@ import type { HeroChapter } from '@/components/hero-scrub/types'
 export const DEMO_SLUG = 'anna-theo'
 
 export const COUPLE_INITIALS = 'A&T'
+export const COUPLE_NAMES = 'Anna & Théo'
 export const WEDDING_DATE_LABEL = 'Samedi 20 juin 2026'
+/** Date seule, sans le jour de semaine — utilisée là où le lieu est déjà donné ailleurs (ex. DemoInfos). */
+export const WEDDING_DATE_SHORT = '20 juin 2026'
 export const VENUE_NAME = 'Domaine de la Baie'
 export const VENUE_LOCATION = "Presqu'île de Crozon, Finistère"
 export const VENUE_ADDRESS = '14 chemin des Embruns, 29160 Crozon'

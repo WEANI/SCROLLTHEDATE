@@ -5,6 +5,7 @@ import DemoBanner from '@/components/demo/DemoBanner'
 import RsvpSection from '@/components/demo/RsvpSection'
 import {
   COUPLE_INITIALS,
+  COUPLE_NAMES,
   DRESS_CODE,
   LODGING_OPTIONS,
   PRACTICAL_INFO,
@@ -12,7 +13,7 @@ import {
   VENUE_ADDRESS,
   VENUE_LOCATION,
   VENUE_NAME,
-  WEDDING_DATE_LABEL,
+  WEDDING_DATE_SHORT,
 } from '@/components/demo/demoContent'
 
 /**
@@ -47,14 +48,14 @@ export default function DemoInfos() {
         <div className="mx-auto mt-8 flex h-14 w-14 items-center justify-center rounded-full border border-[#C97A5C] font-display text-[17px] italic text-[#C97A5C]">
           {COUPLE_INITIALS}
         </div>
-        <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#C97A5C]">
-          Option — page infos complètes
-        </p>
-        <h1 className="font-display mt-4 text-[clamp(2.2rem,5vw,3.2rem)] font-normal italic leading-[1.1] text-[#F5EEE4]">
-          Toutes les informations
+        <h1 className="font-display mt-6 text-[clamp(2.2rem,5vw,3.2rem)] font-normal italic leading-[1.1] text-[#F5EEE4]">
+          {COUPLE_NAMES}
         </h1>
         <p className="mx-auto mt-4 max-w-md text-[15px] font-light leading-[1.7] text-[#B8AC9C]">
-          {WEDDING_DATE_LABEL} — {VENUE_NAME}, {VENUE_LOCATION}
+          Ont l'honneur de vous convier à la cérémonie de leur mariage qui se déroulera
+        </p>
+        <p className="font-display mt-3 text-[clamp(1.4rem,3vw,1.8rem)] font-normal text-[#F5EEE4]">
+          {WEDDING_DATE_SHORT}
         </p>
       </header>
 
@@ -67,18 +68,24 @@ export default function DemoInfos() {
         </p>
       </InfoSection>
 
-      {/* Déroulé */}
+      {/* Déroulé — timeline verticale (ligne + puces reliant chaque temps fort). */}
       <InfoSection icon={Clock3} eyebrow="Déroulé" title="Le programme de la journée">
-        <div className="flex flex-col gap-3">
-          {SCHEDULE_ITEMS.map((item) => (
-            <div
-              key={item.time}
-              className="flex items-center gap-4 rounded-xl border border-[rgba(255,244,232,0.08)] bg-[#241E17] px-5 py-4"
-            >
-              <span className="font-display shrink-0 text-[17px] italic text-[#C97A5C]">{item.time}</span>
-              <span className="text-[14px] font-light text-[#F5EEE4]">{item.label}</span>
-            </div>
-          ))}
+        <div className="relative mx-auto max-w-sm pl-9 text-left">
+          <div className="absolute left-[7px] top-[7px] bottom-[7px] w-px bg-[rgba(255,244,232,0.14)]" aria-hidden />
+          <div className="flex flex-col gap-9">
+            {SCHEDULE_ITEMS.map((item) => (
+              <div key={item.time} className="relative">
+                <span
+                  className="absolute -left-9 top-[3px] flex h-[15px] w-[15px] items-center justify-center rounded-full border-2 border-[#C97A5C] bg-[#17130F]"
+                  aria-hidden
+                />
+                <span className="font-display block text-[17px] italic leading-none text-[#C97A5C]">
+                  {item.time}
+                </span>
+                <span className="mt-1.5 block text-[14px] font-light text-[#F5EEE4]">{item.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </InfoSection>
 
