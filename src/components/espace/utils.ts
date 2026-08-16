@@ -116,6 +116,8 @@ export function auditLabel(action: string, meta?: unknown): string {
       return 'Modifications vidéo demandées'
     case 'project.status_changed':
       return `Étape « ${PROJECT_STATUS_LABEL[String(m.to)] ?? String(m.to)} »`
+    case 'project.template_changed':
+      return `Ambiance « ${TEMPLATE_LABEL[String(m.to)] ?? String(m.to)} »`
     case 'rsvp.config_saved':
       return 'Configuration RSVP enregistrée'
     case 'rsvp.submitted':

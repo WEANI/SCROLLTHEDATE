@@ -38,7 +38,21 @@ export interface HeroTheme {
   id: string
   /** Nom affiché (ex. dans le questionnaire "Ambiance souhaitée"). */
   label: string
+  /**
+   * Clair ou sombre — porté par le thème plutôt que déduit de son `id` au
+   * cas par cas : la page faire-part pose `<meta color-scheme>` d'après
+   * cette valeur (anti-inversion dark mode mobile, directive du skill).
+   * Un test du type `id === 'minimal' ? 'light' : 'dark'` se trompe dès
+   * qu'on ajoute un thème clair — c'était le cas d'"editorial".
+   */
+  colorScheme: 'light' | 'dark'
   frameBg: string
+  /**
+   * Fond du corps de page (sous/autour du hero) — souvent très proche de
+   * `frameBg` sans lui être identique (le cadre vidéo se détache
+   * légèrement). Porté par le thème pour la même raison que `colorScheme`.
+   */
+  pageBg: string
   /** Valeur CSS complète du gradient de vignette du cadre. */
   vignette: string
   accent: string

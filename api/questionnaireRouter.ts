@@ -14,9 +14,38 @@ import {
   findCurrentProject,
   logAudit,
 } from "./queries/helpers";
-import { findAllProjects, updateProjectStatus } from "./queries/projects";
+import {
+  findAllProjects,
+  updateProjectStatus,
+  updateProjectTemplate,
+} from "./queries/projects";
+import { templateEnum } from "./ordersRouter";
 
 const answersSchema = z.record(z.string(), z.unknown());
+
+/**
+ * Question « Ambiance souhaitée » du questionnaire — la réponse du client
+ * pilote directement le thème de son faire-part (cf. syncTemplateFromAmbiance
+ * et src/components/hero-scrub/themes.ts, dont les id sont alignés sur les
+ * valeurs de `projectTemplateEnum`).
+ */
+const AMBIANCE_QUESTION_ID = "style.ambiance";
+
+/**
+ * `answers` est un jsonb libre, et deux formats de réponse coexistent en
+ * base : la valeur brute écrite par l'UI actuelle ("cinema") et le libellé
+ * affiché, accentué et capitalisé, présent sur des projets plus anciens
+ * ("Cinéma", "Éditorial"). On ramène les deux à la valeur de l'enum plutôt
+ * que d'ignorer silencieusement la seconde forme.
+ */
+function normalizeAmbiance(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
 
 const questionSchema = z.object({
   id: z.string().min(1),
@@ -28,6 +57,41 @@ const questionSchema = z.object({
   required: z.boolean().default(false),
   showOnInvite: z.boolean().default(false),
 });
+
+/**
+ * Reporte le choix d'ambiance du client sur `projects.template` (le thème
+ * réellement rendu par la page faire-part). Sans ça, la question « Ambiance
+ * souhaitée » n'avait aucun effet : seul un admin pouvait changer le thème
+ * depuis le Studio, et tout projet gardait le défaut "editorial".
+ *
+ * Ne synchronise QUE si le client vient de (re)choisir une ambiance, pas à
+ * chaque sauvegarde : le questionnaire s'enregistre en autosave et renvoie
+ * les réponses fusionnées, donc écrire systématiquement écraserait à la
+ * première frappe du client tout ajustement manuel fait par l'admin dans le
+ * Studio. Un changement explicite d'ambiance, lui, reste prioritaire — c'est
+ * une intention fraîche du client.
+ */
+async function syncTemplateFromAmbiance(
+  project: { id: number; template: string },
+  previousAnswers: Record<string, unknown>,
+  mergedAnswers: Record<string, unknown>,
+  actor: string,
+) {
+  const previous = previousAnswers[AMBIANCE_QUESTION_ID];
+  const next = mergedAnswers[AMBIANCE_QUESTION_ID];
+  if (next === previous) return;
+
+  // Ne jamais écrire dans l'enum sans valider (jsonb libre côté réponses).
+  const parsed = templateEnum.safeParse(normalizeAmbiance(next));
+  if (!parsed.success || parsed.data === project.template) return;
+
+  await updateProjectTemplate(project.id, parsed.data);
+  await logAudit(project.id, actor, "project.template_changed", {
+    from: project.template,
+    to: parsed.data,
+    source: "questionnaire",
+  });
+}
 
 async function requireCurrentProject(userId: number) {
   const project = await findCurrentProject(userId);
@@ -53,12 +117,17 @@ export const questionnaireRouter = createRouter({
       const project = await requireCurrentProject(ctx.user.id);
       const existing = await findQuestionnaireByProject(project.id);
       const template = await findActiveFormTemplate();
-      const merged = {
-        ...((existing?.answers as Record<string, unknown> | null) ?? {}),
-        ...input.answers,
-      };
+      const previousAnswers =
+        (existing?.answers as Record<string, unknown> | null) ?? {};
+      const merged = { ...previousAnswers, ...input.answers };
       const completionPct = computeCompletionPct(merged, template);
       await upsertQuestionnaire(project.id, merged, completionPct);
+      await syncTemplateFromAmbiance(
+        project,
+        previousAnswers,
+        merged,
+        actorOf(ctx.user),
+      );
       // Première sauvegarde → le projet passe en QUESTIONNAIRE
       if (project.status === "ONBOARDING") {
         await updateProjectStatus(project.id, "QUESTIONNAIRE");

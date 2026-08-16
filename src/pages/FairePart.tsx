@@ -32,13 +32,16 @@ export default function FairePart() {
     document.title = invite.coupleNames ? `${invite.coupleNames} · Scroll The Date` : 'Scroll The Date'
     const meta = document.createElement('meta')
     meta.name = 'color-scheme'
-    meta.content = theme.id === 'minimal' ? 'only light' : 'only dark'
+    // Lu depuis le thème, jamais déduit de son id : "editorial" est clair
+    // lui aussi, un test `id === 'minimal'` l'aurait déclaré sombre et
+    // aurait rouvert l'inversion dark mode sur mobile.
+    meta.content = theme.colorScheme === 'light' ? 'only light' : 'only dark'
     document.head.appendChild(meta)
     return () => {
       document.title = 'Scroll The Date'
       document.head.removeChild(meta)
     }
-  }, [invite, theme.id])
+  }, [invite, theme.colorScheme])
 
   if (query.isLoading) {
     return (
@@ -104,7 +107,7 @@ export default function FairePart() {
   ].filter((f): f is { label: string; value: string } => !!f)
 
   return (
-    <div style={{ background: theme.id === 'minimal' ? '#FBF7F1' : theme.frameBg }}>
+    <div style={{ background: theme.pageBg }}>
       <header className="absolute inset-x-0 top-0 z-40 flex items-center justify-center px-6 py-5">
         <Link to="/" aria-label="Scroll The Date — accueil" className="rounded-full bg-black/25 px-4 py-2 backdrop-blur-sm">
           <img src="/logo.svg" alt="Scroll The Date" className="h-6 w-auto brightness-0 invert" />
