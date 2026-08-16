@@ -162,13 +162,22 @@ export default function HeroScrub({
       />
 
       <div className="hs-frame" style={themeVars}>
-        <div className="hs-stage">
+        <div
+          className="hs-stage"
+          style={
+            video.posterSrc
+              ? { backgroundImage: `url(${video.posterSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+              : undefined
+          }
+        >
+          {/* L'affiche est aussi posée en fond CSS de `.hs-stage` juste
+              au-dessus (pas seulement en attribut `poster`/fallback `<img>`) :
+              elle peint dès le premier rendu, sans dépendre du chargement JS
+              ni de l'état de la vidéo — jamais de cadre totalement vide le
+              temps que la vidéo (bien plus lourde) arrive sur une connexion
+              lente. */}
           {videoFailed ? (
-            video.posterSrc ? (
-              <img src={video.posterSrc} alt="" className="hs-video" />
-            ) : (
-              <div className="hs-video" style={{ background: theme.frameBg }} />
-            )
+            !video.posterSrc && <div className="hs-video" style={{ background: theme.frameBg }} />
           ) : (
             <video
               ref={videoRef}
@@ -180,6 +189,20 @@ export default function HeroScrub({
               onLoadedMetadata={(e) => {
                 hasLoadedOnceRef.current = true
                 setVideoDuration(e.currentTarget.duration)
+                // Safari iOS peut ignorer les seeks (`currentTime`)
+                // programmatiques tant que l'élément vidéo n'a jamais été
+                // "activé" par un play() — même silencieux et aussitôt
+                // interrompu. Sans ça, la vidéo peut rester bloquée sur son
+                // affiche indéfiniment malgré un scrub qui semble fonctionner
+                // partout ailleurs (desktop, Android). Muet + immédiatement
+                // remis en pause : jamais de lecture visible.
+                const vid = e.currentTarget
+                const p = vid.play()
+                if (p && typeof p.then === 'function') {
+                  p.then(() => vid.pause()).catch(() => {
+                    /* lecture bloquée — le scrub par seek reste tenté normalement */
+                  })
+                }
               }}
               onError={(e) => {
                 const vid = e.currentTarget
