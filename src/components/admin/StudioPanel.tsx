@@ -26,7 +26,7 @@ const EMPTY_PROPOSAL: DraftProposal = { title: "", summary: "", durationSec: 60,
 const AMBIANCE_TAGS = ["intimiste", "aventure", "cinéma", "humour", "poétique", "festif"];
 
 function draftKey(projectId: number) {
-  return `felicity-scenario-draft-${projectId}`;
+  return `scrollthedate-scenario-draft-${projectId}`;
 }
 
 function loadDrafts(projectId: number, existing: Project360["scenarioProposals"]): DraftProposal[] {

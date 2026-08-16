@@ -145,7 +145,7 @@ export default function Messages() {
           E·F
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[14.5px] font-semibold text-ink">Élise — Félicity</p>
+          <p className="text-[14.5px] font-semibold text-ink">Élise — Scroll The Date</p>
           <p className="text-[12px] text-neutral-500">Répond en général sous 24 h</p>
         </div>
         {project && (
@@ -159,7 +159,7 @@ export default function Messages() {
       <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-            <span className="font-display text-4xl font-light italic text-terracotta-500">F.</span>
+            <span className="font-display text-4xl font-light italic text-terracotta-500">S.</span>
             <p className="font-display text-xl font-medium text-ink">
               Dites bonjour à Élise — elle adore les détails croustillants.
             </p>

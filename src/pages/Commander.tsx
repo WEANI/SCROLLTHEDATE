@@ -34,7 +34,7 @@ import {
 /* Brouillon de commande (conservé si redirection vers la connexion)          */
 /* -------------------------------------------------------------------------- */
 
-const DRAFT_KEY = 'felicity:checkout:draft'
+const DRAFT_KEY = 'scrollthedate:checkout:draft'
 
 interface CheckoutDraft {
   productId: ProductId

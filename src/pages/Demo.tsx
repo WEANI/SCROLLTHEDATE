@@ -14,9 +14,9 @@ import { HERO_CHAPTERS } from '@/components/demo/demoContent'
  */
 export default function Demo() {
   useEffect(() => {
-    document.title = 'Anna & Théo — 20 juin 2026 · Félicity (démo)'
+    document.title = 'Anna & Théo — 20 juin 2026 · Scroll The Date (démo)'
     return () => {
-      document.title = 'Félicity'
+      document.title = 'Scroll The Date'
     }
   }, [])
 

@@ -32,7 +32,9 @@ const serviceRoleFullAccess = () =>
 
 // ---------------------------------------------------------------------------
 // Enums Postgres — noms et valeurs alignés sur les `create type ... as enum`
-// appliqués côté Supabase (migration felicity_schema_init).
+// appliqués côté Supabase (migration felicity_schema_init — nom historique
+// de la migration réellement appliquée, antérieur au renommage en Scroll The
+// Date ; ne pas "corriger", ça décrirait une migration qui n'existe pas).
 // ---------------------------------------------------------------------------
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 export const orderProductEnum = pgEnum("order_product", [
@@ -121,7 +123,7 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 // ---------------------------------------------------------------------------
-// Félicity — modèle métier (design.md §7)
+// Scroll The Date — modèle métier (design.md §7)
 // FK vers PK bigserial → bigint("col", { mode: "number" })
 // ---------------------------------------------------------------------------
 

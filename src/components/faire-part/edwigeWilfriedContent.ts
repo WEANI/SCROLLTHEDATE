@@ -1,6 +1,6 @@
 /**
  * Contenu du faire-part « Edwige & Wilfried » — première page réelle
- * construite depuis le pipeline FELICITI (cf. instructions-page-edwige-
+ * construite depuis le pipeline SCROLL THE DATE (cf. instructions-page-edwige-
  * wilfried_1.md, skill v0.38). Architecture à deux niveaux (skill Étape 5) :
  * hero scrub quasi muet avec overlays répartis sur des plans précis du film
  * (pas seulement à la fin, cf. HERO_CHAPTERS ci-dessous) + corps de page

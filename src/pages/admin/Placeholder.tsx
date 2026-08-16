@@ -19,7 +19,7 @@ export default function Placeholder({ title, description }: PlaceholderProps) {
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-500">Admin</p>
       <h1 className="font-display mt-2 text-[28px] font-medium leading-tight">{title}</h1>
       <p className="mt-3 max-w-sm text-[13px] leading-relaxed text-neutral-500">
-        {description ?? "Cette section est en cours de construction par l'équipe Félicity."}
+        {description ?? "Cette section est en cours de construction par l'équipe Scroll The Date."}
       </p>
       <Link
         to="/admin"

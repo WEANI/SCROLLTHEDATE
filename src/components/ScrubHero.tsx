@@ -47,7 +47,7 @@ interface WordRef {
 }
 
 /**
- * ScrubHero — héros vidéo scrub-scroll (pattern signature Félicity).
+ * ScrubHero — héros vidéo scrub-scroll (pattern signature Scroll The Date).
  * Section épinglée (350vh par défaut) : `video.currentTime` est piloté par la
  * progression du scroll avec amorti lerp 0.12. Beats typographiques découpés
  * en mots (y 60px→0, rotateX 35°→0, stagger) qui s'enchaînent selon la

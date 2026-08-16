@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { DEMO_SLUG, RSVP_DEADLINE_LABEL } from './demoContent'
 
-const RSVP_STORAGE_KEY = 'felicity-demo-rsvp'
+const RSVP_STORAGE_KEY = 'scrollthedate-demo-rsvp'
 const DEADLINE_LABEL = `Réponse souhaitée avant le ${RSVP_DEADLINE_LABEL}.`
 
 type Attending = 'yes' | 'no'
@@ -534,7 +534,7 @@ export default function RsvpSection({ showInfosLink = true }: { showInfosLink?: 
         </div>
 
         <p className="mt-10 text-[10px] uppercase tracking-[0.2em] text-[rgba(184,172,156,0.6)]">
-          Créé avec Félicity
+          Créé avec Scroll The Date
         </p>
       </div>
 

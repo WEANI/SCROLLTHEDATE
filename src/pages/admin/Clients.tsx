@@ -589,7 +589,7 @@ function ClientDetail({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `felicity-client-${client.user.id}.json`;
+    a.download = `scrollthedate-client-${client.user.id}.json`;
     a.click();
     URL.revokeObjectURL(url);
     push("success", "Export RGPD téléchargé.");

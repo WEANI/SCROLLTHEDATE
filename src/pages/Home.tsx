@@ -15,7 +15,7 @@ const HERO_BEATS: ScrubHeroBeat[] = [
   {
     from: 0,
     to: 0.08,
-    kicker: 'Félicity — Faire-parts digitaux cinématiques',
+    kicker: 'Scroll The Date — Faire-parts digitaux cinématiques',
   },
   {
     from: 0.08,

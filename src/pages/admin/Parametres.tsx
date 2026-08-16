@@ -91,7 +91,7 @@ const DEFAULT_EMAIL_TEMPLATES: EmailTemplateDraft[] = [
   {
     id: "bienvenue",
     name: "Bienvenue post-achat",
-    subject: "Bienvenue chez Félicity, {{prenoms}} !",
+    subject: "Bienvenue chez Scroll The Date, {{prenoms}} !",
     body: "Merci pour votre confiance. Retrouvez votre espace : {{lien_espace}}. Votre mariage le {{date_mariage}} approche — racontez-nous votre histoire.",
     active: true,
   },
@@ -178,7 +178,7 @@ export default function Parametres() {
     <div className="mx-auto w-full max-w-[1600px] text-ink">
       <PageHeader
         title="Paramètres"
-        description="Configuration du studio Félicity."
+        description="Configuration du studio Scroll The Date."
       />
       <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
         {/* Onglets verticaux sticky */}
@@ -255,8 +255,8 @@ function TabProfil({ push }: { push: Push }) {
       | { displayName?: string; signature?: string; bio?: string }
       | null
       | undefined;
-    setDisplayName(v?.displayName ?? user?.name ?? "Élise — Félicity");
-    setSignature(v?.signature ?? "Élise\nFélicity — faire-parts cinématiques");
+    setDisplayName(v?.displayName ?? user?.name ?? "Élise — Scroll The Date");
+    setSignature(v?.signature ?? "Élise\nScroll The Date — faire-parts cinématiques");
     setBio(
       v?.bio ??
         "Votre interlocutrice : je vous accompagne du questionnaire à la livraison de votre film.",
@@ -758,7 +758,7 @@ function TabEmails({ push }: { push: Push }) {
                 )}
               >
                 <div className="bg-anthracite-900 px-4 py-3">
-                  <p className="font-display italic text-white">Félicity</p>
+                  <p className="font-display italic text-white">Scroll The Date</p>
                 </div>
                 <div className="p-4">
                   <p className="text-sm font-semibold text-ink">
@@ -769,7 +769,7 @@ function TabEmails({ push }: { push: Push }) {
                   <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-neutral-500">
                     {selected.body
                       .replaceAll("{{prenoms}}", "Anna & Théo")
-                      .replaceAll("{{lien_espace}}", "felicity.fr/espace")
+                      .replaceAll("{{lien_espace}}", "scrollthedate.fr/espace")
                       .replaceAll("{{date_mariage}}", "20 juin 2026")}
                   </p>
                   <div className="mt-4 h-8 w-36 rounded-full bg-terracotta-500 text-center text-xs font-medium leading-8 text-white">
@@ -953,7 +953,7 @@ function TabIntegrations({ push }: { push: Push }) {
       icon: Server,
       name: "Stockage S3",
       status: "connected" as const,
-      lines: ["Bucket felicity-media", "Quota utilisé : 42 %"],
+      lines: ["Bucket scrollthedate-media", "Quota utilisé : 42 %"],
       ok: true,
     },
     {
@@ -961,7 +961,7 @@ function TabIntegrations({ push }: { push: Push }) {
       icon: Mail,
       name: "Email transactionnel",
       status: "connected" as const,
-      lines: ["Domaine felicity.fr vérifié", "SPF ✓ · DKIM ✓"],
+      lines: ["Domaine scrollthedate.fr vérifié", "SPF ✓ · DKIM ✓"],
       ok: true,
     },
   ];
@@ -1060,7 +1060,7 @@ function TabSecurite({ push }: { push: Push }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "felicity-export-complet.json";
+    a.download = "scrollthedate-export-complet.json";
     a.click();
     URL.revokeObjectURL(url);
     push("success", "Export complet téléchargé.");
@@ -1183,7 +1183,7 @@ function TabSecurite({ push }: { push: Push }) {
                     setConfirmDelete(0);
                     push(
                       "success",
-                      "Demande enregistrée — contactez support@felicity.fr pour finaliser.",
+                      "Demande enregistrée — contactez support@scrollthedate.fr pour finaliser.",
                     );
                   }}
                 >

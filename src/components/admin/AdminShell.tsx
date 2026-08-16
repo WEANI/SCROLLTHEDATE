@@ -182,12 +182,18 @@ export default function AdminShell() {
       <Toaster position="top-right" richColors />
       {/* ── Sidebar ─────────────────────────────────────────────── */}
       <aside className="fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-anthracite-800">
-        <Link to="/admin" className="flex h-16 items-center border-b border-anthracite-700 px-6">
-          <img src="/logo.svg" alt="Félicity" className="h-8 w-auto" />
-          <span className="ml-2 rounded-full bg-terracotta-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-terracotta-300">
+        {/* Marque seule (sans wordmark) : "Scroll The Date" en toutes
+            lettres + badge "Admin" ne tiennent pas dans les 240px fixes de
+            cette sidebar (déjà à la limite avec l'ancien nom, plus court). */}
+        <Link to="/admin" className="flex h-16 items-center gap-2 border-b border-anthracite-700 px-6">
+          <img src="/logo-mark.svg" alt="Scroll The Date" className="h-8 w-8" />
+          <span className="font-display text-[15px] italic leading-none text-white">Scroll The Date</span>
+        </Link>
+        <div className="border-b border-anthracite-700 px-6 py-2">
+          <span className="rounded-full bg-terracotta-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-terracotta-300">
             Admin
           </span>
-        </Link>
+        </div>
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="flex flex-col gap-1">
             {NAV.map((item) => (

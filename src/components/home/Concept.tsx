@@ -70,7 +70,7 @@ export default function Concept() {
           </h2>
           <div className="concept-copy-wrap mt-10 flex max-w-xl flex-col gap-6">
             <p className="concept-copy text-[16px] leading-[1.65] text-white/70">
-              Félicity crée des faire-parts de mariage digitaux uniques. Vous racontez votre
+              Scroll The Date crée des faire-parts de mariage digitaux uniques. Vous racontez votre
               histoire dans un questionnaire guidé et une note vocale — vos mots, vos photos,
               votre ton.
             </p>

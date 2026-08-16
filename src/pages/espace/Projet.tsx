@@ -263,7 +263,7 @@ export default function Projet() {
                       {auditLabel(event.action, event.meta)}
                     </p>
                     <p className="text-[12px] text-neutral-500">
-                      {formatDateShort(event.createdAt)} — {event.actor === 'system' ? 'Félicity' : event.actor}
+                      {formatDateShort(event.createdAt)} — {event.actor === 'system' ? 'Scroll The Date' : event.actor}
                     </p>
                   </motion.li>
                 ))}
@@ -515,7 +515,7 @@ export default function Projet() {
                     >
                       {Array.from({ length: 12 }).map((_, i) => (
                         <span key={i} className="whitespace-nowrap text-lg font-bold tracking-[0.2em] text-white">
-                          FÉLICITY — APERÇU
+                          SCROLL THE DATE — APERÇU
                         </span>
                       ))}
                     </div>

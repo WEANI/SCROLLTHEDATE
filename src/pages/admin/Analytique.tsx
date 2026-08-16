@@ -206,7 +206,7 @@ export default function Analytique() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `felicity-rapport-${days}j.csv`;
+    a.download = `scrollthedate-rapport-${days}j.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };

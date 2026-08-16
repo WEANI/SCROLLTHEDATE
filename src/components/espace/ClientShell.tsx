@@ -186,10 +186,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-20 items-center border-b border-neutral-200 px-6">
-        <Link to="/" aria-label="Félicity — accueil" onClick={onNavigate} className="flex items-baseline gap-2">
-          <span className="font-display text-2xl font-medium italic text-ink">Félicity</span>
+        <Link to="/" aria-label="Scroll The Date — accueil" onClick={onNavigate} className="flex items-baseline gap-2">
+          <span className="font-display text-2xl font-medium italic text-ink">Scroll The Date</span>
           <span className="rounded-full bg-terracotta-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white">
-            F.
+            S.
           </span>
         </Link>
       </div>
@@ -297,7 +297,7 @@ export default function ClientShell() {
   }
 
   useEffect(() => {
-    document.title = `Félicity — ${crumbs[crumbs.length - 1] ?? 'Espace client'}`
+    document.title = `Scroll The Date — ${crumbs[crumbs.length - 1] ?? 'Espace client'}`
   }, [crumbs])
 
   const initials = user?.name
@@ -313,7 +313,7 @@ export default function ClientShell() {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-neutral-100">
         <span className="font-display animate-pulse text-3xl font-light italic text-terracotta-500">
-          Félicity
+          Scroll The Date
         </span>
       </div>
     )

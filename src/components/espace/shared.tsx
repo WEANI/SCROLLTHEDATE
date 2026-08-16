@@ -84,7 +84,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-neutral-200 bg-white/60 px-8 py-14 text-center">
-      <span className="font-display text-4xl font-light italic text-terracotta-500">F.</span>
+      <span className="font-display text-4xl font-light italic text-terracotta-500">S.</span>
       <p className="font-display text-xl font-medium text-ink">{title}</p>
       {description ? <p className="max-w-md text-sm text-neutral-500">{description}</p> : null}
       {action}

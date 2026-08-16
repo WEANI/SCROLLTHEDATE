@@ -27,8 +27,8 @@ export default function Footer() {
       <div className="mx-auto grid max-w-[1440px] gap-12 px-6 py-20 sm:grid-cols-2 lg:grid-cols-4 lg:px-12">
         {/* Wordmark + baseline */}
         <div className="flex flex-col gap-5">
-          <Link to="/" aria-label="Félicity — accueil">
-            <img src="/logo.svg" alt="Félicity" className="h-9 w-auto" />
+          <Link to="/" aria-label="Scroll The Date — accueil">
+            <img src="/logo.svg" alt="Scroll The Date" className="h-9 w-auto" />
           </Link>
           <p className="font-display text-lg font-light italic text-white/70">
             Votre histoire, racontée en images.
@@ -100,7 +100,7 @@ export default function Footer() {
 
       <div className="border-t border-anthracite-700/50">
         <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 px-6 py-6 text-xs text-white/50 sm:flex-row lg:px-12">
-          <p>© {new Date().getFullYear()} Félicity — félicity.fr</p>
+          <p>© {new Date().getFullYear()} Scroll The Date — scrollthedate.fr</p>
           <div className="flex gap-6">
             <Link to="/mentions-legales" className="transition-colors hover:text-white/80">
               Mentions légales

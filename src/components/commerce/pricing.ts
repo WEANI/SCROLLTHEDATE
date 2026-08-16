@@ -1,7 +1,7 @@
 import { trpc } from '@/providers/trpc'
 
 /**
- * Tarifs & produits Félicity — consommés depuis `settings.get` (clés "products",
+ * Tarifs & produits Scroll The Date — consommés depuis `settings.get` (clés "products",
  * "options", "texts") avec repli sur les valeurs validées du design si la query
  * échoue ou si la forme des données ne correspond pas.
  */

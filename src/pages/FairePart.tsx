@@ -29,13 +29,13 @@ export default function FairePart() {
 
   useEffect(() => {
     if (!invite) return
-    document.title = invite.coupleNames ? `${invite.coupleNames} · Félicity` : 'Félicity'
+    document.title = invite.coupleNames ? `${invite.coupleNames} · Scroll The Date` : 'Scroll The Date'
     const meta = document.createElement('meta')
     meta.name = 'color-scheme'
     meta.content = theme.id === 'minimal' ? 'only light' : 'only dark'
     document.head.appendChild(meta)
     return () => {
-      document.title = 'Félicity'
+      document.title = 'Scroll The Date'
       document.head.removeChild(meta)
     }
   }, [invite, theme.id])
@@ -59,7 +59,7 @@ export default function FairePart() {
           Le lien est peut-être arrivé un peu tôt — revenez un peu plus tard.
         </p>
         <Link to="/" className="mt-2 text-[13px] font-medium uppercase tracking-[0.1em] text-terracotta-400">
-          Félicity — accueil
+          Scroll The Date — accueil
         </Link>
       </div>
     )
@@ -106,8 +106,8 @@ export default function FairePart() {
   return (
     <div style={{ background: theme.id === 'minimal' ? '#FBF7F1' : theme.frameBg }}>
       <header className="absolute inset-x-0 top-0 z-40 flex items-center justify-center px-6 py-5">
-        <Link to="/" aria-label="Félicity — accueil" className="rounded-full bg-black/25 px-4 py-2 backdrop-blur-sm">
-          <img src="/logo.svg" alt="Félicity" className="h-6 w-auto brightness-0 invert" />
+        <Link to="/" aria-label="Scroll The Date — accueil" className="rounded-full bg-black/25 px-4 py-2 backdrop-blur-sm">
+          <img src="/logo.svg" alt="Scroll The Date" className="h-6 w-auto brightness-0 invert" />
         </Link>
       </header>
 

@@ -302,7 +302,7 @@ export default function Offres() {
                 <BrowserFrame
                   src="/template-minimal.jpg"
                   alt="Aperçu du Save the Date digital — template minimal"
-                  url="felicity.fr/s/anna-theo"
+                  url="scrollthedate.fr/s/anna-theo"
                 />
               </div>
             }

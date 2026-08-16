@@ -16,7 +16,7 @@ const COUPLE_NAMES = 'Edwige & Wilfried'
 
 /**
  * Faire-part « Edwige & Wilfried » — première page livrée depuis le
- * pipeline FELICITI (cf. instructions-page-edwige-wilfried.md). Page
+ * pipeline SCROLL THE DATE (cf. instructions-page-edwige-wilfried.md). Page
  * client réelle, pas une démo marketing : rendue hors du `Layout` public
  * (pas de Navbar/Footer commerciaux — cf. ClosingSection) avec un en-tête
  * minimal, à la façon de `/login`. `<meta color-scheme>` posé en direct
@@ -24,7 +24,7 @@ const COUPLE_NAMES = 'Edwige & Wilfried'
  */
 export default function FairePartEdwigeWilfried() {
   useEffect(() => {
-    document.title = 'Edwige & Wilfried — 21 décembre 2027 · Félicity'
+    document.title = 'Edwige & Wilfried — 21 décembre 2027 · Scroll The Date'
 
     const meta = document.createElement('meta')
     meta.name = 'color-scheme'
@@ -32,7 +32,7 @@ export default function FairePartEdwigeWilfried() {
     document.head.appendChild(meta)
 
     return () => {
-      document.title = 'Félicity'
+      document.title = 'Scroll The Date'
       document.head.removeChild(meta)
     }
   }, [])
@@ -45,10 +45,10 @@ export default function FairePartEdwigeWilfried() {
       <header className="absolute inset-x-0 top-0 z-40 flex items-center justify-center px-6 py-5">
         <Link
           to="/"
-          aria-label="Félicity — accueil"
+          aria-label="Scroll The Date — accueil"
           className="rounded-full bg-black/25 px-4 py-2 backdrop-blur-sm"
         >
-          <img src="/logo.svg" alt="Félicity" className="h-6 w-auto brightness-0 invert" />
+          <img src="/logo.svg" alt="Scroll The Date" className="h-6 w-auto brightness-0 invert" />
         </Link>
       </header>
 

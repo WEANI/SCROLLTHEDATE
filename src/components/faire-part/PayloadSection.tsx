@@ -34,7 +34,7 @@ export default function PayloadSection({
   rsvpCtaLabel?: string
 }) {
   const [open, setOpen] = useState(false)
-  const rsvpStorageKey = `felicity-fp-rsvp-${slug}`
+  const rsvpStorageKey = `scrollthedate-fp-rsvp-${slug}`
 
   return (
     <section className="relative bg-[#FBF7F1] px-6 py-24 text-center lg:py-32" aria-label="Informations du mariage">

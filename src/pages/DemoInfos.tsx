@@ -26,9 +26,9 @@ import {
  */
 export default function DemoInfos() {
   useEffect(() => {
-    document.title = 'Toutes les informations — Anna & Théo · Félicity (démo)'
+    document.title = 'Toutes les informations — Anna & Théo · Scroll The Date (démo)'
     return () => {
-      document.title = 'Félicity'
+      document.title = 'Scroll The Date'
     }
   }, [])
 

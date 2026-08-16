@@ -73,7 +73,7 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-neutral-100 px-4">
       <div className="w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-6 text-ink shadow-[0_8px_32px_rgba(27,27,30,0.08)]">
         <div className="mb-6 text-center">
-          <p className="font-display text-2xl font-medium italic text-ink">Félicity</p>
+          <p className="font-display text-2xl font-medium italic text-ink">Scroll The Date</p>
           <p className="mt-1 text-sm text-neutral-500">
             {mode === "signin" && "Connectez-vous à votre espace"}
             {mode === "signup" && "Créez votre compte"}

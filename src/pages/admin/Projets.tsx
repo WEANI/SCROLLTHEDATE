@@ -191,7 +191,7 @@ function WorkQueues({
                       send.mutate({
                         projectId: p.id,
                         body:
-                          "Bonjour ! Avez-vous pu prendre connaissance de nos dernières propositions ? Nous restons disponibles pour en discuter. Belle journée, l'équipe Félicity.",
+                          "Bonjour ! Avez-vous pu prendre connaissance de nos dernières propositions ? Nous restons disponibles pour en discuter. Belle journée, l'équipe Scroll The Date.",
                       })
                     }
                     className="flex shrink-0 items-center gap-1.5 rounded-full border border-pending/40 px-3.5 py-2 text-[12px] font-semibold text-pending transition-colors hover:bg-pending hover:text-white disabled:opacity-40"

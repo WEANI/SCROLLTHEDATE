@@ -27,7 +27,7 @@ import AdminMessages from '@/pages/admin/Messages'
 import AdminParametres from '@/pages/admin/Parametres'
 
 /**
- * Routage Félicity.
+ * Routage Scroll The Date.
  * - Layout public (Navbar + Footer, Outlet) : uniquement les pages publiques.
  * - /espace/* : ClientShell (clair) avec routes imbriquées.
  * - /admin/* : AdminShell (dense, garde admin) avec routes imbriquées.
@@ -50,7 +50,7 @@ export default function App() {
 
       {/* Faire-part client livrés — hors Layout public (pas de Navbar/Footer
           marketing devant les invités). /edwige-wilfried reste une page
-          câblée en dur (skill FELICITI) ; /faire-part/:slug est la vraie
+          câblée en dur (skill SCROLL THE DATE) ; /faire-part/:slug est la vraie
           page dynamique, alimentée par projects.getPublicInvite —
           react-router priorise le segment statique sur le paramétré, les
           deux coexistent sans conflit. */}

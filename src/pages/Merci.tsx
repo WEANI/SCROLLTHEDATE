@@ -174,7 +174,7 @@ export default function Merci() {
   const waNumber = formatPhoneFr(texts.contactWhatsApp)
   const waLink = whatsappHref(
     texts.contactWhatsApp,
-    "Bonjour Félicity ! Voici notre note vocale pour raconter notre histoire",
+    "Bonjour Scroll The Date ! Voici notre note vocale pour raconter notre histoire",
   )
 
   // Pendant la vérification serveur d'un utilisateur connecté : écran d'attente.
@@ -227,7 +227,7 @@ export default function Merci() {
             className="mx-auto mt-8 max-w-lg text-[16px] leading-[1.65] text-white/60"
           >
             Votre place est réservée dans notre planning de production. Un email vient de partir :
-            il contient votre lien de remerciement et le lien pour créer votre espace Félicity.
+            il contient votre lien de remerciement et le lien pour créer votre espace Scroll The Date.
           </motion.p>
         </div>
       </section>
@@ -393,11 +393,11 @@ export default function Merci() {
               Écrivez-nous sur WhatsApp
             </a>
             <a
-              href="mailto:contact@felicity.fr"
+              href="mailto:contact@scrollthedate.fr"
               className="inline-flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.1em] text-white/70 transition-colors hover:text-terracotta-300"
             >
               <Mail size={15} className="text-terracotta-500" aria-hidden />
-              contact@felicity.fr
+              contact@scrollthedate.fr
             </a>
           </div>
         </FadeUp>

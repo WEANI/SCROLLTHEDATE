@@ -204,7 +204,7 @@ function AlertsCard({ projects }: { projects: AdminProject[] }) {
                   send.mutate({
                     projectId: a.project.id,
                     body:
-                      "Bonjour ! Nous passons aux nouvelles concernant votre faire-part : n'hésitez pas à compléter les étapes en attente dans votre espace, ou à nous répondre ici si vous avez la moindre question. À très vite, l'équipe Félicity.",
+                      "Bonjour ! Nous passons aux nouvelles concernant votre faire-part : n'hésitez pas à compléter les étapes en attente dans votre espace, ou à nous répondre ici si vous avez la moindre question. À très vite, l'équipe Scroll The Date.",
                   })
                 }
                 className="shrink-0 rounded-full border border-pending/40 px-3 py-1.5 text-[11px] font-semibold text-pending transition-colors hover:bg-pending hover:text-white disabled:opacity-40"

@@ -83,7 +83,7 @@ export const TEMPLATE_LABEL: Record<string, string> = {
 
 export const WHATSAPP_NUMBER = '33600000000'
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-  'Bonjour Félicity, voici ma note vocale pour notre faire-part !',
+  'Bonjour Scroll The Date, voici ma note vocale pour notre faire-part !',
 )}`
 
 /** Libellé lisible d'un événement d'audit (timeline projet). */
@@ -121,9 +121,9 @@ export function auditLabel(action: string, meta?: unknown): string {
     case 'rsvp.submitted':
       return 'Nouvelle réponse RSVP'
     case 'message.admin_sent':
-      return 'Message de Félicity'
+      return 'Message de Scroll The Date'
     case 'message.customer_sent':
-      return 'Message envoyé à Félicity'
+      return 'Message envoyé à Scroll The Date'
     default:
       return action
   }
@@ -139,7 +139,7 @@ export function notificationLabel(type: string): { title: string; detail?: strin
     case 'project.status_changed':
       return { title: 'Votre projet avance', detail: 'Une nouvelle étape vient de commencer' }
     case 'message.received':
-      return { title: 'Nouveau message de Félicity', detail: 'Élise vous a répondu' }
+      return { title: 'Nouveau message de Scroll The Date', detail: 'Élise vous a répondu' }
     default:
       return { title: 'Notification', detail: type }
   }

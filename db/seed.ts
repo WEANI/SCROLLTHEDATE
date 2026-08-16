@@ -20,7 +20,7 @@ import {
 } from "./schema";
 
 // ---------------------------------------------------------------------------
-// Seed Félicity
+// Seed Scroll The Date
 //
 // Auth : Supabase Auth (voir api/context.ts, api/queries/users.ts). Le rôle
 // "admin" est attribué automatiquement à la première connexion réelle de
@@ -70,18 +70,18 @@ async function seed() {
 
   // --- Utilisateurs ---------------------------------------------------------
   const admin = await upsertUser({
-    name: "Élise Félicity",
-    email: "elise@felicity.fr",
+    name: "Élise Scroll The Date",
+    email: "elise@scrollthedate.fr",
     role: "admin",
   });
   const annaTheo = await upsertUser({
     name: "Anna & Théo",
-    email: "anna.theo@demo.felicity.fr",
+    email: "anna.theo@demo.scrollthedate.fr",
     role: "user",
   });
   const mehdiSarah = await upsertUser({
     name: "Mehdi & Sarah",
-    email: "mehdi.sarah@demo.felicity.fr",
+    email: "mehdi.sarah@demo.scrollthedate.fr",
     role: "user",
   });
   console.log("Users:", admin.id, annaTheo.id, mehdiSarah.id);
@@ -360,7 +360,7 @@ async function seed() {
       {
         projectId,
         senderRole: "admin",
-        body: "Votre faire-part est en ligne 🎬 Le lien : felicity.fr/m/anna-theo — la version finale HD remplacera le filigrane cette semaine.",
+        body: "Votre faire-part est en ligne 🎬 Le lien : scrollthedate.fr/m/anna-theo — la version finale HD remplacera le filigrane cette semaine.",
         createdAt: new Date("2026-02-02T09:30:00Z"),
       },
     ]);

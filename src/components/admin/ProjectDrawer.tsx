@@ -528,7 +528,7 @@ function TabMessages({ project }: { project: Project360 }) {
                 )}
                 <p className="whitespace-pre-wrap text-[13px] leading-relaxed">{m.body}</p>
                 <p className={cn("tabular mt-1.5 text-[10px]", isAdmin && !m.internal ? "text-white/50" : "text-neutral-500")}>
-                  {isAdmin ? "Félicity" : coupleNamesFromSlug(project.slug)} · {formatDateTime(m.createdAt)}
+                  {isAdmin ? "Scroll The Date" : coupleNamesFromSlug(project.slug)} · {formatDateTime(m.createdAt)}
                 </p>
               </div>
             </li>

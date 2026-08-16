@@ -67,10 +67,10 @@ function openInvoice(o: OrderLike, customerName: string) {
   .total td{font-weight:bold;border-bottom:none;font-size:16px}
   .meta{color:#9A9AA0;font-size:13px;margin-top:8px}
 </style></head><body>
-  <h1>Félicity<span class="brand">.</span></h1>
+  <h1>Scroll The Date<span class="brand">.</span></h1>
   <p class="meta">Facture ${orderNumber(o)} — ${formatDate(o.createdAt)}<br>Client : ${customerName}<br>Réf. paiement : ${o.stripeRef ?? '—'}</p>
   <table>${rows}<tr class="total"><td>Total TTC</td><td class="num">${formatPrice(o.amountCents)}</td></tr></table>
-  <p class="meta">Félicity — faire-parts de mariage digitaux — felicity.fr<br>Paiement reçu. Merci pour votre confiance.</p>
+  <p class="meta">Scroll The Date — faire-parts de mariage digitaux — scrollthedate.fr<br>Paiement reçu. Merci pour votre confiance.</p>
   <script>window.print()</script>
 </body></html>`
   const win = window.open('', '_blank', 'width=720,height=900')
