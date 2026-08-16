@@ -62,14 +62,29 @@ export default function FairePartEdwigeWilfried() {
         trackHeightVh={700}
         ariaLabel="Faire-part — Edwige & Wilfried"
       />
-      <PayloadSection
-        slug={SLUG}
-        coupleNames={COUPLE_NAMES}
-        fields={PAYLOAD_FIELDS}
-        rsvpCtaLabel={RSVP_CTA_LABEL}
-      />
-      <PhotosSection />
-      <ClosingSection coupleNames={COUPLE_NAMES} />
+
+      {/* Le corps de page recouvre le plan final au lieu de s'enchaîner en
+          dessous : `.hs-frame` (dans HeroScrub) reste épinglé en `position:
+          sticky` tant que la piste de scrub (700vh) n'est pas épuisée — en
+          tirant ce bloc vers le haut via une marge négative, son bord
+          d'attaque entre dans le viewport un peu avant la fin de cette
+          piste, pendant que la vidéo est donc encore épinglée dessous.
+          Comme ce bloc arrive après le hero dans le DOM (empilement par
+          défaut, sans besoin de z-index explicite) et qu'il est opaque, il
+          glisse depuis le bas et referme progressivement le cadre vidéo
+          plutôt que d'apparaître comme une section classique. -20vh calé
+          pour laisser le dernier chapitre (carte de clôture, ~0.95→1 de la
+          progression) le temps d'être lu avant que le recouvrement démarre. */}
+      <div className="relative z-10 -mt-[20vh] rounded-t-[32px] bg-[#FBF7F1] shadow-[0_-24px_60px_rgba(46,38,32,0.18)]">
+        <PayloadSection
+          slug={SLUG}
+          coupleNames={COUPLE_NAMES}
+          fields={PAYLOAD_FIELDS}
+          rsvpCtaLabel={RSVP_CTA_LABEL}
+        />
+        <PhotosSection />
+        <ClosingSection coupleNames={COUPLE_NAMES} />
+      </div>
     </div>
   )
 }
