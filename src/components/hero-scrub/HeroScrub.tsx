@@ -61,6 +61,26 @@ export default function HeroScrub({
   const [activeIdx, setActiveIdx] = useState(-1)
   const [showCue, setShowCue] = useState(true)
 
+  // Overlay de diagnostic (?debug=1 dans l'URL uniquement) — un bug de
+  // vidéo figée a été signalé sur mobile réel sans jamais se reproduire en
+  // environnement de test : ce panneau visible à l'écran (readyState,
+  // networkState, erreurs, évènements du cycle de vie de la vidéo) permet
+  // de lire l'état exact du lecteur directement sur l'enregistrement
+  // d'écran du client, faute de pouvoir brancher un débogueur sur son
+  // téléphone. Retirer une fois le bug confirmé résolu en conditions
+  // réelles.
+  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1'
+  const [debugLog, setDebugLog] = useState<string[]>([])
+  const [debugState, setDebugState] = useState<Record<string, string | number | boolean>>({})
+  const logEvent = (label: string) => {
+    if (!isDebug) return
+    const vid = videoRef.current
+    const detail = vid
+      ? ` rs=${vid.readyState} ns=${vid.networkState} t=${vid.currentTime.toFixed(2)} err=${vid.error ? `${vid.error.code}:${vid.error.message}` : '-'}`
+      : ''
+    setDebugLog((prev) => [...prev.slice(-14), `${new Date().toISOString().slice(11, 23)} ${label}${detail}`])
+  }
+
   const themeVars = {
     '--hs-frame-bg': theme.frameBg,
     '--hs-vignette': theme.vignette,
@@ -133,8 +153,33 @@ export default function HeroScrub({
     // fluide y compris pendant le scroll inertiel (momentum), où l'event
     // "scroll" peut être moins fréquent que le rendu.
     let raf = 0
+    let debugFrameCount = 0
     const tick = () => {
       applyProgress(computeProgress())
+      if (isDebug) {
+        debugFrameCount++
+        // ~4x/s (pas à chaque frame, pour ne pas spammer les re-renders).
+        if (debugFrameCount % 15 === 0) {
+          const vid = videoRef.current
+          if (vid) {
+            const buffered = []
+            for (let i = 0; i < vid.buffered.length; i++) {
+              buffered.push(`${vid.buffered.start(i).toFixed(1)}-${vid.buffered.end(i).toFixed(1)}`)
+            }
+            setDebugState({
+              readyState: vid.readyState,
+              networkState: vid.networkState,
+              paused: vid.paused,
+              currentTime: Number(vid.currentTime.toFixed(2)),
+              duration: Number.isFinite(vid.duration) ? Number(vid.duration.toFixed(2)) : NaN,
+              buffered: buffered.join(',') || '(vide)',
+              error: vid.error ? `${vid.error.code}:${vid.error.message}` : '-',
+              videoFailed,
+              currentSrc: vid.currentSrc.split('/').pop() || '',
+            })
+          }
+        }
+      }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -143,7 +188,7 @@ export default function HeroScrub({
       window.removeEventListener('scroll', onScroll)
       cancelAnimationFrame(raf)
     }
-  }, [reducedMotion, videoFailed, chapters, fps])
+  }, [reducedMotion, videoFailed, chapters, fps, isDebug])
 
   /* ---------- Fallback prefers-reduced-motion : poster + chapitres empilés, aucun scroll-jacking ---------- */
   if (reducedMotion) {
@@ -195,7 +240,22 @@ export default function HeroScrub({
               muted
               playsInline
               preload="auto"
+              onLoadStart={() => logEvent('loadstart')}
+              onLoadedData={() => logEvent('loadeddata')}
+              onCanPlay={() => logEvent('canplay')}
+              onCanPlayThrough={() => logEvent('canplaythrough')}
+              onWaiting={() => logEvent('waiting')}
+              onStalled={() => logEvent('stalled')}
+              onSuspend={() => logEvent('suspend')}
+              onAbort={() => logEvent('abort')}
+              onPlay={() => logEvent('play')}
+              onPlaying={() => logEvent('playing(react)')}
+              onPause={() => logEvent('pause')}
+              onSeeking={() => logEvent('seeking')}
+              onSeeked={() => logEvent('seeked')}
+              onEnded={() => logEvent('ended')}
               onLoadedMetadata={(e) => {
+                logEvent('loadedmetadata')
                 hasLoadedOnceRef.current = true
                 setVideoDuration(e.currentTarget.duration)
                 // Safari iOS peut ignorer les seeks (`currentTime`)
@@ -255,8 +315,10 @@ export default function HeroScrub({
                 // peupler `video.error` : ce n'est pas un échec réel, on
                 // l'ignore. On ne bascule sur le fallback image que si le
                 // navigateur a effectivement posé un MediaError.
+                logEvent(`error(hasErr=${!!vid.error})`)
                 if (!vid.error) return
                 if (vid.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED || !hasLoadedOnceRef.current) {
+                  logEvent('→ videoFailed=true')
                   setVideoFailed(true)
                 }
               }}
@@ -306,6 +368,22 @@ export default function HeroScrub({
           </div>
         )}
       </div>
+
+      {isDebug && (
+        <div
+          className="fixed inset-x-0 bottom-0 z-[999] max-h-[45vh] overflow-y-auto bg-black/85 p-2 font-mono text-[10px] leading-tight text-lime-300"
+          style={{ pointerEvents: 'auto' }}
+        >
+          <div className="mb-1 text-yellow-300">
+            {Object.entries(debugState)
+              .map(([k, v]) => `${k}=${v}`)
+              .join(' | ')}
+          </div>
+          {debugLog.map((line, i) => (
+            <div key={i}>{line}</div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
