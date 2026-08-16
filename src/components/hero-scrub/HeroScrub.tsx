@@ -101,6 +101,15 @@ export default function HeroScrub({
 
       const vid = videoRef.current
       if (vid && !videoFailed && Number.isFinite(vid.duration) && vid.duration > 0) {
+        // Filet de sécurité : cette vidéo n'est JAMAIS censée jouer, le
+        // scrub la pilote uniquement par `currentTime`. Si elle se retrouve
+        // en lecture pour une raison quelconque (déblocage iOS qui démarre
+        // tardivement sur connexion lente, quirk navigateur…), la remettre
+        // en pause ici — la boucle rAF tourne en continu tant que le
+        // composant est monté, donc ce filet s'applique à chaque frame,
+        // sans dépendre d'un timing précis ailleurs.
+        if (!vid.paused) vid.pause()
+
         // Vidéo encodée avec une image clé par frame : on ne resette
         // `currentTime` que quand la frame cible change réellement, pour un
         // scrub exact (pas d'arrondi/lerp qui ferait sauter des morceaux).
@@ -197,29 +206,44 @@ export default function HeroScrub({
                 // partout ailleurs (desktop, Android). Muet + immédiatement
                 // remis en pause : jamais de lecture visible.
                 //
-                // Le pause() DOIT être synchrone, pas chaîné en `.then()` sur
-                // la promesse de play() : sur certains mobiles/réseaux, cette
-                // promesse peut mettre plusieurs secondes à se résoudre — le
-                // temps qu'elle résolve, la vidéo (muette, donc jamais
-                // bloquée par l'autoplay policy) a déjà joué jusqu'à la toute
-                // fin, se bloque sur son dernier plan, et n'accepte plus
-                // aucun seek ensuite (constaté en conditions réelles : le
-                // scrub restait figé sur l'aérien final dès le tout début du
-                // scroll). Appeler pause() tout de suite après play(), sans
-                // attendre sa promesse, interrompt la lecture en quelques
-                // millisecondes au lieu de la laisser filer jusqu'au bout.
+                // Piège identifié en conditions réelles : mettre pause() tout
+                // de suite après play() (sans attendre sa promesse) NE SUFFIT
+                // PAS. Sur connexion lente, play() reste en attente de
+                // données tant que rien n'est encore bufferisé — à cet
+                // instant la vidéo n'est pas encore réellement en lecture, et
+                // pause() s'applique dans le vide (no-op). Quand assez de
+                // données arrivent enfin (des secondes plus tard), la lecture
+                // démarre pour de vrai et n'est plus jamais interrompue : la
+                // vidéo file jusqu'à sa toute fin et s'y bloque, plus aucun
+                // seek n'étant ensuite pris en compte — exactement le
+                // symptôme observé (figé sur l'aérien final dès le début du
+                // scroll, y compris après un rechargement complet).
+                //
+                // Fix robuste : ne pas présumer QUAND la lecture démarre
+                // réellement — écouter l'évènement "playing" (qui ne se
+                // déclenche qu'au tout premier frame effectivement rendu,
+                // quel que soit le délai de buffering) et ne mettre en pause
+                // qu'à ce moment-là. Le seek se fait alors sur une vidéo dont
+                // la lecture a été interrompue pour de vrai, jamais sur une
+                // promesse de lecture encore en attente.
                 const vid = e.currentTarget
-                try {
-                  const p = vid.play()
+                const onPlaying = () => {
                   vid.pause()
                   vid.currentTime = 0
+                  vid.removeEventListener('playing', onPlaying)
+                }
+                vid.addEventListener('playing', onPlaying)
+                try {
+                  const p = vid.play()
                   if (p && typeof p.then === 'function') {
                     p.catch(() => {
                       /* lecture bloquée — le scrub par seek reste tenté normalement */
+                      vid.removeEventListener('playing', onPlaying)
                     })
                   }
                 } catch {
-                  /* play()/pause() indisponible — le scrub par seek reste tenté normalement */
+                  vid.removeEventListener('playing', onPlaying)
+                  /* play() indisponible — le scrub par seek reste tenté normalement */
                 }
               }}
               onError={(e) => {
