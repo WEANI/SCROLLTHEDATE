@@ -6,11 +6,18 @@
  * des photos arrivent, c'est ici, dans le corps après le hero, qu'elles
  * vivent (jamais dans le hero scrub).
  */
-export default function PhotosSection({ photos = [] }: { photos?: { src: string; alt: string }[] }) {
+export default function PhotosSection({
+  photos = [],
+  bg = '#FBF7F1',
+}: {
+  photos?: { src: string; alt: string }[]
+  /** Fond de section — dérivé du thème du couple, cf. PayloadSection.PayloadTheme. */
+  bg?: string
+}) {
   if (photos.length === 0) return null
 
   return (
-    <section className="bg-[#FBF7F1] px-6 pb-24 lg:pb-32" aria-label="Photos">
+    <section className="px-6 pb-24 lg:pb-32" style={{ background: bg }} aria-label="Photos">
       <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-3">
         {photos.map((photo) => (
           <img

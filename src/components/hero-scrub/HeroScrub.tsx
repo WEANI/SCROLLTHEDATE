@@ -449,15 +449,6 @@ function ChapterContent({ chapter, className }: { chapter: HeroChapter; classNam
           <div className="mx-auto my-[18px] h-px w-9 opacity-70" style={{ background: 'var(--hs-accent)' }} />
         )}
 
-        {chapter.sub && (
-          <p
-            className={cn('text-center font-light', chapter.subSize === 'md' ? 'text-[18px]' : 'text-[14px]')}
-            style={{ color: 'var(--hs-text-secondary)' }}
-          >
-            {chapter.sub}
-          </p>
-        )}
-
         {chapter.subLines && (
           <div>
             {chapter.subLines.map((line, i) => (
@@ -474,6 +465,19 @@ function ChapterContent({ chapter, className }: { chapter: HeroChapter; classNam
               </div>
             ))}
           </div>
+        )}
+
+        {/* `sub` reste TOUJOURS à la taille discrète (14px), même quand
+            `subSize: 'md'` agrandit `subLines` juste au-dessus — usage
+            attesté : dress code après heure/lieu (Léa & Olivier), le sous-
+            texte le plus discret du bloc, jamais celui qu'on agrandit. */}
+        {chapter.sub && (
+          <p
+            className={cn('text-center font-light', chapter.subLines ? 'mt-3' : undefined, 'text-[14px]')}
+            style={{ color: 'var(--hs-text-secondary)' }}
+          >
+            {chapter.sub}
+          </p>
         )}
 
         {chapter.kind === 'list' && (

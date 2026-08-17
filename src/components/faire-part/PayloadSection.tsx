@@ -15,32 +15,74 @@ export interface PayloadField {
 }
 
 /**
+ * Palette du bloc payload — dérivée du thème du couple (skill v0.37 : « toute
+ * la page dérive du thème du couple »), pas seulement le hero. Valeurs par
+ * défaut = charte claire d'Edwige & Wilfried (Minimal + pastel), pour que
+ * cette page continue de fonctionner sans rien changer si aucun `theme`
+ * n'est passé. Un couple en ambiance Cinéma (fond sombre, ex. Léa & Olivier)
+ * passe ses propres couleurs.
+ */
+export interface PayloadTheme {
+  sectionBg: string
+  cardBg: string
+  cardBorder: string
+  accent: string
+  accentHover: string
+  heading: string
+  text: string
+}
+
+const DEFAULT_PAYLOAD_THEME: PayloadTheme = {
+  sectionBg: '#FBF7F1',
+  cardBg: 'rgba(255, 255, 255, 0.7)',
+  cardBorder: 'rgba(232, 201, 196, 0.6)',
+  accent: '#B9776C',
+  accentHover: '#A6675C',
+  heading: '#2E2620',
+  text: '#2E2620',
+}
+
+/**
  * Bloc payload — le faire-part fonctionnel (skill Étape 5.B.1), sous le
  * hero. Texte du formulaire posé **verbatim** — jamais reformulé.
  * Hébergement / infos pratiques non renseignés : le champ correspondant est
  * simplement absent de `fields` plutôt que de laisser un bloc vide (cf.
  * instructions §2.B.1). Formulaire RSVP court en Dialog, dégradé en local
- * si le slug n'existe pas côté backend.
+ * si le slug n'existe pas côté backend. Le Dialog RSVP reste volontairement
+ * clair quel que soit le thème de la page (lisibilité du formulaire avant
+ * tout, pattern courant pour une modale par-dessus une page sombre).
  */
 export default function PayloadSection({
   slug,
   coupleNames,
   fields,
   rsvpCtaLabel = 'Répondre à l’invitation',
+  theme,
 }: {
   slug: string
   coupleNames: string
   fields: PayloadField[]
   rsvpCtaLabel?: string
+  theme?: Partial<PayloadTheme>
 }) {
   const [open, setOpen] = useState(false)
   const rsvpStorageKey = `scrollthedate-fp-rsvp-${slug}`
+  const t = { ...DEFAULT_PAYLOAD_THEME, ...theme }
 
   return (
-    <section className="relative bg-[#FBF7F1] px-6 py-24 text-center lg:py-32" aria-label="Informations du mariage">
+    <section
+      className="relative px-6 py-24 text-center lg:py-32"
+      style={{ background: t.sectionBg }}
+      aria-label="Informations du mariage"
+    >
       <div className="mx-auto max-w-[560px]">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#B9776C]">Le faire-part</p>
-        <h2 className="font-display mt-4 text-[clamp(1.9rem,4.4vw,2.6rem)] font-normal italic leading-[1.15] text-[#2E2620]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em]" style={{ color: t.accent }}>
+          Le faire-part
+        </p>
+        <h2
+          className="font-display mt-4 text-[clamp(1.9rem,4.4vw,2.6rem)] font-normal italic leading-[1.15]"
+          style={{ color: t.heading }}
+        >
           {coupleNames} se marient
         </h2>
 
@@ -48,12 +90,18 @@ export default function PayloadSection({
           {fields.map((field) => (
             <div
               key={field.label}
-              className="flex flex-col gap-1 rounded-2xl border border-[#E8C9C4]/60 bg-white/70 px-6 py-5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+              className="flex flex-col gap-1 rounded-2xl border px-6 py-5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+              style={{ borderColor: t.cardBorder, background: t.cardBg }}
             >
-              <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#B9776C]">
+              <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: t.accent }}>
                 {field.label}
               </dt>
-              <dd className="text-[15px] font-light text-[#2E2620] sm:text-right">{field.value}</dd>
+              <dd
+                className="whitespace-pre-line text-[15px] font-light sm:text-right"
+                style={{ color: t.text }}
+              >
+                {field.value}
+              </dd>
             </div>
           ))}
         </dl>
@@ -62,7 +110,10 @@ export default function PayloadSection({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="inline-flex items-center justify-center rounded-full bg-[#B9776C] px-9 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#A6675C]"
+            className="inline-flex items-center justify-center rounded-full px-9 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-colors"
+            style={{ background: t.accent }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = t.accentHover)}
+            onMouseLeave={(e) => (e.currentTarget.style.background = t.accent)}
           >
             {rsvpCtaLabel}
           </button>
