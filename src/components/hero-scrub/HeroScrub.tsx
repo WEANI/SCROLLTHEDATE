@@ -113,6 +113,26 @@ export default function HeroScrub({
     }
 
     let lastFrameSet = -1
+    let lastSeekAt = 0
+    // Sur connexion lente, un seek() toutes les ~16ms (rAF) interrompt le
+    // fetch réseau du seek précédent avant qu'il n'ait pu récupérer la
+    // moindre donnée : `buffered` reste vide en continu, quelle que soit la
+    // durée du scroll (confirmé en conditions réelles via le panneau
+    // ?debug=1 — readyState bloqué à 1, buffered=(vide) du premier au
+    // dernier tick, des dizaines de "seeking" qui ne font jamais aboutir un
+    // seul chargement). Throttle les seeks vers une zone PAS ENCORE
+    // bufferisée pour laisser au réseau le temps de finir au moins une
+    // requête ; une fois qu'une zone est bufferisée, le seek y redevient
+    // libre et instantané (lecture locale, aucun risque réseau).
+    const MIN_SEEK_INTERVAL_MS = 200
+
+    const isBuffered = (vid: HTMLVideoElement, t: number) => {
+      const ranges = vid.buffered
+      for (let i = 0; i < ranges.length; i++) {
+        if (t >= ranges.start(i) - 0.5 && t <= ranges.end(i) + 0.5) return true
+      }
+      return false
+    }
 
     const applyProgress = (p: number) => {
       setProgressPct(p * 100)
@@ -135,12 +155,23 @@ export default function HeroScrub({
         // scrub exact (pas d'arrondi/lerp qui ferait sauter des morceaux).
         const targetFrame = Math.round(p * vid.duration * fps)
         if (targetFrame !== lastFrameSet) {
-          lastFrameSet = targetFrame
-          try {
-            vid.currentTime = targetFrame / fps
-          } catch {
-            /* seek non disponible — ignorer */
+          const targetTime = targetFrame / fps
+          const now = performance.now()
+          if (isBuffered(vid, targetTime) || now - lastSeekAt >= MIN_SEEK_INTERVAL_MS) {
+            lastFrameSet = targetFrame
+            lastSeekAt = now
+            try {
+              vid.currentTime = targetTime
+            } catch {
+              /* seek non disponible — ignorer */
+            }
           }
+          // Sinon : ce tick est ignoré (throttle actif, zone pas encore
+          // bufferisée) — `lastFrameSet` n'est pas mis à jour, donc le tick
+          // suivant (~16ms plus tard, rAF) retentera avec la position de
+          // scroll la plus récente. Les positions intermédiaires manquées
+          // pendant le throttle ne sont jamais rattrapées une par une —
+          // seule la dernière compte, ce qui est le comportement voulu.
         }
       }
     }
