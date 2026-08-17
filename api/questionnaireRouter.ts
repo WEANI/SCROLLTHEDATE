@@ -149,7 +149,12 @@ export const questionnaireRouter = createRouter({
       return { completionPct };
     }),
 
-  getActiveTemplate: authedQuery.query(() => findActiveFormTemplate()),
+  // `?? null` : findActiveFormTemplate (findFirst) renvoie `undefined` tant
+  // qu'aucun template n'est actif — React Query v5 interdit qu'une query se
+  // résolve avec `undefined` et le transforme en erreur générique côté
+  // client (cf. le même correctif sur projects.myProject, où ce piège a été
+  // diagnostiqué en détail).
+  getActiveTemplate: authedQuery.query(async () => (await findActiveFormTemplate()) ?? null),
 
   adminListTemplates: adminQuery.query(() => findAllFormTemplates()),
 

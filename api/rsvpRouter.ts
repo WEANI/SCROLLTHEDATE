@@ -82,14 +82,12 @@ export const rsvpRouter = createRouter({
       return { responseId };
     }),
 
-  // Liste des réponses du faire-part du client connecté.
+  // Liste des réponses du faire-part du client connecté. Lecture : un client
+  // sans projet n'est pas une erreur (ex. juste après signup, avant toute
+  // commande) — réponses vides, comme projects.myProject.
   listMine: authedQuery.query(async ({ ctx }) => {
     const project = await findCurrentProject(ctx.user.id);
-    if (!project)
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Aucun projet pour cet utilisateur",
-      });
+    if (!project) return { config: null, responses: [] };
     const responses = await findRsvpResponsesByProject(project.id);
     const config = await findRsvpConfig(project.id);
     return { config: config ?? null, responses };

@@ -30,8 +30,13 @@ const moodboardSchema = z
   .optional();
 
 export const scenariosRouter = createRouter({
+  // Lecture : un client sans projet n'est pas une erreur (ex. juste après
+  // signup, avant toute commande) — liste vide, comme projects.myProject.
+  // requireCurrentProject (qui lève NOT_FOUND) reste réservé aux mutations
+  // ci-dessous, où l'absence de projet est réellement anormale.
   listMine: authedQuery.query(async ({ ctx }) => {
-    const project = await requireCurrentProject(ctx.user.id);
+    const project = await findCurrentProject(ctx.user.id);
+    if (!project) return [];
     return findScenariosByProject(project.id);
   }),
 

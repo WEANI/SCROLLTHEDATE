@@ -68,7 +68,9 @@ function breadcrumb(pathname: string): string[] {
 function NotificationsBell() {
   const [open, setOpen] = useState(false)
   const utils = trpc.useUtils()
+  const { isAuthenticated } = useAuth()
   const { data: notifications } = trpc.notifications.listMine.useQuery(undefined, {
+    enabled: isAuthenticated,
     refetchInterval: 30_000,
   })
   const markAllRead = trpc.notifications.markAllRead.useMutation({
@@ -169,13 +171,23 @@ function NotificationsBell() {
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
-  const { user, logout } = useAuth()
+  const { user, logout, isAuthenticated } = useAuth()
+  // `enabled: isAuthenticated` — capital ici : ce composant est monté sur
+  // TOUTES les pages /espace/*, et sans cette garde ses requêtes (non
+  // désactivées, elles) partagent leur clé de cache react-query avec les
+  // requêtes homologues de chaque page (TableauDeBord, Projet…). Même si
+  // CES pages posent correctement `enabled: isAuthenticated`, le simple
+  // fait que SidebarContent reste toujours actif suffit à déclencher la
+  // requête et — en cas de course sur la session juste après un
+  // signup/login — à écrire une erreur dans le cache partagé que la page
+  // affiche ensuite, rendant la garde de la page inopérante en pratique.
   const { data: project } = trpc.projects.myProject.useQuery(undefined, {
+    enabled: isAuthenticated,
     refetchInterval: 60_000,
   })
   const { data: thread } = trpc.messages.listThread.useQuery(
     {},
-    { refetchInterval: 30_000, retry: false },
+    { enabled: isAuthenticated, refetchInterval: 30_000, retry: false },
   )
   const unreadMessages = (thread ?? []).filter(
     (m) => m.senderRole === 'admin' && !m.readAt,

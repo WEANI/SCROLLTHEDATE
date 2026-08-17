@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
   CalendarHeart,
+  Check,
   ChevronDown,
   CreditCard,
   Loader2,
@@ -190,9 +191,17 @@ export default function Commander() {
       return
     }
     // Le paiement simulé crée la commande côté serveur → connexion requise.
+    // `state: { from: '/commander' }` est indispensable : Login.tsx retombe
+    // sinon sur son défaut ("/espace") après la connexion/inscription, et la
+    // commande — jamais réellement soumise puisque createCheckout exige un
+    // utilisateur authentifié — reste dans le brouillon sessionStorage sans
+    // que rien ne ramène le client ici pour la finaliser. Le client croit
+    // avoir payé (il vient de saisir sa carte) alors qu'aucune commande
+    // n'existe côté serveur : dashboard vide, aucun email, questionnaire
+    // introuvable.
     if (!isAuthenticated) {
       saveDraft()
-      navigate(LOGIN_PATH)
+      navigate(LOGIN_PATH, { state: { from: '/commander' } })
       return
     }
     setProcessing(true)
@@ -258,6 +267,25 @@ export default function Commander() {
               <Link to={LOGIN_PATH} className="font-semibold text-terracotta-500 underline-offset-4 hover:underline">
                 Se connecter maintenant
               </Link>
+            </p>
+          </motion.div>
+        )}
+
+        {/* Bandeau retour de connexion : le brouillon a été restauré, mais
+            jamais les coordonnées de carte (jamais sauvegardées, même en
+            simulation) — sans ce rappel, "Payer" semble ne rien faire tant
+            que la carte n'est pas ressaisie. */}
+        {!authLoading && isAuthenticated && draft && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE_EDITORIAL }}
+            className="mt-6 flex items-start gap-3 rounded-xl border border-terracotta-500/30 bg-terracotta-500/5 px-5 py-4 text-[14px] leading-[1.55] text-ink"
+          >
+            <Check size={18} className="mt-0.5 shrink-0 text-terracotta-500" />
+            <p>
+              Bon retour — votre commande a été restaurée. Il ne reste qu'à ressaisir votre carte pour
+              finaliser le paiement.
             </p>
           </motion.div>
         )}

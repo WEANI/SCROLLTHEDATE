@@ -108,9 +108,13 @@ function CountUp({ value }: { value: number }) {
 // ---------------------------------------------------------------------------
 
 export default function Commandes() {
-  const { user } = useAuth()
-  const ordersQuery = trpc.orders.myOrders.useQuery()
-  const rsvpQuery = trpc.rsvp.listMine.useQuery(undefined, { retry: false })
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  // `enabled: isAuthenticated` — cf. TableauDeBord.tsx pour l'explication :
+  // évite de lancer ces requêtes avant que la session ne soit confirmée
+  // (juste après un signup/login), ce qui afficherait une erreur à un
+  // client pourtant bien connecté.
+  const ordersQuery = trpc.orders.myOrders.useQuery(undefined, { enabled: isAuthenticated })
+  const rsvpQuery = trpc.rsvp.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
 
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [rsvpFilter, setRsvpFilter] = useState<'all' | 'yes' | 'no' | 'maybe'>('all')
@@ -165,7 +169,7 @@ export default function Commandes() {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000)
   }
 
-  if (ordersQuery.isLoading) return <PageSkeleton />
+  if (authLoading || ordersQuery.isLoading) return <PageSkeleton />
   if (ordersQuery.error) return <ErrorState onRetry={() => ordersQuery.refetch()} />
 
   const inviteUrl = deliveredProject

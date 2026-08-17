@@ -330,15 +330,19 @@ function QuestionField({
 // ---------------------------------------------------------------------------
 
 export default function Questionnaire() {
-  const { user } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const location = useLocation()
   const utils = trpc.useUtils()
 
-  const templateQuery = trpc.questionnaire.getActiveTemplate.useQuery()
-  const getQuery = trpc.questionnaire.get.useQuery(undefined, { retry: false })
-  const voiceQuery = trpc.voiceNotes.list.useQuery(undefined, { retry: false })
-  const mediaQuery = trpc.media.listMine.useQuery(undefined, { retry: false })
-  const rsvpQuery = trpc.rsvp.listMine.useQuery(undefined, { retry: false })
+  // `enabled: isAuthenticated` — cf. TableauDeBord.tsx pour l'explication :
+  // évite de lancer ces requêtes avant que la session ne soit confirmée
+  // (juste après un signup/login), ce qui afficherait une erreur à un
+  // client pourtant bien connecté.
+  const templateQuery = trpc.questionnaire.getActiveTemplate.useQuery(undefined, { enabled: isAuthenticated })
+  const getQuery = trpc.questionnaire.get.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const voiceQuery = trpc.voiceNotes.list.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const mediaQuery = trpc.media.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const rsvpQuery = trpc.rsvp.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
 
   const saveMutation = trpc.questionnaire.save.useMutation({
     onSuccess: async () => {
@@ -559,7 +563,7 @@ export default function Questionnaire() {
   }
 
   // --- Rendu -------------------------------------------------------------------
-  if (templateQuery.isLoading || getQuery.isLoading) return <PageSkeleton />
+  if (authLoading || templateQuery.isLoading || getQuery.isLoading) return <PageSkeleton />
   const notFound = getQuery.error?.data?.code === 'NOT_FOUND'
   if ((getQuery.error && !notFound) || templateQuery.error) {
     return <ErrorState onRetry={() => { void getQuery.refetch(); void templateQuery.refetch() }} />

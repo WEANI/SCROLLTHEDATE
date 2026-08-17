@@ -35,13 +35,17 @@ const EMOJIS = ['❤️', '😂', '🥂', '🎉', '😘', '🙏']
 // ---------------------------------------------------------------------------
 
 export default function Messages() {
-  useAuth()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const utils = trpc.useUtils()
+  // `enabled: isAuthenticated` — cf. TableauDeBord.tsx pour l'explication :
+  // évite de lancer ces requêtes avant que la session ne soit confirmée
+  // (juste après un signup/login), ce qui afficherait une erreur à un
+  // client pourtant bien connecté.
   const threadQuery = trpc.messages.listThread.useQuery(
     {},
-    { refetchInterval: 10_000, retry: false },
+    { enabled: isAuthenticated, refetchInterval: 10_000, retry: false },
   )
-  const projectQuery = trpc.projects.myProject.useQuery(undefined, { retry: false })
+  const projectQuery = trpc.projects.myProject.useQuery(undefined, { enabled: isAuthenticated, retry: false })
 
   const sendMutation = trpc.messages.send.useMutation({
     onSuccess: () => utils.messages.listThread.invalidate(),
@@ -122,7 +126,7 @@ export default function Messages() {
     reader.readAsDataURL(file)
   }
 
-  if (threadQuery.isLoading) return <PageSkeleton />
+  if (authLoading || threadQuery.isLoading) return <PageSkeleton />
   if (threadQuery.error && !notFound) return <ErrorState onRetry={() => threadQuery.refetch()} />
 
   const answers = (project?.questionnaire?.answers as Record<string, unknown> | null) ?? {}

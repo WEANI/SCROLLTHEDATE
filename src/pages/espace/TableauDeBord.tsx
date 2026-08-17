@@ -113,11 +113,20 @@ function ProjectStepper({ steps }: { steps: Step[] }) {
 // ---------------------------------------------------------------------------
 
 export default function TableauDeBord() {
-  const { user } = useAuth()
-  const projectQuery = trpc.projects.myProject.useQuery()
-  const mediaQuery = trpc.media.listMine.useQuery(undefined, { retry: false })
-  const ordersQuery = trpc.orders.myOrders.useQuery()
-  const threadQuery = trpc.messages.listThread.useQuery({}, { retry: false })
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  // `enabled: isAuthenticated` — sans ça, ces requêtes partent dès le
+  // montage, avant que la session Supabase ne soit confirmée (juste après un
+  // signup/login qui vient de rediriger ici) : le token n'est pas encore
+  // prêt, authedQuery lève UNAUTHORIZED, et l'écran affiche "Une erreur est
+  // survenue" à un client qui vient pourtant de se connecter avec succès.
+  // Merci.tsx applique déjà cette garde sur sa propre requête ; il manquait
+  // ici. Comparer avec authLoading (pas seulement isLoading des requêtes
+  // elles-mêmes) plus bas pour garder le skeleton affiché pendant ce court
+  // laps de temps plutôt que de basculer sur un état d'erreur.
+  const projectQuery = trpc.projects.myProject.useQuery(undefined, { enabled: isAuthenticated })
+  const mediaQuery = trpc.media.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const ordersQuery = trpc.orders.myOrders.useQuery(undefined, { enabled: isAuthenticated })
+  const threadQuery = trpc.messages.listThread.useQuery({}, { enabled: isAuthenticated, retry: false })
 
   const project = projectQuery.data ?? null
   const media = useMemo(() => mediaQuery.data ?? [], [mediaQuery.data])
@@ -231,7 +240,7 @@ export default function TableauDeBord() {
   )
   const checklistPct = Math.round((checklist.filter((c) => c.done).length / checklist.length) * 100)
 
-  if (projectQuery.isLoading || ordersQuery.isLoading) return <PageSkeleton />
+  if (authLoading || projectQuery.isLoading || ordersQuery.isLoading) return <PageSkeleton />
   if (projectQuery.error && projectQuery.error.data?.code !== 'NOT_FOUND') {
     return <ErrorState onRetry={() => projectQuery.refetch()} />
   }

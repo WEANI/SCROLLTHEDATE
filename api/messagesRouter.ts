@@ -54,8 +54,17 @@ export const messagesRouter = createRouter({
   listThread: authedQuery
     .input(z.object({ projectId: z.number().int().positive().optional() }))
     .query(async ({ ctx, input }) => {
+      // Lecture côté client : pas de projet n'est pas une erreur (ex. juste
+      // après signup, avant toute commande) — fil vide, comme
+      // projects.myProject. resolveProject (qui lève NOT_FOUND/BAD_REQUEST)
+      // reste utilisé pour l'admin, où projectId est requis, et pour send().
+      if (ctx.user.role !== "admin") {
+        const project = await findCurrentProject(ctx.user.id);
+        if (!project) return [];
+        return findMessagesByProject(project.id, false);
+      }
       const project = await resolveProject(ctx.user, input.projectId);
-      return findMessagesByProject(project.id, ctx.user.role === "admin");
+      return findMessagesByProject(project.id, true);
     }),
 
   send: authedQuery

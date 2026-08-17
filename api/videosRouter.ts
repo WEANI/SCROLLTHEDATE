@@ -30,8 +30,11 @@ const timecodedComments = z
   .optional();
 
 export const videosRouter = createRouter({
+  // Lecture : un client sans projet n'est pas une erreur (ex. juste après
+  // signup, avant toute commande) — liste vide, comme projects.myProject.
   listMine: authedQuery.query(async ({ ctx }) => {
-    const project = await requireCurrentProject(ctx.user.id);
+    const project = await findCurrentProject(ctx.user.id);
+    if (!project) return [];
     // Le client ne voit que les versions envoyées / approuvées / finales
     const versions = await findVideosByProject(project.id);
     return versions.filter((v) => v.status !== "draft");

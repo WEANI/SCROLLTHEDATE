@@ -112,11 +112,15 @@ const STATUS_RANK: Record<string, number> = {
 }
 
 export default function Projet() {
-  useAuth()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const utils = trpc.useUtils()
-  const projectQuery = trpc.projects.myProject.useQuery(undefined, { retry: false })
-  const scenariosQuery = trpc.scenarios.listMine.useQuery(undefined, { retry: false })
-  const videosQuery = trpc.videos.listMine.useQuery(undefined, { retry: false })
+  // `enabled: isAuthenticated` — cf. TableauDeBord.tsx pour l'explication
+  // complète : sans cette garde, ces requêtes partent avant que la session
+  // ne soit confirmée (juste après un signup/login) et affichent "Une
+  // erreur est survenue" à un client pourtant bien connecté.
+  const projectQuery = trpc.projects.myProject.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const scenariosQuery = trpc.scenarios.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const videosQuery = trpc.videos.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
 
   const chooseMutation = trpc.scenarios.choose.useMutation({
     onSuccess: async () => {
@@ -168,7 +172,7 @@ export default function Projet() {
     setTimeout(() => setToast(null), 2500)
   }
 
-  if (projectQuery.isLoading) return <PageSkeleton />
+  if (authLoading || projectQuery.isLoading) return <PageSkeleton />
   if (projectQuery.error && projectQuery.error.data?.code !== 'NOT_FOUND') {
     return <ErrorState onRetry={() => projectQuery.refetch()} />
   }

@@ -51,9 +51,20 @@ export const projectsRouter = createRouter({
     }),
 
   // Projet courant du client connecté, avec timeline (audit) + commande.
-  myProject: authedQuery.query(({ ctx }) =>
-    findCurrentProjectFull(ctx.user.id),
-  ),
+  // `?? null` est déterminant, pas cosmétique : findCurrentProjectFull
+  // renvoie `undefined` via `rows.at(0)` quand le client n'a encore aucun
+  // projet (ex. juste après signup, avant toute commande) — un cas
+  // parfaitement normal, pas une erreur. React Query v5 interdit qu'une
+  // query se résolve avec `undefined` (réservé en interne à "pas encore de
+  // données") et transforme silencieusement ce cas en erreur générique
+  // côté client — jamais visible côté serveur (tRPC transmet `undefined`
+  // sans broncher), donc invisible à tout test qui interroge l'API
+  // directement. C'est ce qui produisait "Une erreur est survenue" sur
+  // Tableau de bord et Projet & scénarios pour tout compte sans commande.
+  myProject: authedQuery.query(async ({ ctx }) => {
+    const project = await findCurrentProjectFull(ctx.user.id);
+    return project ?? null;
+  }),
 
   // Kanban admin : projets + client + commande + complétion questionnaire.
   adminList: adminQuery.query(() => findAllProjects()),
