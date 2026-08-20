@@ -122,9 +122,55 @@ export default function FairePart() {
         ariaLabel={`Faire-part — ${coupleNames}`}
       />
 
-      <PayloadSection slug={invite.slug} coupleNames={coupleNames} fields={fields} />
-      <PhotosSection />
-      <ClosingSection coupleNames={coupleNames} />
+      {/* Le corps de page recouvre le plan final au lieu de s'enchaîner en
+          dessous — même mécanique que sur Edwige & Wilfried / Léa & Olivier
+          (pages câblées en dur) : `.hs-frame` (dans HeroScrub) reste épinglé
+          en `position: sticky` tant que la piste de scrub (700vh) n'est pas
+          épuisée. En tirant ce bloc vers le haut via une marge négative, son
+          bord d'attaque entre dans le viewport un peu avant la fin de cette
+          piste, pendant que la vidéo est donc encore épinglée dessous —
+          il glisse depuis le bas et referme progressivement le cadre vidéo.
+          Couleurs dérivées du thème de l'ambiance (HeroTheme), pas d'un
+          PayloadTheme/ClosingTheme dédié comme les pages câblées en dur :
+          ce composant sert n'importe quel projet réel, quelle que soit son
+          ambiance (cinema/minimal/editorial) — pas de charte propre à un
+          couple en particulier ici. */}
+      <div
+        className="relative z-10 -mt-[20vh] rounded-t-[32px]"
+        style={{
+          background: theme.pageBg,
+          boxShadow:
+            theme.colorScheme === 'dark'
+              ? '0 -24px 60px rgba(0, 0, 0, 0.5)'
+              : '0 -24px 60px rgba(46, 38, 32, 0.18)',
+        }}
+      >
+        <PayloadSection
+          slug={invite.slug}
+          coupleNames={coupleNames}
+          fields={fields}
+          theme={{
+            sectionBg: theme.pageBg,
+            cardBg: theme.cardBg,
+            cardBorder: theme.cardBorder,
+            accent: theme.accent,
+            accentHover: theme.accent,
+            heading: theme.textPrimary,
+            text: theme.textPrimary,
+          }}
+        />
+        <PhotosSection bg={theme.pageBg} />
+        <ClosingSection
+          coupleNames={coupleNames}
+          theme={{
+            bg: theme.pageBg,
+            border: theme.cardBorder,
+            heading: theme.textPrimary,
+            accent: theme.accent,
+            text: theme.textSecondary,
+          }}
+        />
+      </div>
     </div>
   )
 }
