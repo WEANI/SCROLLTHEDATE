@@ -125,7 +125,14 @@ export default function FairePartLeaOlivier() {
             par le couple (cf. leaOlivierContent.ts) — câblé en dur comme le
             reste du payload de cette page en attendant la question
             `jourj.programme` proposée dans DetailsSombre.tsx. */}
-        <PayloadSection slug={SLUG} coupleNames={COUPLE_NAMES} rsvpCtaLabel={RSVP_CTA_LABEL} theme={PAYLOAD_THEME}>
+        <PayloadSection
+          slug={SLUG}
+          coupleNames={COUPLE_NAMES}
+          rsvpCtaLabel={RSVP_CTA_LABEL}
+          theme={PAYLOAD_THEME}
+          eyebrow={null}
+          heading="Nous nous marions"
+        >
           {(openRsvp) => (
             <DetailsSombre
               weddingDateTime={WEDDING_DATETIME}

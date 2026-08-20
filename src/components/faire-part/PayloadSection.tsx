@@ -60,6 +60,12 @@ const DEFAULT_PAYLOAD_THEME: PayloadTheme = {
  * "{coupleNames} se marient") et le Dialog RSVP restent portés par CE
  * composant dans les deux cas — pas dupliqués côté appelant — `children`
  * reçoit `openRsvp` pour déclencher le même Dialog.
+ *
+ * `eyebrow`/`heading` : le titre par défaut ("Le faire-part" au-dessus,
+ * "{coupleNames} se marient" en dessous) reste le défaut pour ne rien
+ * changer sur les pages existantes — `eyebrow={null}` le masque,
+ * `heading` remplace le texte par défaut (cf. Léa & Olivier, qui masque
+ * l'eyebrow et personnalise le heading en "Nous nous marions").
  */
 export default function PayloadSection({
   slug,
@@ -67,6 +73,8 @@ export default function PayloadSection({
   fields = [],
   rsvpCtaLabel = 'Répondre à l’invitation',
   theme,
+  eyebrow = 'Le faire-part',
+  heading,
   children,
 }: {
   slug: string
@@ -74,6 +82,10 @@ export default function PayloadSection({
   fields?: PayloadField[]
   rsvpCtaLabel?: string
   theme?: Partial<PayloadTheme>
+  /** `null` pour masquer l'eyebrow au-dessus du titre. */
+  eyebrow?: string | null
+  /** Texte du titre — par défaut "{coupleNames} se marient". */
+  heading?: string
   children?: (openRsvp: () => void) => ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -87,14 +99,16 @@ export default function PayloadSection({
       aria-label="Informations du mariage"
     >
       <div className="mx-auto max-w-[560px]">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.28em]" style={{ color: t.accent }}>
-          Le faire-part
-        </p>
+        {eyebrow && (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em]" style={{ color: t.accent }}>
+            {eyebrow}
+          </p>
+        )}
         <h2
-          className="font-display mt-4 text-[clamp(1.9rem,4.4vw,2.6rem)] font-normal italic leading-[1.15]"
+          className={`font-display text-[clamp(1.9rem,4.4vw,2.6rem)] font-normal italic leading-[1.15] ${eyebrow ? 'mt-4' : ''}`}
           style={{ color: t.heading }}
         >
-          {coupleNames} se marient
+          {heading ?? `${coupleNames} se marient`}
         </h2>
 
         {children ? (

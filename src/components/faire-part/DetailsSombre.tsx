@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 /**
  * DetailsSombre — bloc « détails » du faire-part en thème sombre (noir/
@@ -32,6 +32,16 @@ import type { ReactNode } from 'react'
  * disparates sur les blocs). Espacement volontairement généreux (112px de
  * bloc à bloc) pour un rendu plus épuré — proche du fichier fourni par le
  * client (108px).
+ *
+ * Reveal au scroll : chaque bloc se déclenche une fois, individuellement,
+ * quand il entre dans le viewport (IntersectionObserver via
+ * `useRevealOnScroll`, même mécanique que `PhotoSplitCinematique` juste
+ * au-dessus dans le corps de page). À l'intérieur d'un bloc, ses éléments
+ * apparaissent en cascade (fondu + léger glissement vers le haut, cf.
+ * `staggerStyle`) plutôt que tous d'un coup — un bloc à un seul élément
+ * (ex. Dress code) dégénère naturellement en simple fondu, pas de cas
+ * particulier à gérer. Respecte `prefers-reduced-motion` : le contenu
+ * apparaît directement, sans cascade.
  *
  * IMPORTANT — `programme` : la frise horaire (Accueil/Cérémonie/Cocktail/
  * Dîner/Soirée…) n'existe pas encore dans le modèle de données. Ne rien
@@ -97,6 +107,66 @@ function SectionLabel({ children, accent }: { children: ReactNode; accent: strin
   )
 }
 
+/** Déclenche `revealed` une seule fois, quand `ref` entre dans le viewport — cf. le même hook dans PhotoSplitCinematique. */
+function useRevealOnScroll(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [revealed, setRevealed] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReducedMotion(mq.matches)
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setRevealed(true)
+      return
+    }
+    const el = ref.current
+    if (!el || revealed) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setRevealed(true)
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [revealed, threshold, reducedMotion])
+
+  return { ref, revealed, reducedMotion }
+}
+
+/**
+ * Style d'un élément à l'index `i` d'une cascade — fondu + léger glissement
+ * vers le haut, retardé de `i * stepMs`. `i=0` seul (bloc sans liste
+ * interne, ex. Dress code) se comporte comme un simple fondu.
+ */
+function staggerStyle(i: number, revealed: boolean, reducedMotion: boolean, stepMs = 90): CSSProperties {
+  if (reducedMotion) return {}
+  return {
+    opacity: revealed ? 1 : 0,
+    transform: revealed ? 'translateY(0)' : 'translateY(14px)',
+    transition: 'opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1)',
+    transitionDelay: `${i * stepMs}ms`,
+  }
+}
+
+/** Porte l'IntersectionObserver d'un bloc et fournit `revealed`/`reducedMotion` à son contenu, pour que ses éléments internes puissent cascader. */
+function RevealBlock({ children }: { children: (revealed: boolean, reducedMotion: boolean) => ReactNode }) {
+  const { ref, revealed, reducedMotion } = useRevealOnScroll()
+  return <div ref={ref}>{children(revealed, reducedMotion)}</div>
+}
+
 function useCountdown(targetMs: number) {
   const compute = () => {
     const diff = Math.max(0, targetMs - Date.now())
@@ -154,89 +224,105 @@ export default function DetailsSombre({
   const pad = (n: number) => String(n).padStart(2, '0')
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${venueName} ${venueAddress}`)}`
 
-  // Tous les blocs, dans l'ordre — chacun précédé d'un filet (cf. rendu
-  // plus bas), aucune marge externe sur les blocs eux-mêmes (cf. doc en
-  // tête de fichier). Les blocs optionnels ne sont ajoutés que si leurs
-  // données sont réelles.
-  const blocks: ReactNode[] = [
-    <div key="date-countdown" className="text-center">
-      <div className="flex items-center justify-center gap-3.5">
-        <div className="flex-1 border-t pt-2" style={{ borderColor: t.line }}>
-          <span className="text-[18px] uppercase tracking-[0.08em] capitalize" style={{ color: t.inkSoft }}>
-            {weekday}
-          </span>
-        </div>
-        <div className="font-display text-[54px] italic leading-none" style={{ color: t.ink }}>
-          {day}
-        </div>
-        <div className="flex-1 border-t pt-2" style={{ borderColor: t.line }}>
-          <span className="text-[18px] uppercase tracking-[0.08em] capitalize" style={{ color: t.inkSoft }}>
-            {month}
-          </span>
-        </div>
-      </div>
-      <div className="mt-1.5 text-[19px]" style={{ color: t.inkSoft }}>
-        {year}
-      </div>
-
-      <div
-        className="mt-6 flex justify-center gap-2"
-        aria-label={`Compte à rebours jusqu'au ${weekday} ${day} ${month} ${year}`}
-      >
-        {([
-          [d, 'JOURS'],
-          [h, 'HRS'],
-          [m, 'MIN'],
-          [s, 'SEC'],
-        ] as const).map(([value, label], i) => (
-          <div key={label} className="flex items-center gap-2">
-            {i > 0 && (
-              <span className="self-center pb-5 text-xl" style={{ color: t.line }} aria-hidden>
-                :
+  // Tous les blocs, dans l'ordre — chacun précédé d'un filet et rendu dans
+  // son propre RevealBlock (cf. rendu plus bas), aucune marge externe sur
+  // les blocs eux-mêmes (cf. doc en tête de fichier). Les blocs optionnels
+  // ne sont ajoutés que si leurs données sont réelles. Chaque bloc est une
+  // fonction (revealed, reducedMotion) => JSX plutôt que du JSX déjà rendu
+  // — il lui faut ces deux valeurs pour faire cascader ses propres
+  // éléments internes (cf. staggerStyle).
+  const blocks: ((revealed: boolean, reducedMotion: boolean) => ReactNode)[] = [
+    (revealed, reducedMotion) => (
+      <div className="text-center">
+        <div style={staggerStyle(0, revealed, reducedMotion)}>
+          <div className="flex items-center justify-center gap-3.5">
+            <div className="flex-1 border-t pt-2" style={{ borderColor: t.line }}>
+              <span className="text-[18px] uppercase tracking-[0.08em] capitalize" style={{ color: t.inkSoft }}>
+                {weekday}
               </span>
-            )}
-            <div className="text-center">
-              <div className="relative min-w-[58px] rounded-[5px] border px-1 py-2.5" style={{ borderColor: t.line, background: '#1a1211' }}>
-                <span className="font-mono text-[26px] font-bold tracking-[2px]" style={{ color: t.accent }} aria-hidden>
-                  {pad(value)}
-                </span>
-              </div>
-              <div className="mt-1.5 font-mono text-[10px] tracking-[0.1em]" style={{ color: t.inkSoft }}>
-                {label}
-              </div>
+            </div>
+            <div className="font-display text-[54px] italic leading-none" style={{ color: t.ink }}>
+              {day}
+            </div>
+            <div className="flex-1 border-t pt-2" style={{ borderColor: t.line }}>
+              <span className="text-[18px] uppercase tracking-[0.08em] capitalize" style={{ color: t.inkSoft }}>
+                {month}
+              </span>
             </div>
           </div>
-        ))}
-      </div>
-    </div>,
+          <div className="mt-1.5 text-[19px]" style={{ color: t.inkSoft }}>
+            {year}
+          </div>
+        </div>
 
-    <section key="lieu">
-      <SectionLabel accent={t.accent}>Le Lieu</SectionLabel>
-      <p className="font-display mb-2.5 text-center text-[30px] italic" style={{ color: t.ink }}>
-        {venueName}
-      </p>
-      <p className="mb-4.5 text-center text-[15px]" style={{ color: t.inkSoft }}>
-        {venueAddress}
-      </p>
-      <a
-        href={mapsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mx-auto block w-max rounded-full border px-[22px] py-2.5 text-center text-[12.5px]"
-        style={{ borderColor: t.accent, color: t.ink }}
-      >
-        voir sur la carte
-      </a>
-    </section>,
+        <div
+          className="mt-6 flex justify-center gap-2"
+          aria-label={`Compte à rebours jusqu'au ${weekday} ${day} ${month} ${year}`}
+        >
+          {([
+            [d, 'JOURS'],
+            [h, 'HRS'],
+            [m, 'MIN'],
+            [s, 'SEC'],
+          ] as const).map(([value, label], i) => (
+            <div key={label} className="flex items-center gap-2" style={staggerStyle(i + 1, revealed, reducedMotion)}>
+              {i > 0 && (
+                <span className="self-center pb-5 text-xl" style={{ color: t.line }} aria-hidden>
+                  :
+                </span>
+              )}
+              <div className="text-center">
+                <div className="relative min-w-[58px] rounded-[5px] border px-1 py-2.5" style={{ borderColor: t.line, background: '#1a1211' }}>
+                  <span className="font-mono text-[26px] font-bold tracking-[2px]" style={{ color: t.accent }} aria-hidden>
+                    {pad(value)}
+                  </span>
+                </div>
+                <div className="mt-1.5 font-mono text-[10px] tracking-[0.1em]" style={{ color: t.inkSoft }}>
+                  {label}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+
+    (revealed, reducedMotion) => (
+      <section>
+        <div style={staggerStyle(0, revealed, reducedMotion)}>
+          <SectionLabel accent={t.accent}>Le Lieu</SectionLabel>
+        </div>
+        <p
+          className="font-display mb-2.5 text-center text-[30px] italic"
+          style={{ color: t.ink, ...staggerStyle(1, revealed, reducedMotion) }}
+        >
+          {venueName}
+        </p>
+        <p className="mb-4.5 text-center text-[15px]" style={{ color: t.inkSoft, ...staggerStyle(2, revealed, reducedMotion) }}>
+          {venueAddress}
+        </p>
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mx-auto block w-max rounded-full border px-[22px] py-2.5 text-center text-[12.5px]"
+          style={{ borderColor: t.accent, color: t.ink, ...staggerStyle(3, revealed, reducedMotion) }}
+        >
+          voir sur la carte
+        </a>
+      </section>
+    ),
   ]
 
   if (programme && programme.length > 0) {
-    blocks.push(
-      <section key="programme">
-        <SectionLabel accent={t.accent}>Le Programme</SectionLabel>
+    blocks.push((revealed, reducedMotion) => (
+      <section>
+        <div style={staggerStyle(0, revealed, reducedMotion)}>
+          <SectionLabel accent={t.accent}>Le Programme</SectionLabel>
+        </div>
         <ol className="ml-[9px] border-l-2 pl-[18px]" style={{ borderColor: t.line }}>
           {programme.map((item, i) => (
-            <li key={i} className="relative pb-8 last:pb-0">
+            <li key={i} className="relative pb-8 last:pb-0" style={staggerStyle(i + 1, revealed, reducedMotion)}>
               <span
                 className="absolute -left-[23px] top-1 h-[7px] w-[7px] rotate-45"
                 style={{ background: t.accent }}
@@ -253,58 +339,64 @@ export default function DetailsSombre({
             </li>
           ))}
         </ol>
-      </section>,
-    )
+      </section>
+    ))
   }
   if (dressCode) {
-    blocks.push(
-      <section key="dress-code">
-        <SectionLabel accent={t.accent}>Dress code</SectionLabel>
-        <p className="text-center text-[16px]" style={{ color: t.ink }}>
+    blocks.push((revealed, reducedMotion) => (
+      <section>
+        <div style={staggerStyle(0, revealed, reducedMotion)}>
+          <SectionLabel accent={t.accent}>Dress code</SectionLabel>
+        </div>
+        <p className="text-center text-[16px]" style={{ color: t.ink, ...staggerStyle(1, revealed, reducedMotion) }}>
           {dressCode}
         </p>
-      </section>,
-    )
+      </section>
+    ))
   }
   if (lodging && lodging.length > 0) {
-    blocks.push(
-      <section key="lodging">
-        <SectionLabel accent={t.accent}>Hébergements</SectionLabel>
+    blocks.push((revealed, reducedMotion) => (
+      <section>
+        <div style={staggerStyle(0, revealed, reducedMotion)}>
+          <SectionLabel accent={t.accent}>Hébergements</SectionLabel>
+        </div>
         <ul className="list-none p-0 text-center">
-          {lodging.map((item) => (
-            <li key={item} className="py-[5px] text-[15px]" style={{ color: t.inkSoft }}>
+          {lodging.map((item, i) => (
+            <li key={item} className="py-[5px] text-[15px]" style={{ color: t.inkSoft, ...staggerStyle(i + 1, revealed, reducedMotion) }}>
               <span style={{ color: t.accent }}>• </span>
               {item}
             </li>
           ))}
         </ul>
-      </section>,
-    )
+      </section>
+    ))
   }
 
-  blocks.push(
-    <section key="rsvp">
-      <SectionLabel accent={t.accent}>RSVP</SectionLabel>
-      <p className="mb-4 text-center text-[15px] leading-[1.6]" style={{ color: t.inkSoft }}>
+  blocks.push((revealed, reducedMotion) => (
+    <section>
+      <div style={staggerStyle(0, revealed, reducedMotion)}>
+        <SectionLabel accent={t.accent}>RSVP</SectionLabel>
+      </div>
+      <p className="mb-4 text-center text-[15px] leading-[1.6]" style={{ color: t.inkSoft, ...staggerStyle(1, revealed, reducedMotion) }}>
         {rsvpText}
       </p>
       <button
         type="button"
         onClick={openRsvp}
         className="mx-auto block w-max rounded-full px-[26px] py-3 text-[12.5px] font-semibold uppercase tracking-[0.04em] text-white"
-        style={{ background: t.accent }}
+        style={{ background: t.accent, ...staggerStyle(2, revealed, reducedMotion) }}
       >
         {rsvpCtaLabel}
       </button>
-    </section>,
-  )
+    </section>
+  ))
 
   return (
     <div className="mx-auto max-w-[420px] text-left">
-      {blocks.map((block, i) => (
+      {blocks.map((renderBlock, i) => (
         <div key={i}>
           <Divider color={t.accent} />
-          {block}
+          <RevealBlock>{renderBlock}</RevealBlock>
         </div>
       ))}
     </div>
