@@ -63,31 +63,22 @@ export const CINEMA_ROUGE_THEME: HeroTheme = {
   dotInactive: 'rgba(247, 241, 236, 0.10)',
 }
 
-/**
- * Corps de page en fond CLAIR (ivoire), à rebours du hero resté sombre.
- * L'ambiance Cinéma dicte le hero (le film doit se détacher sur du noir) ;
- * le corps de page, lui, porte de l'information à lire — le fond quasi noir
- * initial rendait les cartes peu lisibles. Le rouge profond du thème reste
- * l'accent (labels, CTA RSVP, filets) : c'est lui qui assure la continuité
- * visuelle avec le hero, pas le fond. Le noir/rouge du couple reste donc
- * respecté, réparti autrement.
- */
 export const PAYLOAD_THEME: Partial<PayloadTheme> = {
-  sectionBg: '#FBF8F5',
-  cardBg: '#FFFFFF',
-  cardBorder: 'rgba(139, 30, 40, 0.16)', // rouge du thème, très dilué — filet discret
+  sectionBg: '#15100F',
+  cardBg: 'rgba(255, 255, 255, 0.05)',
+  cardBorder: 'rgba(232, 196, 196, 0.14)', // touche de rose poudré discrète — cf. instructions §3
   accent: '#8B1E28',
   accentHover: '#A32732',
-  heading: '#1B1512',
-  text: '#3A302C',
+  heading: '#F5EFEA',
+  text: '#E7DED9',
 }
 
 export const CLOSING_THEME: Partial<ClosingTheme> = {
-  bg: '#FBF8F5',
-  border: 'rgba(139, 30, 40, 0.14)',
-  heading: '#1B1512',
+  bg: '#15100F',
+  border: 'rgba(255, 255, 255, 0.10)',
+  heading: '#F5EFEA',
   accent: '#8B1E28',
-  text: '#6B5D57',
+  text: '#BBAFA9',
 }
 
 /**

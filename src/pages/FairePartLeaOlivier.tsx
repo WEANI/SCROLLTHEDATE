@@ -85,7 +85,7 @@ export default function FairePartLeaOlivier() {
           sombre. */}
       <div
         className="relative z-10 -mt-[100vh] rounded-t-[32px] shadow-[0_-24px_60px_rgba(0,0,0,0.5)]"
-        style={{ background: PAYLOAD_THEME.sectionBg }}
+        style={{ background: CINEMA_ROUGE_THEME.pageBg }}
       >
         {/* Photo d'ouverture — première chose vue après le film, avant les
             informations pratiques. Colonne centrée à largeur limitée plutôt
@@ -102,7 +102,7 @@ export default function FairePartLeaOlivier() {
               alt={OPENING_PHOTO.alt}
               width={1000}
               height={1768}
-              className="w-full rounded-[20px] object-cover shadow-[0_24px_60px_rgba(27,21,18,0.18)]"
+              className="w-full rounded-[20px] object-cover shadow-[0_24px_60px_rgba(0,0,0,0.45)]"
               loading="lazy"
               decoding="async"
             />
