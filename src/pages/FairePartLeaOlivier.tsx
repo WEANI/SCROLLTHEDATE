@@ -4,16 +4,22 @@ import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import PhotoSplitCinematique from '@/components/faire-part/PhotoSplitCinematique'
+import DetailsSombre from '@/components/faire-part/DetailsSombre'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import {
   CINEMA_ROUGE_THEME,
   CLOSING_THEME,
+  DRESS_CODE,
   HERO_CHAPTERS,
+  LODGING_OPTIONS,
   OPENING_PHOTO,
-  PAYLOAD_FIELDS,
   PAYLOAD_THEME,
+  PROGRAMME,
   RSVP_CTA_LABEL,
   SLUG,
+  VENUE_ADDRESS,
+  VENUE_NAME,
+  WEDDING_DATETIME,
 } from '@/components/faire-part/leaOlivierContent'
 
 const COUPLE_NAMES = 'Léa & Olivier'
@@ -112,13 +118,33 @@ export default function FairePartLeaOlivier() {
           </figure>
         </section>
 
-        <PayloadSection
-          slug={SLUG}
-          coupleNames={COUPLE_NAMES}
-          fields={PAYLOAD_FIELDS}
-          rsvpCtaLabel={RSVP_CTA_LABEL}
-          theme={PAYLOAD_THEME}
-        />
+        {/* DetailsSombre (children de PayloadSection) remplace la pile de
+            cartes Date/Heure/Lieu/Dress code/Hébergements par défaut —
+            demande client du thème sombre (compte à rebours, frise du
+            programme, lien carte). `programme` = PROGRAMME, fourni verbatim
+            par le couple (cf. leaOlivierContent.ts) — câblé en dur comme le
+            reste du payload de cette page en attendant la question
+            `jourj.programme` proposée dans DetailsSombre.tsx. */}
+        <PayloadSection slug={SLUG} coupleNames={COUPLE_NAMES} rsvpCtaLabel={RSVP_CTA_LABEL} theme={PAYLOAD_THEME}>
+          {(openRsvp) => (
+            <DetailsSombre
+              weddingDateTime={WEDDING_DATETIME}
+              venueName={VENUE_NAME}
+              venueAddress={VENUE_ADDRESS}
+              programme={PROGRAMME}
+              dressCode={DRESS_CODE}
+              lodging={LODGING_OPTIONS}
+              rsvpCtaLabel={RSVP_CTA_LABEL}
+              openRsvp={openRsvp}
+              theme={{
+                ink: CINEMA_ROUGE_THEME.textPrimary,
+                inkSoft: CINEMA_ROUGE_THEME.textSecondary,
+                accent: CINEMA_ROUGE_THEME.accent,
+                line: PAYLOAD_THEME.cardBorder,
+              }}
+            />
+          )}
+        </PayloadSection>
         <PhotosSection bg={PAYLOAD_THEME.sectionBg} />
         <ClosingSection coupleNames={COUPLE_NAMES} theme={CLOSING_THEME} />
       </div>

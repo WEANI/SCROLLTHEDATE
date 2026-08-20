@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, PartyPopper } from 'lucide-react'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
@@ -51,19 +51,30 @@ const DEFAULT_PAYLOAD_THEME: PayloadTheme = {
  * si le slug n'existe pas côté backend. Le Dialog RSVP reste volontairement
  * clair quel que soit le thème de la page (lisibilité du formulaire avant
  * tout, pattern courant pour une modale par-dessus une page sombre).
+ *
+ * `children` (render prop) : remplace la pile de cartes + bouton par défaut
+ * par une mise en page personnalisée — cf. Léa & Olivier (DetailsSombre),
+ * dont le bloc détails (date/compte à rebours/lieu/programme/dress
+ * code/hébergements/RSVP) est trop différent de la pile de cartes plate
+ * pour rester une simple variation de thème. Le titre ("Le faire-part" +
+ * "{coupleNames} se marient") et le Dialog RSVP restent portés par CE
+ * composant dans les deux cas — pas dupliqués côté appelant — `children`
+ * reçoit `openRsvp` pour déclencher le même Dialog.
  */
 export default function PayloadSection({
   slug,
   coupleNames,
-  fields,
+  fields = [],
   rsvpCtaLabel = 'Répondre à l’invitation',
   theme,
+  children,
 }: {
   slug: string
   coupleNames: string
-  fields: PayloadField[]
+  fields?: PayloadField[]
   rsvpCtaLabel?: string
   theme?: Partial<PayloadTheme>
+  children?: (openRsvp: () => void) => ReactNode
 }) {
   const [open, setOpen] = useState(false)
   const rsvpStorageKey = `scrollthedate-fp-rsvp-${slug}`
@@ -86,38 +97,44 @@ export default function PayloadSection({
           {coupleNames} se marient
         </h2>
 
-        <dl className="mt-12 flex flex-col gap-6 text-left sm:mt-14">
-          {fields.map((field) => (
-            <div
-              key={field.label}
-              className="flex flex-col gap-1 rounded-2xl border px-6 py-5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
-              style={{ borderColor: t.cardBorder, background: t.cardBg }}
-            >
-              <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: t.accent }}>
-                {field.label}
-              </dt>
-              <dd
-                className="whitespace-pre-line text-[15px] font-light sm:text-right"
-                style={{ color: t.text }}
-              >
-                {field.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        {children ? (
+          children(() => setOpen(true))
+        ) : (
+          <>
+            <dl className="mt-12 flex flex-col gap-6 text-left sm:mt-14">
+              {fields.map((field) => (
+                <div
+                  key={field.label}
+                  className="flex flex-col gap-1 rounded-2xl border px-6 py-5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+                  style={{ borderColor: t.cardBorder, background: t.cardBg }}
+                >
+                  <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: t.accent }}>
+                    {field.label}
+                  </dt>
+                  <dd
+                    className="whitespace-pre-line text-[15px] font-light sm:text-right"
+                    style={{ color: t.text }}
+                  >
+                    {field.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
 
-        <div className="mt-11">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="inline-flex items-center justify-center rounded-full px-9 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-colors"
-            style={{ background: t.accent }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = t.accentHover)}
-            onMouseLeave={(e) => (e.currentTarget.style.background = t.accent)}
-          >
-            {rsvpCtaLabel}
-          </button>
-        </div>
+            <div className="mt-11">
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="inline-flex items-center justify-center rounded-full px-9 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-colors"
+                style={{ background: t.accent }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = t.accentHover)}
+                onMouseLeave={(e) => (e.currentTarget.style.background = t.accent)}
+              >
+                {rsvpCtaLabel}
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

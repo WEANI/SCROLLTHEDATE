@@ -18,6 +18,7 @@
 import type { HeroChapter, HeroTheme } from '@/components/hero-scrub/types'
 import type { PayloadTheme } from './PayloadSection'
 import type { ClosingTheme } from './ClosingSection'
+import { parseProgrammeItem, type ProgrammeItem } from './DetailsSombre'
 
 export const SLUG = 'lea-olivier'
 
@@ -28,6 +29,12 @@ export const WEDDING_DATE_LABEL = '15 août 2026'
 /** Forme courte de la date — hero scrub uniquement (cf. edwigeWilfriedContent.ts pour le précédent de ce pattern). */
 export const WEDDING_DATE_SHORT = '15 août 26'
 export const CEREMONY_TIME = '16h00'
+/**
+ * Date+heure ISO — source unique pour le bloc date et le compte à rebours
+ * de DetailsSombre (cf. FairePartLeaOlivier.tsx). +02:00 = heure d'été en
+ * France métropolitaine (le mariage a lieu le 15 août).
+ */
+export const WEDDING_DATETIME = '2026-08-15T16:00:00+02:00'
 export const VENUE_NAME = 'Le Caillavet'
 export const VENUE_LOCATION = 'Saint-Aubin-de-Médoc'
 export const VENUE_ADDRESS = 'Route de Lacanau, Saint-Aubin-de-Médoc, Gironde'
@@ -38,6 +45,27 @@ export const LODGING_OPTIONS = [
   'Cabot Hotel Bordeaux (Le Pian-Médoc)',
   'Logis Hôtels Le Pont Bernet (Le Pian-Médoc)',
 ]
+
+/**
+ * Programme de la journée — fourni verbatim par le couple, non reformulé
+ * (même règle que le reste du payload, cf. PayloadSection). Stocké au
+ * format brut "Horaire — Titre — Détail" puis parsé par
+ * `parseProgrammeItem` : c'est exactement le format que produirait la
+ * question `jourj.programme` (type "list") une fois ajoutée au
+ * questionnaire — cf. le schéma proposé dans DetailsSombre.tsx. En
+ * attendant cette question, câblé en dur ici comme le reste du contenu de
+ * cette page.
+ */
+const PROGRAMME_RAW = [
+  '15h30 — Bienvenue — Accueil et bienvenue au domaine',
+  '16h00 — La cérémonie — Le moment le plus spéciale de la journée',
+  '17h00 — Apéritif — Accueil des invités',
+  '19h30 — Dîner — Repas et festivités',
+  '23h00 — Decoupe du gateau — Un doux moment',
+  '23h30 — La Fête — Nous danserons jusqu’a tard',
+  '4h30 — Au revoir — Fin d’une journée inoubliable',
+]
+export const PROGRAMME: ProgrammeItem[] = PROGRAMME_RAW.map(parseProgrammeItem)
 
 /**
  * Rouge profond (sceau de cire / corde de la vidéo) sur fond noir/anthracite
@@ -91,15 +119,6 @@ export const OPENING_PHOTO = {
   src: '/lea-olivier-photo-1.jpg',
   alt: 'Léa & Olivier, main dans la main sous les arches',
 }
-
-/** Bloc payload — texte du formulaire, verbatim, jamais reformulé. */
-export const PAYLOAD_FIELDS: { label: string; value: string }[] = [
-  { label: 'Date', value: WEDDING_DATE_LABEL },
-  { label: 'Heure de cérémonie', value: CEREMONY_TIME },
-  { label: 'Lieu', value: `${VENUE_NAME}, ${VENUE_ADDRESS}` },
-  { label: 'Dress code', value: DRESS_CODE },
-  { label: 'Hébergements recommandés', value: LODGING_OPTIONS.join('\n') },
-]
 
 export const RSVP_CTA_LABEL = 'Répondre à l’invitation'
 
