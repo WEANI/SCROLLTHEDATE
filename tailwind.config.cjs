@@ -97,11 +97,20 @@ module.exports = {
           "0%,70%,100%": { opacity: "1" },
           "20%,50%": { opacity: "0" },
         },
+        // Traînée de lumière sur la jointure de PhotoSplitCinematique, au
+        // moment où les deux moitiés de la photo se rejoignent. Délai calé
+        // sur les valeurs par défaut de halfDuration/halfStagger (2000ms/
+        // 180ms, cf. ce composant) — à réajuster si ces valeurs changent.
+        "light-leak": {
+          "0%": { opacity: "1" },
+          "100%": { opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "caret-blink": "caret-blink 1.25s ease-out infinite",
+        "light-leak": "light-leak 1.4s ease 1.7s forwards",
       },
     },
   },

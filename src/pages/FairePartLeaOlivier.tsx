@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
+import PhotoSplitCinematique from '@/components/faire-part/PhotoSplitCinematique'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import {
   CINEMA_ROUGE_THEME,
@@ -94,17 +95,19 @@ export default function FairePartLeaOlivier() {
             `object-cover` la rognait si violemment qu'il ne restait que les
             bustes, têtes coupées (constaté à l'écran). En colonne, le
             cadrage vertical d'origine est conservé intact, et l'ensemble
-            fait écho à la colonne 9:16 du hero juste au-dessus. */}
+            fait écho à la colonne 9:16 du hero juste au-dessus.
+            Effet « split cinématique » demandé par le client : la photo se
+            reconstitue en deux moitiés au scroll, une seule fois — cf.
+            PhotoSplitCinematique pour le détail. aspectRatio="1000 / 1768"
+            = dimensions réelles du fichier, obligatoire pour ce composant
+            (il stretch les moitiés à la taille exacte de leur boîte, ne
+            recadre pas en object-fit: cover). */}
         <section className="px-6 pt-16 sm:pt-20" aria-label="Photo du couple">
           <figure className="mx-auto max-w-[420px]">
-            <img
+            <PhotoSplitCinematique
               src={OPENING_PHOTO.src}
               alt={OPENING_PHOTO.alt}
-              width={1000}
-              height={1768}
-              className="w-full rounded-[20px] object-cover shadow-[0_24px_60px_rgba(0,0,0,0.45)]"
-              loading="lazy"
-              decoding="async"
+              aspectRatio="1000 / 1768"
             />
           </figure>
         </section>
