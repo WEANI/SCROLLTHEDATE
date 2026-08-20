@@ -59,7 +59,8 @@ export default function FairePartEdwigeWilfried() {
           desktopSrc: '/edwige-wilfried-hero.mp4',
           posterSrc: '/edwige-wilfried-hero-poster.jpg',
         }}
-        trackHeightVh={700}
+        trackHeightVh={800}
+        tailVh={100}
         ariaLabel="Faire-part — Edwige & Wilfried"
       />
 
@@ -72,10 +73,19 @@ export default function FairePartEdwigeWilfried() {
           Comme ce bloc arrive après le hero dans le DOM (empilement par
           défaut, sans besoin de z-index explicite) et qu'il est opaque, il
           glisse depuis le bas et referme progressivement le cadre vidéo
-          plutôt que d'apparaître comme une section classique. -20vh calé
-          pour laisser le dernier chapitre (carte de clôture, ~0.95→1 de la
-          progression) le temps d'être lu avant que le recouvrement démarre. */}
-      <div className="relative z-10 -mt-[20vh] rounded-t-[32px] bg-[#FBF7F1] shadow-[0_-24px_60px_rgba(46,38,32,0.18)]">
+          plutôt que d'apparaître comme une section classique.
+          -100vh (pas -20vh) : le recouvrement doit être COMPLET au moment où
+          `.hs-frame` se libère de son épinglage, pas juste entamé — sinon,
+          dès que le scroll dépasse la piste, la vidéo (plus épinglée)
+          continue de défiler normalement sous un bloc qui n'a comblé qu'une
+          fraction de l'écran, laissant un vrai trou visible. Avec une marge
+          de -Xvh, ce bloc n'entre dans le viewport que Xvh avant la fin de
+          la piste ; pour qu'il ait fini de tout recouvrir pile à ce
+          moment-là, il faut X = 100 (une pleine hauteur d'écran), quelle que
+          soit la hauteur de la piste (700vh ici). Vérifié par calcul et par
+          mesure DOM en production — -20vh ne comblait que 20 % de l'écran
+          au moment critique. */}
+      <div className="relative z-10 -mt-[100vh] rounded-t-[32px] bg-[#FBF7F1] shadow-[0_-24px_60px_rgba(46,38,32,0.18)]">
         <PayloadSection
           slug={SLUG}
           coupleNames={COUPLE_NAMES}

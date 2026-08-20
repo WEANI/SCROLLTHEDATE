@@ -30,6 +30,21 @@ export interface HeroScrubProps {
   fps?: number
   /** Étiquette "Vidéo générée — Ns scrubbable" en coin bas-droit — désactivée par défaut (réservée à /demo). */
   showWatermark?: boolean
+  /**
+   * Portion finale de `trackHeightVh` (en vh) réservée au recouvrement du
+   * corps de page par-dessus le plan final (cf. `-mt-[100vh]` sur les pages
+   * faire-part) — 0 par défaut (aucun effet, comportement inchangé pour
+   * /demo qui n'a pas ce recouvrement). La progression `p` (qui pilote la
+   * vidéo ET les chapitres) atteint 1 et s'y fige `tailVh` avant la fin
+   * réelle de la piste : le plan final et le dernier chapitre ont donc le
+   * temps d'être pleinement affichés AVANT que le recouvrement (qui, lui,
+   * suit le scroll réel, pas `p`) ne commence à les couvrir. Sans ce
+   * découplage, combler tout l'écran nécessite ~1 hauteur d'écran de scroll,
+   * qui mordait sur la fenêtre du dernier chapitre (souvent bien plus
+   * courte) — vérifié en conditions réelles : le recouvrement démarrait
+   * avant même que le message de clôture ait fini d'apparaître.
+   */
+  tailVh?: number
 }
 
 /**
@@ -49,6 +64,7 @@ export default function HeroScrub({
   ariaLabel,
   fps = 24,
   showWatermark = false,
+  tailVh = 0,
 }: HeroScrubProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -108,8 +124,14 @@ export default function HeroScrub({
     const computeProgress = () => {
       const rect = track.getBoundingClientRect()
       const total = track.offsetHeight - window.innerHeight
-      if (total <= 0) return 0
-      return Math.min(Math.max(-rect.top / total, 0), 1)
+      // `contentTotal` (pas `total`) pilote `p` : voir la doc de `tailVh`
+      // ci-dessus. Le recouvrement, lui, se cale sur le scroll réel (marge
+      // négative en CSS, hors de ce composant) et profite donc pleinement
+      // du `tailVh` restant une fois `p` figé à 1.
+      const tailPx = (tailVh / 100) * window.innerHeight
+      const contentTotal = total - tailPx
+      if (contentTotal <= 0) return 0
+      return Math.min(Math.max(-rect.top / contentTotal, 0), 1)
     }
 
     let lastFrameSet = -1
@@ -219,7 +241,7 @@ export default function HeroScrub({
       window.removeEventListener('scroll', onScroll)
       cancelAnimationFrame(raf)
     }
-  }, [reducedMotion, videoFailed, chapters, fps, isDebug])
+  }, [reducedMotion, videoFailed, chapters, fps, isDebug, tailVh])
 
   /* ---------- Fallback prefers-reduced-motion : poster + chapitres empilés, aucun scroll-jacking ---------- */
   if (reducedMotion) {

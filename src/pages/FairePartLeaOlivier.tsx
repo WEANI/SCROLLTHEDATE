@@ -64,7 +64,8 @@ export default function FairePartLeaOlivier() {
           desktopSrc: '/lea-olivier-hero.mp4',
           posterSrc: '/lea-olivier-hero-poster.jpg',
         }}
-        trackHeightVh={960}
+        trackHeightVh={1060}
+        tailVh={100}
         ariaLabel="Faire-part — Léa & Olivier"
       />
 
@@ -74,13 +75,15 @@ export default function FairePartLeaOlivier() {
           `position: sticky` tant que la piste de scrub (960vh) n'est pas
           épuisée, et ce bloc, tiré vers le haut via une marge négative,
           glisse depuis le bas pour refermer progressivement le cadre vidéo.
-          -20vh calé pour laisser le dernier chapitre (carte de clôture,
-          ~0.974→1 de la progression) le temps d'être lu avant que le
-          recouvrement démarre. Ombre en noir pur (pas la teinte brune
+          -100vh (pas -20vh, cf. Edwige & Wilfried pour l'explication
+          complète du calcul) : le recouvrement doit être COMPLET pile au
+          moment où `.hs-frame` se libère de son épinglage — -20vh ne
+          comblait que 20 % de la hauteur d'écran à ce moment-là, laissant
+          un vrai trou visible. Ombre en noir pur (pas la teinte brune
           utilisée sur Edwige & Wilfried) : cohérente avec un fond déjà
           sombre. */}
       <div
-        className="relative z-10 -mt-[20vh] rounded-t-[32px] shadow-[0_-24px_60px_rgba(0,0,0,0.5)]"
+        className="relative z-10 -mt-[100vh] rounded-t-[32px] shadow-[0_-24px_60px_rgba(0,0,0,0.5)]"
         style={{ background: CINEMA_ROUGE_THEME.pageBg }}
       >
         <PayloadSection

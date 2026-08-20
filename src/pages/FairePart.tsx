@@ -118,7 +118,8 @@ export default function FairePart() {
         theme={theme}
         chapters={chapters}
         video={{ desktopSrc: invite.heroVideoUrl, posterSrc: invite.heroPosterUrl ?? undefined }}
-        trackHeightVh={700}
+        trackHeightVh={800}
+        tailVh={100}
         ariaLabel={`Faire-part — ${coupleNames}`}
       />
 
@@ -130,13 +131,18 @@ export default function FairePart() {
           bord d'attaque entre dans le viewport un peu avant la fin de cette
           piste, pendant que la vidéo est donc encore épinglée dessous —
           il glisse depuis le bas et referme progressivement le cadre vidéo.
+          -100vh (pas -20vh, cf. le même correctif sur les pages câblées en
+          dur pour l'explication complète) : le recouvrement doit être
+          COMPLET pile au moment où `.hs-frame` se libère de son épinglage,
+          quelle que soit la hauteur de la piste — sinon un vrai trou reste
+          visible dès que le scroll dépasse la piste.
           Couleurs dérivées du thème de l'ambiance (HeroTheme), pas d'un
           PayloadTheme/ClosingTheme dédié comme les pages câblées en dur :
           ce composant sert n'importe quel projet réel, quelle que soit son
           ambiance (cinema/minimal/editorial) — pas de charte propre à un
           couple en particulier ici. */}
       <div
-        className="relative z-10 -mt-[20vh] rounded-t-[32px]"
+        className="relative z-10 -mt-[100vh] rounded-t-[32px]"
         style={{
           background: theme.pageBg,
           boxShadow:
