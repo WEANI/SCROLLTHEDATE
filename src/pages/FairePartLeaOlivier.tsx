@@ -8,6 +8,7 @@ import {
   CINEMA_ROUGE_THEME,
   CLOSING_THEME,
   HERO_CHAPTERS,
+  OPENING_PHOTO,
   PAYLOAD_FIELDS,
   PAYLOAD_THEME,
   RSVP_CTA_LABEL,
@@ -84,8 +85,30 @@ export default function FairePartLeaOlivier() {
           sombre. */}
       <div
         className="relative z-10 -mt-[100vh] rounded-t-[32px] shadow-[0_-24px_60px_rgba(0,0,0,0.5)]"
-        style={{ background: CINEMA_ROUGE_THEME.pageBg }}
+        style={{ background: PAYLOAD_THEME.sectionBg }}
       >
+        {/* Photo d'ouverture — première chose vue après le film, avant les
+            informations pratiques. Colonne centrée à largeur limitée plutôt
+            qu'une image pleine largeur : cette photo est un PORTRAIT
+            (1000x1768) — étalée sur toute la largeur d'un écran desktop,
+            `object-cover` la rognait si violemment qu'il ne restait que les
+            bustes, têtes coupées (constaté à l'écran). En colonne, le
+            cadrage vertical d'origine est conservé intact, et l'ensemble
+            fait écho à la colonne 9:16 du hero juste au-dessus. */}
+        <section className="px-6 pt-16 sm:pt-20" aria-label="Photo du couple">
+          <figure className="mx-auto max-w-[420px]">
+            <img
+              src={OPENING_PHOTO.src}
+              alt={OPENING_PHOTO.alt}
+              width={1000}
+              height={1768}
+              className="w-full rounded-[20px] object-cover shadow-[0_24px_60px_rgba(27,21,18,0.18)]"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        </section>
+
         <PayloadSection
           slug={SLUG}
           coupleNames={COUPLE_NAMES}
