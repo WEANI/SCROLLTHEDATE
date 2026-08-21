@@ -25,16 +25,16 @@ export const SLUG = 'lea-olivier'
 export const COUPLE_INITIALS = 'L & O'
 export const BRIDE = 'Léa'
 export const GROOM = 'Olivier'
-export const WEDDING_DATE_LABEL = '15 août 2026'
+export const WEDDING_DATE_LABEL = '15 août 2027'
 /** Forme courte de la date — hero scrub uniquement (cf. edwigeWilfriedContent.ts pour le précédent de ce pattern). */
-export const WEDDING_DATE_SHORT = '15 août 26'
+export const WEDDING_DATE_SHORT = '15 août 27'
 export const CEREMONY_TIME = '16h00'
 /**
  * Date+heure ISO — source unique pour le bloc date et le compte à rebours
  * de DetailsSombre (cf. FairePartLeaOlivier.tsx). +02:00 = heure d'été en
  * France métropolitaine (le mariage a lieu le 15 août).
  */
-export const WEDDING_DATETIME = '2026-08-15T16:00:00+02:00'
+export const WEDDING_DATETIME = '2027-08-15T16:00:00+02:00'
 export const VENUE_NAME = 'Le Caillavet'
 export const VENUE_LOCATION = 'Saint-Aubin-de-Médoc'
 export const VENUE_ADDRESS = 'Route de Lacanau, Saint-Aubin-de-Médoc, Gironde'
@@ -78,12 +78,12 @@ export const CINEMA_ROUGE_THEME: HeroTheme = {
   id: 'cinema',
   label: 'Cinéma — Léa & Olivier',
   colorScheme: 'dark',
-  frameBg: '#15100F',
-  pageBg: '#15100F',
+  frameBg: '#0D0A08',
+  pageBg: '#0D0A08',
   vignette:
     'linear-gradient(180deg, rgba(10,7,7,0.20) 0%, rgba(10,7,7,0.05) 40%, rgba(10,7,7,0.82) 100%)',
   accent: '#8B1E28',
-  textPrimary: '#F5EFEA',
+  textPrimary: '#F3EAD9',
   textSecondary: '#BBAFA9',
   cardBg: 'rgba(21, 16, 15, 0.55)',
   cardBorder: 'rgba(247, 241, 236, 0.12)',
@@ -92,13 +92,13 @@ export const CINEMA_ROUGE_THEME: HeroTheme = {
 }
 
 export const PAYLOAD_THEME: Partial<PayloadTheme> = {
-  sectionBg: '#15100F',
+  sectionBg: '#0D0A08',
   cardBg: 'rgba(255, 255, 255, 0.05)',
   cardBorder: 'rgba(232, 196, 196, 0.14)', // touche de rose poudré discrète — cf. instructions §3
   accent: '#8B1E28',
   accentHover: '#A32732',
-  heading: '#F5EFEA',
-  text: '#E7DED9',
+  heading: '#F3EAD9',
+  text: '#F3EAD9',
 }
 
 /**
@@ -110,24 +110,24 @@ export const PAYLOAD_THEME: Partial<PayloadTheme> = {
  * aucune nouvelle couleur introduite pour ce Dialog.
  */
 export const RSVP_THEME: Partial<RsvpTheme> = {
-  modalBg: '#1C1613',
+  modalBg: '#14100C', // même écart de clarté qu'avant vs pageBg (#1C1613 vs l'ancien #15100F), reporté sur le nouveau fond
   shadow: '0 24px 64px rgba(0, 0, 0, 0.55)',
-  heading: '#F5EFEA',
-  text: '#F5EFEA',
+  heading: '#F3EAD9',
+  text: '#F3EAD9',
   textMuted: '#BBAFA9',
   accent: '#8B1E28',
   accentHover: '#A32732',
   accentSoft: 'rgba(139, 30, 40, 0.18)',
   inputBg: 'rgba(255, 255, 255, 0.05)',
   inputBorder: 'rgba(232, 196, 196, 0.14)',
-  inputText: '#F5EFEA',
+  inputText: '#F3EAD9',
   inputPlaceholder: 'rgba(187, 175, 169, 0.6)',
 }
 
 export const CLOSING_THEME: Partial<ClosingTheme> = {
-  bg: '#15100F',
+  bg: '#0D0A08',
   border: 'rgba(255, 255, 255, 0.10)',
-  heading: '#F5EFEA',
+  heading: '#F3EAD9',
   accent: '#8B1E28',
   text: '#BBAFA9',
 }

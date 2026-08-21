@@ -20,6 +20,7 @@ import {
   SLUG,
   VENUE_ADDRESS,
   VENUE_NAME,
+  WEDDING_DATE_LABEL,
   WEDDING_DATETIME,
 } from '@/components/faire-part/leaOlivierContent'
 
@@ -38,7 +39,10 @@ const COUPLE_NAMES = 'Léa & Olivier'
  */
 export default function FairePartLeaOlivier() {
   useEffect(() => {
-    document.title = 'Léa & Olivier — 15 août 2026 · Scroll The Date'
+    // Dérivé de WEDDING_DATE_LABEL plutôt que redupliqué en dur ici — la
+    // date changée pour 2027 avait laissé ce titre d'onglet en 2026,
+    // repéré à l'occasion de cette correction.
+    document.title = `${COUPLE_NAMES} — ${WEDDING_DATE_LABEL} · Scroll The Date`
 
     const meta = document.createElement('meta')
     meta.name = 'color-scheme'
@@ -134,6 +138,7 @@ export default function FairePartLeaOlivier() {
           rsvpTheme={RSVP_THEME}
           eyebrow={null}
           heading="Nous nous marions"
+          headingCascade
         >
           {(openRsvp) => (
             <DetailsSombre

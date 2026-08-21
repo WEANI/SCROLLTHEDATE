@@ -105,12 +105,21 @@ module.exports = {
           "0%": { opacity: "1" },
           "100%": { opacity: "0" },
         },
+        // Anneaux concentriques qui pulsent depuis le pin de la carte
+        // stylisée du Lieu (DetailsSombre) — boucle infinie, ne démarre
+        // qu'une fois la section révélée au scroll (les <circle> ne sont
+        // montés qu'à ce moment-là, cf. LieuMap).
+        "pulse-ring": {
+          "0%": { transform: "scale(1)", opacity: "0.7" },
+          "100%": { transform: "scale(2.6)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "caret-blink": "caret-blink 1.25s ease-out infinite",
         "light-leak": "light-leak 1.4s ease 1.7s forwards",
+        "pulse-ring": "pulse-ring 2.4s cubic-bezier(0,0,0.2,1) infinite",
       },
     },
   },

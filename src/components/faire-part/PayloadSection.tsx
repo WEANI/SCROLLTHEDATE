@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, FocusEvent, FormEvent, ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, PartyPopper } from 'lucide-react'
@@ -103,6 +103,11 @@ const DEFAULT_RSVP_THEME: RsvpTheme = {
  * changer sur les pages existantes — `eyebrow={null}` le masque,
  * `heading` remplace le texte par défaut (cf. Léa & Olivier, qui masque
  * l'eyebrow et personnalise le heading en "Nous nous marions").
+ *
+ * `headingCascade` : le titre se découpe en mots qui apparaissent en
+ * cascade au scroll (cf. CascadeHeading) au lieu d'être visible d'un coup
+ * — opt-in, `false` par défaut pour ne rien changer sur les pages
+ * existantes (cf. Léa & Olivier, seule page à l'activer).
  */
 export default function PayloadSection({
   slug,
@@ -113,6 +118,7 @@ export default function PayloadSection({
   rsvpTheme,
   eyebrow = 'Le faire-part',
   heading,
+  headingCascade = false,
   children,
 }: {
   slug: string
@@ -126,6 +132,8 @@ export default function PayloadSection({
   eyebrow?: string | null
   /** Texte du titre — par défaut "{coupleNames} se marient". */
   heading?: string
+  /** Le titre apparaît mot par mot au scroll plutôt que d'un coup. */
+  headingCascade?: boolean
   children?: (openRsvp: () => void) => ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -144,12 +152,20 @@ export default function PayloadSection({
             {eyebrow}
           </p>
         )}
-        <h2
-          className={`font-display text-[clamp(1.9rem,4.4vw,2.6rem)] font-normal italic leading-[1.15] ${eyebrow ? 'mt-4' : ''}`}
-          style={{ color: t.heading }}
-        >
-          {heading ?? `${coupleNames} se marient`}
-        </h2>
+        {headingCascade ? (
+          <CascadeHeading
+            text={heading ?? `${coupleNames} se marient`}
+            className={`font-display text-[clamp(1.9rem,4.4vw,2.6rem)] font-normal italic leading-[1.15] ${eyebrow ? 'mt-4' : ''}`}
+            color={t.heading}
+          />
+        ) : (
+          <h2
+            className={`font-display text-[clamp(1.9rem,4.4vw,2.6rem)] font-normal italic leading-[1.15] ${eyebrow ? 'mt-4' : ''}`}
+            style={{ color: t.heading }}
+          >
+            {heading ?? `${coupleNames} se marient`}
+          </h2>
+        )}
 
         {children ? (
           children(() => setOpen(true))
@@ -208,6 +224,77 @@ export default function PayloadSection({
         </DialogContent>
       </Dialog>
     </section>
+  )
+}
+
+/**
+ * Titre qui se découpe en mots, chacun apparaissant en cascade au scroll —
+ * translateY + légère rotation, easing cubic-bezier(.22,1,.36,1). Une seule
+ * IntersectionObserver pour tout le titre (pas une par mot) : c'est le
+ * titre entier qui doit entrer dans l'écran pour déclencher, chaque mot n'a
+ * qu'un délai différent une fois ce point atteint — pas 5 observers
+ * indépendants qui se déclencheraient à des instants de scroll différents.
+ * Respecte `prefers-reduced-motion`, même pattern que DetailsSombre/
+ * PhotoSplitCinematique.
+ */
+function CascadeHeading({ text, className, color }: { text: string; className: string; color: string }) {
+  const ref = useRef<HTMLHeadingElement>(null)
+  const [revealed, setRevealed] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReducedMotion(mq.matches)
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setRevealed(true)
+      return
+    }
+    const el = ref.current
+    if (!el || revealed) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setRevealed(true)
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.4 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [revealed, reducedMotion])
+
+  const words = text.split(' ')
+
+  return (
+    <h2 ref={ref} className={`${className} flex flex-wrap justify-center gap-x-[0.32em]`} style={{ color }}>
+      {words.map((word, i) => (
+        <span
+          key={i}
+          className="inline-block"
+          style={
+            reducedMotion
+              ? undefined
+              : {
+                  opacity: revealed ? 1 : 0,
+                  transform: revealed ? 'translateY(0) rotate(0deg)' : 'translateY(22px) rotate(-4deg)',
+                  transition: 'opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1)',
+                  transitionDelay: `${i * 110}ms`,
+                }
+          }
+        >
+          {word}
+        </span>
+      ))}
+    </h2>
   )
 }
 

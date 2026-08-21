@@ -288,7 +288,7 @@ function RsvpButton({ label, accent, onClick }: { label: string; accent: string;
   }, [])
 
   const handleClick = () => {
-    if (btnRef.current) spawnConfetti(btnRef.current, [accent, '#F5EFEA', CONFETTI_GOLD])
+    if (btnRef.current) spawnConfetti(btnRef.current, [accent, '#F3EAD9', CONFETTI_GOLD])
     onClick()
   }
 
@@ -309,6 +309,122 @@ function RsvpButton({ label, accent, onClick }: { label: string; accent: string;
     >
       {label}
     </button>
+  )
+}
+
+/**
+ * Tuile flip-clock — carte sombre avec ligne médiane, chiffre serif rouge,
+ * animation flip 3D (rotateX) à chaque changement de valeur. La technique
+ * (snap-puis-anime en deux `requestAnimationFrame` imbriqués) est
+ * nécessaire pour obtenir un vrai flip plutôt qu'un simple fondu : la
+ * nouvelle valeur ne doit devenir visible qu'APRÈS que la carte a déjà
+ * tourné à 90° (tranche, invisible), sinon on verrait le chiffre changer
+ * puis tourner dans le vide, pas « tourner pour révéler » —
+ * 1er rAF : bascule instantanée à rotateX(-90deg) sans transition (encore
+ *   l'ancienne valeur affichée, juste tournée sur la tranche) ;
+ * 2e rAF (frame suivante) : la nouvelle valeur remplace l'ancienne pendant
+ *   que la carte est sur la tranche (invisible), transition réactivée,
+ *   retour à rotateX(0) — la carte « tombe » sur la nouvelle valeur.
+ * Aucun flip au montage (seulement sur un VRAI changement, cf. `prevValue`
+ * initialisé à la valeur courante) — la première apparition de la tuile
+ * reste portée par la cascade du bloc (cf. `staggerStyle`), pas par ceci.
+ */
+function FlipTile({ value, line, accent }: { value: string; line: string; accent: string }) {
+  const [displayValue, setDisplayValue] = useState(value)
+  const [transform, setTransform] = useState('rotateX(0deg)')
+  const [transitionOn, setTransitionOn] = useState(true)
+  const prevValue = useRef(value)
+
+  useEffect(() => {
+    if (prevValue.current === value) return
+    prevValue.current = value
+    setTransitionOn(false)
+    setTransform('rotateX(-90deg)')
+    requestAnimationFrame(() => {
+      setDisplayValue(value)
+      requestAnimationFrame(() => {
+        setTransitionOn(true)
+        setTransform('rotateX(0deg)')
+      })
+    })
+  }, [value])
+
+  return (
+    <div
+      className="relative min-w-[58px] overflow-hidden rounded-[5px] border px-1 py-2.5"
+      style={{ borderColor: line, background: '#1A1211', perspective: '260px' }}
+    >
+      {/* ligne médiane — seam de carte flip-clock (ombre + léger reflet) */}
+      <span className="pointer-events-none absolute inset-x-1.5 top-1/2 h-px -translate-y-px" style={{ background: 'rgba(0,0,0,0.5)' }} aria-hidden />
+      <span className="pointer-events-none absolute inset-x-1.5 top-1/2 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} aria-hidden />
+      <span
+        className="font-display block text-center text-[27px] font-semibold"
+        style={{
+          color: accent,
+          transform,
+          transformOrigin: 'center',
+          transition: transitionOn ? 'transform 0.4s cubic-bezier(.22,1,.36,1)' : 'none',
+        }}
+        aria-hidden
+      >
+        {displayValue}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * Carte stylisée du Lieu — dessinée en SVG (fond sombre, routes en traits
+ * bruns organiques), pas de tuiles Google Maps (le vrai plan reste
+ * accessible via le lien "Voir sur la carte"). Pin rouge qui tombe du haut
+ * avec un rebond élastique (cubic-bezier(.34,1.56,.64,1) — la même courbe
+ * « back out » que le retour du bouton RSVP magnétique, cf. RsvpButton :
+ * un seul langage de mouvement « élastique » sur toute la page, pas deux
+ * qui se ressemblent sans être identiques), puis deux anneaux concentriques
+ * pulsent en boucle depuis sa base. Tout démarre une fois `revealed`
+ * (fourni par le RevealBlock du bloc "Le Lieu", même IntersectionObserver
+ * que le reste de la cascade) — les anneaux ne sont montés qu'à ce
+ * moment-là, pas juste masqués, pour ne pas animer hors écran.
+ */
+function LieuMap({ revealed, reducedMotion, accent }: { revealed: boolean; reducedMotion: boolean; accent: string }) {
+  return (
+    <div className="w-full overflow-hidden rounded-2xl" style={{ background: '#1A1211' }}>
+      <svg viewBox="0 0 240 200" className="block w-full" role="img" aria-label="Carte stylisée du lieu">
+        {/* routes organiques — traits bruns, jamais un vrai plan */}
+        <path d="M-10,152 Q50,120 82,155 T180,118 T260,138" stroke="#5C4A3A" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7" />
+        <path d="M-10,58 Q60,90 102,54 T220,68" stroke="#4A3A2E" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.55" />
+        <path d="M42,-10 Q30,80 72,120 T60,210" stroke="#5C4A3A" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeDasharray="1 7" opacity="0.5" />
+        <path d="M190,-10 Q168,70 202,130 T170,210" stroke="#4A3A2E" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeDasharray="1 7" opacity="0.45" />
+
+        {revealed && !reducedMotion && (
+          <>
+            <circle cx="120" cy="140" r="9" fill="none" stroke={accent} strokeWidth="1.5" className="animate-pulse-ring" style={{ transformBox: 'fill-box', transformOrigin: 'center' }} />
+            <circle
+              cx="120"
+              cy="140"
+              r="9"
+              fill="none"
+              stroke={accent}
+              strokeWidth="1.5"
+              className="animate-pulse-ring"
+              style={{ transformBox: 'fill-box', transformOrigin: 'center', animationDelay: '1.2s' }}
+            />
+          </>
+        )}
+
+        {/* pin — tombe du haut, rebond élastique au repos */}
+        <g
+          style={{
+            transform: reducedMotion || revealed ? 'translateY(0)' : 'translateY(-70px)',
+            opacity: reducedMotion ? 1 : revealed ? 1 : 0,
+            transition: reducedMotion ? 'none' : 'transform 0.9s cubic-bezier(.34,1.56,.64,1), opacity 0.4s ease',
+          }}
+        >
+          <path d="M120,140c0,0-24-28-24-48c0-13,11-24,24-24c13,0,24,11,24,24C144,112,120,140,120,140z" fill={accent} />
+          <circle cx="120" cy="92" r="9" fill="#1A1211" />
+        </g>
+      </svg>
+    </div>
   )
 }
 
@@ -417,11 +533,7 @@ export default function DetailsSombre({
                 </span>
               )}
               <div className="text-center">
-                <div className="relative min-w-[58px] rounded-[5px] border px-1 py-2.5" style={{ borderColor: t.line, background: '#1a1211' }}>
-                  <span className="font-mono text-[26px] font-bold tracking-[2px]" style={{ color: t.accent }} aria-hidden>
-                    {pad(value)}
-                  </span>
-                </div>
+                <FlipTile value={pad(value)} line={t.line} accent={t.accent} />
                 <div className="mt-1.5 font-mono text-[10px] tracking-[0.1em]" style={{ color: t.inkSoft }}>
                   {label}
                 </div>
@@ -437,24 +549,31 @@ export default function DetailsSombre({
         <div style={staggerStyle(0, revealed, reducedMotion)}>
           <SectionLabel accent={t.accent}>Le Lieu</SectionLabel>
         </div>
-        <p
-          className="font-display mb-2.5 text-center text-[30px] italic"
-          style={{ color: t.ink, ...staggerStyle(1, revealed, reducedMotion) }}
-        >
-          {venueName}
-        </p>
-        <p className="mb-4.5 text-center text-[15px]" style={{ color: t.inkSoft, ...staggerStyle(2, revealed, reducedMotion) }}>
-          {venueAddress}
-        </p>
-        <a
-          href={mapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mx-auto block w-max rounded-full border px-[22px] py-2.5 text-center text-[12.5px]"
-          style={{ borderColor: t.accent, color: t.ink, ...staggerStyle(3, revealed, reducedMotion) }}
-        >
-          voir sur la carte
-        </a>
+        <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-7">
+          <div className="w-full sm:w-[46%]" style={staggerStyle(1, revealed, reducedMotion)}>
+            <LieuMap revealed={revealed} reducedMotion={reducedMotion} accent={t.accent} />
+          </div>
+          <div className="w-full text-center sm:w-[54%] sm:text-left">
+            <p
+              className="font-display text-[28px] italic leading-[1.15]"
+              style={{ color: t.ink, ...staggerStyle(2, revealed, reducedMotion) }}
+            >
+              {venueName}
+            </p>
+            <p className="mt-2 text-[15px]" style={{ color: t.inkSoft, ...staggerStyle(3, revealed, reducedMotion) }}>
+              {venueAddress}
+            </p>
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold underline underline-offset-4"
+              style={{ color: t.accent, textDecorationColor: t.accent, ...staggerStyle(4, revealed, reducedMotion) }}
+            >
+              Voir sur la carte <span aria-hidden>→</span>
+            </a>
+          </div>
+        </div>
       </section>
     ),
   ]
