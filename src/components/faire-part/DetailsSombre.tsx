@@ -183,17 +183,22 @@ function hexToRgba(hex: string, alpha: number): string {
  * Explosion de confettis carrés depuis le centre de `originEl` — physique
  * simple en JS (gravité + rotation + fondu), frame-rate indépendante (delta
  * temps réel, pas un compte de frames). Nœuds DOM créés/animés/retirés en
- * dehors de React (transitoire, ~1,1s, pas d'intérêt à passer par un
+ * dehors de React (transitoire, ~1,3s, pas d'intérêt à passer par un
  * re-render) — pattern déjà établi dans ce fichier pour tout ce qui est
  * purement visuel et jetable.
+ *
+ * Réglages revus après retour vidéo (l'explosion passait quasi inaperçue,
+ * cf. RsvpButton pour l'autre partie du correctif — le Dialog s'ouvrait
+ * par-dessus avant qu'on ait le temps de la voir) : plus de particules,
+ * plus de vitesse et de dispersion, plus grosses.
  */
 function spawnConfetti(originEl: HTMLElement, colors: string[]) {
   const rect = originEl.getBoundingClientRect()
   const originX = rect.left + rect.width / 2
   const originY = rect.top + rect.height / 2
-  const COUNT = 32
-  const DURATION = 1100
-  const GRAVITY = 900 // px/s²
+  const COUNT = 56
+  const DURATION = 1300
+  const GRAVITY = 950 // px/s²
 
   const container = document.createElement('div')
   container.style.cssText = 'position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden;'
@@ -201,8 +206,8 @@ function spawnConfetti(originEl: HTMLElement, colors: string[]) {
 
   const particles = Array.from({ length: COUNT }, () => {
     const angle = Math.random() * Math.PI * 2
-    const speed = 160 + Math.random() * 260
-    const size = 6 + Math.random() * 6
+    const speed = 260 + Math.random() * 460
+    const size = 7 + Math.random() * 8
     const el = document.createElement('div')
     el.style.cssText = `position:absolute; width:${size}px; height:${size}px; background:${
       colors[Math.floor(Math.random() * colors.length)]
@@ -212,9 +217,9 @@ function spawnConfetti(originEl: HTMLElement, colors: string[]) {
       x: 0,
       y: 0,
       vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 200, // biais vers le haut à l'explosion, avant que la gravité reprenne
+      vy: Math.sin(angle) * speed - 320, // biais vers le haut à l'explosion, avant que la gravité reprenne
       rot: Math.random() * 360,
-      vrot: (Math.random() - 0.5) * 720, // deg/s
+      vrot: (Math.random() - 0.5) * 900, // deg/s
       el,
     }
   })
@@ -258,7 +263,16 @@ function spawnConfetti(originEl: HTMLElement, colors: string[]) {
  * transition — suivi instantané) ; hors rayon, translation ramenée à zéro
  * *avec* une transition à easing « back out » (dépasse légèrement puis
  * revient) pour le retour élastique demandé.
+ *
+ * `onClick` (ouverture du Dialog RSVP) est volontairement retardé de
+ * `CONFETTI_TO_DIALOG_DELAY_MS` après le déclenchement des confettis —
+ * repéré sur une vidéo réelle (mobile) que le Dialog s'ouvrait quasi
+ * instantanément par-dessus l'explosion, la rendant invisible. Ce délai
+ * laisse le pic de l'explosion se voir sur la page avant que le Dialog ne
+ * la recouvre.
  */
+const CONFETTI_TO_DIALOG_DELAY_MS = 550
+
 function RsvpButton({ label, accent, onClick }: { label: string; accent: string; onClick: () => void }) {
   const btnRef = useRef<HTMLButtonElement>(null)
   const [magnet, setMagnet] = useState({ x: 0, y: 0, active: false, snap: true })
@@ -289,7 +303,7 @@ function RsvpButton({ label, accent, onClick }: { label: string; accent: string;
 
   const handleClick = () => {
     if (btnRef.current) spawnConfetti(btnRef.current, [accent, '#F3EAD9', CONFETTI_GOLD])
-    onClick()
+    window.setTimeout(onClick, CONFETTI_TO_DIALOG_DELAY_MS)
   }
 
   return (
