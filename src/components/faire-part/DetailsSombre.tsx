@@ -25,13 +25,13 @@ import type { CSSProperties, ReactNode } from 'react'
  * Rythme vertical : chaque bloc (date+compte à rebours, Le Lieu, chaque
  * section optionnelle, RSVP) est rendu SANS marge externe — c'est le filet
  * qui porte, seul, tout l'espacement entre deux blocs, à parts égales
- * au-dessus et en dessous (`my-14`). Ce choix délibéré est ce qui garde le
+ * au-dessus et en dessous (`my-16`). Ce choix délibéré est ce qui garde le
  * filet visuellement centré entre les sections : un espacement ad hoc
  * différent au-dessus/en dessous de chaque bloc l'aurait décentré (c'était
  * le bug avant ce commentaire — mb-8 sur le filet + marges internes
- * disparates sur les blocs). Espacement volontairement généreux (112px de
- * bloc à bloc) pour un rendu plus épuré — proche du fichier fourni par le
- * client (108px).
+ * disparates sur les blocs). Espacement volontairement généreux (128px de
+ * bloc à bloc, encore agrandi sur retour client) pour un rendu plus épuré —
+ * dépasse même le fichier fourni par le client (108px).
  *
  * Reveal au scroll : chaque bloc se déclenche une fois, individuellement,
  * quand il entre dans le viewport (IntersectionObserver via
@@ -89,7 +89,7 @@ const DEFAULT_DETAILS_THEME: DetailsSombreTheme = {
 
 function Divider({ color }: { color: string }) {
   return (
-    <div className="my-14 flex items-center justify-center gap-2.5" style={{ color }} aria-hidden>
+    <div className="my-16 flex items-center justify-center gap-2.5" style={{ color }} aria-hidden>
       <span className="h-px max-w-24 flex-1" style={{ background: `linear-gradient(to right, transparent, currentColor 45%, currentColor 55%, transparent)` }} />
       <span className="h-[5px] w-[5px] rotate-45" style={{ background: 'currentColor' }} />
       <span className="h-[9px] w-[9px] rotate-45" style={{ background: 'currentColor' }} />
@@ -147,15 +147,27 @@ function useRevealOnScroll(threshold = 0.15) {
 }
 
 /**
- * Style d'un élément à l'index `i` d'une cascade — fondu + léger glissement
- * vers le haut, retardé de `i * stepMs`. `i=0` seul (bloc sans liste
- * interne, ex. Dress code) se comporte comme un simple fondu.
+ * Style d'un élément à l'index `i` d'une cascade — fondu + léger glissement,
+ * retardé de `i * stepMs`. `axis='up'` (défaut, tous les blocs existants) :
+ * glisse vers le haut, comme avant. `axis='right'` (Le Programme
+ * uniquement) : glisse depuis la droite, cf. LieuMap pour la même logique
+ * de paramètre optionnel n'affectant que son seul appelant. `i=0` seul
+ * (bloc sans liste interne, ex. Dress code) se comporte comme un simple
+ * fondu quel que soit l'axe.
  */
-function staggerStyle(i: number, revealed: boolean, reducedMotion: boolean, stepMs = 90): CSSProperties {
+function staggerStyle(
+  i: number,
+  revealed: boolean,
+  reducedMotion: boolean,
+  axis: 'up' | 'right' = 'up',
+  stepMs = 90,
+): CSSProperties {
   if (reducedMotion) return {}
+  const hidden = axis === 'right' ? 'translateX(28px)' : 'translateY(14px)'
+  const shown = axis === 'right' ? 'translateX(0)' : 'translateY(0)'
   return {
     opacity: revealed ? 1 : 0,
-    transform: revealed ? 'translateY(0)' : 'translateY(14px)',
+    transform: revealed ? shown : hidden,
     transition: 'opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1)',
     transitionDelay: `${i * stepMs}ms`,
   }
@@ -598,25 +610,40 @@ export default function DetailsSombre({
         <div style={staggerStyle(0, revealed, reducedMotion)}>
           <SectionLabel accent={t.accent}>Le Programme</SectionLabel>
         </div>
-        <ol className="ml-[9px] border-l-2 pl-[18px]" style={{ borderColor: t.line }}>
-          {programme.map((item, i) => (
-            <li key={i} className="relative pb-8 last:pb-0" style={staggerStyle(i + 1, revealed, reducedMotion)}>
-              <span
-                className="absolute -left-[23px] top-1 h-[7px] w-[7px] rotate-45"
-                style={{ background: t.accent }}
-                aria-hidden
-              />
-              <p className="text-[18px] font-bold" style={{ color: t.ink }}>
-                {item.time} — {item.label}
-              </p>
-              {item.sub && (
-                <p className="mt-0.5 text-[14px]" style={{ color: t.inkSoft }}>
-                  {item.sub}
+        <div className="relative">
+          {/* rail — toujours visible, sert de piste au remplissage */}
+          <div className="absolute left-[5px] top-0 bottom-0 w-[2px]" style={{ background: t.line }} aria-hidden />
+          {/* remplissage rouge — hauteur 0→100% une fois la section révélée */}
+          <div
+            className="absolute left-[5px] top-0 w-[2px]"
+            style={{
+              background: t.accent,
+              height: reducedMotion || revealed ? '100%' : '0%',
+              transition: reducedMotion ? 'none' : 'height 1.4s cubic-bezier(0.22,1,0.36,1)',
+            }}
+            aria-hidden
+          />
+          <ol className="relative pl-[26px]">
+            {programme.map((item, i) => (
+              <li key={i} className="relative pb-8 last:pb-0" style={staggerStyle(i + 1, revealed, reducedMotion, 'right')}>
+                {/* puce circulaire cerclée de rouge, sur le rail */}
+                <span
+                  className="absolute -left-[26px] top-0.5 h-3 w-3 rounded-full border-2"
+                  style={{ borderColor: t.accent, background: '#1A1211' }}
+                  aria-hidden
+                />
+                <p className="text-[18px] font-bold" style={{ color: t.ink }}>
+                  {item.time} — {item.label}
                 </p>
-              )}
-            </li>
-          ))}
-        </ol>
+                {item.sub && (
+                  <p className="mt-0.5 text-[14px]" style={{ color: t.inkSoft }}>
+                    {item.sub}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
     ))
   }
