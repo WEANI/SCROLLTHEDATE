@@ -16,7 +16,7 @@
  */
 
 import type { HeroChapter, HeroTheme } from '@/components/hero-scrub/types'
-import type { PayloadTheme } from './PayloadSection'
+import type { PayloadTheme, RsvpTheme } from './PayloadSection'
 import type { ClosingTheme } from './ClosingSection'
 import { parseProgrammeItem, type ProgrammeItem } from './DetailsSombre'
 
@@ -99,6 +99,29 @@ export const PAYLOAD_THEME: Partial<PayloadTheme> = {
   accentHover: '#A32732',
   heading: '#F5EFEA',
   text: '#E7DED9',
+}
+
+/**
+ * Palette du Dialog RSVP — le Dialog est clair par défaut sur tout le
+ * projet (cf. PayloadSection), demande explicite de reprendre ici le fond
+ * sombre + accent rouge du reste de la page plutôt que la modale claire
+ * générique. Valeurs reprises telles quelles de CINEMA_ROUGE_THEME/
+ * PAYLOAD_THEME ci-dessus (mêmes rouge, crème, bordure rose poudrée) —
+ * aucune nouvelle couleur introduite pour ce Dialog.
+ */
+export const RSVP_THEME: Partial<RsvpTheme> = {
+  modalBg: '#1C1613',
+  shadow: '0 24px 64px rgba(0, 0, 0, 0.55)',
+  heading: '#F5EFEA',
+  text: '#F5EFEA',
+  textMuted: '#BBAFA9',
+  accent: '#8B1E28',
+  accentHover: '#A32732',
+  accentSoft: 'rgba(139, 30, 40, 0.18)',
+  inputBg: 'rgba(255, 255, 255, 0.05)',
+  inputBorder: 'rgba(232, 196, 196, 0.14)',
+  inputText: '#F5EFEA',
+  inputPlaceholder: 'rgba(187, 175, 169, 0.6)',
 }
 
 export const CLOSING_THEME: Partial<ClosingTheme> = {

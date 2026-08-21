@@ -167,6 +167,151 @@ function RevealBlock({ children }: { children: (revealed: boolean, reducedMotion
   return <div ref={ref}>{children(revealed, reducedMotion)}</div>
 }
 
+/** Bronze du cachet de cire de l'ouverture (charte FELICITI) — réutilisé comme 3e couleur des confettis, pas une couleur inventée pour l'occasion. */
+const CONFETTI_GOLD = '#A6845C'
+
+function hexToRgba(hex: string, alpha: number): string {
+  const m = hex.replace('#', '')
+  const full = m.length === 3 ? m.split('').map((c) => c + c).join('') : m
+  const r = parseInt(full.slice(0, 2), 16)
+  const g = parseInt(full.slice(2, 4), 16)
+  const b = parseInt(full.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+/**
+ * Explosion de confettis carrés depuis le centre de `originEl` — physique
+ * simple en JS (gravité + rotation + fondu), frame-rate indépendante (delta
+ * temps réel, pas un compte de frames). Nœuds DOM créés/animés/retirés en
+ * dehors de React (transitoire, ~1,1s, pas d'intérêt à passer par un
+ * re-render) — pattern déjà établi dans ce fichier pour tout ce qui est
+ * purement visuel et jetable.
+ */
+function spawnConfetti(originEl: HTMLElement, colors: string[]) {
+  const rect = originEl.getBoundingClientRect()
+  const originX = rect.left + rect.width / 2
+  const originY = rect.top + rect.height / 2
+  const COUNT = 32
+  const DURATION = 1100
+  const GRAVITY = 900 // px/s²
+
+  const container = document.createElement('div')
+  container.style.cssText = 'position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden;'
+  document.body.appendChild(container)
+
+  const particles = Array.from({ length: COUNT }, () => {
+    const angle = Math.random() * Math.PI * 2
+    const speed = 160 + Math.random() * 260
+    const size = 6 + Math.random() * 6
+    const el = document.createElement('div')
+    el.style.cssText = `position:absolute; width:${size}px; height:${size}px; background:${
+      colors[Math.floor(Math.random() * colors.length)]
+    }; left:${originX}px; top:${originY}px; will-change:transform,opacity;`
+    container.appendChild(el)
+    return {
+      x: 0,
+      y: 0,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 200, // biais vers le haut à l'explosion, avant que la gravité reprenne
+      rot: Math.random() * 360,
+      vrot: (Math.random() - 0.5) * 720, // deg/s
+      el,
+    }
+  })
+
+  const start = performance.now()
+  let last = start
+
+  function frame(now: number) {
+    const dt = Math.min(0.032, (now - last) / 1000)
+    last = now
+    const t = (now - start) / DURATION
+    if (t >= 1) {
+      container.remove()
+      return
+    }
+    for (const p of particles) {
+      p.vy += GRAVITY * dt
+      p.x += p.vx * dt
+      p.y += p.vy * dt
+      p.rot += p.vrot * dt
+      p.el.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${p.rot}deg)`
+      p.el.style.opacity = String(Math.max(0, 1 - t))
+    }
+    requestAnimationFrame(frame)
+  }
+  requestAnimationFrame(frame)
+}
+
+/**
+ * Bouton RSVP magnétique + halo + confettis — desktop uniquement
+ * (`hover: hover` et `pointer: fine`, vérifié une fois au montage) : sur
+ * tactile, un bouton qui suit un curseur qui n'existe pas n'a pas de sens,
+ * et une magnétisation ratée sur un doigt donnerait un bouton qui « fuit »
+ * au tap. Sur tactile, le bouton reste un bouton normal — les confettis,
+ * eux, se déclenchent partout (au clic comme au tap).
+ *
+ * Magnétisme : distance curseur↔centre du bouton mesurée à chaque
+ * mousemove sur `window` (le rayon de 120px dépasse la taille du bouton,
+ * il faut donc écouter plus large que le bouton lui-même) ; dans le rayon,
+ * translation = décalage × 0,35 (proportionnelle à la distance, sans
+ * transition — suivi instantané) ; hors rayon, translation ramenée à zéro
+ * *avec* une transition à easing « back out » (dépasse légèrement puis
+ * revient) pour le retour élastique demandé.
+ */
+function RsvpButton({ label, accent, onClick }: { label: string; accent: string; onClick: () => void }) {
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const [magnet, setMagnet] = useState({ x: 0, y: 0, active: false, snap: true })
+
+  useEffect(() => {
+    const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    if (!canHover) return
+
+    const RADIUS = 120
+    const PULL = 0.35
+
+    const onMove = (e: MouseEvent) => {
+      const btn = btnRef.current
+      if (!btn) return
+      const rect = btn.getBoundingClientRect()
+      const dx = e.clientX - (rect.left + rect.width / 2)
+      const dy = e.clientY - (rect.top + rect.height / 2)
+      const dist = Math.hypot(dx, dy)
+      if (dist <= RADIUS) {
+        setMagnet({ x: dx * PULL, y: dy * PULL, active: true, snap: false })
+      } else {
+        setMagnet({ x: 0, y: 0, active: false, snap: true })
+      }
+    }
+    window.addEventListener('mousemove', onMove)
+    return () => window.removeEventListener('mousemove', onMove)
+  }, [])
+
+  const handleClick = () => {
+    if (btnRef.current) spawnConfetti(btnRef.current, [accent, '#F5EFEA', CONFETTI_GOLD])
+    onClick()
+  }
+
+  return (
+    <button
+      ref={btnRef}
+      type="button"
+      onClick={handleClick}
+      className="mx-auto block w-max rounded-full px-[26px] py-3 text-[12.5px] font-semibold uppercase tracking-[0.04em] text-white"
+      style={{
+        background: accent,
+        transform: `translate(${magnet.x}px, ${magnet.y}px)`,
+        transition: magnet.snap
+          ? 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease'
+          : 'box-shadow 0.35s ease',
+        boxShadow: magnet.active ? `0 0 42px 8px ${hexToRgba(accent, 0.5)}` : `0 0 0 0 ${hexToRgba(accent, 0)}`,
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
 function useCountdown(targetMs: number) {
   const compute = () => {
     const diff = Math.max(0, targetMs - Date.now())
@@ -380,14 +525,9 @@ export default function DetailsSombre({
       <p className="mb-4 text-center text-[15px] leading-[1.6]" style={{ color: t.inkSoft, ...staggerStyle(1, revealed, reducedMotion) }}>
         {rsvpText}
       </p>
-      <button
-        type="button"
-        onClick={openRsvp}
-        className="mx-auto block w-max rounded-full px-[26px] py-3 text-[12.5px] font-semibold uppercase tracking-[0.04em] text-white"
-        style={{ background: t.accent, ...staggerStyle(2, revealed, reducedMotion) }}
-      >
-        {rsvpCtaLabel}
-      </button>
+      <div style={staggerStyle(2, revealed, reducedMotion)}>
+        <RsvpButton label={rsvpCtaLabel} accent={t.accent} onClick={openRsvp} />
+      </div>
     </section>
   ))
 

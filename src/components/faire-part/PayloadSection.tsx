@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { FormEvent, ReactNode } from 'react'
+import type { CSSProperties, FocusEvent, FormEvent, ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, PartyPopper } from 'lucide-react'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
@@ -43,6 +43,43 @@ const DEFAULT_PAYLOAD_THEME: PayloadTheme = {
 }
 
 /**
+ * Palette du Dialog RSVP — historiquement toujours clair, quel que soit le
+ * thème de la page (lisibilité du formulaire avant tout). Reste le défaut
+ * ici pour ne rien changer sur les pages existantes ; `rsvpTheme` permet à
+ * une page de l'adapter (cf. Léa & Olivier, dont le Dialog reprend le
+ * fond sombre + accent rouge du reste de la page).
+ */
+export interface RsvpTheme {
+  modalBg: string
+  shadow: string
+  heading: string
+  text: string
+  textMuted: string
+  accent: string
+  accentHover: string
+  accentSoft: string
+  inputBg: string
+  inputBorder: string
+  inputText: string
+  inputPlaceholder: string
+}
+
+const DEFAULT_RSVP_THEME: RsvpTheme = {
+  modalBg: '#FFFFFF',
+  shadow: '0 24px 64px rgba(46, 38, 32, 0.28)',
+  heading: '#232326',
+  text: '#232326',
+  textMuted: 'rgba(35, 35, 38, 0.7)',
+  accent: '#B9776C',
+  accentHover: '#A6675C',
+  accentSoft: 'rgba(185, 119, 108, 0.1)',
+  inputBg: '#FFFFFF',
+  inputBorder: '#E8E5E1',
+  inputText: '#232326',
+  inputPlaceholder: 'rgba(154, 154, 160, 0.7)',
+}
+
+/**
  * Bloc payload — le faire-part fonctionnel (skill Étape 5.B.1), sous le
  * hero. Texte du formulaire posé **verbatim** — jamais reformulé.
  * Hébergement / infos pratiques non renseignés : le champ correspondant est
@@ -73,6 +110,7 @@ export default function PayloadSection({
   fields = [],
   rsvpCtaLabel = 'Répondre à l’invitation',
   theme,
+  rsvpTheme,
   eyebrow = 'Le faire-part',
   heading,
   children,
@@ -82,6 +120,8 @@ export default function PayloadSection({
   fields?: PayloadField[]
   rsvpCtaLabel?: string
   theme?: Partial<PayloadTheme>
+  /** Palette du Dialog RSVP — par défaut toujours clair, cf. RsvpTheme. */
+  rsvpTheme?: Partial<RsvpTheme>
   /** `null` pour masquer l'eyebrow au-dessus du titre. */
   eyebrow?: string | null
   /** Texte du titre — par défaut "{coupleNames} se marient". */
@@ -159,14 +199,29 @@ export default function PayloadSection({
           <VisuallyHidden>
             <DialogTitle>{rsvpCtaLabel}</DialogTitle>
           </VisuallyHidden>
-          <RsvpForm slug={slug} coupleNames={coupleNames} storageKey={rsvpStorageKey} />
+          <RsvpForm
+            slug={slug}
+            coupleNames={coupleNames}
+            storageKey={rsvpStorageKey}
+            theme={{ ...DEFAULT_RSVP_THEME, ...rsvpTheme }}
+          />
         </DialogContent>
       </Dialog>
     </section>
   )
 }
 
-function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames: string; storageKey: string }) {
+function RsvpForm({
+  slug,
+  coupleNames,
+  storageKey,
+  theme: t,
+}: {
+  slug: string
+  coupleNames: string
+  storageKey: string
+  theme: RsvpTheme
+}) {
   const publicQuery = trpc.rsvp.getPublic.useQuery(
     { slug },
     { retry: false, refetchOnWindowFocus: false, staleTime: Infinity },
@@ -232,16 +287,38 @@ function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames
     }
   }
 
+  // Couleurs en inline style plutôt qu'en classes Tailwind câblées en dur
+  // (`#B9776C`, `bg-white`...) : ce sont des valeurs de thème, pilotables
+  // via `rsvpTheme` (cf. PayloadSection). Hover/focus gérés en JS
+  // (`e.currentTarget.style...`), même pattern que le bouton CTA plus haut
+  // dans ce fichier — une couleur de thème dynamique ne peut pas passer par
+  // les pseudo-classes Tailwind (`hover:`/`focus:`), qui exigent une classe
+  // statique connue à la compilation.
   const fieldClass =
-    'w-full rounded-[10px] border border-neutral-200 bg-white px-4 py-3 text-[15px] text-ink placeholder:text-neutral-500/70 outline-none transition-colors focus:border-[#B9776C] focus:ring-2 focus:ring-[#B9776C]/20'
-  const labelClass = 'mb-2 block text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60'
+    'w-full rounded-[10px] border px-4 py-3 text-[15px] outline-none transition-colors placeholder:[color:var(--fp-rsvp-placeholder)]'
+  const fieldStyle: CSSProperties = {
+    background: t.inputBg,
+    borderColor: t.inputBorder,
+    color: t.inputText,
+    ['--fp-rsvp-placeholder' as string]: t.inputPlaceholder,
+  }
+  const onFieldFocus = (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.currentTarget.style.borderColor = t.accent
+    e.currentTarget.style.boxShadow = `0 0 0 3px ${t.accentSoft}`
+  }
+  const onFieldBlur = (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.currentTarget.style.borderColor = t.inputBorder
+    e.currentTarget.style.boxShadow = 'none'
+  }
+  const labelClass = 'mb-2 block text-[11px] font-semibold uppercase tracking-[0.14em]'
 
   return (
     <motion.div
       initial={{ y: 18, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="relative overflow-hidden rounded-[20px] bg-white p-8 shadow-[0_24px_64px_rgba(46,38,32,0.28)] sm:p-10"
+      className="relative overflow-hidden rounded-[20px] p-8 sm:p-10"
+      style={{ background: t.modalBg, boxShadow: t.shadow }}
     >
       <AnimatePresence mode="wait">
         {done ? (
@@ -252,21 +329,26 @@ function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col items-center py-6 text-center"
           >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#B9776C]/10">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: t.accentSoft }}>
               {done === 'yes' ? (
-                <PartyPopper size={24} className="text-[#B9776C]" aria-hidden />
+                <PartyPopper size={24} color={t.accent} aria-hidden />
               ) : (
-                <Heart size={24} className="text-[#B9776C]" aria-hidden />
+                <Heart size={24} color={t.accent} aria-hidden />
               )}
             </span>
-            <h2 className="font-display mt-6 text-[2rem] font-light tracking-[-0.01em] text-ink">Merci&nbsp;!</h2>
-            <p className="mt-3 max-w-sm text-[15px] leading-[1.65] text-ink/70">
+            <h2 className="font-display mt-6 text-[2rem] font-light tracking-[-0.01em]" style={{ color: t.heading }}>
+              Merci&nbsp;!
+            </h2>
+            <p className="mt-3 max-w-sm text-[15px] leading-[1.65]" style={{ color: t.textMuted }}>
               {done === 'yes'
                 ? `Votre réponse est bien arrivée. ${coupleNames} ont hâte de vous accueillir.`
                 : `Votre réponse est bien arrivée. Vous manquerez à ${coupleNames}.`}
             </p>
             {localOnly && (
-              <p className="mt-4 rounded-full bg-neutral-100 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
+              <p
+                className="mt-4 rounded-full border px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em]"
+                style={{ background: t.inputBg, borderColor: t.inputBorder, color: t.textMuted }}
+              >
                 Réponse enregistrée localement
               </p>
             )}
@@ -281,7 +363,8 @@ function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames
                   /* ignorer */
                 }
               }}
-              className="mt-6 text-[12px] font-medium uppercase tracking-[0.12em] text-[#B9776C] underline-offset-4 transition-colors hover:underline"
+              className="mt-6 text-[12px] font-medium uppercase tracking-[0.12em] underline-offset-4 transition-colors hover:underline"
+              style={{ color: t.accent }}
             >
               Modifier ma réponse
             </button>
@@ -289,15 +372,17 @@ function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames
         ) : (
           <motion.form key="form" onSubmit={onSubmit} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }}>
             <div className="text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#B9776C]">RSVP</p>
-              <h2 className="font-display mt-3 text-[clamp(1.6rem,3.6vw,2.1rem)] font-light leading-[1.15] text-ink">
-                Serez-vous <em className="italic text-[#B9776C]">des nôtres&nbsp;?</em>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: t.accent }}>
+                RSVP
+              </p>
+              <h2 className="font-display mt-3 text-[clamp(1.6rem,3.6vw,2.1rem)] font-light leading-[1.15]" style={{ color: t.heading }}>
+                Serez-vous <em className="italic" style={{ color: t.accent }}>des nôtres&nbsp;?</em>
               </h2>
             </div>
 
             <div className="mt-8 grid gap-5 sm:grid-cols-2">
               <div>
-                <label htmlFor="fp-rsvp-name" className={labelClass}>
+                <label htmlFor="fp-rsvp-name" className={labelClass} style={{ color: t.textMuted }}>
                   Nom &amp; prénom
                 </label>
                 <input
@@ -305,13 +390,16 @@ function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames
                   required
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
+                  onFocus={onFieldFocus}
+                  onBlur={onFieldBlur}
                   placeholder="Votre nom"
                   className={fieldClass}
+                  style={fieldStyle}
                   autoComplete="name"
                 />
               </div>
               <div>
-                <label htmlFor="fp-rsvp-email" className={labelClass}>
+                <label htmlFor="fp-rsvp-email" className={labelClass} style={{ color: t.textMuted }}>
                   Email
                 </label>
                 <input
@@ -320,15 +408,20 @@ function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onFocus={onFieldFocus}
+                  onBlur={onFieldBlur}
                   placeholder="vous@exemple.fr"
                   className={fieldClass}
+                  style={fieldStyle}
                   autoComplete="email"
                 />
               </div>
             </div>
 
             <div className="mt-6">
-              <span className={labelClass}>Votre réponse</span>
+              <span className={labelClass} style={{ color: t.textMuted }}>
+                Votre réponse
+              </span>
               <div className="flex gap-3" role="radiogroup" aria-label="Présence">
                 {(['yes', 'no'] as const).map((value) => {
                   const active = attending === value
@@ -339,12 +432,20 @@ function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames
                       role="radio"
                       aria-checked={active}
                       onClick={() => setAttending(value)}
+                      onMouseEnter={(e) => {
+                        if (!active) e.currentTarget.style.borderColor = t.accent
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!active) e.currentTarget.style.borderColor = t.inputBorder
+                      }}
                       className={cn(
                         'flex flex-1 items-center justify-center gap-2.5 rounded-full border px-5 py-3.5 text-[13px] font-semibold uppercase tracking-[0.08em] transition-all active:scale-[0.97]',
-                        active
-                          ? 'border-[#B9776C] bg-[#B9776C] text-white'
-                          : 'border-neutral-200 bg-white text-ink/70 hover:border-[#B9776C]/60 hover:text-ink',
                       )}
+                      style={
+                        active
+                          ? { borderColor: t.accent, background: t.accent, color: '#fff' }
+                          : { borderColor: t.inputBorder, background: t.inputBg, color: t.textMuted }
+                      }
                     >
                       {value === 'yes' ? 'On sera là !' : 'Hélas non'}
                     </button>
@@ -354,15 +455,18 @@ function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames
             </div>
 
             <div className="mt-5">
-              <label htmlFor="fp-rsvp-message" className={labelClass}>
+              <label htmlFor="fp-rsvp-message" className={labelClass} style={{ color: t.textMuted }}>
                 Un mot pour {coupleNames} (facultatif)
               </label>
               <textarea
                 id="fp-rsvp-message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
+                onFocus={onFieldFocus}
+                onBlur={onFieldBlur}
                 rows={3}
                 className={cn(fieldClass, 'resize-none')}
+                style={fieldStyle}
               />
             </div>
 
@@ -370,7 +474,10 @@ function RsvpForm({ slug, coupleNames, storageKey }: { slug: string; coupleNames
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-full bg-[#B9776C] py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#A6675C] disabled:cursor-wait disabled:opacity-70"
+                onMouseEnter={(e) => !submitting && (e.currentTarget.style.background = t.accentHover)}
+                onMouseLeave={(e) => !submitting && (e.currentTarget.style.background = t.accent)}
+                className="w-full rounded-full py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-colors disabled:cursor-wait disabled:opacity-70"
+                style={{ background: t.accent }}
               >
                 {submitting ? 'Envoi en cours…' : 'Envoyer ma réponse'}
               </button>

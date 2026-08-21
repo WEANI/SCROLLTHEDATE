@@ -16,6 +16,7 @@ import {
   PAYLOAD_THEME,
   PROGRAMME,
   RSVP_CTA_LABEL,
+  RSVP_THEME,
   SLUG,
   VENUE_ADDRESS,
   VENUE_NAME,
@@ -130,6 +131,7 @@ export default function FairePartLeaOlivier() {
           coupleNames={COUPLE_NAMES}
           rsvpCtaLabel={RSVP_CTA_LABEL}
           theme={PAYLOAD_THEME}
+          rsvpTheme={RSVP_THEME}
           eyebrow={null}
           heading="Nous nous marions"
         >
