@@ -12,6 +12,7 @@
  */
 
 import type { HeroChapter } from '@/components/hero-scrub/types'
+import { parseProgrammeItem, type ProgrammeItem } from './DetailsSombre'
 
 export const SLUG = 'edwige-wilfried'
 
@@ -52,6 +53,24 @@ export const ACCENT_PALE = '#E8C9C4' // rose poudré — fonds, filets, puces
 export const ACCENT_DEEP = '#B9776C' // même teinte, assombrie — texte, CTA, icônes
 
 export const RSVP_CTA_LABEL = 'Répondre à l’invitation'
+
+/**
+ * Programme de la journée — fourni verbatim par le couple, non reformulé
+ * (même règle que le reste du payload, cf. PayloadSection). Même format
+ * brut "Horaire — Titre — Détail" parsé par `parseProgrammeItem` que Léa &
+ * Olivier — cf. leaOlivierContent.ts pour le schéma proposé côté
+ * questionnaire (`jourj.programme`, pas encore implémenté).
+ */
+const PROGRAMME_RAW = [
+  '15h30 — Bienvenue — Accueil et bienvenue au domaine',
+  '16h00 — La cérémonie — Le moment le plus spéciale de la journée',
+  '17h00 — Apéritif — Accueil des invités',
+  '19h30 — Dîner — Repas et festivités',
+  '23h00 — Decoupe du gateau — Un doux moment',
+  '23h30 — La Fête — Nous danserons jusqu’a tard',
+  '4h30 — Au revoir — Fin d’une journée inoubliable',
+]
+export const PROGRAMME: ProgrammeItem[] = PROGRAMME_RAW.map(parseProgrammeItem)
 
 /**
  * Thème du bloc détails (DetailsSombre — cf. FairePartEdwigeWilfried.tsx) —

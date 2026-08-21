@@ -11,6 +11,7 @@ import {
   DETAILS_THEME,
   DRESS_CODE,
   HERO_CHAPTERS,
+  PROGRAMME,
   RSVP_CTA_LABEL,
   SLUG,
   VENUE_LOCATION,
@@ -94,12 +95,12 @@ export default function FairePartEdwigeWilfried() {
       <div className="relative z-10 -mt-[100vh] rounded-t-[32px] bg-[#FBF7F1] shadow-[0_-24px_60px_rgba(46,38,32,0.18)]">
         {/* DetailsSombre (children de PayloadSection) remplace la pile de
             cartes Date/Lieu/Heure/Dress code par défaut — mêmes effets que
-            Léa & Olivier (compte à rebours flip-clock, carte SVG du Lieu,
+            Léa & Olivier (compte à rebours à anneaux, carte SVG du Lieu,
             timeline du Programme, bouton RSVP magnétique + confettis),
             adaptés au thème clair de ce couple (cf. DETAILS_THEME, repris
-            de MINIMAL_THEME). `programme`/`lodging` omis : pas de vraie
-            donnée pour ce couple, comme pour Léa & Olivier avant que le
-            programme ne soit fourni — jamais de contenu inventé.
+            de MINIMAL_THEME). `programme` = PROGRAMME, fourni verbatim par
+            le couple (cf. edwigeWilfriedContent.ts). `lodging` reste omis :
+            pas de vraie donnée pour ce couple — jamais de contenu inventé.
             `confettiSecondary` = ACCENT_PALE (rose poudré) plutôt que le
             crème par défaut, pensé pour un fond sombre — sur cette page
             claire, le crème serait invisible. */}
@@ -109,6 +110,7 @@ export default function FairePartEdwigeWilfried() {
               weddingDateTime={WEDDING_DATETIME}
               venueName={VENUE_NAME}
               venueAddress={VENUE_LOCATION}
+              programme={PROGRAMME}
               dressCode={DRESS_CODE}
               rsvpCtaLabel={RSVP_CTA_LABEL}
               confettiSecondary={ACCENT_PALE}

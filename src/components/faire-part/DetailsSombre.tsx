@@ -360,27 +360,42 @@ function RsvpButton({
 }
 
 /**
- * Bordeaux + carte sombre + crème fixes pour le bloc date+compte à rebours
- * — indépendants de `theme` volontairement : demandé identique sur toutes
+ * Carte sombre + crème fixes pour le bloc date+compte à rebours —
+ * indépendants de `theme` volontairement : demandé identique sur toutes
  * les pages quel que soit le thème du couple (cf. Edwige & Wilfried, thème
  * clair par ailleurs). Reprend les valeurs déjà établies de Léa & Olivier
  * (CINEMA_ROUGE_THEME) plutôt que d'inventer une 2e palette sombre.
+ * L'accent (arc + chiffre), lui, N'EST PAS fixe — passé en prop depuis
+ * `theme.accent` (cf. DateCountdownCard) : demandé rouge bordeaux pour
+ * Léa & Olivier, rose pour Edwige & Wilfried — seule la carte reste
+ * délibérément sombre partout, pas la couleur d'accent.
  */
-const DATE_ACCENT = '#8B1E28'
 const DATE_INK = '#F5EFEA'
 const DATE_INK_SOFT = '#BBAFA9'
 
 /**
- * Anneau de progression circulaire — arc rouge qui se remplit
- * proportionnellement à `value / max` (ex. 45 secondes sur 60 = arc aux
- * 3/4), `stroke-linecap="round"` (bouts arrondis, pas carrés), animé via
+ * Anneau de progression circulaire — arc qui se remplit proportionnellement
+ * à `value / max` (ex. 45 secondes sur 60 = arc aux 3/4),
+ * `stroke-linecap="round"` (bouts arrondis, pas carrés), animé via
  * `stroke-dashoffset` (technique standard : dasharray = circonférence
  * complète, dashoffset = la part non dessinée). Piste de fond toujours
  * visible en filigrane pour situer l'arc. Chiffre serif au centre (HTML,
  * pas du texte SVG — plus simple à aligner/styler), taille réduite au-delà
  * de 2 chiffres (le compteur de jours peut monter à 3 chiffres).
  */
-function ProgressRing({ value, max, label, size = 72 }: { value: number; max: number; label: string; size?: number }) {
+function ProgressRing({
+  value,
+  max,
+  label,
+  accent,
+  size = 72,
+}: {
+  value: number
+  max: number
+  label: string
+  accent: string
+  size?: number
+}) {
   const strokeWidth = 4
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
@@ -398,7 +413,7 @@ function ProgressRing({ value, max, label, size = 72 }: { value: number; max: nu
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke={DATE_ACCENT}
+            stroke={accent}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -426,7 +441,8 @@ function ProgressRing({ value, max, label, size = 72 }: { value: number; max: nu
  * grand serif italique, révélée par dé-floutage (blur 12px→0 + fondu)
  * plutôt que le glissement générique de `staggerStyle` (traitement à part,
  * cf. plus bas), puis 4 anneaux de progression (jours/heures/min/sec) sous
- * une carte sombre à accent bordeaux fixe (cf. DATE_ACCENT ci-dessus).
+ * une carte sombre fixe, à l'accent du thème du couple (`accent`, cf.
+ * DATE_INK ci-dessus pour ce qui reste fixe).
  *
  * `max` de chaque anneau : heures/minutes/secondes sur leur cycle naturel
  * (24/60/60) ; jours sur le total de jours restants CAPTÉ UNE FOIS AU
@@ -437,10 +453,12 @@ function ProgressRing({ value, max, label, size = 72 }: { value: number; max: nu
  */
 function DateCountdownCard({
   weddingDateTime,
+  accent,
   revealed,
   reducedMotion,
 }: {
   weddingDateTime: string
+  accent: string
   revealed: boolean
   reducedMotion: boolean
 }) {
@@ -454,13 +472,13 @@ function DateCountdownCard({
   // pour que le premier remplissage se voie comme une entrée, pas comme un
   // état déjà acquis — cf. la même logique pour le fondu/flou de la date.
   const ring = (value: number, max: number, label: string) => (
-    <ProgressRing value={revealed ? value : 0} max={max} label={label} />
+    <ProgressRing value={revealed ? value : 0} max={max} label={label} accent={accent} />
   )
 
   return (
     <div className="rounded-2xl px-6 py-9 text-center" style={{ background: CARD_DARK_BG }}>
       <p
-        className="font-display text-[26px] italic leading-[1.2]"
+        className="font-display whitespace-nowrap text-[20px] italic leading-[1.2] sm:text-[26px]"
         style={{
           color: DATE_INK,
           filter: reducedMotion || revealed ? 'blur(0px)' : 'blur(12px)',
@@ -597,7 +615,7 @@ export default function DetailsSombre({
   // éléments internes (cf. staggerStyle).
   const blocks: ((revealed: boolean, reducedMotion: boolean) => ReactNode)[] = [
     (revealed, reducedMotion) => (
-      <DateCountdownCard weddingDateTime={weddingDateTime} revealed={revealed} reducedMotion={reducedMotion} />
+      <DateCountdownCard weddingDateTime={weddingDateTime} accent={t.accent} revealed={revealed} reducedMotion={reducedMotion} />
     ),
 
     (revealed, reducedMotion) => (
