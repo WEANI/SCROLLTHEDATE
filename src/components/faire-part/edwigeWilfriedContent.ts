@@ -30,6 +30,16 @@ export const WEDDING_DATE_SHORT = '21 déc. 27'
 export const CEREMONY_TIME = '16h00'
 export const VENUE_NAME = 'One&Only The Palm'
 export const VENUE_LOCATION = 'Dubaï'
+/**
+ * Date+heure ISO — source unique du bloc date et du compte à rebours de
+ * DetailsSombre (cf. FairePartEdwigeWilfried.tsx), dérivée de
+ * WEDDING_DATE_LABEL/CEREMONY_TIME ci-dessus sans rien changer à la date
+ * elle-même. +04:00 = heure du Golfe (Dubaï, lieu de la cérémonie, sans
+ * heure d'été) — CEREMONY_TIME est l'heure locale du lieu, pas celle de la
+ * France.
+ */
+export const WEDDING_DATETIME = '2027-12-21T16:00:00+04:00'
+export const DRESS_CODE = 'Couleurs pastel'
 
 /**
  * Accent pastel — proposition, pas une donnée client (aucun hex fourni par
@@ -41,15 +51,23 @@ export const VENUE_LOCATION = 'Dubaï'
 export const ACCENT_PALE = '#E8C9C4' // rose poudré — fonds, filets, puces
 export const ACCENT_DEEP = '#B9776C' // même teinte, assombrie — texte, CTA, icônes
 
-/** Bloc payload — texte du formulaire, verbatim, jamais reformulé. */
-export const PAYLOAD_FIELDS: { label: string; value: string }[] = [
-  { label: 'Date', value: WEDDING_DATE_LABEL },
-  { label: 'Lieu', value: `${VENUE_NAME}, ${VENUE_LOCATION}` },
-  { label: 'Heure de cérémonie', value: CEREMONY_TIME },
-  { label: 'Dress code', value: 'Couleurs pastel' },
-]
-
 export const RSVP_CTA_LABEL = 'Répondre à l’invitation'
+
+/**
+ * Thème du bloc détails (DetailsSombre — cf. FairePartEdwigeWilfried.tsx) —
+ * reprend telles quelles les couleurs déjà établies de MINIMAL_THEME
+ * (hero-scrub/themes.ts), aucune nouvelle couleur introduite. `line` =
+ * cardBorder de ce même thème (rose poudré à faible opacité, cohérent avec
+ * les filets déjà utilisés dans le hero). DetailsSombre garde volontairement
+ * ses cartes (tuiles flip-clock, carte du Lieu) sombres même ici — cf. sa
+ * doc, un choix délibéré de contraste, pas une valeur de thème.
+ */
+export const DETAILS_THEME = {
+  ink: '#2E2620',
+  inkSoft: '#6B5F53',
+  accent: ACCENT_DEEP,
+  line: 'rgba(184, 119, 108, 0.22)',
+}
 
 /**
  * Overlays répartis sur quatre plans précis du film (cf. instructions §2.A,

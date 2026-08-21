@@ -3,13 +3,19 @@ import { Link } from 'react-router'
 import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
+import DetailsSombre from '@/components/faire-part/DetailsSombre'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { MINIMAL_THEME } from '@/components/hero-scrub/themes'
 import {
+  ACCENT_PALE,
+  DETAILS_THEME,
+  DRESS_CODE,
   HERO_CHAPTERS,
-  PAYLOAD_FIELDS,
   RSVP_CTA_LABEL,
   SLUG,
+  VENUE_LOCATION,
+  VENUE_NAME,
+  WEDDING_DATETIME,
 } from '@/components/faire-part/edwigeWilfriedContent'
 
 const COUPLE_NAMES = 'Edwige & Wilfried'
@@ -86,12 +92,31 @@ export default function FairePartEdwigeWilfried() {
           mesure DOM en production — -20vh ne comblait que 20 % de l'écran
           au moment critique. */}
       <div className="relative z-10 -mt-[100vh] rounded-t-[32px] bg-[#FBF7F1] shadow-[0_-24px_60px_rgba(46,38,32,0.18)]">
-        <PayloadSection
-          slug={SLUG}
-          coupleNames={COUPLE_NAMES}
-          fields={PAYLOAD_FIELDS}
-          rsvpCtaLabel={RSVP_CTA_LABEL}
-        />
+        {/* DetailsSombre (children de PayloadSection) remplace la pile de
+            cartes Date/Lieu/Heure/Dress code par défaut — mêmes effets que
+            Léa & Olivier (compte à rebours flip-clock, carte SVG du Lieu,
+            timeline du Programme, bouton RSVP magnétique + confettis),
+            adaptés au thème clair de ce couple (cf. DETAILS_THEME, repris
+            de MINIMAL_THEME). `programme`/`lodging` omis : pas de vraie
+            donnée pour ce couple, comme pour Léa & Olivier avant que le
+            programme ne soit fourni — jamais de contenu inventé.
+            `confettiSecondary` = ACCENT_PALE (rose poudré) plutôt que le
+            crème par défaut, pensé pour un fond sombre — sur cette page
+            claire, le crème serait invisible. */}
+        <PayloadSection slug={SLUG} coupleNames={COUPLE_NAMES} rsvpCtaLabel={RSVP_CTA_LABEL} headingCascade>
+          {(openRsvp) => (
+            <DetailsSombre
+              weddingDateTime={WEDDING_DATETIME}
+              venueName={VENUE_NAME}
+              venueAddress={VENUE_LOCATION}
+              dressCode={DRESS_CODE}
+              rsvpCtaLabel={RSVP_CTA_LABEL}
+              confettiSecondary={ACCENT_PALE}
+              openRsvp={openRsvp}
+              theme={DETAILS_THEME}
+            />
+          )}
+        </PayloadSection>
         <PhotosSection />
         <ClosingSection coupleNames={COUPLE_NAMES} />
       </div>

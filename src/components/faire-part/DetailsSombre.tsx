@@ -87,6 +87,16 @@ const DEFAULT_DETAILS_THEME: DetailsSombreTheme = {
   line: 'rgba(247, 241, 236, 0.14)',
 }
 
+/**
+ * Fond des tuiles flip-clock et de la carte SVG du Lieu — volontairement
+ * une constante fixe, pas un champ de thème : ce sont des « écrans »/
+ * cartes à contraste fort (façon horloge digitale), qui restent sombres
+ * même sur une page au thème clair (cf. Edwige & Wilfried) plutôt que de
+ * se fondre dans la page — un choix délibéré, pas une valeur à varier par
+ * couple.
+ */
+const CARD_DARK_BG = '#1A1211'
+
 function Divider({ color }: { color: string }) {
   return (
     <div className="my-16 flex items-center justify-center gap-2.5" style={{ color }} aria-hidden>
@@ -285,7 +295,18 @@ function spawnConfetti(originEl: HTMLElement, colors: string[]) {
  */
 const CONFETTI_TO_DIALOG_DELAY_MS = 550
 
-function RsvpButton({ label, accent, onClick }: { label: string; accent: string; onClick: () => void }) {
+function RsvpButton({
+  label,
+  accent,
+  confettiSecondary,
+  onClick,
+}: {
+  label: string
+  accent: string
+  /** 2e couleur des confettis (avec `accent` et l'or de marque) — doit contraster avec le fond de la page, cf. DetailsSombre. */
+  confettiSecondary: string
+  onClick: () => void
+}) {
   const btnRef = useRef<HTMLButtonElement>(null)
   const [magnet, setMagnet] = useState({ x: 0, y: 0, active: false, snap: true })
 
@@ -314,7 +335,7 @@ function RsvpButton({ label, accent, onClick }: { label: string; accent: string;
   }, [])
 
   const handleClick = () => {
-    if (btnRef.current) spawnConfetti(btnRef.current, [accent, '#F3EAD9', CONFETTI_GOLD])
+    if (btnRef.current) spawnConfetti(btnRef.current, [accent, confettiSecondary, CONFETTI_GOLD])
     window.setTimeout(onClick, CONFETTI_TO_DIALOG_DELAY_MS)
   }
 
@@ -339,62 +360,123 @@ function RsvpButton({ label, accent, onClick }: { label: string; accent: string;
 }
 
 /**
- * Tuile flip-clock — carte sombre avec ligne médiane, chiffre serif rouge,
- * animation flip 3D (rotateX) à chaque changement de valeur. La technique
- * (snap-puis-anime en deux `requestAnimationFrame` imbriqués) est
- * nécessaire pour obtenir un vrai flip plutôt qu'un simple fondu : la
- * nouvelle valeur ne doit devenir visible qu'APRÈS que la carte a déjà
- * tourné à 90° (tranche, invisible), sinon on verrait le chiffre changer
- * puis tourner dans le vide, pas « tourner pour révéler » —
- * 1er rAF : bascule instantanée à rotateX(-90deg) sans transition (encore
- *   l'ancienne valeur affichée, juste tournée sur la tranche) ;
- * 2e rAF (frame suivante) : la nouvelle valeur remplace l'ancienne pendant
- *   que la carte est sur la tranche (invisible), transition réactivée,
- *   retour à rotateX(0) — la carte « tombe » sur la nouvelle valeur.
- * Aucun flip au montage (seulement sur un VRAI changement, cf. `prevValue`
- * initialisé à la valeur courante) — la première apparition de la tuile
- * reste portée par la cascade du bloc (cf. `staggerStyle`), pas par ceci.
+ * Bordeaux + carte sombre + crème fixes pour le bloc date+compte à rebours
+ * — indépendants de `theme` volontairement : demandé identique sur toutes
+ * les pages quel que soit le thème du couple (cf. Edwige & Wilfried, thème
+ * clair par ailleurs). Reprend les valeurs déjà établies de Léa & Olivier
+ * (CINEMA_ROUGE_THEME) plutôt que d'inventer une 2e palette sombre.
  */
-function FlipTile({ value, line, accent }: { value: string; line: string; accent: string }) {
-  const [displayValue, setDisplayValue] = useState(value)
-  const [transform, setTransform] = useState('rotateX(0deg)')
-  const [transitionOn, setTransitionOn] = useState(true)
-  const prevValue = useRef(value)
+const DATE_ACCENT = '#8B1E28'
+const DATE_INK = '#F5EFEA'
+const DATE_INK_SOFT = '#BBAFA9'
 
-  useEffect(() => {
-    if (prevValue.current === value) return
-    prevValue.current = value
-    setTransitionOn(false)
-    setTransform('rotateX(-90deg)')
-    requestAnimationFrame(() => {
-      setDisplayValue(value)
-      requestAnimationFrame(() => {
-        setTransitionOn(true)
-        setTransform('rotateX(0deg)')
-      })
-    })
-  }, [value])
+/**
+ * Anneau de progression circulaire — arc rouge qui se remplit
+ * proportionnellement à `value / max` (ex. 45 secondes sur 60 = arc aux
+ * 3/4), `stroke-linecap="round"` (bouts arrondis, pas carrés), animé via
+ * `stroke-dashoffset` (technique standard : dasharray = circonférence
+ * complète, dashoffset = la part non dessinée). Piste de fond toujours
+ * visible en filigrane pour situer l'arc. Chiffre serif au centre (HTML,
+ * pas du texte SVG — plus simple à aligner/styler), taille réduite au-delà
+ * de 2 chiffres (le compteur de jours peut monter à 3 chiffres).
+ */
+function ProgressRing({ value, max, label, size = 72 }: { value: number; max: number; label: string; size?: number }) {
+  const strokeWidth = 4
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const fraction = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0
+  const offset = circumference * (1 - fraction)
+  const digitSize = value >= 100 ? 15 : 19
 
   return (
-    <div
-      className="relative min-w-[58px] overflow-hidden rounded-[5px] border px-1 py-2.5"
-      style={{ borderColor: line, background: '#1A1211', perspective: '260px' }}
-    >
-      {/* ligne médiane — seam de carte flip-clock (ombre + léger reflet) */}
-      <span className="pointer-events-none absolute inset-x-1.5 top-1/2 h-px -translate-y-px" style={{ background: 'rgba(0,0,0,0.5)' }} aria-hidden />
-      <span className="pointer-events-none absolute inset-x-1.5 top-1/2 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} aria-hidden />
-      <span
-        className="font-display block text-center text-[27px] font-semibold"
+    <div className="flex flex-col items-center gap-2.5">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90" aria-hidden>
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(247, 241, 236, 0.14)" strokeWidth={strokeWidth} />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={DATE_ACCENT}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 0.6s linear' }}
+          />
+        </svg>
+        <div
+          className="font-display absolute inset-0 flex items-center justify-center font-semibold"
+          style={{ color: DATE_INK, fontSize: digitSize }}
+          aria-hidden
+        >
+          {value}
+        </div>
+      </div>
+      <div className="font-mono text-[10px] uppercase tracking-[0.22em]" style={{ color: DATE_INK_SOFT }}>
+        {label}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Bloc date + compte à rebours — section minimaliste : date complète en
+ * grand serif italique, révélée par dé-floutage (blur 12px→0 + fondu)
+ * plutôt que le glissement générique de `staggerStyle` (traitement à part,
+ * cf. plus bas), puis 4 anneaux de progression (jours/heures/min/sec) sous
+ * une carte sombre à accent bordeaux fixe (cf. DATE_ACCENT ci-dessus).
+ *
+ * `max` de chaque anneau : heures/minutes/secondes sur leur cycle naturel
+ * (24/60/60) ; jours sur le total de jours restants CAPTÉ UNE FOIS AU
+ * MONTAGE (`initialDays`, ref) — sinon, en recalculant `max = d` à chaque
+ * rendu, l'anneau des jours resterait à 100% en permanence (le numérateur
+ * et le dénominateur seraient toujours égaux), ce qui viderait de son sens
+ * la seule progression réellement longue et donc la plus lisible des 4.
+ */
+function DateCountdownCard({
+  weddingDateTime,
+  revealed,
+  reducedMotion,
+}: {
+  weddingDateTime: string
+  revealed: boolean
+  reducedMotion: boolean
+}) {
+  const targetMs = new Date(weddingDateTime).getTime()
+  const date = new Date(weddingDateTime)
+  const fullDate = date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const { d, h, m, s } = useCountdown(targetMs)
+  const initialDays = useRef(d)
+
+  // Avant révélation, chaque anneau part de 0 (même la fraction réelle)
+  // pour que le premier remplissage se voie comme une entrée, pas comme un
+  // état déjà acquis — cf. la même logique pour le fondu/flou de la date.
+  const ring = (value: number, max: number, label: string) => (
+    <ProgressRing value={revealed ? value : 0} max={max} label={label} />
+  )
+
+  return (
+    <div className="rounded-2xl px-6 py-9 text-center" style={{ background: CARD_DARK_BG }}>
+      <p
+        className="font-display text-[26px] italic leading-[1.2]"
         style={{
-          color: accent,
-          transform,
-          transformOrigin: 'center',
-          transition: transitionOn ? 'transform 0.4s cubic-bezier(.22,1,.36,1)' : 'none',
+          color: DATE_INK,
+          filter: reducedMotion || revealed ? 'blur(0px)' : 'blur(12px)',
+          opacity: reducedMotion || revealed ? 1 : 0,
+          transition: reducedMotion ? 'none' : 'filter 1s ease-out, opacity 1s ease-out',
         }}
-        aria-hidden
       >
-        {displayValue}
-      </span>
+        {fullDate}
+      </p>
+
+      <div className="mt-8 flex justify-center gap-3" aria-label={`Compte à rebours jusqu'au ${fullDate}`}>
+        {ring(d, initialDays.current || 1, 'Jours')}
+        {ring(h, 24, 'Heures')}
+        {ring(m, 60, 'Min')}
+        {ring(s, 60, 'Sec')}
+      </div>
     </div>
   )
 }
@@ -414,7 +496,7 @@ function FlipTile({ value, line, accent }: { value: string; line: string; accent
  */
 function LieuMap({ revealed, reducedMotion, accent }: { revealed: boolean; reducedMotion: boolean; accent: string }) {
   return (
-    <div className="w-full overflow-hidden rounded-2xl" style={{ background: '#1A1211' }}>
+    <div className="w-full overflow-hidden rounded-2xl" style={{ background: CARD_DARK_BG }}>
       <svg viewBox="0 0 240 200" className="block w-full" role="img" aria-label="Carte stylisée du lieu">
         {/* routes organiques — traits bruns, jamais un vrai plan */}
         <path d="M-10,152 Q50,120 82,155 T180,118 T260,138" stroke="#5C4A3A" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7" />
@@ -447,7 +529,7 @@ function LieuMap({ revealed, reducedMotion, accent }: { revealed: boolean; reduc
           }}
         >
           <path d="M120,140c0,0-24-28-24-48c0-13,11-24,24-24c13,0,24,11,24,24C144,112,120,140,120,140z" fill={accent} />
-          <circle cx="120" cy="92" r="9" fill="#1A1211" />
+          <circle cx="120" cy="92" r="9" fill={CARD_DARK_BG} />
         </g>
       </svg>
     </div>
@@ -484,6 +566,7 @@ export default function DetailsSombre({
   lodging,
   rsvpText = 'Nous serions honorés de vous compter parmi nous pour partager ce moment unique de notre vie.',
   rsvpCtaLabel = 'Répondre à l’invitation',
+  confettiSecondary = '#F3EAD9',
   openRsvp,
   theme,
 }: {
@@ -497,18 +580,12 @@ export default function DetailsSombre({
   lodging?: string[]
   rsvpText?: string
   rsvpCtaLabel?: string
+  /** 2e couleur des confettis RSVP — défaut = crème, pensé pour un fond sombre. Sur un thème clair (cf. Edwige & Wilfried), passer une teinte qui contraste avec la page (ex. le rose poudré du thème). */
+  confettiSecondary?: string
   openRsvp: () => void
   theme?: Partial<DetailsSombreTheme>
 }) {
   const t = { ...DEFAULT_DETAILS_THEME, ...theme }
-  const targetMs = new Date(weddingDateTime).getTime()
-  const date = new Date(weddingDateTime)
-  const weekday = date.toLocaleDateString('fr-FR', { weekday: 'long' })
-  const day = date.toLocaleDateString('fr-FR', { day: 'numeric' })
-  const month = date.toLocaleDateString('fr-FR', { month: 'long' })
-  const year = date.toLocaleDateString('fr-FR', { year: 'numeric' })
-  const { d, h, m, s } = useCountdown(targetMs)
-  const pad = (n: number) => String(n).padStart(2, '0')
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${venueName} ${venueAddress}`)}`
 
   // Tous les blocs, dans l'ordre — chacun précédé d'un filet et rendu dans
@@ -520,54 +597,7 @@ export default function DetailsSombre({
   // éléments internes (cf. staggerStyle).
   const blocks: ((revealed: boolean, reducedMotion: boolean) => ReactNode)[] = [
     (revealed, reducedMotion) => (
-      <div className="text-center">
-        <div style={staggerStyle(0, revealed, reducedMotion)}>
-          <div className="flex items-center justify-center gap-3.5">
-            <div className="flex-1 border-t pt-2" style={{ borderColor: t.line }}>
-              <span className="text-[18px] uppercase tracking-[0.08em] capitalize" style={{ color: t.inkSoft }}>
-                {weekday}
-              </span>
-            </div>
-            <div className="font-display text-[54px] italic leading-none" style={{ color: t.ink }}>
-              {day}
-            </div>
-            <div className="flex-1 border-t pt-2" style={{ borderColor: t.line }}>
-              <span className="text-[18px] uppercase tracking-[0.08em] capitalize" style={{ color: t.inkSoft }}>
-                {month}
-              </span>
-            </div>
-          </div>
-          <div className="mt-1.5 text-[19px]" style={{ color: t.inkSoft }}>
-            {year}
-          </div>
-        </div>
-
-        <div
-          className="mt-6 flex justify-center gap-2"
-          aria-label={`Compte à rebours jusqu'au ${weekday} ${day} ${month} ${year}`}
-        >
-          {([
-            [d, 'JOURS'],
-            [h, 'HRS'],
-            [m, 'MIN'],
-            [s, 'SEC'],
-          ] as const).map(([value, label], i) => (
-            <div key={label} className="flex items-center gap-2" style={staggerStyle(i + 1, revealed, reducedMotion)}>
-              {i > 0 && (
-                <span className="self-center pb-5 text-xl" style={{ color: t.line }} aria-hidden>
-                  :
-                </span>
-              )}
-              <div className="text-center">
-                <FlipTile value={pad(value)} line={t.line} accent={t.accent} />
-                <div className="mt-1.5 font-mono text-[10px] tracking-[0.1em]" style={{ color: t.inkSoft }}>
-                  {label}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <DateCountdownCard weddingDateTime={weddingDateTime} revealed={revealed} reducedMotion={reducedMotion} />
     ),
 
     (revealed, reducedMotion) => (
@@ -629,7 +659,7 @@ export default function DetailsSombre({
                 {/* puce circulaire cerclée de rouge, sur le rail */}
                 <span
                   className="absolute -left-[26px] top-0.5 h-3 w-3 rounded-full border-2"
-                  style={{ borderColor: t.accent, background: '#1A1211' }}
+                  style={{ borderColor: t.accent, background: CARD_DARK_BG }}
                   aria-hidden
                 />
                 <p className="text-[18px] font-bold" style={{ color: t.ink }}>
@@ -686,7 +716,7 @@ export default function DetailsSombre({
         {rsvpText}
       </p>
       <div style={staggerStyle(2, revealed, reducedMotion)}>
-        <RsvpButton label={rsvpCtaLabel} accent={t.accent} onClick={openRsvp} />
+        <RsvpButton label={rsvpCtaLabel} accent={t.accent} confettiSecondary={confettiSecondary} onClick={openRsvp} />
       </div>
     </section>
   ))
