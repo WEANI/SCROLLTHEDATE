@@ -155,7 +155,7 @@ function ScatterTitle({ text, revealed, reducedMotion }: { text: string; reveale
   )
 
   return (
-    <p className="font-display whitespace-nowrap text-[22px] italic leading-[1.2] sm:text-[28px]" aria-label={text}>
+    <p className="font-display whitespace-nowrap text-[36px] italic leading-[1.2] sm:text-[46px]" aria-label={text}>
       {chars.map((ch, i) => (
         <span
           key={i}
