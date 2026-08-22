@@ -591,6 +591,7 @@ export default function DetailsSombre({
   renderDate,
   renderLieu,
   renderProgramme,
+  renderDressCode,
   renderBeforeRsvp,
   renderRsvp,
   renderAfterRsvp,
@@ -627,6 +628,7 @@ export default function DetailsSombre({
     reducedMotion: boolean,
   ) => ReactNode
   renderProgramme?: (programme: ProgrammeItem[], accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
+  renderDressCode?: (dressCode: string, accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
   /**
    * Bloc additionnel inséré juste avant RSVP — pas un remplacement d'un
    * bloc existant comme les 4 slots ci-dessus, mais un EN PLUS (cf.
@@ -748,16 +750,20 @@ export default function DetailsSombre({
     )
   }
   if (dressCode) {
-    blocks.push((revealed, reducedMotion) => (
-      <section>
-        <div style={staggerStyle(0, revealed, reducedMotion)}>
-          <SectionLabel accent={t.accent}>Dress code</SectionLabel>
-        </div>
-        <p className="text-center text-[16px]" style={{ color: t.ink, ...staggerStyle(1, revealed, reducedMotion) }}>
-          {dressCode}
-        </p>
-      </section>
-    ))
+    blocks.push((revealed, reducedMotion) =>
+      renderDressCode ? (
+        renderDressCode(dressCode, t.accent, revealed, reducedMotion)
+      ) : (
+        <section>
+          <div style={staggerStyle(0, revealed, reducedMotion)}>
+            <SectionLabel accent={t.accent}>Dress code</SectionLabel>
+          </div>
+          <p className="text-center text-[16px]" style={{ color: t.ink, ...staggerStyle(1, revealed, reducedMotion) }}>
+            {dressCode}
+          </p>
+        </section>
+      ),
+    )
   }
   if (lodging && lodging.length > 0) {
     blocks.push((revealed, reducedMotion) => (

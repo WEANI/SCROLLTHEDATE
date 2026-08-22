@@ -40,7 +40,10 @@ export const VENUE_LOCATION = 'Dubaï'
  * France.
  */
 export const WEDDING_DATETIME = '2027-12-21T16:00:00+04:00'
-export const DRESS_CODE = 'Couleurs pastel'
+// Texte + repris tels quels de la maquette fournie par la cliente pour la
+// refonte de la section Dress code (cf. DressCodeCard dans
+// edwigeWilfriedEffects.tsx) — remplace l'ancien "Couleurs pastel".
+export const DRESS_CODE = 'Une tenue élégante est souhaitée pour célébrer ce moment dans une belle ambiance.'
 
 /**
  * Accent pastel — proposition, pas une donnée client (aucun hex fourni par

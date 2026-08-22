@@ -945,3 +945,45 @@ export function FoireAuxQuestions() {
     </section>
   )
 }
+
+// 7. Dress code — teintes suggérées -------------------------------------
+
+/**
+ * 3 teintes pastel approximant la capture fournie par la cliente (lavande,
+ * beige, rose) — à ajuster si elle a des références précises (Pantone,
+ * nuancier). Le texte de description et le footnote "Merci d'éviter le
+ * blanc" reprennent tels quels ceux visibles sur la capture, pas inventés.
+ */
+const EW_DRESS_CODE_COLORS = ['#B9A3CC', '#D8B99A', '#E8A9BC']
+
+/**
+ * Remplace le rendu par défaut de DetailsSombre (juste `dressCode` en texte
+ * brut) — mêmes conventions typographiques que le reste de la page
+ * (EwLabel pour le titre, pas de script font : Fraunces reste la seule
+ * serif chargée sur ce projet, cf. NotreHistoire pour le même choix).
+ */
+export function DressCodeCard({ dressCode }: { dressCode: string }) {
+  return (
+    <section className="text-center">
+      <EwLabel>Dress Code</EwLabel>
+      <p className="text-[15px] leading-[1.6]" style={{ color: 'rgba(46, 38, 32, 0.75)' }}>
+        {dressCode}
+      </p>
+      <p className="mt-8 mb-5 text-[12px] uppercase tracking-[0.16em]" style={{ color: 'rgba(46, 38, 32, 0.5)' }}>
+        Teintes suggérées
+      </p>
+      <div className="flex items-center justify-center gap-4">
+        {EW_DRESS_CODE_COLORS.map((c) => (
+          <span
+            key={c}
+            className="h-11 w-11 rounded-full"
+            style={{ background: c, boxShadow: '0 2px 6px rgba(46,38,32,0.18)', border: '2px solid #fff' }}
+          />
+        ))}
+      </div>
+      <p className="mt-6 font-display text-[13px] italic" style={{ color: 'rgba(46, 38, 32, 0.45)' }}>
+        Merci d'éviter le blanc, réservé aux mariés
+      </p>
+    </section>
+  )
+}

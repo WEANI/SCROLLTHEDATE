@@ -4,7 +4,7 @@ import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import DetailsSombre from '@/components/faire-part/DetailsSombre'
-import { EwEffectsStyles, FoireAuxQuestions, HorizontalProgramme, LieuMagnifier, NotreHistoire, ScatterDateCard, WaxSealRsvp } from '@/components/faire-part/edwigeWilfriedEffects'
+import { DressCodeCard, EwEffectsStyles, FoireAuxQuestions, HorizontalProgramme, LieuMagnifier, NotreHistoire, ScatterDateCard, WaxSealRsvp } from '@/components/faire-part/edwigeWilfriedEffects'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { MINIMAL_THEME } from '@/components/hero-scrub/themes'
 import {
@@ -136,6 +136,7 @@ export default function FairePartEdwigeWilfried() {
               renderProgramme={(programme, _accent, revealed, reducedMotion) => (
                 <HorizontalProgramme programme={programme} revealed={revealed} reducedMotion={reducedMotion} />
               )}
+              renderDressCode={(dressCode) => <DressCodeCard dressCode={dressCode} />}
               renderBeforeRsvp={() => <NotreHistoire />}
               renderRsvp={({ label, onClick }) => (
                 <WaxSealRsvp label={label} weddingDateLabel={WEDDING_DATE_LABEL} onClick={onClick} />
