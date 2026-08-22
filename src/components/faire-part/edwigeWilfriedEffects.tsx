@@ -805,6 +805,9 @@ export function WaxSealRsvp({
   return (
     <>
       <EwLabel>RSVP</EwLabel>
+      <p className="mb-6 text-center text-[15px] leading-[1.6]" style={{ color: 'rgba(46, 38, 32, 0.75)' }}>
+        Nous serions honorés de vous compter parmi nous pour partager ce moment unique de notre vie.
+      </p>
       <div className="flex flex-col items-center gap-5">
         <button
           ref={btnRef}
@@ -846,7 +849,7 @@ export function WaxSealRsvp({
           style={
             sealed
               ? { color: EW_GOLD, fontStyle: 'italic', animation: 'ew-fade-in 0.8s ease forwards' }
-              : { color: 'rgba(243, 234, 217, 0.55)', textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 12 }
+              : { color: 'rgba(46, 38, 32, 0.55)', textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 12 }
           }
         >
           {sealed ? `Scellé. On vous attend le ${weddingDateLabel}.` : 'Maintenir pour sceller'}
