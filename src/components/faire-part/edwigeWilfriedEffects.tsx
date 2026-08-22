@@ -754,6 +754,13 @@ const EW_PHOTOS = ['/edwige-wilfried-photo-1.jpg', '/edwige-wilfried-photo-2.jpg
  * (`animation-timeline`, cf. EwEffectsStyles) en priorité, repli JS
  * (scroll + rAF) si non supporté, et défilement horizontal natif simple
  * (pas d'épinglage) si `prefers-reduced-motion`.
+ *
+ * `max-h-*` + `max-w-*` (pas `h-*` fixe) sur chaque photo : les photos
+ * sont au format paysage (~4:3) — une hauteur fixe en vh les fait
+ * déborder en largeur sur un écran étroit (mobile), coupant l'image sur
+ * les côtés (constaté avec une vraie capture mobile). Avec les deux
+ * contraintes en max + `w-auto`/`h-auto`, le navigateur choisit
+ * lui-même la dimension limitante et la photo tient entière.
  */
 function HorizontalPhotos() {
   const outerRef = useRef<HTMLDivElement>(null)
@@ -799,7 +806,7 @@ function HorizontalPhotos() {
             key={src}
             src={src}
             alt=""
-            className="h-[60vh] w-auto shrink-0 rounded-2xl object-contain"
+            className="h-auto max-h-[60vh] w-auto max-w-[84vw] shrink-0 rounded-2xl object-contain"
             style={{ scrollSnapAlign: 'start' }}
             loading="lazy"
           />
@@ -822,7 +829,7 @@ function HorizontalPhotos() {
               key={src}
               src={src}
               alt=""
-              className="h-[72vh] w-auto rounded-2xl object-contain"
+              className="h-auto max-h-[72vh] w-auto max-w-[84cqw] rounded-2xl object-contain"
               style={{ boxShadow: '0 12px 40px rgba(46,38,32,0.22)' }}
               loading="lazy"
             />
