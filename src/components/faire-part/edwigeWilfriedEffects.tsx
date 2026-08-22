@@ -1343,3 +1343,62 @@ export function DressCodeCard({
     </section>
   )
 }
+
+/**
+ * Hébergements en cartes qui apparaissent en cascade — « proposition 1 »
+ * du prototype HTML autonome (fondu + léger glissement vers le haut,
+ * décalé de 150ms par carte), validée par Léa & Olivier. Chaque entrée de
+ * `lodging` est du texte libre du type "Nom (Lieu)" (cf. LODGING_OPTIONS) ;
+ * on sépare nom et lieu pour l'affichage en carte si ce gabarit matche,
+ * sinon on retombe sur le texte brut en une seule ligne — jamais de contenu
+ * inventé. Le déclenchement au scroll (`revealed`) est le même mécanisme
+ * que le reste de la page (RevealBlock côté DetailsSombre) : pas un 2e
+ * système d'animation, juste une transition CSS pilotée par ce booléen.
+ */
+export function LodgingCascadeCard({
+  lodging,
+  revealed = true,
+  reducedMotion = false,
+}: {
+  lodging: string[]
+  revealed?: boolean
+  reducedMotion?: boolean
+}) {
+  const p = usePalette()
+  return (
+    <section className="text-center">
+      <EwLabel>Hébergements</EwLabel>
+      <div className="mx-auto flex max-w-[420px] flex-col gap-3">
+        {lodging.map((item, i) => {
+          const match = /^(.+?)\s*\((.+)\)$/.exec(item)
+          const name = match ? match[1] : item
+          const place = match ? match[2] : null
+          return (
+            <div
+              key={item}
+              className="rounded-2xl px-6 py-4 text-left"
+              style={{
+                background: p.bg,
+                opacity: reducedMotion || revealed ? 1 : 0,
+                transform: reducedMotion || revealed ? 'translateY(0)' : 'translateY(18px)',
+                transition: reducedMotion
+                  ? 'none'
+                  : 'opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1)',
+                transitionDelay: reducedMotion ? '0ms' : `${i * 150}ms`,
+              }}
+            >
+              <p className="font-display text-[16px] italic" style={{ color: p.inkOnCard }}>
+                {name}
+              </p>
+              {place && (
+                <p className="mt-0.5 text-[13px]" style={{ color: `rgba(${p.inkOnCardRgb}, 0.6)` }}>
+                  {place}
+                </p>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}

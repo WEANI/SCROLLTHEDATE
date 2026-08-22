@@ -13,6 +13,7 @@ import {
   FoireAuxQuestions,
   HorizontalProgramme,
   LieuMagnifier,
+  LodgingCascadeCard,
   NotreHistoire,
   ScatterDateCard,
   WaxSealRsvp,
@@ -187,6 +188,9 @@ export default function FairePartLeaOlivier() {
               )}
               renderDressCode={(dressCode, _accent, revealed, reducedMotion) => (
                 <DressCodeCard dressCode={dressCode} colors={LAO_DRESS_CODE_COLORS} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
+              renderLodging={(lodging, _accent, revealed, reducedMotion) => (
+                <LodgingCascadeCard lodging={lodging} revealed={revealed} reducedMotion={reducedMotion} />
               )}
               renderBeforeRsvp={() => <NotreHistoire text={LAO_HISTOIRE_TEXT} keywords={LAO_HISTOIRE_KEYWORDS} photos={GALLERY_PHOTOS} />}
               renderBeforeRsvp2={() => <FoireAuxQuestions items={LAO_FAQ_ITEMS} />}

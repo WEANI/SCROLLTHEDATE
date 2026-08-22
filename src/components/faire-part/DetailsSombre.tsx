@@ -592,6 +592,7 @@ export default function DetailsSombre({
   renderLieu,
   renderProgramme,
   renderDressCode,
+  renderLodging,
   renderBeforeRsvp,
   renderBeforeRsvp2,
   renderRsvp,
@@ -629,6 +630,7 @@ export default function DetailsSombre({
   ) => ReactNode
   renderProgramme?: (programme: ProgrammeItem[], accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
   renderDressCode?: (dressCode: string, accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
+  renderLodging?: (lodging: string[], accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
   /**
    * Blocs additionnels insérés juste avant RSVP, dans l'ordre — pas un
    * remplacement d'un bloc existant comme les 4 slots ci-dessus, mais des
@@ -765,21 +767,25 @@ export default function DetailsSombre({
     )
   }
   if (lodging && lodging.length > 0) {
-    blocks.push((revealed, reducedMotion) => (
-      <section>
-        <div style={staggerStyle(0, revealed, reducedMotion)}>
-          <SectionLabel accent={t.accent}>Hébergements</SectionLabel>
-        </div>
-        <ul className="list-none p-0 text-center">
-          {lodging.map((item, i) => (
-            <li key={item} className="py-[5px] text-[15px]" style={{ color: t.inkSoft, ...staggerStyle(i + 1, revealed, reducedMotion) }}>
-              <span style={{ color: t.accent }}>• </span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </section>
-    ))
+    blocks.push((revealed, reducedMotion) =>
+      renderLodging ? (
+        renderLodging(lodging, t.accent, revealed, reducedMotion)
+      ) : (
+        <section>
+          <div style={staggerStyle(0, revealed, reducedMotion)}>
+            <SectionLabel accent={t.accent}>Hébergements</SectionLabel>
+          </div>
+          <ul className="list-none p-0 text-center">
+            {lodging.map((item, i) => (
+              <li key={item} className="py-[5px] text-[15px]" style={{ color: t.inkSoft, ...staggerStyle(i + 1, revealed, reducedMotion) }}>
+                <span style={{ color: t.accent }}>• </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ),
+    )
   }
 
   if (renderBeforeRsvp) {
