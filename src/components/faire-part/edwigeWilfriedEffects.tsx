@@ -622,7 +622,12 @@ export function NotreHistoire() {
     return () => observer.disconnect()
   }, [])
 
-  const words = EW_HISTOIRE_TEXT.split(' ')
+  // Un retour à la ligne à la fin de chaque phrase (split sur ". ", point
+  // gardé collé à la phrase précédente) plutôt qu'un seul bloc qui
+  // retourne à la ligne uniquement selon la largeur du conteneur — demandé
+  // pour rythmer la lecture. L'index continue across phrases pour garder
+  // des clés uniques, le scroll-ink (par mot) n'en dépend pas.
+  const sentences = EW_HISTOIRE_TEXT.split(/(?<=\.) /).map((s) => s.split(' '))
 
   return (
     // plein cadre (sort de la colonne étroite max-w-420 héritée de
@@ -635,21 +640,40 @@ export function NotreHistoire() {
     // Programme sur retour client.
     <section className="relative ml-[calc(50%-50vw)] w-screen py-20" style={{ background: 'transparent' }}>
       <EwLabel>Notre histoire</EwLabel>
-      <p
-        ref={pRef}
-        className="font-display mx-auto max-w-[26ch] text-center italic"
-        style={{ fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', lineHeight: 1.6 }}
-      >
-        {words.map((raw, i) => (
-          <span
-            key={i}
-            className="ew-word-ink inline"
-            style={{ color: EW_HISTOIRE_KEYWORDS.has(normalizeWord(raw)) ? EW_BORDEAUX : EW_INK }}
-          >
-            {raw}{' '}
-          </span>
-        ))}
-      </p>
+      <div className="relative mx-auto max-w-[26ch]">
+        {/* Alliances en fondu derrière le texte — image fournie par la
+            cliente, fond déjà transparent, recadrée pour retirer le filet
+            pointillé du bas (artefact de l'export). `aria-hidden` :
+            purement décoratif, le texte porte déjà tout le sens. Opacité
+            faible + pas d'interaction (`pointer-events-none`) pour rester
+            un filigrane, jamais gêner la lecture. */}
+        <img
+          src="/edwige-wilfried-alliances.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-1/2 w-[85%] max-w-[360px] -translate-x-1/2 -translate-y-1/2 select-none"
+          style={{ opacity: 0.32 }}
+        />
+        <p
+          ref={pRef}
+          className="font-display relative text-center italic"
+          style={{ fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', lineHeight: 1.6 }}
+        >
+          {sentences.map((sentenceWords, si) => (
+            <span key={si} className="block">
+              {sentenceWords.map((raw, i) => (
+                <span
+                  key={i}
+                  className="ew-word-ink inline"
+                  style={{ color: EW_HISTOIRE_KEYWORDS.has(normalizeWord(raw)) ? EW_BORDEAUX : EW_INK }}
+                >
+                  {raw}{' '}
+                </span>
+              ))}
+            </span>
+          ))}
+        </p>
+      </div>
     </section>
   )
 }
