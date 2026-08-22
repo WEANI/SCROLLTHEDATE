@@ -1038,8 +1038,8 @@ function DressCodeSwatch({ color, index, revealed, reducedMotion }: { color: str
   const strokeWidth = 2
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
-  const ringDelay = index * 180
-  const ringDuration = 550
+  const ringDelay = index * 300
+  const ringDuration = 1300
   const swatchDelay = ringDelay + ringDuration
 
   return (
