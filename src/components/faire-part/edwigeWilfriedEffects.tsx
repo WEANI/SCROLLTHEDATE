@@ -90,6 +90,31 @@ export function EwEffectsStyles() {
         to { transform: translateX(calc(-100% + 100cqw)); }
       }
 
+      /* Photos de Notre histoire — même mécanique que la piste du
+         Programme (view-timeline nommé sur le conteneur épinglé,
+         translateX sur la piste) — nom de timeline distinct
+         (--ew-photos-progress) pour ne pas entrer en conflit avec
+         --ew-progress (Programme) si les deux sections sont montées
+         simultanément sur la page. */
+      @supports (view-timeline-name: --x) {
+        .ew-photos-outer {
+          view-timeline-name: --ew-photos-progress;
+          view-timeline-axis: block;
+        }
+        .ew-photos-track[data-native="1"] {
+          animation-name: ew-photos-scroll;
+          animation-duration: 1ms;
+          animation-timing-function: linear;
+          animation-fill-mode: both;
+          animation-timeline: --ew-photos-progress;
+          animation-range: contain 0% contain 100%;
+        }
+      }
+      @keyframes ew-photos-scroll {
+        from { transform: translateX(0); }
+        to { transform: translateX(calc(-100% + 100cqw)); }
+      }
+
       /* Notre histoire — chaque mot part à 12% d'opacité et « s'encre »
          (opacité pleine) au fur et à mesure qu'il traverse le viewport, de
          façon réversible (on peut remonter). CSS natif : chaque span porte
@@ -713,7 +738,98 @@ export function NotreHistoire() {
           ))}
         </p>
       </div>
+      <HorizontalPhotos />
     </section>
+  )
+}
+
+const EW_PHOTOS = ['/edwige-wilfried-photo-1.jpg', '/edwige-wilfried-photo-2.jpg', '/edwige-wilfried-photo-3.jpg', '/edwige-wilfried-photo-4.jpg']
+
+/**
+ * Galerie photo — même mécanique que la piste épinglée du Programme
+ * (HorizontalProgramme, cf. plus haut) : conteneur externe grand, cadre
+ * `sticky` plein-écran, piste translatée horizontalement au scroll (le
+ * client a d'abord demandé « scroll vertical », puis corrigé en
+ * horizontal — cf. échange). Même triple implémentation : CSS natif
+ * (`animation-timeline`, cf. EwEffectsStyles) en priorité, repli JS
+ * (scroll + rAF) si non supporté, et défilement horizontal natif simple
+ * (pas d'épinglage) si `prefers-reduced-motion`.
+ */
+function HorizontalPhotos() {
+  const outerRef = useRef<HTMLDivElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [nativeSupported, setNativeSupported] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(false)
+
+  useEffect(() => {
+    setNativeSupported(typeof CSS !== 'undefined' && !!CSS.supports && CSS.supports('view-timeline-name: --x'))
+    setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  }, [])
+
+  useEffect(() => {
+    if (reducedMotion || nativeSupported) return
+    const outer = outerRef.current
+    const track = trackRef.current
+    if (!outer || !track) return
+
+    let raf = 0
+    const onScroll = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const rect = outer.getBoundingClientRect()
+        const total = rect.height - window.innerHeight
+        const progress = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 0
+        const maxShift = track.scrollWidth - track.clientWidth
+        track.style.transform = `translateX(${-progress * maxShift}px)`
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(raf)
+    }
+  }, [nativeSupported, reducedMotion])
+
+  if (reducedMotion) {
+    return (
+      <div className="-mx-6 mt-14 flex gap-6 overflow-x-auto px-6 pb-4 sm:mx-0 sm:px-0" style={{ scrollSnapType: 'x mandatory' }}>
+        {EW_PHOTOS.map((src) => (
+          <img
+            key={src}
+            src={src}
+            alt=""
+            className="h-[60vh] w-auto shrink-0 rounded-2xl object-contain"
+            style={{ scrollSnapAlign: 'start' }}
+            loading="lazy"
+          />
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div ref={outerRef} className="ew-photos-outer relative mt-14 ml-[calc(50%-50vw)] w-screen" style={{ height: '230vh' }}>
+      <div className="sticky top-0 h-screen overflow-hidden" style={{ containerType: 'inline-size' }}>
+        <div
+          ref={trackRef}
+          className="ew-photos-track flex h-full items-center gap-10 px-[8cqw]"
+          data-native={nativeSupported ? '1' : '0'}
+          style={{ width: 'max-content', willChange: 'transform' }}
+        >
+          {EW_PHOTOS.map((src) => (
+            <img
+              key={src}
+              src={src}
+              alt=""
+              className="h-[72vh] w-auto rounded-2xl object-contain"
+              style={{ boxShadow: '0 12px 40px rgba(46,38,32,0.22)' }}
+              loading="lazy"
+            />
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
