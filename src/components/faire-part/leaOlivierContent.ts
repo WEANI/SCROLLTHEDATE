@@ -19,6 +19,7 @@ import type { HeroChapter, HeroTheme } from '@/components/hero-scrub/types'
 import type { PayloadTheme, RsvpTheme } from './PayloadSection'
 import type { ClosingTheme } from './ClosingSection'
 import { parseProgrammeItem, type ProgrammeItem } from './DetailsSombre'
+import type { BespokePalette } from './edwigeWilfriedEffects'
 
 export const SLUG = 'lea-olivier'
 
@@ -204,3 +205,86 @@ export const HERO_CHAPTERS: HeroChapter[] = [
     segments: [{ text: BRIDE }, { text: '&', accent: true }, { text: GROOM }],
   },
 ]
+
+/**
+ * Refonte bespoke portée depuis Edwige & Wilfried (cf. edwigeWilfriedEffects.tsx
+ * pour le détail des mécaniques — lettres qui se recomposent, anneaux du
+ * compte à rebours, loupe magnétique, programme en défilement horizontal
+ * épinglé, sceau de cire, Notre histoire, Foire aux questions, Dress code
+ * animé) : mêmes composants, palette et contenu propres à ce couple.
+ *
+ * `LAO_PALETTE` — cartes Lieu/Programme/FAQ gardent la même carte claire
+ * que chez Edwige & Wilfried (`bg`/`bgProgramme` crème, `inkOnCard` sombre)
+ * — surface neutre, pas une couleur de marque, pas de raison de varier par
+ * couple. En revanche le texte posé DIRECTEMENT sur le fond de la page
+ * (`ink`) passe en crème : la page de Léa & Olivier est sombre
+ * (CINEMA_ROUGE_THEME.pageBg = #0D0A08), contrairement à celle d'Edwige &
+ * Wilfried — un ink sombre y serait illisible. `gold` (accent principal)
+ * devient leur rouge déjà établi (CINEMA_ROUGE_THEME.accent) plutôt que du
+ * doré inventé ; `bordeaux` (accent secondaire, pulse/mots-clés) devient
+ * leur rose poudré déjà établi (PAYLOAD_THEME.cardBorder) — un rose sur un
+ * rouge se distingue mieux qu'un rouge sur un rouge. Le sceau RSVP, lui,
+ * doit rester visuellement un sceau de cire ROUGE (pas rose) : `seal`
+ * reprend donc l'accent principal, pas `bordeaux` — cf. doc de `seal` dans
+ * BespokePalette pour pourquoi ce rôle est séparé des deux autres.
+ */
+export const LAO_PALETTE: BespokePalette = {
+  bg: '#f3ead9',
+  bgDate: 'transparent',
+  bgProgramme: '#f3ead9',
+  cream: '#F3EAD9',
+  ink: '#F3EAD9',
+  inkRgb: '243, 234, 217',
+  inkOnCard: '#2E2620',
+  inkOnCardRgb: '46, 38, 32',
+  bordeaux: '#E8C4C4',
+  bordeauxRgb: '232, 196, 196',
+  gold: '#8B1E28',
+  goldRgb: '139, 30, 40',
+  seal: '#8B1E28',
+  sealLight: '#A32732', // accentHover déjà établi dans PAYLOAD_THEME, pas une teinte inventée
+  sealDark: '#5C1018',
+}
+
+/**
+ * Texte non fourni ni par le couple ni par l'utilisateur — comme pour
+ * Edwige & Wilfried, purement pour satisfaire la mécanique technique
+ * (mots qui s'encrent au scroll). À REMPLACER dès que la vraie histoire du
+ * couple est fournie. Mots-clés choisis pour rester cohérents avec
+ * l'ambiance Cinéma/rouge de cette page (pas les mêmes que Edwige &
+ * Wilfried, pour ne pas dupliquer verbatim la même histoire pour deux
+ * couples différents).
+ */
+export const LAO_HISTOIRE_TEXT =
+  'Comme dans un film, tout a commencé par un regard qui s’attarde un peu trop longtemps. Puis une scène, une autre, et cette certitude tranquille : c’est cette histoire-là que nous voulions vivre. Aujourd’hui le rideau se lève sur le plus beau des chapitres.'
+export const LAO_HISTOIRE_KEYWORDS = ['regard', 'certitude', 'histoire', 'rideau']
+
+/**
+ * Mêmes 3 questions génériques que pour Edwige & Wilfried (logistique
+ * couple-agnostique, cf. edwigeWilfriedEffects.tsx pour la même remarque),
+ * réponses adaptées au lieu de ce couple (Le Caillavet). Provisoire —
+ * à ajuster dès que le couple confirme le contenu réel.
+ */
+export const LAO_FAQ_ITEMS: { q: string; a: string }[] = [
+  {
+    q: 'Y a-t-il un parking disponible ?',
+    a: 'Un parking est disponible sur place, au domaine du Caillavet. Nous vous communiquerons les modalités précises avant le jour J.',
+  },
+  {
+    q: 'Puis-je venir accompagné(e) ?',
+    a: "Le nombre de places étant compté, merci de vous en tenir aux personnes indiquées sur votre invitation. N'hésitez pas à nous contacter pour toute question.",
+  },
+  {
+    q: 'À quelle heure faut-il arriver ?',
+    a: 'Nous vous recommandons d\'arriver un peu avant le début de la cérémonie, à 16h00, afin de vous installer tranquillement.',
+  },
+]
+
+/**
+ * Dérivées du dress code textuel « Rouge et noir » (DRESS_CODE ci-dessus)
+ * — 2 teintes, pas 3 : pas de 3e couleur inventée juste pour matcher la
+ * mise en page à 3 pastilles d'Edwige & Wilfried. Rouge = leur accent déjà
+ * établi (CINEMA_ROUGE_THEME.accent), noir = teinte neutre proche de leur
+ * fond de page plutôt qu'un noir pur qui aurait disparu dessus.
+ */
+export const LAO_DRESS_CODE_COLORS = ['#8B1E28', '#1A1512']

@@ -7,10 +7,26 @@ import PhotoSplitCinematique from '@/components/faire-part/PhotoSplitCinematique
 import DetailsSombre from '@/components/faire-part/DetailsSombre'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import {
+  BespokePaletteProvider,
+  DressCodeCard,
+  EwEffectsStyles,
+  FoireAuxQuestions,
+  HorizontalProgramme,
+  LieuMagnifier,
+  NotreHistoire,
+  ScatterDateCard,
+  WaxSealRsvp,
+} from '@/components/faire-part/edwigeWilfriedEffects'
+import {
   CINEMA_ROUGE_THEME,
   CLOSING_THEME,
   DRESS_CODE,
   HERO_CHAPTERS,
+  LAO_DRESS_CODE_COLORS,
+  LAO_FAQ_ITEMS,
+  LAO_HISTOIRE_KEYWORDS,
+  LAO_HISTOIRE_TEXT,
+  LAO_PALETTE,
   LODGING_OPTIONS,
   OPENING_PHOTO,
   PAYLOAD_THEME,
@@ -56,7 +72,9 @@ export default function FairePartLeaOlivier() {
   }, [])
 
   return (
+    <BespokePaletteProvider palette={LAO_PALETTE}>
     <div style={{ background: CINEMA_ROUGE_THEME.pageBg }}>
+      <EwEffectsStyles />
       {/* En-tête minimal — pas le Navbar marketing du site public. Pastille
           sombre translucide pour rester lisible quelle que soit l'image du
           scrub derrière (sceau de cire sombre comme tunnel de lumière). */}
@@ -156,6 +174,23 @@ export default function FairePartLeaOlivier() {
                 accent: CINEMA_ROUGE_THEME.accent,
                 line: PAYLOAD_THEME.cardBorder,
               }}
+              renderDate={(_accent, revealed, reducedMotion) => (
+                <ScatterDateCard weddingDateTime={WEDDING_DATETIME} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
+              renderLieu={({ venueName, venueAddress, mapsUrl }) => (
+                <LieuMagnifier venueName={venueName} venueAddress={venueAddress} mapsUrl={mapsUrl} photoSrc="" />
+              )}
+              renderProgramme={(programme, _accent, revealed, reducedMotion) => (
+                <HorizontalProgramme programme={programme} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
+              renderDressCode={(dressCode, _accent, revealed, reducedMotion) => (
+                <DressCodeCard dressCode={dressCode} colors={LAO_DRESS_CODE_COLORS} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
+              renderBeforeRsvp={() => <NotreHistoire text={LAO_HISTOIRE_TEXT} keywords={LAO_HISTOIRE_KEYWORDS} photos={[]} />}
+              renderBeforeRsvp2={() => <FoireAuxQuestions items={LAO_FAQ_ITEMS} />}
+              renderRsvp={({ label, onClick }) => (
+                <WaxSealRsvp label={label} weddingDateLabel={WEDDING_DATE_LABEL} initials="L · O" onClick={onClick} />
+              )}
             />
           )}
         </PayloadSection>
@@ -163,5 +198,6 @@ export default function FairePartLeaOlivier() {
         <ClosingSection coupleNames={COUPLE_NAMES} theme={CLOSING_THEME} />
       </div>
     </div>
+    </BespokePaletteProvider>
   )
 }

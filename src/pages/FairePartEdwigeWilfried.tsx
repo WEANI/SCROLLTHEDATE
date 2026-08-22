@@ -4,7 +4,18 @@ import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import DetailsSombre from '@/components/faire-part/DetailsSombre'
-import { DressCodeCard, EwEffectsStyles, FoireAuxQuestions, HorizontalProgramme, LieuMagnifier, NotreHistoire, ScatterDateCard, WaxSealRsvp } from '@/components/faire-part/edwigeWilfriedEffects'
+import {
+  BespokePaletteProvider,
+  DressCodeCard,
+  EW_PALETTE,
+  EwEffectsStyles,
+  FoireAuxQuestions,
+  HorizontalProgramme,
+  LieuMagnifier,
+  NotreHistoire,
+  ScatterDateCard,
+  WaxSealRsvp,
+} from '@/components/faire-part/edwigeWilfriedEffects'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { MINIMAL_THEME } from '@/components/hero-scrub/themes'
 import {
@@ -47,6 +58,7 @@ export default function FairePartEdwigeWilfried() {
   }, [])
 
   return (
+    <BespokePaletteProvider palette={EW_PALETTE}>
     <div className="bg-[#FBF7F1]">
       <EwEffectsStyles />
 
@@ -151,5 +163,6 @@ export default function FairePartEdwigeWilfried() {
         <ClosingSection coupleNames={COUPLE_NAMES} />
       </div>
     </div>
+    </BespokePaletteProvider>
   )
 }

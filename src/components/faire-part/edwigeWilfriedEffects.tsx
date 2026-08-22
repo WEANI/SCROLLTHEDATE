@@ -1,44 +1,102 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react'
 import { useCountdown, type ProgrammeItem } from './DetailsSombre'
 
 /**
- * Refonte bespoke de plusieurs sections du faire-part « Edwige & Wilfried »
- * — date (lettres qui se recomposent + compte à rebours en Fraunces
- * variable), programme (défilement horizontal épinglé), lieu (loupe
- * magnétique sur carte SVG à deux calques), RSVP (sceau de cire pressé),
- * plus « Notre histoire » et « Foire aux questions » (paragraphe qui
- * s'encre au scroll / accordéon), ajoutées ensuite. Branché via les slots
- * `renderDate`/`renderLieu`/`renderProgramme`/`renderRsvp`/
- * `renderBeforeRsvp`/`renderAfterRsvp` de DetailsSombre — cf. ce fichier
- * pour pourquoi ces sections sortent du système de thème générique plutôt
- * que d'être une variation de plus.
+ * Refonte bespoke de plusieurs sections de faire-part — date (lettres qui
+ * se recomposent + compte à rebours en Fraunces variable), programme
+ * (défilement horizontal épinglé), lieu (loupe magnétique sur carte SVG à
+ * deux calques), RSVP (sceau de cire pressé), plus « Notre histoire »
+ * (paragraphe qui s'encre au scroll + galerie photo en défilement
+ * horizontal épinglé) et « Foire aux questions » (accordéon), ajoutées
+ * ensuite. Conçue au départ pour Edwige & Wilfried, puis généralisée
+ * (palette en `BespokePalette`, cf. plus bas) pour être réutilisée par
+ * Léa & Olivier avec leur propre thème — d'où le nom de fichier resté
+ * `edwigeWilfriedEffects.tsx` mais le contenu maintenant partagé. Branché
+ * via les slots `renderDate`/`renderLieu`/`renderProgramme`/
+ * `renderDressCode`/`renderRsvp`/`renderBeforeRsvp`/`renderBeforeRsvp2` de
+ * DetailsSombre — cf. ce fichier pour pourquoi ces sections sortent du
+ * système de thème générique plutôt que d'être une variation de plus.
  *
- * Palette FIXE, propre à cette redesign — pas les couleurs du thème
- * générique de la page (rose pastel, cf. DETAILS_THEME dans
- * edwigeWilfriedContent.ts). Fond des cases Date/Lieu/Programme repassé en
- * clair sur retour client (c'était sombre au départ) — `EW_BG`/
- * `EW_BG_PROGRAMME` valent la même teinte crème que `EW_CREAM` (pas une 2e
- * couleur inventée), et le texte qui était en crème sur ces 3 cases est
- * passé à `EW_INK` (sombre). La case Date, elle, est passée en blanc pur
- * (`EW_BG_DATE`) sur un 2e retour client — distincte de `EW_BG` pour ne
- * pas aussi blanchir la carte du Lieu, qui garde le crème. Le sceau RSVP
- * n'a pas été redemandé en clair : il garde son fond bordeaux/EW_CREAM
- * d'origine, `EW_CREAM` reste donc utile telle quelle pour lui. Accent
- * bordeaux/doré inchangés (ce sont des accents, pas le « texte blanc » visé).
+ * `BespokePalette` — toutes les couleurs identitaires de cette refonte,
+ * paramétrables par couple via `BespokePaletteProvider` (Context — plus
+ * simple que de faire passer `palette` en prop à travers chaque composant
+ * imbriqué, cf. `usePalette` ci-dessous). Deux rôles d'encre distincts :
+ * `ink`/`inkRgb` pour le texte posé DIRECTEMENT sur le fond de la page du
+ * couple (case Date transparente, Notre histoire, Dress code — sombre
+ * chez Edwige & Wilfried dont la page est claire, crème chez Léa & Olivier
+ * dont la page est sombre) ; `inkOnCard`/`inkOnCardRgb` pour le texte posé
+ * sur les cartes claires (Lieu, Programme, questions de la FAQ) qui
+ * restent claires quel que soit le couple — donc la même encre sombre
+ * fonctionne pour les deux, jamais besoin de varier ce rôle.
  */
-const EW_BG = '#f3ead9'
-const EW_BG_DATE = 'transparent' // sur retour client — la case Date se fond maintenant dans le fond de la page (blanc pur essayé juste avant, non retenu)
-const EW_BG_PROGRAMME = '#f3ead9'
-const EW_CREAM = '#f3ead9'
-const EW_INK = '#2E2620' // texte sombre — repris de DETAILS_THEME.ink (edwigeWilfriedContent.ts), déjà utilisé ailleurs sur cette page
-const EW_BORDEAUX = '#b02634'
-const EW_GOLD = '#c9a961'
+export type BespokePalette = {
+  /** Fond de la case Lieu et de la piste Programme — carte claire, posée sur le fond (clair ou sombre) de la page du couple. */
+  bg: string
+  /** Fond de la case Date — transparent pour les deux couples (se fond dans le fond de la page). */
+  bgDate: string
+  bgProgramme: string
+  /** Crème du sceau RSVP (reste sombre/bordeaux pour les deux couples, jamais reconverti en clair) — texte des initiales. */
+  cream: string
+  /** Texte posé directement sur le fond de la page du couple (pas sur une carte claire) — varie par couple. */
+  ink: string
+  inkRgb: string
+  /** Texte posé sur une carte claire (Lieu, Programme, FAQ) — reste sombre pour les deux couples. */
+  inkOnCard: string
+  inkOnCardRgb: string
+  /** Accent secondaire (pulse du compte à rebours, mots-clés qui s'encrent, point sur la carte). */
+  bordeaux: string
+  bordeauxRgb: string
+  /** Accent principal (titres de section, anneaux, filets). */
+  gold: string
+  goldRgb: string
+  /**
+   * Sceau de cire RSVP — 3 teintes pour son dégradé radial (clair au
+   * centre, sombre au bord). Rôle distinct de `gold`/`bordeaux` : chez
+   * Edwige & Wilfried le sceau reste rouge (accent secondaire de la page)
+   * même si l'accent principal ailleurs est doré ; chez Léa & Olivier
+   * c'est l'inverse (leur accent principal EST déjà rouge) — un simple
+   * alias de gold/bordeaux n'aurait pas fonctionné pour les deux.
+   */
+  seal: string
+  sealLight: string
+  sealDark: string
+}
+
+export const EW_PALETTE: BespokePalette = {
+  bg: '#f3ead9',
+  bgDate: 'transparent',
+  bgProgramme: '#f3ead9',
+  cream: '#f3ead9',
+  ink: '#2E2620',
+  inkRgb: '46, 38, 32',
+  inkOnCard: '#2E2620',
+  inkOnCardRgb: '46, 38, 32',
+  bordeaux: '#b02634',
+  bordeauxRgb: '176, 38, 52',
+  gold: '#c9a961',
+  goldRgb: '201, 169, 97',
+  seal: '#b02634',
+  sealLight: '#c8394a',
+  sealDark: '#7c1a26',
+}
+
+const PaletteContext = createContext<BespokePalette>(EW_PALETTE)
+
+/** Fournit la palette à toute la sous-arborescence — englobe à la fois `EwEffectsStyles` et les composants qui consomment `usePalette()`, cf. FairePartEdwigeWilfried.tsx / FairePartLeaOlivier.tsx. */
+export function BespokePaletteProvider({ palette, children }: { palette: BespokePalette; children: ReactNode }) {
+  return <PaletteContext.Provider value={palette}>{children}</PaletteContext.Provider>
+}
+
+function usePalette() {
+  return useContext(PaletteContext)
+}
 
 /** Titre de section (« La date », « Le Lieu », « RSVP »…) — même traitement visuel que « Le Programme », factorisé pour ne pas le répéter 4 fois. */
 function EwLabel({ children }: { children: string }) {
+  const p = usePalette()
   return (
-    <p className="mb-7 text-center text-[19px] italic" style={{ color: EW_GOLD }}>
+    <p className="mb-7 text-center text-[19px] italic" style={{ color: p.gold }}>
       {children}
     </p>
   )
@@ -52,6 +110,7 @@ function EwLabel({ children }: { children: string }) {
  * consomme (ils sont tous montés simultanément sur la même page).
  */
 export function EwEffectsStyles() {
+  const p = usePalette()
   return (
     <style>{`
       @property --p {
@@ -60,8 +119,8 @@ export function EwEffectsStyles() {
         initial-value: 0;
       }
       @keyframes ew-ping {
-        0% { box-shadow: 0 0 0 0 rgba(176, 38, 52, 0.55); }
-        100% { box-shadow: 0 0 0 18px rgba(176, 38, 52, 0); }
+        0% { box-shadow: 0 0 0 0 rgba(${p.bordeauxRgb}, 0.55); }
+        100% { box-shadow: 0 0 0 18px rgba(${p.bordeauxRgb}, 0); }
       }
       @keyframes ew-fade-in {
         from { opacity: 0; transform: translateY(6px); }
@@ -175,6 +234,7 @@ export function EwEffectsStyles() {
  * même composant parent) au lieu de rester stable jusqu'au déclenchement.
  */
 function ScatterTitle({ text, revealed, reducedMotion }: { text: string; revealed: boolean; reducedMotion: boolean }) {
+  const p = usePalette()
   const chars = useMemo(() => text.split(''), [text])
   const offsets = useMemo(
     () => chars.map(() => ({ dx: (Math.random() * 2 - 1) * 120, dy: (Math.random() * 2 - 1) * 120, rot: (Math.random() * 2 - 1) * 40 })),
@@ -191,9 +251,9 @@ function ScatterTitle({ text, revealed, reducedMotion }: { text: string; reveale
           className="inline-block"
           style={
             reducedMotion
-              ? { color: EW_INK }
+              ? { color: p.ink }
               : {
-                  color: EW_INK,
+                  color: p.ink,
                   transform: revealed
                     ? 'translate(0, 0) rotate(0deg) scale(1)'
                     : `translate(${offsets[i].dx}px, ${offsets[i].dy}px) rotate(${offsets[i].rot}deg) scale(1.6)`,
@@ -226,6 +286,7 @@ function ScatterTitle({ text, revealed, reducedMotion }: { text: string; reveale
  * micro-capitales espacées en dessous.
  */
 function EwRing({ value, max, label, size = 76 }: { value: number; max: number; label: string; size?: number }) {
+  const p = usePalette()
   const strokeWidth = 4
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
@@ -253,13 +314,13 @@ function EwRing({ value, max, label, size = 76 }: { value: number; max: number; 
     <div className="flex flex-col items-center gap-2.5">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90" aria-hidden>
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(46, 38, 32, 0.12)" strokeWidth={strokeWidth} />
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={`rgba(${p.inkRgb}, 0.12)`} strokeWidth={strokeWidth} />
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke={EW_GOLD}
+            stroke={p.gold}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -270,7 +331,7 @@ function EwRing({ value, max, label, size = 76 }: { value: number; max: number; 
         <div
           className="font-display tabular-nums absolute inset-0 flex items-center justify-center"
           style={{
-            color: pulsing ? EW_BORDEAUX : EW_INK,
+            color: pulsing ? p.bordeaux : p.ink,
             fontSize: digitSize,
             fontVariationSettings: pulsing ? "'wght' 800, 'SOFT' 0" : "'wght' 300, 'SOFT' 100",
             transition: 'font-variation-settings 450ms ease, color 450ms ease',
@@ -280,7 +341,7 @@ function EwRing({ value, max, label, size = 76 }: { value: number; max: number; 
           {String(value).padStart(2, '0')}
         </div>
       </div>
-      <span className="text-[10px] uppercase tracking-[0.22em]" style={{ color: 'rgba(46, 38, 32, 0.55)' }}>
+      <span className="text-[10px] uppercase tracking-[0.22em]" style={{ color: `rgba(${p.inkRgb}, 0.55)` }}>
         {label}
       </span>
     </div>
@@ -296,6 +357,7 @@ export function ScatterDateCard({
   revealed: boolean
   reducedMotion: boolean
 }) {
+  const p = usePalette()
   const targetMs = new Date(weddingDateTime).getTime()
   const date = new Date(weddingDateTime)
   const month = date.toLocaleDateString('fr-FR', { month: 'long' })
@@ -313,14 +375,14 @@ export function ScatterDateCard({
   return (
     <>
       <EwLabel>La date</EwLabel>
-      <div className="rounded-2xl px-6 py-9 text-center" style={{ background: EW_BG_DATE }}>
+      <div className="rounded-2xl px-6 py-9 text-center" style={{ background: p.bgDate }}>
         <ScatterTitle text={title} revealed={revealed} reducedMotion={reducedMotion} />
 
         {/* filet doré dégradé — s'étire sous le titre une fois les lettres posées */}
         <div
           className="mx-auto mt-5 h-px w-32"
           style={{
-            background: `linear-gradient(90deg, transparent, ${EW_GOLD}, transparent)`,
+            background: `linear-gradient(90deg, transparent, ${p.gold}, transparent)`,
             transform: reducedMotion || revealed ? 'scaleX(1)' : 'scaleX(0)',
             transition: reducedMotion ? 'none' : 'transform 0.8s cubic-bezier(.22,1,.36,1)',
             transitionDelay: reducedMotion ? '0ms' : `${title.length * 40 + 300}ms`,
@@ -344,17 +406,18 @@ export function ScatterDateCard({
 /* ------------------------------------------------------------------ */
 
 function StepCard({ item }: { item: ProgrammeItem }) {
+  const p = usePalette()
   return (
     <div className="flex h-full flex-col justify-center px-2" style={{ width: 'min(400px, 74cqw)', flex: '0 0 auto' }}>
-      <div className="mb-5 h-px w-10" style={{ background: 'rgba(46, 38, 32, 0.15)' }} aria-hidden />
-      <p className="font-display mt-3 text-[52px] leading-none" style={{ color: EW_BORDEAUX, fontVariationSettings: "'wght' 200" }}>
+      <div className="mb-5 h-px w-10" style={{ background: `rgba(${p.inkOnCardRgb}, 0.15)` }} aria-hidden />
+      <p className="font-display mt-3 text-[52px] leading-none" style={{ color: p.bordeaux, fontVariationSettings: "'wght' 200" }}>
         {item.time}
       </p>
-      <p className="font-display mt-3 text-[20px] italic" style={{ color: EW_INK }}>
+      <p className="font-display mt-3 text-[20px] italic" style={{ color: p.inkOnCard }}>
         {item.label}
       </p>
       {item.sub && (
-        <p className="mt-2 text-[14px]" style={{ color: 'rgba(46, 38, 32, 0.55)' }}>
+        <p className="mt-2 text-[14px]" style={{ color: `rgba(${p.inkOnCardRgb}, 0.55)` }}>
           {item.sub}
         </p>
       )}
@@ -389,6 +452,7 @@ export function HorizontalProgramme({
   revealed: boolean
   reducedMotion: boolean
 }) {
+  const p = usePalette()
   const outerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [nativeSupported, setNativeSupported] = useState(false)
@@ -424,7 +488,7 @@ export function HorizontalProgramme({
 
   const label = (
     <div style={reducedMotion ? undefined : { opacity: revealed ? 1 : 0, transform: revealed ? 'translateY(0)' : 'translateY(14px)', transition: 'opacity 0.6s cubic-bezier(.22,1,.36,1), transform 0.6s cubic-bezier(.22,1,.36,1)' }}>
-      <p className="mb-7 text-center text-[19px] italic" style={{ color: EW_GOLD }}>
+      <p className="mb-7 text-center text-[19px] italic" style={{ color: p.gold }}>
         Le Programme
       </p>
     </div>
@@ -436,7 +500,7 @@ export function HorizontalProgramme({
         {label}
         <div
           className="-mx-6 flex gap-6 overflow-x-auto px-6 pb-4 sm:mx-0 sm:px-0"
-          style={{ background: EW_BG_PROGRAMME, scrollSnapType: 'x mandatory', containerType: 'inline-size', borderRadius: 16, paddingTop: 24, paddingBottom: 24 }}
+          style={{ background: p.bgProgramme, scrollSnapType: 'x mandatory', containerType: 'inline-size', borderRadius: 16, paddingTop: 24, paddingBottom: 24 }}
         >
           {programme.map((item, i) => (
             <div key={i} style={{ scrollSnapAlign: 'start' }}>
@@ -453,7 +517,7 @@ export function HorizontalProgramme({
       {label}
       {/* rupture de la colonne étroite (max-w-420 hérité de DetailsSombre) pour un vrai plein-large, cf. demande */}
       <div ref={outerRef} className="ew-hprog-outer relative ml-[calc(50%-50vw)] w-screen" style={{ height: '230vh' }}>
-        <div className="sticky top-0 h-screen overflow-hidden" style={{ containerType: 'inline-size', clipPath: 'inset(0)', background: EW_BG_PROGRAMME }}>
+        <div className="sticky top-0 h-screen overflow-hidden" style={{ containerType: 'inline-size', clipPath: 'inset(0)', background: p.bgProgramme }}>
           <div
             ref={trackRef}
             className="ew-hprog-track flex h-full items-center gap-10 px-[8cqw]"
@@ -483,6 +547,7 @@ export function HorizontalProgramme({
  * `brightness(0.5)` aurait viré la carte au gris boueux hors de la loupe.
  */
 function StyledMapSvg({ blurred }: { blurred: boolean }) {
+  const p = usePalette()
   return (
     <svg
       viewBox="0 0 240 200"
@@ -490,11 +555,11 @@ function StyledMapSvg({ blurred }: { blurred: boolean }) {
       style={blurred ? { filter: 'blur(14px) saturate(0.3) brightness(1.08)' } : undefined}
       aria-hidden
     >
-      <rect width="240" height="200" fill={EW_BG} />
+      <rect width="240" height="200" fill={p.bg} />
       <path d="M-10,150 Q50,120 82,155 T180,118 T260,138" stroke="#5C4A3A" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.65" />
       <path d="M-10,58 Q60,90 102,54 T220,68" stroke="#4A3A2E" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.5" />
       {/* rivière dorée, courbe de Bézier */}
-      <path d="M0,168 C60,140 110,190 170,150 C200,128 220,110 240,96" stroke={EW_GOLD} strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.75" />
+      <path d="M0,168 C60,140 110,190 170,150 C200,128 220,110 240,96" stroke={p.gold} strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.75" />
       {/* hachures de vignes — parcelles en traits fins parallèles */}
       {Array.from({ length: 16 }).map((_, i) => {
         const x = 26 + (i % 8) * 11
@@ -519,11 +584,15 @@ export function LieuMagnifier({
   venueName,
   venueAddress,
   mapsUrl,
+  photoSrc = '/edwige-wilfried-lieu-photo.jpg',
 }: {
   venueName: string
   venueAddress: string
   mapsUrl: string
+  /** Photo au-dessus de la carte dynamique — fournie par Edwige & Wilfried (valeur par défaut, historique) ; omise si vide (cf. Léa & Olivier, aucune photo de lieu fournie pour l'instant). */
+  photoSrc?: string
 }) {
+  const p = usePalette()
   const containerRef = useRef<HTMLDivElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
   const maskRef = useRef<HTMLDivElement>(null)
@@ -581,15 +650,11 @@ export function LieuMagnifier({
           dynamique (loupe magnétique). Même traitement visuel (rounded-2xl,
           même ratio) pour que les deux blocs s'enchaînent comme une seule
           pièce plutôt que deux éléments disparates. */}
-      <img
-        src="/edwige-wilfried-lieu-photo.jpg"
-        alt={venueName}
-        className="mb-5 aspect-[6/5] w-full rounded-2xl object-cover"
-      />
+      {photoSrc && <img src={photoSrc} alt={venueName} className="mb-5 aspect-[6/5] w-full rounded-2xl object-cover" />}
       <div
         ref={containerRef}
         className="relative aspect-[6/5] w-full overflow-hidden rounded-2xl [cursor:none]"
-        style={{ background: EW_BG, ['--mx' as string]: '50%', ['--my' as string]: '46%' } as CSSProperties}
+        style={{ background: p.bg, ['--mx' as string]: '50%', ['--my' as string]: '46%' } as CSSProperties}
       >
         <StyledMapSvg blurred />
         <div
@@ -603,22 +668,22 @@ export function LieuMagnifier({
         <div
           ref={ringRef}
           className="pointer-events-none absolute h-[150px] w-[150px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
-          style={{ borderColor: EW_GOLD, boxShadow: '0 0 24px rgba(201,169,97,0.25)' }}
+          style={{ borderColor: p.gold, boxShadow: `0 0 24px rgba(${p.goldRgb}, 0.25)` }}
           aria-hidden
         />
 
         {/* point bordeaux — pulse en boucle (box-shadow ping) à l'emplacement du lieu */}
         <div
           className="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{ left: '50%', top: '46%', background: EW_BORDEAUX, animation: 'ew-ping 2.2s cubic-bezier(0,0,0.2,1) infinite' }}
+          style={{ left: '50%', top: '46%', background: p.bordeaux, animation: 'ew-ping 2.2s cubic-bezier(0,0,0.2,1) infinite' }}
           aria-hidden
         />
 
         <div className="absolute left-5 top-5 max-w-[70%]">
-          <p className="font-display text-[24px] italic leading-[1.15]" style={{ color: EW_INK }}>
+          <p className="font-display text-[24px] italic leading-[1.15]" style={{ color: p.inkOnCard }}>
             {venueName}
           </p>
-          <p className="mt-1 text-[13px]" style={{ color: 'rgba(46, 38, 32, 0.65)' }}>
+          <p className="mt-1 text-[13px]" style={{ color: `rgba(${p.inkOnCardRgb}, 0.65)` }}>
             {venueAddress}
           </p>
         </div>
@@ -628,7 +693,7 @@ export function LieuMagnifier({
           target="_blank"
           rel="noopener noreferrer"
           className="absolute bottom-5 left-5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold underline underline-offset-4"
-          style={{ color: EW_GOLD, textDecorationColor: EW_GOLD }}
+          style={{ color: p.gold, textDecorationColor: p.gold }}
         >
           Voir sur la carte <span aria-hidden>→</span>
         </a>
@@ -653,7 +718,7 @@ export function LieuMagnifier({
 const EW_HISTOIRE_TEXT =
   'Un jour, nos regards se sont trouvés. Nous avons dit oui à cette évidence, entre deux verres levés à la légèreté du monde. Depuis, chaque soir ressemble à une promesse — chandelles allumées, mots murmurés jusqu’à l’aube.'
 
-const EW_HISTOIRE_KEYWORDS = new Set(['oui', 'verres', 'chandelles', 'aube'])
+const EW_HISTOIRE_KEYWORDS = ['oui', 'verres', 'chandelles', 'aube']
 
 const normalizeWord = (w: string) => w.toLowerCase().replace(/[.,;:!?—«»"'’]/g, '')
 
@@ -672,7 +737,21 @@ const normalizeWord = (w: string) => w.toLowerCase().replace(/[.,;:!?—«»"'�
  * seulement si le CSS natif (`animation-timeline: view()`) n'est pas
  * supporté — sinon rien à faire, le CSS pilote seul.
  */
-export function NotreHistoire() {
+export function NotreHistoire({
+  text = EW_HISTOIRE_TEXT,
+  keywords = EW_HISTOIRE_KEYWORDS,
+  photos = EW_PHOTOS,
+}: {
+  /** Texte non fourni par défaut ni par le couple ni par l'utilisateur — À REMPLACER, cf. doc plus haut. Rendu paramétrable pour que chaque couple ait son propre texte (et ses propres mots-clés). */
+  text?: string
+  keywords?: string[]
+  /** Galerie sous le texte — omise si vide (cf. Léa & Olivier, aucune photo fournie pour l'instant). */
+  photos?: string[]
+}) {
+  // Nommée `palette` (pas `p`, la convention du fichier) : `p` désigne déjà
+  // l'élément DOM du paragraphe dans le useEffect juste en dessous.
+  const palette = usePalette()
+  const keywordSet = useMemo(() => new Set(keywords), [keywords])
   const pRef = useRef<HTMLParagraphElement>(null)
 
   useEffect(() => {
@@ -704,14 +783,14 @@ export function NotreHistoire() {
   // retourne à la ligne uniquement selon la largeur du conteneur — demandé
   // pour rythmer la lecture. L'index continue across phrases pour garder
   // des clés uniques, le scroll-ink (par mot) n'en dépend pas.
-  const sentences = EW_HISTOIRE_TEXT.split(/(?<=\.) /).map((s) => s.split(' '))
+  const sentences = text.split(/(?<=\.) /).map((s) => s.split(' '))
 
   return (
     // plein cadre (sort de la colonne étroite max-w-420 héritée de
     // DetailsSombre), même technique que la piste du programme (cf.
     // HorizontalProgramme). Fond transparent (et non plus #0d0a08) sur
     // retour client : la section doit se fondre dans le fond clair de la
-    // page (même mécanisme que EW_BG_DATE), pas trancher comme une bande
+    // page (même mécanisme que la case Date), pas trancher comme une bande
     // sombre. Positionnée juste avant RSVP via le slot `renderBeforeRsvp`
     // (cf. FairePartEdwigeWilfried.tsx) — déplacée depuis avant Le
     // Programme sur retour client.
@@ -729,7 +808,7 @@ export function NotreHistoire() {
                 <span
                   key={i}
                   className="ew-word-ink inline"
-                  style={{ color: EW_HISTOIRE_KEYWORDS.has(normalizeWord(raw)) ? EW_BORDEAUX : EW_INK }}
+                  style={{ color: keywordSet.has(normalizeWord(raw)) ? palette.bordeaux : palette.ink }}
                 >
                   {raw}{' '}
                 </span>
@@ -738,7 +817,7 @@ export function NotreHistoire() {
           ))}
         </p>
       </div>
-      <HorizontalPhotos />
+      {photos.length > 0 && <HorizontalPhotos photos={photos} />}
     </section>
   )
 }
@@ -762,7 +841,7 @@ const EW_PHOTOS = ['/edwige-wilfried-photo-1.jpg', '/edwige-wilfried-photo-2.jpg
  * contraintes en max + `w-auto`/`h-auto`, le navigateur choisit
  * lui-même la dimension limitante et la photo tient entière.
  */
-function HorizontalPhotos() {
+function HorizontalPhotos({ photos }: { photos: string[] }) {
   const outerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [nativeSupported, setNativeSupported] = useState(false)
@@ -801,7 +880,7 @@ function HorizontalPhotos() {
   if (reducedMotion) {
     return (
       <div className="-mx-6 mt-14 flex gap-6 overflow-x-auto px-6 pb-4 sm:mx-0 sm:px-0" style={{ scrollSnapType: 'x mandatory' }}>
-        {EW_PHOTOS.map((src) => (
+        {photos.map((src) => (
           <img
             key={src}
             src={src}
@@ -824,7 +903,7 @@ function HorizontalPhotos() {
           data-native={nativeSupported ? '1' : '0'}
           style={{ width: 'max-content', willChange: 'transform' }}
         >
-          {EW_PHOTOS.map((src) => (
+          {photos.map((src) => (
             <img
               key={src}
               src={src}
@@ -844,15 +923,21 @@ function HorizontalPhotos() {
 /* 5. RSVP — sceau de cire pressé                                       */
 /* ------------------------------------------------------------------ */
 
-/** Éclaboussure de 8 gouttelettes de cire — même technique que spawnConfetti dans DetailsSombre.tsx (nœuds DOM hors React, physique simple en JS), particules plus petites/rondes, trajet plus court. */
-function spawnDroplets(originEl: HTMLElement) {
+/**
+ * Éclaboussure de 8 gouttelettes de cire — même technique que
+ * spawnConfetti dans DetailsSombre.tsx (nœuds DOM hors React, physique
+ * simple en JS), particules plus petites/rondes, trajet plus court.
+ * `colors` en paramètre (pas `usePalette()`) : fonction utilitaire pure,
+ * pas un composant — les hooks n'y sont pas utilisables, cf. l'appelant
+ * (WaxSealRsvp) qui lui passe `[p.bordeaux, p.gold]`.
+ */
+function spawnDroplets(originEl: HTMLElement, colors: [string, string]) {
   const rect = originEl.getBoundingClientRect()
   const originX = rect.left + rect.width / 2
   const originY = rect.top + rect.height / 2
   const COUNT = 8
   const DURATION = 700
   const GRAVITY = 700
-  const colors = [EW_BORDEAUX, EW_GOLD]
 
   const container = document.createElement('div')
   container.style.cssText = 'position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden;'
@@ -909,12 +994,16 @@ const HOLD_MS = 1400
 export function WaxSealRsvp({
   label,
   weddingDateLabel,
+  initials = 'É · W',
   onClick,
 }: {
   label: string
   weddingDateLabel: string
+  /** Initiales gravées au centre du sceau — « É · W » par défaut (Edwige & Wilfried, valeur d'origine avant que ce composant devienne partagé). */
+  initials?: string
   onClick: () => void
 }) {
+  const p = usePalette()
   const btnRef = useRef<HTMLButtonElement>(null)
   const sealRef = useRef<HTMLSpanElement>(null)
   const [holding, setHolding] = useState(false)
@@ -969,7 +1058,7 @@ export function WaxSealRsvp({
     setSealed(true)
     setSquash(true)
     if (navigator.vibrate) navigator.vibrate(40)
-    if (btnRef.current) spawnDroplets(btnRef.current)
+    if (btnRef.current) spawnDroplets(btnRef.current, [p.bordeaux, p.gold])
     window.setTimeout(() => setSquash(false), 500)
     onClick()
   }
@@ -994,7 +1083,7 @@ export function WaxSealRsvp({
   return (
     <>
       <EwLabel>RSVP</EwLabel>
-      <p className="mb-6 text-center text-[15px] leading-[1.6]" style={{ color: 'rgba(46, 38, 32, 0.75)' }}>
+      <p className="mb-6 text-center text-[15px] leading-[1.6]" style={{ color: `rgba(${p.inkRgb}, 0.75)` }}>
         Nous serions honorés de vous compter parmi nous pour partager ce moment unique de notre vie.
       </p>
       <div className="flex flex-col items-center gap-5">
@@ -1012,7 +1101,7 @@ export function WaxSealRsvp({
           style={
             {
               ['--p' as string]: 0,
-              background: `conic-gradient(${EW_GOLD} calc(var(--p) * 360deg), rgba(201,169,97,0.18) calc(var(--p) * 360deg))`,
+              background: `conic-gradient(${p.gold} calc(var(--p) * 360deg), rgba(${p.goldRgb}, 0.18) calc(var(--p) * 360deg))`,
             } as CSSProperties
           }
         >
@@ -1021,14 +1110,14 @@ export function WaxSealRsvp({
             className="flex h-[128px] w-[128px] items-center justify-center"
             style={{
               borderRadius: '47% 53% 50% 50% / 52% 48% 52% 48%',
-              background: `radial-gradient(circle at 35% 30%, #c8394a, ${EW_BORDEAUX} 60%, #7c1a26 100%)`,
+              background: `radial-gradient(circle at 35% 30%, ${p.sealLight}, ${p.seal} 60%, ${p.sealDark} 100%)`,
               boxShadow: 'inset 0 6px 14px rgba(0,0,0,0.45), inset 0 -4px 10px rgba(255,255,255,0.08)',
               transform: squash ? 'scale(0.94)' : holding ? undefined : 'scale(1)',
               transition: squash ? 'transform 0.5s cubic-bezier(.34,1.56,.64,1)' : holding ? 'none' : 'transform 0.6s cubic-bezier(.34,1.56,.64,1)',
             }}
           >
-            <span className="font-display italic text-[22px]" style={{ color: EW_CREAM }}>
-              É · W
+            <span className="font-display italic text-[22px]" style={{ color: p.cream }}>
+              {initials}
             </span>
           </span>
         </button>
@@ -1037,8 +1126,8 @@ export function WaxSealRsvp({
           className="min-h-[1.6em] text-center text-[13.5px]"
           style={
             sealed
-              ? { color: EW_GOLD, fontStyle: 'italic', animation: 'ew-fade-in 0.8s ease forwards' }
-              : { color: 'rgba(46, 38, 32, 0.55)', textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 12 }
+              ? { color: p.gold, fontStyle: 'italic', animation: 'ew-fade-in 0.8s ease forwards' }
+              : { color: `rgba(${p.inkRgb}, 0.55)`, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 12 }
           }
         >
           {sealed ? `Scellé. On vous attend le ${weddingDateLabel}.` : 'Maintenir pour sceller'}
@@ -1072,6 +1161,7 @@ const EW_FAQ_ITEMS: { q: string; a: string }[] = [
 ]
 
 function FaqItemCard({ item, open, onToggle }: { item: { q: string; a: string }; open: boolean; onToggle: () => void }) {
+  const p = usePalette()
   return (
     <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(46,38,32,0.08)]">
       <button
@@ -1080,7 +1170,7 @@ function FaqItemCard({ item, open, onToggle }: { item: { q: string; a: string };
         onClick={onToggle}
         className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
       >
-        <span className="font-display text-[16px] italic" style={{ color: EW_INK }}>
+        <span className="font-display text-[16px] italic" style={{ color: p.inkOnCard }}>
           {item.q}
         </span>
         <svg
@@ -1089,7 +1179,7 @@ function FaqItemCard({ item, open, onToggle }: { item: { q: string; a: string };
           viewBox="0 0 16 16"
           fill="none"
           className="shrink-0 transition-transform duration-300"
-          style={{ transform: open ? 'rotate(180deg)' : 'none', color: EW_INK, opacity: 0.5 }}
+          style={{ transform: open ? 'rotate(180deg)' : 'none', color: p.inkOnCard, opacity: 0.5 }}
         >
           <path d="M3 6l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -1099,7 +1189,7 @@ function FaqItemCard({ item, open, onToggle }: { item: { q: string; a: string };
         style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden">
-          <p className="px-6 pb-5 text-[14px] leading-[1.6]" style={{ color: 'rgba(46, 38, 32, 0.7)' }}>
+          <p className="px-6 pb-5 text-[14px] leading-[1.6]" style={{ color: `rgba(${p.inkOnCardRgb}, 0.7)` }}>
             {item.a}
           </p>
         </div>
@@ -1114,17 +1204,18 @@ function FaqItemCard({ item, open, onToggle }: { item: { q: string; a: string };
  * DetailsSombre. Une seule question ouverte à la fois plutôt qu'un état
  * par carte — plus lisible sur une section courte (3 questions).
  */
-export function FoireAuxQuestions() {
+export function FoireAuxQuestions({ items = EW_FAQ_ITEMS }: { items?: { q: string; a: string }[] }) {
+  const p = usePalette()
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   return (
     <section>
       <EwLabel>Foire aux questions</EwLabel>
-      <p className="mb-8 text-center text-[13px]" style={{ color: 'rgba(46, 38, 32, 0.55)' }}>
+      <p className="mb-8 text-center text-[13px]" style={{ color: `rgba(${p.inkRgb}, 0.55)` }}>
         Tout ce que vous devez savoir
       </p>
       <div className="flex flex-col gap-4">
-        {EW_FAQ_ITEMS.map((item, i) => (
+        {items.map((item, i) => (
           <FaqItemCard key={item.q} item={item} open={openIndex === i} onToggle={() => setOpenIndex(openIndex === i ? null : i)} />
         ))}
       </div>
@@ -1160,6 +1251,7 @@ const EW_DRESS_CODE_COLORS = ['#B9A3CC', '#D8B99A', '#E8A9BC']
  * se remplit par un scale ressort une fois le tracé terminé.
  */
 function DressCodeSwatch({ color, index, revealed, reducedMotion }: { color: string; index: number; revealed: boolean; reducedMotion: boolean }) {
+  const p = usePalette()
   const size = 52
   const strokeWidth = 2
   const radius = (size - strokeWidth) / 2
@@ -1176,7 +1268,7 @@ function DressCodeSwatch({ color, index, revealed, reducedMotion }: { color: str
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={EW_GOLD}
+          stroke={p.gold}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -1205,28 +1297,32 @@ function DressCodeSwatch({ color, index, revealed, reducedMotion }: { color: str
 
 export function DressCodeCard({
   dressCode,
+  colors = EW_DRESS_CODE_COLORS,
   revealed = true,
   reducedMotion = false,
 }: {
   dressCode: string
+  /** Teintes des pastilles — 3 par défaut (pastel, cf. doc plus haut) ; non fournies pour Léa & Olivier, dérivées de leur dress code textuel « Rouge et noir » (2 teintes, pas 3 : pas de 3e couleur inventée). */
+  colors?: string[]
   revealed?: boolean
   reducedMotion?: boolean
 }) {
+  const p = usePalette()
   return (
     <section className="text-center">
       <EwLabel>Dress Code</EwLabel>
-      <p className="text-[15px] leading-[1.6]" style={{ color: 'rgba(46, 38, 32, 0.75)' }}>
+      <p className="text-[15px] leading-[1.6]" style={{ color: `rgba(${p.inkRgb}, 0.75)` }}>
         {dressCode}
       </p>
-      <p className="mt-8 mb-5 text-[12px] uppercase tracking-[0.16em]" style={{ color: 'rgba(46, 38, 32, 0.5)' }}>
+      <p className="mt-8 mb-5 text-[12px] uppercase tracking-[0.16em]" style={{ color: `rgba(${p.inkRgb}, 0.5)` }}>
         Teintes suggérées
       </p>
       <div className="flex items-center justify-center gap-4">
-        {EW_DRESS_CODE_COLORS.map((c, i) => (
+        {colors.map((c, i) => (
           <DressCodeSwatch key={c} color={c} index={i} revealed={revealed} reducedMotion={reducedMotion} />
         ))}
       </div>
-      <p className="mt-6 font-display text-[13px] italic" style={{ color: 'rgba(46, 38, 32, 0.45)' }}>
+      <p className="mt-6 font-display text-[13px] italic" style={{ color: `rgba(${p.inkRgb}, 0.45)` }}>
         Merci d'éviter le blanc, réservé aux mariés
       </p>
     </section>
