@@ -136,7 +136,9 @@ export default function FairePartEdwigeWilfried() {
               renderProgramme={(programme, _accent, revealed, reducedMotion) => (
                 <HorizontalProgramme programme={programme} revealed={revealed} reducedMotion={reducedMotion} />
               )}
-              renderDressCode={(dressCode) => <DressCodeCard dressCode={dressCode} />}
+              renderDressCode={(dressCode, _accent, revealed, reducedMotion) => (
+                <DressCodeCard dressCode={dressCode} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
               renderBeforeRsvp={() => <NotreHistoire />}
               renderRsvp={({ label, onClick }) => (
                 <WaxSealRsvp label={label} weddingDateLabel={WEDDING_DATE_LABEL} onClick={onClick} />

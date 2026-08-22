@@ -1022,7 +1022,70 @@ const EW_DRESS_CODE_COLORS = ['#B9A3CC', '#D8B99A', '#E8A9BC']
  * (EwLabel pour le titre, pas de script font : Fraunces reste la seule
  * serif chargée sur ce projet, cf. NotreHistoire pour le même choix).
  */
-export function DressCodeCard({ dressCode }: { dressCode: string }) {
+/**
+ * Pastille avec anneau qui se trace — choisie parmi 3 propositions
+ * d'animation (nuancier en éventail / goutte qui s'épanouit / anneau qui
+ * se trace), prototypées dans un fichier HTML autonome puis validées par
+ * la cliente. Reprend exactement la mécanique des 4 anneaux du compte à
+ * rebours (EwRing plus haut) — SVG, stroke-dasharray/dashoffset, cercle
+ * qui se dessine — pour un écho visuel direct plutôt qu'un 5e mécanisme
+ * d'animation différent sur la même page. Séquence par pastille (delay =
+ * index × 180ms) : l'anneau se trace en premier (550ms), puis la pastille
+ * se remplit par un scale ressort une fois le tracé terminé.
+ */
+function DressCodeSwatch({ color, index, revealed, reducedMotion }: { color: string; index: number; revealed: boolean; reducedMotion: boolean }) {
+  const size = 52
+  const strokeWidth = 2
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const ringDelay = index * 180
+  const ringDuration = 550
+  const swatchDelay = ringDelay + ringDuration
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={EW_GOLD}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={reducedMotion || revealed ? 0 : circumference}
+          style={{
+            transition: reducedMotion ? 'none' : `stroke-dashoffset ${ringDuration}ms ease`,
+            transitionDelay: reducedMotion ? '0ms' : `${ringDelay}ms`,
+          }}
+        />
+      </svg>
+      <span
+        className="absolute rounded-full"
+        style={{
+          inset: 4,
+          background: color,
+          boxShadow: '0 2px 6px rgba(46,38,32,0.18)',
+          border: '2px solid #fff',
+          transform: reducedMotion || revealed ? 'scale(1)' : 'scale(0)',
+          transition: reducedMotion ? 'none' : 'transform 0.4s cubic-bezier(.34,1.56,.64,1)',
+          transitionDelay: reducedMotion ? '0ms' : `${swatchDelay}ms`,
+        }}
+      />
+    </div>
+  )
+}
+
+export function DressCodeCard({
+  dressCode,
+  revealed = true,
+  reducedMotion = false,
+}: {
+  dressCode: string
+  revealed?: boolean
+  reducedMotion?: boolean
+}) {
   return (
     <section className="text-center">
       <EwLabel>Dress Code</EwLabel>
@@ -1033,12 +1096,8 @@ export function DressCodeCard({ dressCode }: { dressCode: string }) {
         Teintes suggérées
       </p>
       <div className="flex items-center justify-center gap-4">
-        {EW_DRESS_CODE_COLORS.map((c) => (
-          <span
-            key={c}
-            className="h-11 w-11 rounded-full"
-            style={{ background: c, boxShadow: '0 2px 6px rgba(46,38,32,0.18)', border: '2px solid #fff' }}
-          />
+        {EW_DRESS_CODE_COLORS.map((c, i) => (
+          <DressCodeSwatch key={c} color={c} index={i} revealed={revealed} reducedMotion={reducedMotion} />
         ))}
       </div>
       <p className="mt-6 font-display text-[13px] italic" style={{ color: 'rgba(46, 38, 32, 0.45)' }}>
