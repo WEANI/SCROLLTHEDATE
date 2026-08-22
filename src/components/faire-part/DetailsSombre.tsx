@@ -554,7 +554,8 @@ function LieuMap({ revealed, reducedMotion, accent }: { revealed: boolean; reduc
   )
 }
 
-function useCountdown(targetMs: number) {
+/** Exporté — réutilisé tel quel par edwigeWilfriedEffects.tsx (compte à rebours à poids variable), pas de 2e implémentation. */
+export function useCountdown(targetMs: number) {
   const compute = () => {
     const diff = Math.max(0, targetMs - Date.now())
     return {
@@ -587,6 +588,10 @@ export default function DetailsSombre({
   confettiSecondary = '#F3EAD9',
   openRsvp,
   theme,
+  renderDate,
+  renderLieu,
+  renderProgramme,
+  renderRsvp,
 }: {
   /** Date + heure ISO du mariage, ex "2026-08-15T16:00:00+02:00" — source unique pour le bloc date ET le compte à rebours. */
   weddingDateTime: string
@@ -602,6 +607,29 @@ export default function DetailsSombre({
   confettiSecondary?: string
   openRsvp: () => void
   theme?: Partial<DetailsSombreTheme>
+  /**
+   * Emplacements (slots) qui remplacent le rendu par défaut d'un bloc —
+   * opt-in, tous `undefined` par défaut (Léa & Olivier, comportement
+   * inchangé). Ajoutés pour Edwige & Wilfried, dont la refonte (titre en
+   * lettres qui se recomposent, programme en défilement horizontal épinglé,
+   * lieu en loupe magnétique, RSVP en sceau de cire pressé) diverge trop du
+   * design par défaut pour rester une variation de thème — cf.
+   * edwigeWilfriedEffects.tsx. Chaque slot reçoit `revealed`/`reducedMotion`
+   * du même RevealBlock que le rendu par défaut qu'il remplace : un seul
+   * mécanisme de déclenchement au scroll pour toute la page, pas deux.
+   */
+  renderDate?: (accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
+  renderLieu?: (
+    props: { venueName: string; venueAddress: string; mapsUrl: string; accent: string },
+    revealed: boolean,
+    reducedMotion: boolean,
+  ) => ReactNode
+  renderProgramme?: (programme: ProgrammeItem[], accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
+  renderRsvp?: (
+    props: { label: string; accent: string; onClick: () => void },
+    revealed: boolean,
+    reducedMotion: boolean,
+  ) => ReactNode
 }) {
   const t = { ...DEFAULT_DETAILS_THEME, ...theme }
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${venueName} ${venueAddress}`)}`
@@ -614,86 +642,96 @@ export default function DetailsSombre({
   // — il lui faut ces deux valeurs pour faire cascader ses propres
   // éléments internes (cf. staggerStyle).
   const blocks: ((revealed: boolean, reducedMotion: boolean) => ReactNode)[] = [
-    (revealed, reducedMotion) => (
-      <DateCountdownCard weddingDateTime={weddingDateTime} accent={t.accent} revealed={revealed} reducedMotion={reducedMotion} />
-    ),
+    (revealed, reducedMotion) =>
+      renderDate ? (
+        renderDate(t.accent, revealed, reducedMotion)
+      ) : (
+        <DateCountdownCard weddingDateTime={weddingDateTime} accent={t.accent} revealed={revealed} reducedMotion={reducedMotion} />
+      ),
 
-    (revealed, reducedMotion) => (
-      <section>
-        <div style={staggerStyle(0, revealed, reducedMotion)}>
-          <SectionLabel accent={t.accent}>Le Lieu</SectionLabel>
-        </div>
-        <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-7">
-          <div className="w-full sm:w-[46%]" style={staggerStyle(1, revealed, reducedMotion)}>
-            <LieuMap revealed={revealed} reducedMotion={reducedMotion} accent={t.accent} />
+    (revealed, reducedMotion) =>
+      renderLieu ? (
+        renderLieu({ venueName, venueAddress, mapsUrl, accent: t.accent }, revealed, reducedMotion)
+      ) : (
+        <section>
+          <div style={staggerStyle(0, revealed, reducedMotion)}>
+            <SectionLabel accent={t.accent}>Le Lieu</SectionLabel>
           </div>
-          <div className="w-full text-center sm:w-[54%] sm:text-left">
-            <p
-              className="font-display text-[28px] italic leading-[1.15]"
-              style={{ color: t.ink, ...staggerStyle(2, revealed, reducedMotion) }}
-            >
-              {venueName}
-            </p>
-            <p className="mt-2 text-[15px]" style={{ color: t.inkSoft, ...staggerStyle(3, revealed, reducedMotion) }}>
-              {venueAddress}
-            </p>
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold underline underline-offset-4"
-              style={{ color: t.accent, textDecorationColor: t.accent, ...staggerStyle(4, revealed, reducedMotion) }}
-            >
-              Voir sur la carte <span aria-hidden>→</span>
-            </a>
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-7">
+            <div className="w-full sm:w-[46%]" style={staggerStyle(1, revealed, reducedMotion)}>
+              <LieuMap revealed={revealed} reducedMotion={reducedMotion} accent={t.accent} />
+            </div>
+            <div className="w-full text-center sm:w-[54%] sm:text-left">
+              <p
+                className="font-display text-[28px] italic leading-[1.15]"
+                style={{ color: t.ink, ...staggerStyle(2, revealed, reducedMotion) }}
+              >
+                {venueName}
+              </p>
+              <p className="mt-2 text-[15px]" style={{ color: t.inkSoft, ...staggerStyle(3, revealed, reducedMotion) }}>
+                {venueAddress}
+              </p>
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold underline underline-offset-4"
+                style={{ color: t.accent, textDecorationColor: t.accent, ...staggerStyle(4, revealed, reducedMotion) }}
+              >
+                Voir sur la carte <span aria-hidden>→</span>
+              </a>
+            </div>
           </div>
-        </div>
-      </section>
-    ),
+        </section>
+      ),
   ]
 
   if (programme && programme.length > 0) {
-    blocks.push((revealed, reducedMotion) => (
-      <section>
-        <div style={staggerStyle(0, revealed, reducedMotion)}>
-          <SectionLabel accent={t.accent}>Le Programme</SectionLabel>
-        </div>
-        <div className="relative">
-          {/* rail — toujours visible, sert de piste au remplissage */}
-          <div className="absolute left-[5px] top-0 bottom-0 w-[2px]" style={{ background: t.line }} aria-hidden />
-          {/* remplissage rouge — hauteur 0→100% une fois la section révélée */}
-          <div
-            className="absolute left-[5px] top-0 w-[2px]"
-            style={{
-              background: t.accent,
-              height: reducedMotion || revealed ? '100%' : '0%',
-              transition: reducedMotion ? 'none' : 'height 1.4s cubic-bezier(0.22,1,0.36,1)',
-            }}
-            aria-hidden
-          />
-          <ol className="relative pl-[26px]">
-            {programme.map((item, i) => (
-              <li key={i} className="relative pb-8 last:pb-0" style={staggerStyle(i + 1, revealed, reducedMotion, 'right')}>
-                {/* puce circulaire cerclée de rouge, sur le rail */}
-                <span
-                  className="absolute -left-[26px] top-0.5 h-3 w-3 rounded-full border-2"
-                  style={{ borderColor: t.accent, background: CARD_DARK_BG }}
-                  aria-hidden
-                />
-                <p className="text-[18px] font-bold" style={{ color: t.ink }}>
-                  {item.time} — {item.label}
-                </p>
-                {item.sub && (
-                  <p className="mt-0.5 text-[14px]" style={{ color: t.inkSoft }}>
-                    {item.sub}
+    blocks.push((revealed, reducedMotion) =>
+      renderProgramme ? (
+        renderProgramme(programme, t.accent, revealed, reducedMotion)
+      ) : (
+        <section>
+          <div style={staggerStyle(0, revealed, reducedMotion)}>
+            <SectionLabel accent={t.accent}>Le Programme</SectionLabel>
+          </div>
+          <div className="relative">
+            {/* rail — toujours visible, sert de piste au remplissage */}
+            <div className="absolute left-[5px] top-0 bottom-0 w-[2px]" style={{ background: t.line }} aria-hidden />
+            {/* remplissage rouge — hauteur 0→100% une fois la section révélée */}
+            <div
+              className="absolute left-[5px] top-0 w-[2px]"
+              style={{
+                background: t.accent,
+                height: reducedMotion || revealed ? '100%' : '0%',
+                transition: reducedMotion ? 'none' : 'height 1.4s cubic-bezier(0.22,1,0.36,1)',
+              }}
+              aria-hidden
+            />
+            <ol className="relative pl-[26px]">
+              {programme.map((item, i) => (
+                <li key={i} className="relative pb-8 last:pb-0" style={staggerStyle(i + 1, revealed, reducedMotion, 'right')}>
+                  {/* puce circulaire cerclée de rouge, sur le rail */}
+                  <span
+                    className="absolute -left-[26px] top-0.5 h-3 w-3 rounded-full border-2"
+                    style={{ borderColor: t.accent, background: CARD_DARK_BG }}
+                    aria-hidden
+                  />
+                  <p className="text-[18px] font-bold" style={{ color: t.ink }}>
+                    {item.time} — {item.label}
                   </p>
-                )}
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-    ))
+                  {item.sub && (
+                    <p className="mt-0.5 text-[14px]" style={{ color: t.inkSoft }}>
+                      {item.sub}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      ),
+    )
   }
   if (dressCode) {
     blocks.push((revealed, reducedMotion) => (
@@ -725,19 +763,23 @@ export default function DetailsSombre({
     ))
   }
 
-  blocks.push((revealed, reducedMotion) => (
-    <section>
-      <div style={staggerStyle(0, revealed, reducedMotion)}>
-        <SectionLabel accent={t.accent}>RSVP</SectionLabel>
-      </div>
-      <p className="mb-4 text-center text-[15px] leading-[1.6]" style={{ color: t.inkSoft, ...staggerStyle(1, revealed, reducedMotion) }}>
-        {rsvpText}
-      </p>
-      <div style={staggerStyle(2, revealed, reducedMotion)}>
-        <RsvpButton label={rsvpCtaLabel} accent={t.accent} confettiSecondary={confettiSecondary} onClick={openRsvp} />
-      </div>
-    </section>
-  ))
+  blocks.push((revealed, reducedMotion) =>
+    renderRsvp ? (
+      renderRsvp({ label: rsvpCtaLabel, accent: t.accent, onClick: openRsvp }, revealed, reducedMotion)
+    ) : (
+      <section>
+        <div style={staggerStyle(0, revealed, reducedMotion)}>
+          <SectionLabel accent={t.accent}>RSVP</SectionLabel>
+        </div>
+        <p className="mb-4 text-center text-[15px] leading-[1.6]" style={{ color: t.inkSoft, ...staggerStyle(1, revealed, reducedMotion) }}>
+          {rsvpText}
+        </p>
+        <div style={staggerStyle(2, revealed, reducedMotion)}>
+          <RsvpButton label={rsvpCtaLabel} accent={t.accent} confettiSecondary={confettiSecondary} onClick={openRsvp} />
+        </div>
+      </section>
+    ),
+  )
 
   return (
     <div className="mx-auto max-w-[420px] text-left">

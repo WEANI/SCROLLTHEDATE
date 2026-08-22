@@ -11,8 +11,9 @@
     <meta property="og:type" content="website" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fraunces chargée en variable complète (wght 300..800 + SOFT 0..100, upright et italique) plutôt qu'en coupes statiques fixes — nécessaire pour le compte à rebours d'Edwige & Wilfried (font-variation-settings animé à chaque tick, cf. edwigeWilfriedEffects.tsx). Les coupes statiques précédentes (300/400/500/600) restent couvertes par cette plage, aucune régression sur le reste du site qui n'utilise que ces poids. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Jost:wght@300;400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..800,0..100;1,9..144,300..800,0..100&family=Jost:wght@300;400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <title>Scroll The Date — Faire-parts de mariage digitaux</title>

@@ -4,6 +4,7 @@ import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import DetailsSombre from '@/components/faire-part/DetailsSombre'
+import { EwEffectsStyles, HorizontalProgramme, LieuMagnifier, ScatterDateCard, WaxSealRsvp } from '@/components/faire-part/edwigeWilfriedEffects'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { MINIMAL_THEME } from '@/components/hero-scrub/themes'
 import {
@@ -16,6 +17,7 @@ import {
   SLUG,
   VENUE_LOCATION,
   VENUE_NAME,
+  WEDDING_DATE_LABEL,
   WEDDING_DATETIME,
 } from '@/components/faire-part/edwigeWilfriedContent'
 
@@ -46,6 +48,8 @@ export default function FairePartEdwigeWilfried() {
 
   return (
     <div className="bg-[#FBF7F1]">
+      <EwEffectsStyles />
+
       {/* En-tête minimal — pas le Navbar marketing du site public. Pastille
           sombre translucide pour rester lisible quelle que soit l'image du
           scrub derrière (l'enveloppe claire comme la scène dorée). */}
@@ -93,17 +97,17 @@ export default function FairePartEdwigeWilfried() {
           mesure DOM en production — -20vh ne comblait que 20 % de l'écran
           au moment critique. */}
       <div className="relative z-10 -mt-[100vh] rounded-t-[32px] bg-[#FBF7F1] shadow-[0_-24px_60px_rgba(46,38,32,0.18)]">
-        {/* DetailsSombre (children de PayloadSection) remplace la pile de
-            cartes Date/Lieu/Heure/Dress code par défaut — mêmes effets que
-            Léa & Olivier (compte à rebours à anneaux, carte SVG du Lieu,
-            timeline du Programme, bouton RSVP magnétique + confettis),
-            adaptés au thème clair de ce couple (cf. DETAILS_THEME, repris
-            de MINIMAL_THEME). `programme` = PROGRAMME, fourni verbatim par
-            le couple (cf. edwigeWilfriedContent.ts). `lodging` reste omis :
-            pas de vraie donnée pour ce couple — jamais de contenu inventé.
-            `confettiSecondary` = ACCENT_PALE (rose poudré) plutôt que le
-            crème par défaut, pensé pour un fond sombre — sur cette page
-            claire, le crème serait invisible. */}
+        {/* DetailsSombre (children de PayloadSection) — Dress code garde le
+            rendu par défaut (thème clair, cf. DETAILS_THEME), mais Date,
+            Lieu, Programme et RSVP passent par les slots `renderDate`/
+            `renderLieu`/`renderProgramme`/`renderRsvp` : une refonte
+            bespoke à palette fixe (chic sombre, cf. edwigeWilfriedEffects.tsx)
+            plutôt qu'une variation du thème générique de la page — lettres
+            qui se recomposent + compte à rebours en Fraunces variable,
+            défilement horizontal épinglé, loupe magnétique sur carte SVG,
+            sceau de cire pressé. `programme` = PROGRAMME, fourni verbatim
+            par le couple. `lodging` reste omis : pas de vraie donnée pour
+            ce couple — jamais de contenu inventé. */}
         <PayloadSection slug={SLUG} coupleNames={COUPLE_NAMES} rsvpCtaLabel={RSVP_CTA_LABEL} headingCascade>
           {(openRsvp) => (
             <DetailsSombre
@@ -116,6 +120,18 @@ export default function FairePartEdwigeWilfried() {
               confettiSecondary={ACCENT_PALE}
               openRsvp={openRsvp}
               theme={DETAILS_THEME}
+              renderDate={(_accent, revealed, reducedMotion) => (
+                <ScatterDateCard weddingDateTime={WEDDING_DATETIME} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
+              renderLieu={({ venueName, venueAddress, mapsUrl }) => (
+                <LieuMagnifier venueName={venueName} venueAddress={venueAddress} mapsUrl={mapsUrl} />
+              )}
+              renderProgramme={(programme, _accent, revealed, reducedMotion) => (
+                <HorizontalProgramme programme={programme} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
+              renderRsvp={({ label, onClick }) => (
+                <WaxSealRsvp label={label} weddingDateLabel={WEDDING_DATE_LABEL} onClick={onClick} />
+              )}
             />
           )}
         </PayloadSection>
