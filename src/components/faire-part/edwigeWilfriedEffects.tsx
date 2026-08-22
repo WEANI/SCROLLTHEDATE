@@ -184,14 +184,32 @@ function ScatterTitle({ text, revealed, reducedMotion }: { text: string; reveale
 }
 
 /**
- * Un chiffre du compte à rebours, en Fraunces variable — au changement de
- * valeur, la graisse « gonfle » (wght 300→800, SOFT 100→0) et vire bordeaux
- * pendant 450ms avant de revenir. Nécessite Fraunces chargée en variable
- * complète, pas en coupes statiques fixes (cf. index.html). Chiffres
- * tabulaires (largeur fixe) pour que le compteur ne « saute » pas
- * horizontalement à chaque tick.
+ * Anneau de progression circulaire — un des 4 (jours/heures/min/sec) du
+ * compte à rebours. Arc doré (accent demandé en retour client, bordeaux à
+ * l'origine) qui se remplit proportionnellement au
+ * temps restant dans le cycle de l'unité (`value / max`), pas au temps
+ * écoulé : `value` DIMINUE à l'approche du mariage (23h restantes sur 24,
+ * puis 22h, etc.), donc l'anneau se VIDE à mesure que l'unité s'épuise —
+ * lecture immédiate, cohérent avec la logique déjà en place pour Léa &
+ * Olivier (cf. ProgressRing dans DetailsSombre.tsx, non exporté — palette
+ * différente ici, donc dupliqué plutôt que réexposé). `strokeLinecap`
+ * rond + transition sur `strokeDashoffset` pour l'animation de
+ * remplissage à chaque tick. Chiffre serif (Fraunces) au centre, label en
+ * micro-capitales espacées en dessous.
  */
-function PulseDigit({ value, label }: { value: number; label: string }) {
+function EwRing({ value, max, label, size = 76 }: { value: number; max: number; label: string; size?: number }) {
+  const strokeWidth = 4
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const fraction = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0
+  const offset = circumference * (1 - fraction)
+  const digitSize = value >= 100 ? 17 : 22
+
+  // À chaque tick (changement de `value`), le chiffre « gonfle » en graisse
+  // (Fraunces variable, wght 300→800 + SOFT 100→0) et vire bordeaux pendant
+  // 450ms avant de revenir — repris de l'ancien PulseDigit (avant le
+  // passage aux anneaux SVG), maintenant appliqué au chiffre à l'intérieur
+  // de l'anneau plutôt qu'à un chiffre nu.
   const [pulsing, setPulsing] = useState(false)
   const prev = useRef(value)
 
@@ -204,18 +222,36 @@ function PulseDigit({ value, label }: { value: number; label: string }) {
   }, [value])
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <span
-        className="font-display tabular-nums"
-        style={{
-          fontSize: 28,
-          color: pulsing ? EW_BORDEAUX : EW_INK,
-          fontVariationSettings: pulsing ? "'wght' 800, 'SOFT' 0" : "'wght' 300, 'SOFT' 100",
-          transition: 'font-variation-settings 450ms ease, color 450ms ease',
-        }}
-      >
-        {String(value).padStart(2, '0')}
-      </span>
+    <div className="flex flex-col items-center gap-2.5">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90" aria-hidden>
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(46, 38, 32, 0.12)" strokeWidth={strokeWidth} />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={EW_GOLD}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 0.6s linear' }}
+          />
+        </svg>
+        <div
+          className="font-display tabular-nums absolute inset-0 flex items-center justify-center"
+          style={{
+            color: pulsing ? EW_BORDEAUX : EW_INK,
+            fontSize: digitSize,
+            fontVariationSettings: pulsing ? "'wght' 800, 'SOFT' 0" : "'wght' 300, 'SOFT' 100",
+            transition: 'font-variation-settings 450ms ease, color 450ms ease',
+          }}
+          aria-hidden
+        >
+          {String(value).padStart(2, '0')}
+        </div>
+      </div>
       <span className="text-[10px] uppercase tracking-[0.22em]" style={{ color: 'rgba(46, 38, 32, 0.55)' }}>
         {label}
       </span>
@@ -241,6 +277,10 @@ export function ScatterDateCard({
   // retour client — "Mardi 21 décembre 2027" → "21 décembre 2027").
   const title = `${day} ${month} ${year}`
   const { d, h, m, s } = useCountdown(targetMs)
+  // Capté une seule fois au montage — sinon, en recalculant max=d à chaque
+  // rendu, l'anneau des jours resterait à 100% en permanence (numérateur et
+  // dénominateur toujours égaux), cf. même logique côté DetailsSombre.
+  const initialDays = useRef(d)
 
   return (
     <>
@@ -261,10 +301,10 @@ export function ScatterDateCard({
         />
 
         <div className="mt-8 flex justify-center gap-5" aria-label={`Compte à rebours jusqu'au ${title}`}>
-          <PulseDigit value={d} label="Jours" />
-          <PulseDigit value={h} label="Heures" />
-          <PulseDigit value={m} label="Min" />
-          <PulseDigit value={s} label="Sec" />
+          <EwRing value={revealed ? d : 0} max={initialDays.current || 1} label="Jours" />
+          <EwRing value={revealed ? h : 0} max={24} label="Heures" />
+          <EwRing value={revealed ? m : 0} max={60} label="Min" />
+          <EwRing value={revealed ? s : 0} max={60} label="Sec" />
         </div>
       </div>
     </>
