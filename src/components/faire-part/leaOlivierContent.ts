@@ -79,15 +79,16 @@ export const CINEMA_ROUGE_THEME: HeroTheme = {
   id: 'cinema',
   label: 'Cinéma — Léa & Olivier',
   colorScheme: 'dark',
-  // Fond allégé (demande client « moins sombre ») — bordeaux profond
+  // Fond allégé (demande client « moins sombre ») — anthracite chaud
   // choisi parmi 3 propositions (sombre atténué / anthracite chaud /
-  // bordeaux profond) prototypées en HTML autonome. Garde l'identité
-  // rouge du thème au lieu d'un neutre, tout en restant nettement moins
-  // "noir absolu" que l'ancien #0D0A08.
-  frameBg: '#2E1518',
-  pageBg: '#2E1518',
+  // bordeaux profond) prototypées en HTML autonome, après un premier essai
+  // en bordeaux profond finalement écarté par la cliente. Neutre chaud,
+  // plus proche de la charte marketing du site (anthracite), nettement
+  // moins "noir absolu" que l'ancien #0D0A08.
+  frameBg: '#26201C',
+  pageBg: '#26201C',
   vignette:
-    'linear-gradient(180deg, rgba(46,21,24,0.20) 0%, rgba(46,21,24,0.05) 40%, rgba(46,21,24,0.82) 100%)',
+    'linear-gradient(180deg, rgba(38,32,28,0.20) 0%, rgba(38,32,28,0.05) 40%, rgba(38,32,28,0.82) 100%)',
   accent: '#8B1E28',
   textPrimary: '#F3EAD9',
   textSecondary: '#BBAFA9',
@@ -98,7 +99,7 @@ export const CINEMA_ROUGE_THEME: HeroTheme = {
 }
 
 export const PAYLOAD_THEME: Partial<PayloadTheme> = {
-  sectionBg: '#2E1518', // aligné sur CINEMA_ROUGE_THEME.pageBg, cf. commentaire là-bas
+  sectionBg: '#26201C', // aligné sur CINEMA_ROUGE_THEME.pageBg, cf. commentaire là-bas
   cardBg: 'rgba(255, 255, 255, 0.05)',
   cardBorder: 'rgba(232, 196, 196, 0.14)', // touche de rose poudré discrète — cf. instructions §3
   accent: '#8B1E28',
@@ -120,7 +121,7 @@ export const PAYLOAD_THEME: Partial<PayloadTheme> = {
  * aucune nouvelle couleur introduite pour ce Dialog.
  */
 export const RSVP_THEME: Partial<RsvpTheme> = {
-  modalBg: '#351B1C', // même écart de clarté que vs pageBg avant l'allègement (#14100C vs l'ex-#0D0A08), reporté sur le nouveau fond
+  modalBg: '#2D2620', // même écart de clarté que vs pageBg avant l'allègement (#14100C vs l'ex-#0D0A08), reporté sur le nouveau fond
   shadow: '0 24px 64px rgba(0, 0, 0, 0.55)',
   heading: '#F3EAD9',
   text: '#F3EAD9',
@@ -139,7 +140,7 @@ export const RSVP_THEME: Partial<RsvpTheme> = {
 }
 
 export const CLOSING_THEME: Partial<ClosingTheme> = {
-  bg: '#2E1518', // aligné sur CINEMA_ROUGE_THEME.pageBg, cf. commentaire là-bas
+  bg: '#26201C', // aligné sur CINEMA_ROUGE_THEME.pageBg, cf. commentaire là-bas
   border: 'rgba(255, 255, 255, 0.10)',
   heading: '#F3EAD9',
   accent: '#8B1E28',
@@ -235,7 +236,7 @@ export const HERO_CHAPTERS: HeroChapter[] = [
  * contrairement à Edwige & Wilfried où ces cartes claires posées sur une
  * page claire n'ont jamais posé ce problème. Texte posé DIRECTEMENT sur le
  * fond de la page (`ink`) déjà en crème : la page de Léa & Olivier reste
- * sombre (CINEMA_ROUGE_THEME.pageBg, bordeaux profond), contrairement à
+ * sombre (CINEMA_ROUGE_THEME.pageBg, anthracite chaud), contrairement à
  * celle d'Edwige & Wilfried. `mapLine` (traits de la carte SVG du Lieu) en crème
  * aussi, pour rester visible sur la carte désormais sombre. `gold` (accent
  * principal) devient leur rouge déjà établi (CINEMA_ROUGE_THEME.accent)
