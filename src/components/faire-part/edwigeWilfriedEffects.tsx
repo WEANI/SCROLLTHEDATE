@@ -54,8 +54,10 @@ export type BespokePalette = {
   goldRgb: string
   /** Titres de section (« La date », « Le Lieu »…) — doré chez Edwige & Wilfried ; blanc/crème chez Léa & Olivier (demande client, pour se détacher du rouge déjà très présent ailleurs sur leur page). Rôle séparé de `gold` : `gold` reste utilisé ailleurs (anneaux, filets) même quand les titres passent en blanc. */
   sectionTitle: string
-  /** Chiffre de l'heure dans la piste du Programme — bordeaux (accent secondaire) chez Edwige & Wilfried ; rouge principal chez Léa & Olivier (demande client : « respecte les couleurs du thème », pas le rose secondaire). Rôle séparé de `bordeaux`/`gold` car le bon accent à utiliser ici diffère par couple. */
+  /** Chiffre de l'heure dans la piste du Programme — bordeaux (accent secondaire) chez Edwige & Wilfried ; crème chez Léa & Olivier (demande client : l'heure en blanc, le titre en rouge — cf. `stepLabel`). Rôle séparé de `bordeaux`/`gold` car le bon accent à utiliser ici diffère par couple. */
   timelineAccent: string
+  /** Titre de l'étape sous l'heure (« La cérémonie »…) dans la piste du Programme — même teinte que le reste du texte de carte chez Edwige & Wilfried (`inkOnCard`) ; rouge principal chez Léa & Olivier (demande client, pour inverser heure/titre par rapport à `inkOnCard`). Rôle séparé d'`inkOnCard` : celui-ci reste utilisé ailleurs (Lieu, FAQ, Dress code) même quand le titre du Programme passe au rouge. */
+  stepLabel: string
   /**
    * Sceau de cire RSVP — 3 teintes pour son dégradé radial (clair au
    * centre, sombre au bord). Rôle distinct de `gold`/`bordeaux` : chez
@@ -85,6 +87,7 @@ export const EW_PALETTE: BespokePalette = {
   goldRgb: '201, 169, 97',
   sectionTitle: '#c9a961',
   timelineAccent: '#b02634',
+  stepLabel: '#2E2620',
   seal: '#b02634',
   sealLight: '#c8394a',
   sealDark: '#7c1a26',
@@ -422,7 +425,7 @@ function StepCard({ item }: { item: ProgrammeItem }) {
       <p className="font-display mt-3 text-[52px] leading-none" style={{ color: p.timelineAccent, fontVariationSettings: "'wght' 200" }}>
         {item.time}
       </p>
-      <p className="font-display mt-3 text-[20px] italic" style={{ color: p.inkOnCard }}>
+      <p className="font-display mt-3 text-[20px] italic" style={{ color: p.stepLabel }}>
         {item.label}
       </p>
       {item.sub && (

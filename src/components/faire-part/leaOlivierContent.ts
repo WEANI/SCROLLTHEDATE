@@ -265,10 +265,12 @@ export const LAO_PALETTE: BespokePalette = {
   // Titres de section en blanc (demande client) — pas leur rouge
   // (`gold`), déjà très présent ailleurs sur cette page.
   sectionTitle: '#F3EAD9',
-  // Chiffre de l'heure dans la piste du Programme : leur rouge principal
-  // (demande client « respecte les couleurs du thème »), pas le rose
-  // secondaire (`bordeaux`) utilisé par défaut.
-  timelineAccent: '#8B1E28',
+  // Chiffre de l'heure dans la piste du Programme : blanc/crème (demande
+  // client « l'heure en blanc, le titre en rouge » — inverse du réglage
+  // précédent, qui mettait le rouge sur l'heure). Le titre de l'étape
+  // (« La cérémonie »…) passe donc au rouge via `stepLabel` ci-dessous.
+  timelineAccent: '#F3EAD9',
+  stepLabel: '#8B1E28',
   seal: '#8B1E28',
   sealLight: '#A32732', // accentHover déjà établi dans PAYLOAD_THEME, pas une teinte inventée
   sealDark: '#5C1018',
