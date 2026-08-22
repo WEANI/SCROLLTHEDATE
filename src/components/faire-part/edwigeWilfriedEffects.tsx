@@ -906,19 +906,27 @@ function HorizontalPhotos({ photos }: { photos: string[] }) {
       <div className="sticky top-0 h-screen overflow-hidden" style={{ containerType: 'inline-size' }}>
         <div
           ref={trackRef}
-          className="ew-photos-track flex h-full items-center gap-10 px-[8cqw]"
+          className="ew-photos-track flex h-full"
           data-native={nativeSupported ? '1' : '0'}
           style={{ width: 'max-content', willChange: 'transform' }}
         >
+          {/* Une diapo = 100cqw pile (pas juste la largeur naturelle de la
+              photo) : la piste fait alors exactement N × 100cqw, et
+              `translateX(calc(-100% + 100cqw))` s'arrête pile sur le bord
+              gauche de la dernière diapo — aucun bout de la photo
+              précédente ne dépasse plus dans le cadre à la fin du scroll
+              (constaté sur mobile avant ce correctif). Chaque photo reste
+              entière dans sa diapo via `object-contain`. */}
           {photos.map((src) => (
-            <img
-              key={src}
-              src={src}
-              alt=""
-              className="h-auto max-h-[72vh] w-auto max-w-[84cqw] rounded-2xl object-contain"
-              style={{ boxShadow: '0 12px 40px rgba(46,38,32,0.22)' }}
-              loading="lazy"
-            />
+            <div key={src} className="flex h-full w-[100cqw] shrink-0 items-center justify-center px-[8cqw]">
+              <img
+                src={src}
+                alt=""
+                className="h-auto max-h-[72vh] w-auto max-w-full rounded-2xl object-contain"
+                style={{ boxShadow: '0 12px 40px rgba(46,38,32,0.22)' }}
+                loading="lazy"
+              />
+            </div>
           ))}
         </div>
       </div>
