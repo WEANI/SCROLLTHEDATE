@@ -15,14 +15,17 @@ import { useCountdown, type ProgrammeItem } from './DetailsSombre'
  * générique de la page (rose pastel, cf. DETAILS_THEME dans
  * edwigeWilfriedContent.ts). Fond des cases Date/Lieu/Programme repassé en
  * clair sur retour client (c'était sombre au départ) — `EW_BG`/
- * `EW_BG_PROGRAMME` valent maintenant la même teinte crème que `EW_CREAM`
- * (pas une 2e couleur inventée), et le texte qui était en crème sur ces
- * 3 cases est passé à `EW_INK` (sombre). Le sceau RSVP, lui, n'a pas été
- * redemandé en clair : il garde son fond bordeaux/EW_CREAM d'origine,
- * `EW_CREAM` reste donc utile telle quelle pour lui. Accent bordeaux/doré
- * inchangés (ce sont des accents, pas le « texte blanc » visé).
+ * `EW_BG_PROGRAMME` valent la même teinte crème que `EW_CREAM` (pas une 2e
+ * couleur inventée), et le texte qui était en crème sur ces 3 cases est
+ * passé à `EW_INK` (sombre). La case Date, elle, est passée en blanc pur
+ * (`EW_BG_DATE`) sur un 2e retour client — distincte de `EW_BG` pour ne
+ * pas aussi blanchir la carte du Lieu, qui garde le crème. Le sceau RSVP
+ * n'a pas été redemandé en clair : il garde son fond bordeaux/EW_CREAM
+ * d'origine, `EW_CREAM` reste donc utile telle quelle pour lui. Accent
+ * bordeaux/doré inchangés (ce sont des accents, pas le « texte blanc » visé).
  */
 const EW_BG = '#f3ead9'
+const EW_BG_DATE = 'transparent' // sur retour client — la case Date se fond maintenant dans le fond de la page (blanc pur essayé juste avant, non retenu)
 const EW_BG_PROGRAMME = '#f3ead9'
 const EW_CREAM = '#f3ead9'
 const EW_INK = '#2E2620' // texte sombre — repris de DETAILS_THEME.ink (edwigeWilfriedContent.ts), déjà utilisé ailleurs sur cette page
@@ -83,6 +86,46 @@ export function EwEffectsStyles() {
         from { transform: translateX(0); }
         to { transform: translateX(calc(-100% + 100cqw)); }
       }
+
+      /* Notre histoire — chaque mot part à 12% d'opacité et « s'encre »
+         (opacité pleine) au fur et à mesure qu'il traverse le viewport, de
+         façon réversible (on peut remonter). CSS natif : chaque span porte
+         SON PROPRE view-timeline (sujet = lui-même, pas un ancêtre nommé
+         comme pour la piste horizontale du programme — ici chaque mot doit
+         s'animer selon SA PROPRE traversée, pas celle d'un conteneur
+         commun) via animation-timeline: view(), réversible par nature
+         (contrairement à une animation classique, la progression suit
+         directement le scroll dans les deux sens, rien à gérer en plus). */
+      .ew-word-ink {
+        opacity: 0.12;
+      }
+      @supports (animation-timeline: view()) {
+        .ew-word-ink {
+          animation-name: ew-word-ink-anim;
+          animation-duration: 1ms; /* ignorée avec un view-timeline, requise pour une syntaxe valide */
+          animation-fill-mode: both;
+          animation-timeline: view();
+          animation-range: cover 5% cover 42%;
+        }
+      }
+      @keyframes ew-word-ink-anim {
+        from { opacity: 0.12; }
+        to { opacity: 1; }
+      }
+      /* Repli JS (cf. NotreHistoire, IntersectionObserver à seuils
+         multiples) : bascule discrète d'une classe plutôt qu'un scrub
+         continu — suffisant en repli, avec une petite transition pour ne
+         pas être un pur « pop ». */
+      .ew-word-ink.ew-inked {
+        opacity: 1;
+        transition: opacity 0.4s ease;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ew-word-ink {
+          opacity: 1;
+          animation: none;
+        }
+      }
     `}</style>
   )
 }
@@ -90,8 +133,6 @@ export function EwEffectsStyles() {
 /* ------------------------------------------------------------------ */
 /* 1. Date — lettres qui se recomposent + compte à rebours variable    */
 /* ------------------------------------------------------------------ */
-
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /**
  * Titre en lettres qui se recomposent — chaque caractère part d'une
@@ -190,20 +231,18 @@ export function ScatterDateCard({
 }) {
   const targetMs = new Date(weddingDateTime).getTime()
   const date = new Date(weddingDateTime)
-  const weekday = capitalize(date.toLocaleDateString('fr-FR', { weekday: 'long' }))
   const month = date.toLocaleDateString('fr-FR', { month: 'long' })
   const day = date.getDate()
   const year = date.getFullYear()
-  // Jour en chiffres + année — le jour en toutes lettres ("vingt-et-un")
-  // retenu au départ (cf. DAY_WORDS ci-dessus, gardé au cas où) s'est révélé
-  // moins lisible que le chiffre, et l'année manquait.
-  const title = `${weekday} ${day} ${month} ${year}`
+  // Jour en chiffres + année, sans le jour de la semaine (retiré sur
+  // retour client — "Mardi 21 décembre 2027" → "21 décembre 2027").
+  const title = `${day} ${month} ${year}`
   const { d, h, m, s } = useCountdown(targetMs)
 
   return (
     <>
       <EwLabel>La date</EwLabel>
-      <div className="rounded-2xl px-6 py-9 text-center" style={{ background: EW_BG }}>
+      <div className="rounded-2xl px-6 py-9 text-center" style={{ background: EW_BG_DATE }}>
         <ScatterTitle text={title} revealed={revealed} reducedMotion={reducedMotion} />
 
         {/* filet doré dégradé — s'étire sous le titre une fois les lettres posées */}
@@ -233,13 +272,10 @@ export function ScatterDateCard({
 /* 2. Programme — défilement horizontal épinglé                        */
 /* ------------------------------------------------------------------ */
 
-function StepCard({ item, index }: { item: ProgrammeItem; index: number }) {
+function StepCard({ item }: { item: ProgrammeItem }) {
   return (
     <div className="flex h-full flex-col justify-center px-2" style={{ width: 'min(400px, 74cqw)', flex: '0 0 auto' }}>
       <div className="mb-5 h-px w-10" style={{ background: 'rgba(46, 38, 32, 0.15)' }} aria-hidden />
-      <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color: EW_GOLD }}>
-        Étape {String(index + 1).padStart(2, '0')}
-      </p>
       <p className="font-display mt-3 text-[52px] leading-none" style={{ color: EW_BORDEAUX, fontVariationSettings: "'wght' 200" }}>
         {item.time}
       </p>
@@ -333,7 +369,7 @@ export function HorizontalProgramme({
         >
           {programme.map((item, i) => (
             <div key={i} style={{ scrollSnapAlign: 'start' }}>
-              <StepCard item={item} index={i} />
+              <StepCard item={item} />
             </div>
           ))}
         </div>
@@ -354,7 +390,7 @@ export function HorizontalProgramme({
             style={{ width: 'max-content', willChange: 'transform' }}
           >
             {programme.map((item, i) => (
-              <StepCard key={i} item={item} index={i} />
+              <StepCard key={i} item={item} />
             ))}
           </div>
         </div>
@@ -522,7 +558,98 @@ export function LieuMagnifier({
 }
 
 /* ------------------------------------------------------------------ */
-/* 4. RSVP — sceau de cire pressé                                       */
+/* 4. Notre histoire — mots qui s'encrent au scroll                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Texte fourni ni par le couple ni par l'utilisateur — cette section a été
+ * demandée uniquement par sa mécanique (mots qui s'encrent au scroll),
+ * sans texte réel. Paragraphe générique écrit pour satisfaire la demande
+ * technique (26ch de large, mots-clés « oui »/« verres »/« chandelles »/
+ * « aube » intégrés naturellement pour qu'ils s'encrent en bordeaux comme
+ * spécifié) — À REMPLACER par la vraie histoire du couple dès qu'elle est
+ * fournie, ce n'est pas un texte définitif.
+ */
+const EW_HISTOIRE_TEXT =
+  'Un jour, nos regards se sont trouvés. Nous avons dit oui à cette évidence, entre deux verres levés à la légèreté du monde. Depuis, chaque soir ressemble à une promesse — chandelles allumées, mots murmurés jusqu’à l’aube.'
+
+const EW_HISTOIRE_KEYWORDS = new Set(['oui', 'verres', 'chandelles', 'aube'])
+
+const normalizeWord = (w: string) => w.toLowerCase().replace(/[.,;:!?—«»"'’]/g, '')
+
+/**
+ * Paragraphe en Cormorant Garamond dans la demande d'origine — cette police
+ * n'est chargée nulle part sur ce projet (uniquement Fraunces/Jost/Space
+ * Grotesk, cf. index.html) ; en ajouter une 3e serif juste pour ce
+ * paragraphe aurait cassé la cohérence typographique du reste de la page
+ * pour un rendu très proche. Fraunces (`font-display`, déjà la police
+ * serif du site) reprise à la place.
+ *
+ * Chaque mot dans son propre `<span className="ew-word-ink">` (cf.
+ * EwEffectsStyles pour l'animation) — crème à 12% d'opacité par défaut,
+ * bordeaux pour les mots-clés (même logique de couleur statique + seule
+ * l'opacité anime, cf. doc de la classe CSS). `useEffect` : repli JS
+ * seulement si le CSS natif (`animation-timeline: view()`) n'est pas
+ * supporté — sinon rien à faire, le CSS pilote seul.
+ */
+export function NotreHistoire() {
+  const pRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    const nativeSupported = typeof CSS !== 'undefined' && !!CSS.supports && CSS.supports('animation-timeline: view()')
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (nativeSupported || reducedMotion) return
+
+    const p = pRef.current
+    if (!p) return
+    const spans = Array.from(p.querySelectorAll<HTMLElement>('.ew-word-ink'))
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          entry.target.classList.toggle('ew-inked', entry.intersectionRatio > 0.15)
+        })
+      },
+      // seuils multiples : l'observer doit re-déclencher à chaque petite
+      // variation du ratio de recouvrement (pas juste 0/1) pour un effet
+      // réversible qui suit le scroll, pas un simple aller simple.
+      { threshold: Array.from({ length: 21 }, (_, i) => i / 20) },
+    )
+    spans.forEach((s) => observer.observe(s))
+    return () => observer.disconnect()
+  }, [])
+
+  const words = EW_HISTOIRE_TEXT.split(' ')
+
+  return (
+    // plein cadre (sort de la colonne étroite max-w-420 héritée de
+    // DetailsSombre), même technique que la piste du programme juste en
+    // dessous. Fond transparent (et non plus #0d0a08) sur retour client :
+    // la section doit maintenant se fondre dans le fond clair de la page
+    // (même mécanisme que EW_BG_DATE), pas trancher comme une bande sombre.
+    <section className="relative ml-[calc(50%-50vw)] w-screen py-20" style={{ background: 'transparent' }}>
+      <EwLabel>Notre histoire</EwLabel>
+      <p
+        ref={pRef}
+        className="font-display mx-auto max-w-[26ch] text-center italic"
+        style={{ fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', lineHeight: 1.6 }}
+      >
+        {words.map((raw, i) => (
+          <span
+            key={i}
+            className="ew-word-ink inline"
+            style={{ color: EW_HISTOIRE_KEYWORDS.has(normalizeWord(raw)) ? EW_BORDEAUX : EW_INK }}
+          >
+            {raw}{' '}
+          </span>
+        ))}
+      </p>
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. RSVP — sceau de cire pressé                                       */
 /* ------------------------------------------------------------------ */
 
 /** Éclaboussure de 8 gouttelettes de cire — même technique que spawnConfetti dans DetailsSombre.tsx (nœuds DOM hors React, physique simple en JS), particules plus petites/rondes, trajet plus court. */

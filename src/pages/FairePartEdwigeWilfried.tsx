@@ -4,7 +4,7 @@ import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import DetailsSombre from '@/components/faire-part/DetailsSombre'
-import { EwEffectsStyles, HorizontalProgramme, LieuMagnifier, ScatterDateCard, WaxSealRsvp } from '@/components/faire-part/edwigeWilfriedEffects'
+import { EwEffectsStyles, HorizontalProgramme, LieuMagnifier, NotreHistoire, ScatterDateCard, WaxSealRsvp } from '@/components/faire-part/edwigeWilfriedEffects'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { MINIMAL_THEME } from '@/components/hero-scrub/themes'
 import {
@@ -133,6 +133,7 @@ export default function FairePartEdwigeWilfried() {
               renderLieu={({ venueName, venueAddress, mapsUrl }) => (
                 <LieuMagnifier venueName={venueName} venueAddress={venueAddress} mapsUrl={mapsUrl} />
               )}
+              renderBeforeProgramme={() => <NotreHistoire />}
               renderProgramme={(programme, _accent, revealed, reducedMotion) => (
                 <HorizontalProgramme programme={programme} revealed={revealed} reducedMotion={reducedMotion} />
               )}
