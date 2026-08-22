@@ -593,6 +593,7 @@ export default function DetailsSombre({
   renderProgramme,
   renderBeforeRsvp,
   renderRsvp,
+  renderAfterRsvp,
 }: {
   /** Date + heure ISO du mariage, ex "2026-08-15T16:00:00+02:00" — source unique pour le bloc date ET le compte à rebours. */
   weddingDateTime: string
@@ -638,6 +639,11 @@ export default function DetailsSombre({
     revealed: boolean,
     reducedMotion: boolean,
   ) => ReactNode
+  /**
+   * Bloc additionnel inséré juste après RSVP — même mécanique que
+   * `renderBeforeRsvp` (cf. Edwige & Wilfried « Foire aux questions »).
+   */
+  renderAfterRsvp?: (revealed: boolean, reducedMotion: boolean) => ReactNode
 }) {
   const t = { ...DEFAULT_DETAILS_THEME, ...theme }
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${venueName} ${venueAddress}`)}`
@@ -792,6 +798,10 @@ export default function DetailsSombre({
       </section>
     ),
   )
+
+  if (renderAfterRsvp) {
+    blocks.push((revealed, reducedMotion) => renderAfterRsvp(revealed, reducedMotion))
+  }
 
   return (
     <div className="mx-auto max-w-[420px] text-left">

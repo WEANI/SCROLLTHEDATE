@@ -3,13 +3,16 @@ import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react'
 import { useCountdown, type ProgrammeItem } from './DetailsSombre'
 
 /**
- * Refonte bespoke de 4 sections du faire-part « Edwige & Wilfried » — date
- * (lettres qui se recomposent + compte à rebours en Fraunces variable),
- * programme (défilement horizontal épinglé), lieu (loupe magnétique sur
- * carte SVG à deux calques), RSVP (sceau de cire pressé). Branché via les
- * slots `renderDate`/`renderLieu`/`renderProgramme`/`renderRsvp` de
- * DetailsSombre — cf. ce fichier pour pourquoi ces 4 sections sortent du
- * système de thème générique plutôt que d'être une variation de plus.
+ * Refonte bespoke de plusieurs sections du faire-part « Edwige & Wilfried »
+ * — date (lettres qui se recomposent + compte à rebours en Fraunces
+ * variable), programme (défilement horizontal épinglé), lieu (loupe
+ * magnétique sur carte SVG à deux calques), RSVP (sceau de cire pressé),
+ * plus « Notre histoire » et « Foire aux questions » (paragraphe qui
+ * s'encre au scroll / accordéon), ajoutées ensuite. Branché via les slots
+ * `renderDate`/`renderLieu`/`renderProgramme`/`renderRsvp`/
+ * `renderBeforeRsvp`/`renderAfterRsvp` de DetailsSombre — cf. ce fichier
+ * pour pourquoi ces sections sortent du système de thème générique plutôt
+ * que d'être une variation de plus.
  *
  * Palette FIXE, propre à cette redesign — pas les couleurs du thème
  * générique de la page (rose pastel, cf. DETAILS_THEME dans
@@ -856,5 +859,89 @@ export function WaxSealRsvp({
         </p>
       </div>
     </>
+  )
+}
+
+// 6. Foire aux questions — accordéon, sous RSVP -----------------------
+
+/**
+ * Contenu PROVISOIRE : seules les 3 questions ont été fournies par la
+ * cliente (capture d'écran de maquette) — pas de réponses. Réponses
+ * génériques plausibles écrites en attendant le vrai texte du couple,
+ * signalées comme telles ici pour ne pas être oubliées.
+ */
+const EW_FAQ_ITEMS: { q: string; a: string }[] = [
+  {
+    q: 'Y a-t-il un parking disponible ?',
+    a: 'Un parking est disponible sur place. Nous vous communiquerons les modalités précises avant le jour J.',
+  },
+  {
+    q: 'Puis-je venir accompagné(e) ?',
+    a: "Le nombre de places étant compté, merci de vous en tenir aux personnes indiquées sur votre invitation. N'hésitez pas à nous contacter pour toute question.",
+  },
+  {
+    q: 'À quelle heure faut-il arriver ?',
+    a: "Nous vous recommandons d'arriver un peu avant le début de la cérémonie afin de vous installer tranquillement.",
+  },
+]
+
+function FaqItemCard({ item, open, onToggle }: { item: { q: string; a: string }; open: boolean; onToggle: () => void }) {
+  return (
+    <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(46,38,32,0.08)]">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
+      >
+        <span className="font-display text-[16px] italic" style={{ color: EW_INK }}>
+          {item.q}
+        </span>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          className="shrink-0 transition-transform duration-300"
+          style={{ transform: open ? 'rotate(180deg)' : 'none', color: EW_INK, opacity: 0.5 }}
+        >
+          <path d="M3 6l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <div
+        className="grid transition-[grid-template-rows] duration-300 ease-out"
+        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
+          <p className="px-6 pb-5 text-[14px] leading-[1.6]" style={{ color: 'rgba(46, 38, 32, 0.7)' }}>
+            {item.a}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Section « Foire aux questions » — accordéon crème/blanc (cf. maquette
+ * fournie), positionnée sous RSVP via le slot `renderAfterRsvp` de
+ * DetailsSombre. Une seule question ouverte à la fois plutôt qu'un état
+ * par carte — plus lisible sur une section courte (3 questions).
+ */
+export function FoireAuxQuestions() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
+
+  return (
+    <section>
+      <EwLabel>Foire aux questions</EwLabel>
+      <p className="mb-8 text-center text-[13px]" style={{ color: 'rgba(46, 38, 32, 0.55)' }}>
+        Tout ce que vous devez savoir
+      </p>
+      <div className="flex flex-col gap-4">
+        {EW_FAQ_ITEMS.map((item, i) => (
+          <FaqItemCard key={item.q} item={item} open={openIndex === i} onToggle={() => setOpenIndex(openIndex === i ? null : i)} />
+        ))}
+      </div>
+    </section>
   )
 }

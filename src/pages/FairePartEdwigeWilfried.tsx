@@ -4,7 +4,7 @@ import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import DetailsSombre from '@/components/faire-part/DetailsSombre'
-import { EwEffectsStyles, HorizontalProgramme, LieuMagnifier, NotreHistoire, ScatterDateCard, WaxSealRsvp } from '@/components/faire-part/edwigeWilfriedEffects'
+import { EwEffectsStyles, FoireAuxQuestions, HorizontalProgramme, LieuMagnifier, NotreHistoire, ScatterDateCard, WaxSealRsvp } from '@/components/faire-part/edwigeWilfriedEffects'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { MINIMAL_THEME } from '@/components/hero-scrub/themes'
 import {
@@ -140,6 +140,7 @@ export default function FairePartEdwigeWilfried() {
               renderRsvp={({ label, onClick }) => (
                 <WaxSealRsvp label={label} weddingDateLabel={WEDDING_DATE_LABEL} onClick={onClick} />
               )}
+              renderAfterRsvp={() => <FoireAuxQuestions />}
             />
           )}
         </PayloadSection>
