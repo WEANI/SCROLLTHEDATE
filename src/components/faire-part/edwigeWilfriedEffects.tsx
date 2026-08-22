@@ -696,7 +696,7 @@ export function NotreHistoire() {
           style={{ fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', lineHeight: 1.6 }}
         >
           {sentences.map((sentenceWords, si) => (
-            <span key={si} className="block">
+            <span key={si} className="block" style={{ marginBottom: si < sentences.length - 1 ? '1em' : 0 }}>
               {sentenceWords.map((raw, i) => (
                 <span
                   key={i}
