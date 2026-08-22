@@ -13,16 +13,30 @@ import { useCountdown, type ProgrammeItem } from './DetailsSombre'
  *
  * Palette FIXE, propre à cette redesign — pas les couleurs du thème
  * générique de la page (rose pastel, cf. DETAILS_THEME dans
- * edwigeWilfriedContent.ts) : demande explicite avec des hex précis
- * (fond #0d0a08/#15100d, crème #f3ead9, bordeaux #b02634, doré #c9a961),
- * un chic sombre volontairement différent du reste de la page claire —
- * même logique que CARD_DARK_BG dans DetailsSombre.tsx, poussée plus loin.
+ * edwigeWilfriedContent.ts). Fond des cases Date/Lieu/Programme repassé en
+ * clair sur retour client (c'était sombre au départ) — `EW_BG`/
+ * `EW_BG_PROGRAMME` valent maintenant la même teinte crème que `EW_CREAM`
+ * (pas une 2e couleur inventée), et le texte qui était en crème sur ces
+ * 3 cases est passé à `EW_INK` (sombre). Le sceau RSVP, lui, n'a pas été
+ * redemandé en clair : il garde son fond bordeaux/EW_CREAM d'origine,
+ * `EW_CREAM` reste donc utile telle quelle pour lui. Accent bordeaux/doré
+ * inchangés (ce sont des accents, pas le « texte blanc » visé).
  */
-const EW_BG = '#0d0a08'
-const EW_BG_PROGRAMME = '#15100d'
+const EW_BG = '#f3ead9'
+const EW_BG_PROGRAMME = '#f3ead9'
 const EW_CREAM = '#f3ead9'
+const EW_INK = '#2E2620' // texte sombre — repris de DETAILS_THEME.ink (edwigeWilfriedContent.ts), déjà utilisé ailleurs sur cette page
 const EW_BORDEAUX = '#b02634'
 const EW_GOLD = '#c9a961'
+
+/** Titre de section (« La date », « Le Lieu », « RSVP »…) — même traitement visuel que « Le Programme », factorisé pour ne pas le répéter 4 fois. */
+function EwLabel({ children }: { children: string }) {
+  return (
+    <p className="mb-7 text-center text-[19px] italic" style={{ color: EW_GOLD }}>
+      {children}
+    </p>
+  )
+}
 
 /**
  * Styles globaux partagés par les 4 composants (keyframes, `@property --p`
@@ -105,9 +119,9 @@ function ScatterTitle({ text, revealed, reducedMotion }: { text: string; reveale
           className="inline-block"
           style={
             reducedMotion
-              ? { color: EW_CREAM }
+              ? { color: EW_INK }
               : {
-                  color: EW_CREAM,
+                  color: EW_INK,
                   transform: revealed
                     ? 'translate(0, 0) rotate(0deg) scale(1)'
                     : `translate(${offsets[i].dx}px, ${offsets[i].dy}px) rotate(${offsets[i].rot}deg) scale(1.6)`,
@@ -151,14 +165,14 @@ function PulseDigit({ value, label }: { value: number; label: string }) {
         className="font-display tabular-nums"
         style={{
           fontSize: 28,
-          color: pulsing ? EW_BORDEAUX : EW_CREAM,
+          color: pulsing ? EW_BORDEAUX : EW_INK,
           fontVariationSettings: pulsing ? "'wght' 800, 'SOFT' 0" : "'wght' 300, 'SOFT' 100",
           transition: 'font-variation-settings 450ms ease, color 450ms ease',
         }}
       >
         {String(value).padStart(2, '0')}
       </span>
-      <span className="text-[10px] uppercase tracking-[0.22em]" style={{ color: 'rgba(243, 234, 217, 0.55)' }}>
+      <span className="text-[10px] uppercase tracking-[0.22em]" style={{ color: 'rgba(46, 38, 32, 0.55)' }}>
         {label}
       </span>
     </div>
@@ -187,28 +201,31 @@ export function ScatterDateCard({
   const { d, h, m, s } = useCountdown(targetMs)
 
   return (
-    <div className="rounded-2xl px-6 py-9 text-center" style={{ background: EW_BG }}>
-      <ScatterTitle text={title} revealed={revealed} reducedMotion={reducedMotion} />
+    <>
+      <EwLabel>La date</EwLabel>
+      <div className="rounded-2xl px-6 py-9 text-center" style={{ background: EW_BG }}>
+        <ScatterTitle text={title} revealed={revealed} reducedMotion={reducedMotion} />
 
-      {/* filet doré dégradé — s'étire sous le titre une fois les lettres posées */}
-      <div
-        className="mx-auto mt-5 h-px w-32"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${EW_GOLD}, transparent)`,
-          transform: reducedMotion || revealed ? 'scaleX(1)' : 'scaleX(0)',
-          transition: reducedMotion ? 'none' : 'transform 0.8s cubic-bezier(.22,1,.36,1)',
-          transitionDelay: reducedMotion ? '0ms' : `${title.length * 40 + 300}ms`,
-        }}
-        aria-hidden
-      />
+        {/* filet doré dégradé — s'étire sous le titre une fois les lettres posées */}
+        <div
+          className="mx-auto mt-5 h-px w-32"
+          style={{
+            background: `linear-gradient(90deg, transparent, ${EW_GOLD}, transparent)`,
+            transform: reducedMotion || revealed ? 'scaleX(1)' : 'scaleX(0)',
+            transition: reducedMotion ? 'none' : 'transform 0.8s cubic-bezier(.22,1,.36,1)',
+            transitionDelay: reducedMotion ? '0ms' : `${title.length * 40 + 300}ms`,
+          }}
+          aria-hidden
+        />
 
-      <div className="mt-8 flex justify-center gap-5" aria-label={`Compte à rebours jusqu'au ${title}`}>
-        <PulseDigit value={d} label="Jours" />
-        <PulseDigit value={h} label="Heures" />
-        <PulseDigit value={m} label="Min" />
-        <PulseDigit value={s} label="Sec" />
+        <div className="mt-8 flex justify-center gap-5" aria-label={`Compte à rebours jusqu'au ${title}`}>
+          <PulseDigit value={d} label="Jours" />
+          <PulseDigit value={h} label="Heures" />
+          <PulseDigit value={m} label="Min" />
+          <PulseDigit value={s} label="Sec" />
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -219,18 +236,18 @@ export function ScatterDateCard({
 function StepCard({ item, index }: { item: ProgrammeItem; index: number }) {
   return (
     <div className="flex h-full flex-col justify-center px-2" style={{ width: 'min(400px, 74cqw)', flex: '0 0 auto' }}>
-      <div className="mb-5 h-px w-10" style={{ background: 'rgba(243, 234, 217, 0.12)' }} aria-hidden />
+      <div className="mb-5 h-px w-10" style={{ background: 'rgba(46, 38, 32, 0.15)' }} aria-hidden />
       <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color: EW_GOLD }}>
         Étape {String(index + 1).padStart(2, '0')}
       </p>
       <p className="font-display mt-3 text-[52px] leading-none" style={{ color: EW_BORDEAUX, fontVariationSettings: "'wght' 200" }}>
         {item.time}
       </p>
-      <p className="font-display mt-3 text-[20px] italic" style={{ color: EW_CREAM }}>
+      <p className="font-display mt-3 text-[20px] italic" style={{ color: EW_INK }}>
         {item.label}
       </p>
       {item.sub && (
-        <p className="mt-2 text-[14px]" style={{ color: 'rgba(243, 234, 217, 0.5)' }}>
+        <p className="mt-2 text-[14px]" style={{ color: 'rgba(46, 38, 32, 0.55)' }}>
           {item.sub}
         </p>
       )}
@@ -350,13 +367,20 @@ export function HorizontalProgramme({
 /* 3. Lieu — loupe magnétique sur carte SVG à deux calques              */
 /* ------------------------------------------------------------------ */
 
-/** Carte stylisée : routes brunes organiques, rivière dorée en courbe de Bézier, hachures de vignes fines — jamais un vrai plan. */
+/**
+ * Carte stylisée : routes brunes organiques, rivière dorée en courbe de
+ * Bézier, hachures de vignes fines — jamais un vrai plan.
+ * `brightness(0.5)` du calque flouté (assombrir un fond déjà sombre)
+ * retenu au départ ; devenu `brightness(1.08)` (léger délavage plutôt
+ * qu'un assombrissement) une fois le fond de la carte passé en clair —
+ * `brightness(0.5)` aurait viré la carte au gris boueux hors de la loupe.
+ */
 function StyledMapSvg({ blurred }: { blurred: boolean }) {
   return (
     <svg
       viewBox="0 0 240 200"
       className="absolute inset-0 h-full w-full"
-      style={blurred ? { filter: 'blur(14px) saturate(0.3) brightness(0.5)' } : undefined}
+      style={blurred ? { filter: 'blur(14px) saturate(0.3) brightness(1.08)' } : undefined}
       aria-hidden
     >
       <rect width="240" height="200" fill={EW_BG} />
@@ -444,53 +468,56 @@ export function LieuMagnifier({
   }, [])
 
   return (
-    <div
-      ref={containerRef}
-      className="relative aspect-[6/5] w-full overflow-hidden rounded-2xl [cursor:none]"
-      style={{ background: EW_BG, ['--mx' as string]: '50%', ['--my' as string]: '46%' } as CSSProperties}
-    >
-      <StyledMapSvg blurred />
+    <>
+      <EwLabel>Le Lieu</EwLabel>
       <div
-        ref={maskRef}
-        className="absolute inset-0 [-webkit-mask-image:radial-gradient(circle_150px_at_var(--mx)_var(--my),black_60%,transparent_100%)] [mask-image:radial-gradient(circle_150px_at_var(--mx)_var(--my),black_60%,transparent_100%)]"
+        ref={containerRef}
+        className="relative aspect-[6/5] w-full overflow-hidden rounded-2xl [cursor:none]"
+        style={{ background: EW_BG, ['--mx' as string]: '50%', ['--my' as string]: '46%' } as CSSProperties}
       >
-        <StyledMapSvg blurred={false} />
+        <StyledMapSvg blurred />
+        <div
+          ref={maskRef}
+          className="absolute inset-0 [-webkit-mask-image:radial-gradient(circle_150px_at_var(--mx)_var(--my),black_60%,transparent_100%)] [mask-image:radial-gradient(circle_150px_at_var(--mx)_var(--my),black_60%,transparent_100%)]"
+        >
+          <StyledMapSvg blurred={false} />
+        </div>
+
+        {/* anneau doré — matérialise la loupe, suit --mx/--my */}
+        <div
+          ref={ringRef}
+          className="pointer-events-none absolute h-[150px] w-[150px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
+          style={{ borderColor: EW_GOLD, boxShadow: '0 0 24px rgba(201,169,97,0.25)' }}
+          aria-hidden
+        />
+
+        {/* point bordeaux — pulse en boucle (box-shadow ping) à l'emplacement du lieu */}
+        <div
+          className="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ left: '50%', top: '46%', background: EW_BORDEAUX, animation: 'ew-ping 2.2s cubic-bezier(0,0,0.2,1) infinite' }}
+          aria-hidden
+        />
+
+        <div className="absolute left-5 top-5 max-w-[70%]">
+          <p className="font-display text-[24px] italic leading-[1.15]" style={{ color: EW_INK }}>
+            {venueName}
+          </p>
+          <p className="mt-1 text-[13px]" style={{ color: 'rgba(46, 38, 32, 0.65)' }}>
+            {venueAddress}
+          </p>
+        </div>
+
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute bottom-5 left-5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold underline underline-offset-4"
+          style={{ color: EW_GOLD, textDecorationColor: EW_GOLD }}
+        >
+          Voir sur la carte <span aria-hidden>→</span>
+        </a>
       </div>
-
-      {/* anneau doré — matérialise la loupe, suit --mx/--my */}
-      <div
-        ref={ringRef}
-        className="pointer-events-none absolute h-[150px] w-[150px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
-        style={{ borderColor: EW_GOLD, boxShadow: '0 0 24px rgba(201,169,97,0.25)' }}
-        aria-hidden
-      />
-
-      {/* point bordeaux — pulse en boucle (box-shadow ping) à l'emplacement du lieu */}
-      <div
-        className="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{ left: '50%', top: '46%', background: EW_BORDEAUX, animation: 'ew-ping 2.2s cubic-bezier(0,0,0.2,1) infinite' }}
-        aria-hidden
-      />
-
-      <div className="absolute left-5 top-5 max-w-[70%]">
-        <p className="font-display text-[24px] italic leading-[1.15]" style={{ color: EW_CREAM }}>
-          {venueName}
-        </p>
-        <p className="mt-1 text-[13px]" style={{ color: 'rgba(243, 234, 217, 0.65)' }}>
-          {venueAddress}
-        </p>
-      </div>
-
-      <a
-        href={mapsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute bottom-5 left-5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold underline underline-offset-4"
-        style={{ color: EW_GOLD, textDecorationColor: EW_GOLD }}
-      >
-        Voir sur la carte <span aria-hidden>→</span>
-      </a>
-    </div>
+    </>
   )
 }
 
@@ -646,52 +673,55 @@ export function WaxSealRsvp({
   }
 
   return (
-    <div className="flex flex-col items-center gap-5">
-      <button
-        ref={btnRef}
-        type="button"
-        aria-label={sealed ? 'Réponse scellée' : `${label} — maintenir l'appui`}
-        disabled={sealed}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onKeyDown={onKeyDown}
-        onKeyUp={onKeyUp}
-        className="relative flex h-[150px] w-[150px] select-none items-center justify-center rounded-full outline-none"
-        style={
-          {
-            ['--p' as string]: 0,
-            background: `conic-gradient(${EW_GOLD} calc(var(--p) * 360deg), rgba(201,169,97,0.18) calc(var(--p) * 360deg))`,
-          } as CSSProperties
-        }
-      >
-        <span
-          ref={sealRef}
-          className="flex h-[128px] w-[128px] items-center justify-center"
-          style={{
-            borderRadius: '47% 53% 50% 50% / 52% 48% 52% 48%',
-            background: `radial-gradient(circle at 35% 30%, #c8394a, ${EW_BORDEAUX} 60%, #7c1a26 100%)`,
-            boxShadow: 'inset 0 6px 14px rgba(0,0,0,0.45), inset 0 -4px 10px rgba(255,255,255,0.08)',
-            transform: squash ? 'scale(0.94)' : holding ? undefined : 'scale(1)',
-            transition: squash ? 'transform 0.5s cubic-bezier(.34,1.56,.64,1)' : holding ? 'none' : 'transform 0.6s cubic-bezier(.34,1.56,.64,1)',
-          }}
+    <>
+      <EwLabel>RSVP</EwLabel>
+      <div className="flex flex-col items-center gap-5">
+        <button
+          ref={btnRef}
+          type="button"
+          aria-label={sealed ? 'Réponse scellée' : `${label} — maintenir l'appui`}
+          disabled={sealed}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onKeyDown={onKeyDown}
+          onKeyUp={onKeyUp}
+          className="relative flex h-[150px] w-[150px] select-none items-center justify-center rounded-full outline-none"
+          style={
+            {
+              ['--p' as string]: 0,
+              background: `conic-gradient(${EW_GOLD} calc(var(--p) * 360deg), rgba(201,169,97,0.18) calc(var(--p) * 360deg))`,
+            } as CSSProperties
+          }
         >
-          <span className="font-display italic text-[22px]" style={{ color: EW_CREAM }}>
-            É · W
+          <span
+            ref={sealRef}
+            className="flex h-[128px] w-[128px] items-center justify-center"
+            style={{
+              borderRadius: '47% 53% 50% 50% / 52% 48% 52% 48%',
+              background: `radial-gradient(circle at 35% 30%, #c8394a, ${EW_BORDEAUX} 60%, #7c1a26 100%)`,
+              boxShadow: 'inset 0 6px 14px rgba(0,0,0,0.45), inset 0 -4px 10px rgba(255,255,255,0.08)',
+              transform: squash ? 'scale(0.94)' : holding ? undefined : 'scale(1)',
+              transition: squash ? 'transform 0.5s cubic-bezier(.34,1.56,.64,1)' : holding ? 'none' : 'transform 0.6s cubic-bezier(.34,1.56,.64,1)',
+            }}
+          >
+            <span className="font-display italic text-[22px]" style={{ color: EW_CREAM }}>
+              É · W
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
 
-      <p
-        className="min-h-[1.6em] text-center text-[13.5px]"
-        style={
-          sealed
-            ? { color: EW_GOLD, fontStyle: 'italic', animation: 'ew-fade-in 0.8s ease forwards' }
-            : { color: 'rgba(243, 234, 217, 0.55)', textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 12 }
-        }
-      >
-        {sealed ? `Scellé. On vous attend le ${weddingDateLabel}.` : 'Maintenir pour sceller'}
-      </p>
-    </div>
+        <p
+          className="min-h-[1.6em] text-center text-[13.5px]"
+          style={
+            sealed
+              ? { color: EW_GOLD, fontStyle: 'italic', animation: 'ew-fade-in 0.8s ease forwards' }
+              : { color: 'rgba(243, 234, 217, 0.55)', textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 12 }
+          }
+        >
+          {sealed ? `Scellé. On vous attend le ${weddingDateLabel}.` : 'Maintenir pour sceller'}
+        </p>
+      </div>
+    </>
   )
 }

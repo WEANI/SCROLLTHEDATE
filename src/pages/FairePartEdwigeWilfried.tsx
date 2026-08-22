@@ -108,7 +108,14 @@ export default function FairePartEdwigeWilfried() {
             sceau de cire pressé. `programme` = PROGRAMME, fourni verbatim
             par le couple. `lodging` reste omis : pas de vraie donnée pour
             ce couple — jamais de contenu inventé. */}
-        <PayloadSection slug={SLUG} coupleNames={COUPLE_NAMES} rsvpCtaLabel={RSVP_CTA_LABEL} headingCascade>
+        <PayloadSection
+          slug={SLUG}
+          coupleNames={COUPLE_NAMES}
+          rsvpCtaLabel={RSVP_CTA_LABEL}
+          eyebrow={null}
+          heading="Nous avons le plaisir de vous inviter à notre mariage"
+          headingCascade
+        >
           {(openRsvp) => (
             <DetailsSombre
               weddingDateTime={WEDDING_DATETIME}

@@ -108,6 +108,12 @@ const DEFAULT_RSVP_THEME: RsvpTheme = {
  * cascade au scroll (cf. CascadeHeading) au lieu d'être visible d'un coup
  * — opt-in, `false` par défaut pour ne rien changer sur les pages
  * existantes (cf. Léa & Olivier, seule page à l'activer).
+ *
+ * `headingSizeClass` : taille du titre — par défaut la même valeur
+ * `clamp(...)` qu'avant (aucun changement sur les pages existantes),
+ * remplaçable pour un titre plus long (cf. Edwige & Wilfried, dont le
+ * titre est devenu une phrase entière plutôt que "{coupleNames} se
+ * marient", réduite de moitié pour rester lisible sans dominer la page).
  */
 export default function PayloadSection({
   slug,
@@ -118,6 +124,7 @@ export default function PayloadSection({
   rsvpTheme,
   eyebrow = 'Le faire-part',
   heading,
+  headingSizeClass = 'text-[clamp(1.9rem,4.4vw,2.6rem)]',
   headingCascade = false,
   children,
 }: {
@@ -132,6 +139,8 @@ export default function PayloadSection({
   eyebrow?: string | null
   /** Texte du titre — par défaut "{coupleNames} se marient". */
   heading?: string
+  /** Classe Tailwind de taille du titre — par défaut la taille historique. */
+  headingSizeClass?: string
   /** Le titre apparaît mot par mot au scroll plutôt que d'un coup. */
   headingCascade?: boolean
   children?: (openRsvp: () => void) => ReactNode
@@ -155,12 +164,12 @@ export default function PayloadSection({
         {headingCascade ? (
           <CascadeHeading
             text={heading ?? `${coupleNames} se marient`}
-            className={`font-display text-[clamp(1.9rem,4.4vw,2.6rem)] font-normal italic leading-[1.15] ${eyebrow ? 'mt-4' : ''}`}
+            className={`font-display ${headingSizeClass} font-normal italic leading-[1.15] ${eyebrow ? 'mt-4' : ''}`}
             color={t.heading}
           />
         ) : (
           <h2
-            className={`font-display text-[clamp(1.9rem,4.4vw,2.6rem)] font-normal italic leading-[1.15] ${eyebrow ? 'mt-4' : ''}`}
+            className={`font-display ${headingSizeClass} font-normal italic leading-[1.15] ${eyebrow ? 'mt-4' : ''}`}
             style={{ color: t.heading }}
           >
             {heading ?? `${coupleNames} se marient`}
@@ -272,26 +281,39 @@ function CascadeHeading({ text, className, color }: { text: string; className: s
     return () => observer.disconnect()
   }, [revealed, reducedMotion])
 
-  const words = text.split(' ')
+  // Découpage par ligne d'abord (saut de ligne explicite, ex. Edwige &
+  // Wilfried : "Edwige & Wilfried\nse marient") puis par mot — l'index de
+  // cascade continue d'une ligne à l'autre (pas remis à 0), pour que le
+  // mouvement reste un seul geste fluide sur tout le titre plutôt que deux
+  // cascades indépendantes qui repartiraient chacune de zéro.
+  const lines = text.split('\n')
+  let wordIndex = 0
 
   return (
-    <h2 ref={ref} className={`${className} flex flex-wrap justify-center gap-x-[0.32em]`} style={{ color }}>
-      {words.map((word, i) => (
-        <span
-          key={i}
-          className="inline-block"
-          style={
-            reducedMotion
-              ? undefined
-              : {
-                  opacity: revealed ? 1 : 0,
-                  transform: revealed ? 'translateY(0) rotate(0deg)' : 'translateY(22px) rotate(-4deg)',
-                  transition: 'opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1)',
-                  transitionDelay: `${i * 110}ms`,
+    <h2 ref={ref} className={className} style={{ color }}>
+      {lines.map((line, li) => (
+        <span key={li} className="flex flex-wrap justify-center gap-x-[0.32em]">
+          {line.split(' ').map((word) => {
+            const i = wordIndex++
+            return (
+              <span
+                key={i}
+                className="inline-block"
+                style={
+                  reducedMotion
+                    ? undefined
+                    : {
+                        opacity: revealed ? 1 : 0,
+                        transform: revealed ? 'translateY(0) rotate(0deg)' : 'translateY(22px) rotate(-4deg)',
+                        transition: 'opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1)',
+                        transitionDelay: `${i * 110}ms`,
+                      }
                 }
-          }
-        >
-          {word}
+              >
+                {word}
+              </span>
+            )
+          })}
         </span>
       ))}
     </h2>
