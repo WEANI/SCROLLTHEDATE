@@ -749,12 +749,12 @@ const normalizeWord = (w: string) => w.toLowerCase().replace(/[.,;:!?—«»"'�
 export function NotreHistoire({
   text = EW_HISTOIRE_TEXT,
   keywords = EW_HISTOIRE_KEYWORDS,
-  photos = EW_PHOTOS,
+  photos = [],
 }: {
   /** Texte non fourni par défaut ni par le couple ni par l'utilisateur — À REMPLACER, cf. doc plus haut. Rendu paramétrable pour que chaque couple ait son propre texte (et ses propres mots-clés). */
   text?: string
   keywords?: string[]
-  /** Galerie sous le texte — omise si vide (cf. Léa & Olivier, aucune photo fournie pour l'instant). */
+  /** Galerie sous le texte — omise par défaut (vide), à fournir explicitement par la page (cf. Léa & Olivier ; retirée d'Edwige & Wilfried sur retour client bien qu'ils en avaient une). */
   photos?: string[]
 }) {
   // Nommée `palette` (pas `p`, la convention du fichier) : `p` désigne déjà
@@ -830,8 +830,6 @@ export function NotreHistoire({
     </section>
   )
 }
-
-const EW_PHOTOS = ['/edwige-wilfried-photo-1.jpg', '/edwige-wilfried-photo-2.jpg', '/edwige-wilfried-photo-3.jpg', '/edwige-wilfried-photo-4.jpg']
 
 /**
  * Galerie photo — même mécanique que la piste épinglée du Programme
