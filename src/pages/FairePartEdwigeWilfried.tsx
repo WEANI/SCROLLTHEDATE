@@ -140,10 +140,10 @@ export default function FairePartEdwigeWilfried() {
                 <DressCodeCard dressCode={dressCode} revealed={revealed} reducedMotion={reducedMotion} />
               )}
               renderBeforeRsvp={() => <NotreHistoire />}
+              renderBeforeRsvp2={() => <FoireAuxQuestions />}
               renderRsvp={({ label, onClick }) => (
                 <WaxSealRsvp label={label} weddingDateLabel={WEDDING_DATE_LABEL} onClick={onClick} />
               )}
-              renderAfterRsvp={() => <FoireAuxQuestions />}
             />
           )}
         </PayloadSection>

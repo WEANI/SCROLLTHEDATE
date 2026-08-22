@@ -593,8 +593,8 @@ export default function DetailsSombre({
   renderProgramme,
   renderDressCode,
   renderBeforeRsvp,
+  renderBeforeRsvp2,
   renderRsvp,
-  renderAfterRsvp,
 }: {
   /** Date + heure ISO du mariage, ex "2026-08-15T16:00:00+02:00" — source unique pour le bloc date ET le compte à rebours. */
   weddingDateTime: string
@@ -630,22 +630,21 @@ export default function DetailsSombre({
   renderProgramme?: (programme: ProgrammeItem[], accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
   renderDressCode?: (dressCode: string, accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
   /**
-   * Bloc additionnel inséré juste avant RSVP — pas un remplacement d'un
-   * bloc existant comme les 4 slots ci-dessus, mais un EN PLUS (cf.
-   * Edwige & Wilfried « Notre histoire »). Reçoit son propre
-   * `revealed`/`reducedMotion` comme les autres, même mécanique.
+   * Blocs additionnels insérés juste avant RSVP, dans l'ordre — pas un
+   * remplacement d'un bloc existant comme les 4 slots ci-dessus, mais des
+   * EN PLUS (cf. Edwige & Wilfried « Notre histoire » puis
+   * « Foire aux questions », toutes deux avant RSVP). Chacun garde son
+   * propre filet + RevealBlock (donc son propre déclenchement au scroll),
+   * comme n'importe quel autre bloc — `renderBeforeRsvp2` n'est qu'un 2e
+   * emplacement du même type, pas un mécanisme différent.
    */
   renderBeforeRsvp?: (revealed: boolean, reducedMotion: boolean) => ReactNode
+  renderBeforeRsvp2?: (revealed: boolean, reducedMotion: boolean) => ReactNode
   renderRsvp?: (
     props: { label: string; accent: string; onClick: () => void },
     revealed: boolean,
     reducedMotion: boolean,
   ) => ReactNode
-  /**
-   * Bloc additionnel inséré juste après RSVP — même mécanique que
-   * `renderBeforeRsvp` (cf. Edwige & Wilfried « Foire aux questions »).
-   */
-  renderAfterRsvp?: (revealed: boolean, reducedMotion: boolean) => ReactNode
 }) {
   const t = { ...DEFAULT_DETAILS_THEME, ...theme }
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${venueName} ${venueAddress}`)}`
@@ -787,6 +786,10 @@ export default function DetailsSombre({
     blocks.push((revealed, reducedMotion) => renderBeforeRsvp(revealed, reducedMotion))
   }
 
+  if (renderBeforeRsvp2) {
+    blocks.push((revealed, reducedMotion) => renderBeforeRsvp2(revealed, reducedMotion))
+  }
+
   blocks.push((revealed, reducedMotion) =>
     renderRsvp ? (
       renderRsvp({ label: rsvpCtaLabel, accent: t.accent, onClick: openRsvp }, revealed, reducedMotion)
@@ -804,10 +807,6 @@ export default function DetailsSombre({
       </section>
     ),
   )
-
-  if (renderAfterRsvp) {
-    blocks.push((revealed, reducedMotion) => renderAfterRsvp(revealed, reducedMotion))
-  }
 
   return (
     <div className="mx-auto max-w-[420px] text-left">
