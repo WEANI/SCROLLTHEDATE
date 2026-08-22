@@ -640,23 +640,10 @@ export function NotreHistoire() {
     // Programme sur retour client.
     <section className="relative ml-[calc(50%-50vw)] w-screen py-20" style={{ background: 'transparent' }}>
       <EwLabel>Notre histoire</EwLabel>
-      <div className="relative mx-auto max-w-[26ch]">
-        {/* Alliances en fondu derrière le texte — image fournie par la
-            cliente, fond déjà transparent, recadrée pour retirer le filet
-            pointillé du bas (artefact de l'export). `aria-hidden` :
-            purement décoratif, le texte porte déjà tout le sens. Opacité
-            faible + pas d'interaction (`pointer-events-none`) pour rester
-            un filigrane, jamais gêner la lecture. */}
-        <img
-          src="/edwige-wilfried-alliances.png"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-1/2 w-[85%] max-w-[360px] -translate-x-1/2 -translate-y-1/2 select-none"
-          style={{ opacity: 0.32 }}
-        />
+      <div className="mx-auto max-w-[26ch]">
         <p
           ref={pRef}
-          className="font-display relative text-center italic"
+          className="font-display text-center italic"
           style={{ fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', lineHeight: 1.6 }}
         >
           {sentences.map((sentenceWords, si) => (
