@@ -133,10 +133,10 @@ export default function FairePartEdwigeWilfried() {
               renderLieu={({ venueName, venueAddress, mapsUrl }) => (
                 <LieuMagnifier venueName={venueName} venueAddress={venueAddress} mapsUrl={mapsUrl} />
               )}
-              renderBeforeProgramme={() => <NotreHistoire />}
               renderProgramme={(programme, _accent, revealed, reducedMotion) => (
                 <HorizontalProgramme programme={programme} revealed={revealed} reducedMotion={reducedMotion} />
               )}
+              renderBeforeRsvp={() => <NotreHistoire />}
               renderRsvp={({ label, onClick }) => (
                 <WaxSealRsvp label={label} weddingDateLabel={WEDDING_DATE_LABEL} onClick={onClick} />
               )}

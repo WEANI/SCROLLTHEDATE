@@ -591,7 +591,7 @@ export default function DetailsSombre({
   renderDate,
   renderLieu,
   renderProgramme,
-  renderBeforeProgramme,
+  renderBeforeRsvp,
   renderRsvp,
 }: {
   /** Date + heure ISO du mariage, ex "2026-08-15T16:00:00+02:00" — source unique pour le bloc date ET le compte à rebours. */
@@ -627,12 +627,12 @@ export default function DetailsSombre({
   ) => ReactNode
   renderProgramme?: (programme: ProgrammeItem[], accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
   /**
-   * Bloc additionnel inséré juste avant Le Programme — pas un remplacement
-   * d'un bloc existant comme les 4 slots ci-dessus, mais un EN PLUS (cf.
+   * Bloc additionnel inséré juste avant RSVP — pas un remplacement d'un
+   * bloc existant comme les 4 slots ci-dessus, mais un EN PLUS (cf.
    * Edwige & Wilfried « Notre histoire »). Reçoit son propre
    * `revealed`/`reducedMotion` comme les autres, même mécanique.
    */
-  renderBeforeProgramme?: (revealed: boolean, reducedMotion: boolean) => ReactNode
+  renderBeforeRsvp?: (revealed: boolean, reducedMotion: boolean) => ReactNode
   renderRsvp?: (
     props: { label: string; accent: string; onClick: () => void },
     revealed: boolean,
@@ -693,10 +693,6 @@ export default function DetailsSombre({
         </section>
       ),
   ]
-
-  if (renderBeforeProgramme) {
-    blocks.push((revealed, reducedMotion) => renderBeforeProgramme(revealed, reducedMotion))
-  }
 
   if (programme && programme.length > 0) {
     blocks.push((revealed, reducedMotion) =>
@@ -773,6 +769,10 @@ export default function DetailsSombre({
         </ul>
       </section>
     ))
+  }
+
+  if (renderBeforeRsvp) {
+    blocks.push((revealed, reducedMotion) => renderBeforeRsvp(revealed, reducedMotion))
   }
 
   blocks.push((revealed, reducedMotion) =>

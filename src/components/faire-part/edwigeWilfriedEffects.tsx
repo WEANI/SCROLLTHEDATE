@@ -623,10 +623,13 @@ export function NotreHistoire() {
 
   return (
     // plein cadre (sort de la colonne étroite max-w-420 héritée de
-    // DetailsSombre), même technique que la piste du programme juste en
-    // dessous. Fond transparent (et non plus #0d0a08) sur retour client :
-    // la section doit maintenant se fondre dans le fond clair de la page
-    // (même mécanisme que EW_BG_DATE), pas trancher comme une bande sombre.
+    // DetailsSombre), même technique que la piste du programme (cf.
+    // HorizontalProgramme). Fond transparent (et non plus #0d0a08) sur
+    // retour client : la section doit se fondre dans le fond clair de la
+    // page (même mécanisme que EW_BG_DATE), pas trancher comme une bande
+    // sombre. Positionnée juste avant RSVP via le slot `renderBeforeRsvp`
+    // (cf. FairePartEdwigeWilfried.tsx) — déplacée depuis avant Le
+    // Programme sur retour client.
     <section className="relative ml-[calc(50%-50vw)] w-screen py-20" style={{ background: 'transparent' }}>
       <EwLabel>Notre histoire</EwLabel>
       <p
