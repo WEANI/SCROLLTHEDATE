@@ -549,6 +549,15 @@ export function LieuMagnifier({
   return (
     <>
       <EwLabel>Le Lieu</EwLabel>
+      {/* Photo du lieu — fournie par la cliente, au-dessus de la carte
+          dynamique (loupe magnétique). Même traitement visuel (rounded-2xl,
+          même ratio) pour que les deux blocs s'enchaînent comme une seule
+          pièce plutôt que deux éléments disparates. */}
+      <img
+        src="/edwige-wilfried-lieu-photo.jpg"
+        alt={venueName}
+        className="mb-5 aspect-[6/5] w-full rounded-2xl object-cover"
+      />
       <div
         ref={containerRef}
         className="relative aspect-[6/5] w-full overflow-hidden rounded-2xl [cursor:none]"
