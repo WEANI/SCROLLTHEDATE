@@ -30,6 +30,9 @@ export interface PayloadTheme {
   accentHover: string
   heading: string
   text: string
+  /** Fond/texte du bouton RSVP — `accent`/blanc par défaut (cf. plus bas), distincts d'`accent` pour permettre un bouton clair sur un accent déjà clair, ou (Léa & Olivier) un bouton blanc sur un accent rouge. */
+  ctaBg?: string
+  ctaText?: string
 }
 
 const DEFAULT_PAYLOAD_THEME: PayloadTheme = {
@@ -62,6 +65,9 @@ export interface RsvpTheme {
   inputBorder: string
   inputText: string
   inputPlaceholder: string
+  /** Fond/texte du bouton d'envoi — `accent`/blanc par défaut (mêmes rôles que `ctaBg`/`ctaText` de PayloadTheme, cf. cette interface). */
+  ctaBg?: string
+  ctaText?: string
 }
 
 const DEFAULT_RSVP_THEME: RsvpTheme = {
@@ -204,10 +210,10 @@ export default function PayloadSection({
               <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="inline-flex items-center justify-center rounded-full px-9 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-colors"
-                style={{ background: t.accent }}
+                className="inline-flex items-center justify-center rounded-full px-9 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] transition-colors"
+                style={{ background: t.ctaBg ?? t.accent, color: t.ctaText ?? '#fff' }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = t.accentHover)}
-                onMouseLeave={(e) => (e.currentTarget.style.background = t.accent)}
+                onMouseLeave={(e) => (e.currentTarget.style.background = t.ctaBg ?? t.accent)}
               >
                 {rsvpCtaLabel}
               </button>
@@ -584,9 +590,9 @@ function RsvpForm({
                 type="submit"
                 disabled={submitting}
                 onMouseEnter={(e) => !submitting && (e.currentTarget.style.background = t.accentHover)}
-                onMouseLeave={(e) => !submitting && (e.currentTarget.style.background = t.accent)}
-                className="w-full rounded-full py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-colors disabled:cursor-wait disabled:opacity-70"
-                style={{ background: t.accent }}
+                onMouseLeave={(e) => !submitting && (e.currentTarget.style.background = t.ctaBg ?? t.accent)}
+                className="w-full rounded-full py-4 text-[13px] font-semibold uppercase tracking-[0.1em] transition-colors disabled:cursor-wait disabled:opacity-70"
+                style={{ background: t.ctaBg ?? t.accent, color: t.ctaText ?? '#fff' }}
               >
                 {submitting ? 'Envoi en cours…' : 'Envoyer ma réponse'}
               </button>

@@ -31,25 +31,31 @@ import { useCountdown, type ProgrammeItem } from './DetailsSombre'
  * fonctionne pour les deux, jamais besoin de varier ce rôle.
  */
 export type BespokePalette = {
-  /** Fond de la case Lieu et de la piste Programme — carte claire, posée sur le fond (clair ou sombre) de la page du couple. */
+  /** Fond de la case Lieu, de la piste Programme et des cartes FAQ — clair chez Edwige & Wilfried (page claire), sombre chez Léa & Olivier (page sombre) : pas une couleur neutre invariante, adaptée au thème de la page. */
   bg: string
   /** Fond de la case Date — transparent pour les deux couples (se fond dans le fond de la page). */
   bgDate: string
   bgProgramme: string
   /** Crème du sceau RSVP (reste sombre/bordeaux pour les deux couples, jamais reconverti en clair) — texte des initiales. */
   cream: string
-  /** Texte posé directement sur le fond de la page du couple (pas sur une carte claire) — varie par couple. */
+  /** Texte posé directement sur le fond de la page du couple (pas sur une carte) — varie par couple. */
   ink: string
   inkRgb: string
-  /** Texte posé sur une carte claire (Lieu, Programme, FAQ) — reste sombre pour les deux couples. */
+  /** Texte posé sur les cartes Lieu/Programme/FAQ (cf. `bg` ci-dessus) — varie par couple avec `bg`, pas figé sombre : sombre sur carte claire (Edwige & Wilfried), clair sur carte sombre (Léa & Olivier). */
   inkOnCard: string
   inkOnCardRgb: string
+  /** Traits de la carte SVG du Lieu (routes, hachures de vignes) — même logique que `inkOnCard`, doit rester lisible sur `bg`. */
+  mapLine: string
   /** Accent secondaire (pulse du compte à rebours, mots-clés qui s'encrent, point sur la carte). */
   bordeaux: string
   bordeauxRgb: string
-  /** Accent principal (titres de section, anneaux, filets). */
+  /** Accent principal (anneaux, filets, sceau/dégradés dorés). */
   gold: string
   goldRgb: string
+  /** Titres de section (« La date », « Le Lieu »…) — doré chez Edwige & Wilfried ; blanc/crème chez Léa & Olivier (demande client, pour se détacher du rouge déjà très présent ailleurs sur leur page). Rôle séparé de `gold` : `gold` reste utilisé ailleurs (anneaux, filets) même quand les titres passent en blanc. */
+  sectionTitle: string
+  /** Chiffre de l'heure dans la piste du Programme — bordeaux (accent secondaire) chez Edwige & Wilfried ; rouge principal chez Léa & Olivier (demande client : « respecte les couleurs du thème », pas le rose secondaire). Rôle séparé de `bordeaux`/`gold` car le bon accent à utiliser ici diffère par couple. */
+  timelineAccent: string
   /**
    * Sceau de cire RSVP — 3 teintes pour son dégradé radial (clair au
    * centre, sombre au bord). Rôle distinct de `gold`/`bordeaux` : chez
@@ -72,10 +78,13 @@ export const EW_PALETTE: BespokePalette = {
   inkRgb: '46, 38, 32',
   inkOnCard: '#2E2620',
   inkOnCardRgb: '46, 38, 32',
+  mapLine: '#5C4A3A',
   bordeaux: '#b02634',
   bordeauxRgb: '176, 38, 52',
   gold: '#c9a961',
   goldRgb: '201, 169, 97',
+  sectionTitle: '#c9a961',
+  timelineAccent: '#b02634',
   seal: '#b02634',
   sealLight: '#c8394a',
   sealDark: '#7c1a26',
@@ -96,7 +105,7 @@ function usePalette() {
 function EwLabel({ children }: { children: string }) {
   const p = usePalette()
   return (
-    <p className="mb-7 text-center text-[19px] italic" style={{ color: p.gold }}>
+    <p className="mb-7 text-center text-[19px] italic" style={{ color: p.sectionTitle }}>
       {children}
     </p>
   )
@@ -410,7 +419,7 @@ function StepCard({ item }: { item: ProgrammeItem }) {
   return (
     <div className="flex h-full flex-col justify-center px-2" style={{ width: 'min(400px, 74cqw)', flex: '0 0 auto' }}>
       <div className="mb-5 h-px w-10" style={{ background: `rgba(${p.inkOnCardRgb}, 0.15)` }} aria-hidden />
-      <p className="font-display mt-3 text-[52px] leading-none" style={{ color: p.bordeaux, fontVariationSettings: "'wght' 200" }}>
+      <p className="font-display mt-3 text-[52px] leading-none" style={{ color: p.timelineAccent, fontVariationSettings: "'wght' 200" }}>
         {item.time}
       </p>
       <p className="font-display mt-3 text-[20px] italic" style={{ color: p.inkOnCard }}>
@@ -488,7 +497,7 @@ export function HorizontalProgramme({
 
   const label = (
     <div style={reducedMotion ? undefined : { opacity: revealed ? 1 : 0, transform: revealed ? 'translateY(0)' : 'translateY(14px)', transition: 'opacity 0.6s cubic-bezier(.22,1,.36,1), transform 0.6s cubic-bezier(.22,1,.36,1)' }}>
-      <p className="mb-7 text-center text-[19px] italic" style={{ color: p.gold }}>
+      <p className="mb-7 text-center text-[19px] italic" style={{ color: p.sectionTitle }}>
         Le Programme
       </p>
     </div>
@@ -556,15 +565,15 @@ function StyledMapSvg({ blurred }: { blurred: boolean }) {
       aria-hidden
     >
       <rect width="240" height="200" fill={p.bg} />
-      <path d="M-10,150 Q50,120 82,155 T180,118 T260,138" stroke="#5C4A3A" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.65" />
-      <path d="M-10,58 Q60,90 102,54 T220,68" stroke="#4A3A2E" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.5" />
+      <path d="M-10,150 Q50,120 82,155 T180,118 T260,138" stroke={p.mapLine} strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.65" />
+      <path d="M-10,58 Q60,90 102,54 T220,68" stroke={p.mapLine} strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.5" />
       {/* rivière dorée, courbe de Bézier */}
       <path d="M0,168 C60,140 110,190 170,150 C200,128 220,110 240,96" stroke={p.gold} strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.75" />
       {/* hachures de vignes — parcelles en traits fins parallèles */}
       {Array.from({ length: 16 }).map((_, i) => {
         const x = 26 + (i % 8) * 11
         const y = 10 + Math.floor(i / 8) * 8
-        return <line key={i} x1={x} y1={y} x2={x + 6} y2={y + 14} stroke="#4A3A2E" strokeWidth="1" opacity="0.4" />
+        return <line key={i} x1={x} y1={y} x2={x + 6} y2={y + 14} stroke={p.mapLine} strokeWidth="1" opacity="0.4" />
       })}
     </svg>
   )
@@ -1163,7 +1172,7 @@ const EW_FAQ_ITEMS: { q: string; a: string }[] = [
 function FaqItemCard({ item, open, onToggle }: { item: { q: string; a: string }; open: boolean; onToggle: () => void }) {
   const p = usePalette()
   return (
-    <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(46,38,32,0.08)]">
+    <div className="overflow-hidden rounded-2xl shadow-[0_1px_3px_rgba(46,38,32,0.08)]" style={{ background: p.bg }}>
       <button
         type="button"
         aria-expanded={open}

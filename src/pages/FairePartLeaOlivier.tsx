@@ -21,6 +21,7 @@ import {
   CINEMA_ROUGE_THEME,
   CLOSING_THEME,
   DRESS_CODE,
+  GALLERY_PHOTOS,
   HERO_CHAPTERS,
   LAO_DRESS_CODE_COLORS,
   LAO_FAQ_ITEMS,
@@ -36,6 +37,7 @@ import {
   SLUG,
   VENUE_ADDRESS,
   VENUE_NAME,
+  VENUE_PHOTO,
   WEDDING_DATE_LABEL,
   WEDDING_DATETIME,
 } from '@/components/faire-part/leaOlivierContent'
@@ -178,7 +180,7 @@ export default function FairePartLeaOlivier() {
                 <ScatterDateCard weddingDateTime={WEDDING_DATETIME} revealed={revealed} reducedMotion={reducedMotion} />
               )}
               renderLieu={({ venueName, venueAddress, mapsUrl }) => (
-                <LieuMagnifier venueName={venueName} venueAddress={venueAddress} mapsUrl={mapsUrl} photoSrc="" />
+                <LieuMagnifier venueName={venueName} venueAddress={venueAddress} mapsUrl={mapsUrl} photoSrc={VENUE_PHOTO} />
               )}
               renderProgramme={(programme, _accent, revealed, reducedMotion) => (
                 <HorizontalProgramme programme={programme} revealed={revealed} reducedMotion={reducedMotion} />
@@ -186,7 +188,7 @@ export default function FairePartLeaOlivier() {
               renderDressCode={(dressCode, _accent, revealed, reducedMotion) => (
                 <DressCodeCard dressCode={dressCode} colors={LAO_DRESS_CODE_COLORS} revealed={revealed} reducedMotion={reducedMotion} />
               )}
-              renderBeforeRsvp={() => <NotreHistoire text={LAO_HISTOIRE_TEXT} keywords={LAO_HISTOIRE_KEYWORDS} photos={[]} />}
+              renderBeforeRsvp={() => <NotreHistoire text={LAO_HISTOIRE_TEXT} keywords={LAO_HISTOIRE_KEYWORDS} photos={GALLERY_PHOTOS} />}
               renderBeforeRsvp2={() => <FoireAuxQuestions items={LAO_FAQ_ITEMS} />}
               renderRsvp={({ label, onClick }) => (
                 <WaxSealRsvp label={label} weddingDateLabel={WEDDING_DATE_LABEL} initials="L · O" onClick={onClick} />

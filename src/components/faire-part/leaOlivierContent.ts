@@ -100,6 +100,10 @@ export const PAYLOAD_THEME: Partial<PayloadTheme> = {
   accentHover: '#A32732',
   heading: '#F3EAD9',
   text: '#F3EAD9',
+  // Bouton RSVP en blanc (demande client) — distinct d'`accent` (rouge,
+  // repris ailleurs : kickers, libellés) pour ne changer QUE le bouton.
+  ctaBg: '#F3EAD9',
+  ctaText: '#8B1E28',
 }
 
 /**
@@ -123,6 +127,10 @@ export const RSVP_THEME: Partial<RsvpTheme> = {
   inputBorder: 'rgba(232, 196, 196, 0.14)',
   inputText: '#F3EAD9',
   inputPlaceholder: 'rgba(187, 175, 169, 0.6)',
+  // Bouton d'envoi en blanc (demande client) — même logique que ctaBg/
+  // ctaText de PAYLOAD_THEME ci-dessus.
+  ctaBg: '#F3EAD9',
+  ctaText: '#8B1E28',
 }
 
 export const CLOSING_THEME: Partial<ClosingTheme> = {
@@ -213,34 +221,48 @@ export const HERO_CHAPTERS: HeroChapter[] = [
  * épinglé, sceau de cire, Notre histoire, Foire aux questions, Dress code
  * animé) : mêmes composants, palette et contenu propres à ce couple.
  *
- * `LAO_PALETTE` — cartes Lieu/Programme/FAQ gardent la même carte claire
- * que chez Edwige & Wilfried (`bg`/`bgProgramme` crème, `inkOnCard` sombre)
- * — surface neutre, pas une couleur de marque, pas de raison de varier par
- * couple. En revanche le texte posé DIRECTEMENT sur le fond de la page
- * (`ink`) passe en crème : la page de Léa & Olivier est sombre
- * (CINEMA_ROUGE_THEME.pageBg = #0D0A08), contrairement à celle d'Edwige &
- * Wilfried — un ink sombre y serait illisible. `gold` (accent principal)
- * devient leur rouge déjà établi (CINEMA_ROUGE_THEME.accent) plutôt que du
- * doré inventé ; `bordeaux` (accent secondaire, pulse/mots-clés) devient
- * leur rose poudré déjà établi (PAYLOAD_THEME.cardBorder) — un rose sur un
- * rouge se distingue mieux qu'un rouge sur un rouge. Le sceau RSVP, lui,
- * doit rester visuellement un sceau de cire ROUGE (pas rose) : `seal`
- * reprend donc l'accent principal, pas `bordeaux` — cf. doc de `seal` dans
- * BespokePalette pour pourquoi ce rôle est séparé des deux autres.
+ * `LAO_PALETTE` — cartes Lieu/Programme/FAQ EN CLAIR (crème, comme chez
+ * Edwige & Wilfried) d'abord essayées, jugées trop tranchées sur le fond
+ * sombre de cette page (îlots clairs qui détonnent) : `bg`/`bgProgramme`
+ * repassés en carte sombre (`rgba(255, 255, 255, 0.05)`, déjà établi comme
+ * fond de carte dans PAYLOAD_THEME.cardBg — pas une couleur inventée),
+ * `inkOnCard` en crème (plus du sombre, illisible sur une carte sombre) —
+ * contrairement à Edwige & Wilfried où ces cartes claires posées sur une
+ * page claire n'ont jamais posé ce problème. Texte posé DIRECTEMENT sur le
+ * fond de la page (`ink`) déjà en crème : la page de Léa & Olivier est
+ * sombre (CINEMA_ROUGE_THEME.pageBg = #0D0A08), contrairement à celle
+ * d'Edwige & Wilfried. `mapLine` (traits de la carte SVG du Lieu) en crème
+ * aussi, pour rester visible sur la carte désormais sombre. `gold` (accent
+ * principal) devient leur rouge déjà établi (CINEMA_ROUGE_THEME.accent)
+ * plutôt que du doré inventé ; `bordeaux` (accent secondaire, pulse/
+ * mots-clés) devient leur rose poudré déjà établi
+ * (PAYLOAD_THEME.cardBorder) — un rose sur un rouge se distingue mieux
+ * qu'un rouge sur un rouge. Le sceau RSVP, lui, doit rester visuellement
+ * un sceau de cire ROUGE (pas rose) : `seal` reprend donc l'accent
+ * principal, pas `bordeaux` — cf. doc de `seal` dans BespokePalette pour
+ * pourquoi ce rôle est séparé des deux autres.
  */
 export const LAO_PALETTE: BespokePalette = {
-  bg: '#f3ead9',
+  bg: 'rgba(255, 255, 255, 0.05)',
   bgDate: 'transparent',
-  bgProgramme: '#f3ead9',
+  bgProgramme: 'rgba(255, 255, 255, 0.05)',
   cream: '#F3EAD9',
   ink: '#F3EAD9',
   inkRgb: '243, 234, 217',
-  inkOnCard: '#2E2620',
-  inkOnCardRgb: '46, 38, 32',
+  inkOnCard: '#F3EAD9',
+  inkOnCardRgb: '243, 234, 217',
+  mapLine: '#F3EAD9',
   bordeaux: '#E8C4C4',
   bordeauxRgb: '232, 196, 196',
   gold: '#8B1E28',
   goldRgb: '139, 30, 40',
+  // Titres de section en blanc (demande client) — pas leur rouge
+  // (`gold`), déjà très présent ailleurs sur cette page.
+  sectionTitle: '#F3EAD9',
+  // Chiffre de l'heure dans la piste du Programme : leur rouge principal
+  // (demande client « respecte les couleurs du thème »), pas le rose
+  // secondaire (`bordeaux`) utilisé par défaut.
+  timelineAccent: '#8B1E28',
   seal: '#8B1E28',
   sealLight: '#A32732', // accentHover déjà établi dans PAYLOAD_THEME, pas une teinte inventée
   sealDark: '#5C1018',
@@ -288,3 +310,15 @@ export const LAO_FAQ_ITEMS: { q: string; a: string }[] = [
  * fond de page plutôt qu'un noir pur qui aurait disparu dessus.
  */
 export const LAO_DRESS_CODE_COLORS = ['#8B1E28', '#1A1512']
+
+/** Photo du lieu (Le Caillavet) au-dessus de la carte dynamique dans « Le Lieu » — fournie par le couple. */
+export const VENUE_PHOTO = '/lea-olivier-lieu-photo.jpg'
+
+/**
+ * Galerie de « Notre histoire » — 3 photos fournies par le couple.
+ * Résolution modeste (~283px de large, capture de vignette) — image un
+ * peu douce à l'affichage plein cadre (jusqu'à 72vh) sur grand écran,
+ * cf. remarque faite au couple ; à remplacer par des fichiers en plus
+ * haute résolution si disponibles.
+ */
+export const GALLERY_PHOTOS = ['/lea-olivier-gallery-1.jpg', '/lea-olivier-gallery-2.jpg', '/lea-olivier-gallery-3.jpg']
