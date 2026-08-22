@@ -98,7 +98,10 @@ export function EwEffectsStyles() {
          s'animer selon SA PROPRE traversée, pas celle d'un conteneur
          commun) via animation-timeline: view(), réversible par nature
          (contrairement à une animation classique, la progression suit
-         directement le scroll dans les deux sens, rien à gérer en plus). */
+         directement le scroll dans les deux sens, rien à gérer en plus).
+         Plage 10%-90% de la traversée (pas 5%-42%, jugé trop rapide/pas
+         ressenti au scroll) — l'encrage s'étale sur presque tout le
+         passage du mot dans le viewport, effet plus lent et perceptible. */
       .ew-word-ink {
         opacity: 0.12;
       }
@@ -108,7 +111,7 @@ export function EwEffectsStyles() {
           animation-duration: 1ms; /* ignorée avec un view-timeline, requise pour une syntaxe valide */
           animation-fill-mode: both;
           animation-timeline: view();
-          animation-range: cover 5% cover 42%;
+          animation-range: cover 10% cover 90%;
         }
       }
       @keyframes ew-word-ink-anim {
