@@ -45,7 +45,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Projet & scénarios', to: '/espace/projet', icon: Clapperboard },
   { label: 'Commandes', to: '/espace/commandes', icon: ShoppingBag },
   { label: 'Messages', to: '/espace/messages', icon: MessageCircle },
-  { label: 'Paramètres', to: '/espace/parametres', icon: Settings, disabled: true },
+  { label: 'Paramètres', to: '/espace/parametres', icon: Settings },
 ]
 
 const CRUMB_LABEL: Record<string, string> = {
@@ -54,6 +54,7 @@ const CRUMB_LABEL: Record<string, string> = {
   projet: 'Projet & scénarios',
   commandes: 'Commandes',
   messages: 'Messages',
+  parametres: 'Paramètres',
 }
 
 function breadcrumb(pathname: string): string[] {
