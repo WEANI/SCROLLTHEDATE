@@ -125,12 +125,27 @@ export default function Confidentialite() {
         </p>
       </section>
 
-      <section>
-        <h2>Cookies</h2>
+      <section id="cookies">
+        <h2>Cookies et traceurs</h2>
         <p>
-          Le site utilise uniquement des cookies strictement nécessaires à son fonctionnement
-          (maintien de la session de connexion). Aucun cookie de mesure d'audience ou publicitaire
-          tiers n'est déposé au moment de la rédaction de cette page.
+          Le site ne dépose <strong>aucun cookie ni traceur soumis à consentement</strong>
+          (pas de mesure d'audience, pas de publicité, pas de traceur de réseau social — vérifié
+          dans le code du site, pas une simple déclaration d'intention).
+        </p>
+        <p>
+          Le seul mécanisme technique en jeu est le stockage de votre session de connexion
+          (maintenu par notre prestataire d'authentification, Supabase, via le stockage local de
+          votre navigateur — pas même un cookie HTTP au sens strict). Il n'est posé que lorsque
+          vous créez un compte ou vous connectez, c'est-à-dire un service que vous demandez
+          explicitement. Conformément aux recommandations de la CNIL, les traceurs strictement
+          nécessaires à un service expressément demandé par l'utilisateur — dont l'authentification
+          — sont exemptés de consentement préalable : c'est pourquoi vous ne voyez pas de bandeau
+          "Accepter / Refuser" sur ce site, il n'y a rien à accepter ou refuser.
+        </p>
+        <p>
+          Si un outil de mesure d'audience ou publicitaire venait à être ajouté au site, un
+          recueil de consentement conforme (refus aussi simple que l'acceptation) serait mis en
+          place avant son activation.
         </p>
       </section>
 

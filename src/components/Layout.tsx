@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import CookieNotice from '@/components/CookieNotice'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -105,6 +106,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <Footer />
+      <CookieNotice />
     </div>
   )
 }
