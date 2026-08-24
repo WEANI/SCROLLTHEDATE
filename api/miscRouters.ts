@@ -13,6 +13,8 @@ import {
 } from "./queries/analytics";
 import { getSiteSetting, upsertSiteSetting } from "./queries/orders";
 import { isEmailConfigured } from "./lib/email";
+import { isStripeConfigured } from "./lib/stripe";
+import { env } from "./lib/env";
 
 export const analyticsRouter = createRouter({
   adminOverview: adminQuery
@@ -68,4 +70,18 @@ export const settingsRouter = createRouter({
   // état auparavant codé en dur ("connecté", "domaine vérifié") qui ne
   // reflétait rien de réel : aucun service d'emailing n'existait.
   emailStatus: adminQuery.query(() => ({ configured: isEmailConfigured() })),
+
+  // État RÉEL de l'intégration Stripe, pour la carte "Stripe" du panneau
+  // admin — cf. api/lib/stripe.ts. Même correction que emailStatus
+  // ci-dessus : remplace un statut "connecté" codé en dur qui s'affichait
+  // que Stripe soit configuré ou non. `mode` distingue test/live à partir
+  // du préfixe de la clé secrète (jamais renvoyée elle-même au client).
+  stripeStatus: adminQuery.query(() => ({
+    configured: isStripeConfigured(),
+    mode: env.stripeSecretKey.startsWith("sk_live_")
+      ? ("live" as const)
+      : env.stripeSecretKey.startsWith("sk_test_")
+        ? ("test" as const)
+        : null,
+  })),
 });

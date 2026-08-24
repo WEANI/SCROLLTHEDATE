@@ -32,4 +32,18 @@ export const env = {
   // un environnement mal configuré ne doit jamais pointer vers une adresse
   // inaccessible au client.
   appUrl: process.env.APP_URL ?? "https://scrollthedate-production.up.railway.app",
+  // Paiement (Stripe) — cf. api/lib/stripe.ts. Volontairement PAS
+  // `required()` : contrairement à `databaseUrl`/`supabaseUrl`, une clé
+  // manquante ne doit jamais empêcher le serveur entier de démarrer (ça
+  // ferait tomber tout le site — pages légales, faire-part livrés, etc. —
+  // pour un problème qui ne concerne que le paiement). `createCheckout`
+  // vérifie lui-même la présence de la clé et renvoie une erreur explicite
+  // au client plutôt que de simuler un paiement réussi (c'est précisément
+  // le défaut de l'ancienne implémentation que cette intégration corrige).
+  // Clé TEST (sk_test_...) en développement : mêmes flux que la production,
+  // aucun vrai débit, cf. cartes de test Stripe (4242 4242 4242 4242).
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
+  // Secret de signature du webhook (whsec_...) — vérifie que les
+  // événements reçus sur /api/webhooks/stripe viennent bien de Stripe.
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
 };

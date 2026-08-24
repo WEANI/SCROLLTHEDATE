@@ -7,9 +7,12 @@ import { createContext } from "./context";
 import { env } from "./lib/env";
 import { bootstrapDatabase } from "./db-bootstrap";
 import { warnIfEmailMisconfigured } from "./lib/email";
+import { warnIfStripeMisconfigured } from "./lib/stripe";
+import { handleStripeWebhook } from "./webhooks/stripe";
 
 bootstrapDatabase();
 warnIfEmailMisconfigured();
+warnIfStripeMisconfigured();
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
@@ -28,6 +31,12 @@ app.use("/api/trpc/*", async (c) => {
     createContext,
   });
 });
+
+// Route Hono brute (pas une procédure tRPC) : la vérification de signature
+// Stripe exige le corps de requête BRUT, incompatible avec le parsing JSON
+// automatique de tRPC. Doit rester avant le catch-all /api/* ci-dessous.
+app.post("/api/webhooks/stripe", handleStripeWebhook);
+
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export default app;

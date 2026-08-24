@@ -922,6 +922,10 @@ function TabIntegrations({ push }: { push: Push }) {
   // — remplace un statut auparavant codé en dur ("connecté", "domaine
   // vérifié") qui ne reflétait rien de réel.
   const emailStatus = trpc.settings.emailStatus.useQuery();
+  // Idem pour Stripe (cf. api/lib/stripe.ts) — la carte affichait "Mode
+  // test · connecté" en dur avant même qu'une seule ligne de code n'appelle
+  // Stripe.
+  const stripeStatus = trpc.settings.stripeStatus.useQuery();
 
   const test = (name: string, ok: boolean) => {
     setTesting(name);
@@ -937,9 +941,13 @@ function TabIntegrations({ push }: { push: Push }) {
       id: "stripe",
       icon: CreditCard,
       name: "Stripe",
-      status: "connected" as const,
-      lines: ["Mode test · clé pk_test_••••••••4f2a", "Dernière synchro : aujourd'hui"],
-      ok: true,
+      status: stripeStatus.data?.configured ? ("connected" as const) : ("error" as const),
+      lines: stripeStatus.isLoading
+        ? ["Vérification…"]
+        : stripeStatus.data?.configured
+          ? [`Mode ${stripeStatus.data.mode === "live" ? "live" : "test"} · clé configurée`]
+          : ["Non configuré — aucun paiement ne peut être traité", "Renseigner STRIPE_SECRET_KEY et STRIPE_WEBHOOK_SECRET"],
+      ok: stripeStatus.data?.configured ?? false,
     },
     {
       id: "whatsapp",

@@ -105,6 +105,14 @@ export async function findOrderById(orderId: number) {
   });
 }
 
+/** Retrouve une commande à partir de l'id du PaymentIntent Stripe qui lui est associé (stripeRef) — utilisé par le webhook. */
+export async function findOrderByStripeRef(stripeRef: string) {
+  return getDb().query.orders.findFirst({
+    where: eq(orders.stripeRef, stripeRef),
+    with: { projects: true },
+  });
+}
+
 export async function updateOrderPaymentStatus(
   orderId: number,
   paymentStatus: "pending" | "paid" | "failed" | "refunded",

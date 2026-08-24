@@ -11,14 +11,8 @@ import {
   findOrdersByUser,
   updateOrderPaymentStatus,
 } from "./queries/orders";
-import { actorOf, logAudit, notifyUser } from "./queries/helpers";
-import { sendEmail } from "./lib/email";
-import { orderConfirmationEmail } from "./lib/emailTemplates";
-
-/** Même format que formatOrderNumber côté client (src/components/commerce/pricing.ts) — dupliqué à dessein plutôt qu'importé : ce fichier reste pur frontend. */
-function formatOrderNumber(orderId: number, date: Date): string {
-  return `FL-${date.getFullYear()}-${String(orderId).padStart(4, "0")}`;
-}
+import { actorOf, logAudit } from "./queries/helpers";
+import { stripe, isStripeConfigured } from "./lib/stripe";
 
 export const productEnum = z.enum(["FAIRE_PART", "SAVE_THE_DATE"]);
 export const projectStatusEnum = z.enum([
@@ -42,7 +36,14 @@ function slugify(text: string) {
 }
 
 export const ordersRouter = createRouter({
-  // Simule un paiement réussi : commande paid + projet ONBOARDING + audit.
+  // Crée un PaymentIntent Stripe RÉEL (mode test tant que STRIPE_SECRET_KEY
+  // est une clé sk_test_) + une commande "pending" + le projet associé.
+  // Le paiement n'est confirmé — commande → "paid", email de confirmation —
+  // que par le webhook Stripe (api/webhooks/stripe.ts), jamais ici : cette
+  // mutation ne fait que PRÉPARER le paiement, elle ne l'exécute pas.
+  // `clientSecret` sert au frontend à monter Stripe Elements et à confirmer
+  // le paiement directement avec Stripe, sans jamais faire transiter les
+  // données de carte par nos serveurs.
   createCheckout: authedQuery
     .input(
       z.object({
@@ -54,17 +55,39 @@ export const ordersRouter = createRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (!isStripeConfigured() || !stripe) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message:
+            "Le paiement en ligne n'est pas encore configuré. Contactez-nous pour finaliser votre commande.",
+        });
+      }
       const { amountCents, options } = await computeAmount(
         input.product,
         input.optionIds,
       );
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amountCents,
+        currency: "eur",
+        // automatic_payment_methods plutôt qu'un payment_method_types figé
+        // en dur : les moyens de paiement activables évoluent depuis le
+        // tableau de bord Stripe, sans redéploiement.
+        automatic_payment_methods: { enabled: true },
+        metadata: {
+          userId: String(ctx.user.id),
+          product: input.product,
+          names: input.names ?? "",
+        },
+      });
+
       const orderId = await createOrder({
         userId: ctx.user.id,
         product: input.product,
         options,
         amountCents,
-        paymentStatus: "paid",
-        stripeRef: `test_${nanoid(16)}`, // paiement simulé (pas de vrai Stripe)
+        paymentStatus: "pending",
+        stripeRef: paymentIntent.id,
       });
       const slugBase = slugify(input.names ?? ctx.user.name ?? "projet") || "projet";
       const projectId = await createProject({
@@ -76,29 +99,20 @@ export const ordersRouter = createRouter({
         venue: input.venue ?? null,
         progress: 5,
       });
-      await logAudit(projectId, actorOf(ctx.user), "order.paid", {
+      await logAudit(projectId, actorOf(ctx.user), "order.created", {
         orderId,
         product: input.product,
         amountCents,
         options: input.optionIds,
       });
       await logAudit(projectId, "system", "project.created", { orderId });
-      await notifyUser(ctx.user.id, "order.confirmed", { orderId, projectId });
-      // Ne bloque jamais la commande : sendEmail ne lève jamais (cf.
-      // api/lib/email.ts) et ce await ne fait qu'attendre son retour, pas
-      // relancer une erreur. Pas de "lien pour créer votre espace" ici — le
-      // compte existe déjà (authedQuery : la commande exige d'être connecté).
-      if (ctx.user.email) {
-        await sendEmail(
-          orderConfirmationEmail({
-            to: ctx.user.email,
-            coupleNames: input.names ?? "",
-            orderRef: formatOrderNumber(orderId, new Date()),
-            amountCents,
-          }),
-        );
-      }
-      return { orderId, projectId, amountCents };
+
+      return {
+        orderId,
+        projectId,
+        amountCents,
+        clientSecret: paymentIntent.client_secret,
+      };
     }),
 
   myOrders: authedQuery.query(({ ctx }) => findOrdersByUser(ctx.user.id)),

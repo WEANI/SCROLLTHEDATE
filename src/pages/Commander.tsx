@@ -1,10 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  Elements,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from '@stripe/react-stripe-js'
+import type { StripeElementsOptions } from '@stripe/stripe-js'
+import {
   ArrowLeft,
-  CalendarHeart,
   Check,
   ChevronDown,
   CreditCard,
@@ -17,6 +23,7 @@ import { cn } from '@/lib/utils'
 import { trpc } from '@/providers/trpc'
 import { useAuth } from '@/hooks/useAuth'
 import { LOGIN_PATH } from '@/const'
+import { stripePromise } from '@/lib/stripeClient'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
 import AnimatedAmount from '@/components/commerce/AnimatedAmount'
 import CheckDraw, { CheckboxMark } from '@/components/commerce/CheckDraw'
@@ -46,7 +53,6 @@ interface CheckoutDraft {
   phone: string
   weddingDate: string
   venue: string
-  payIn3: boolean
 }
 
 function loadDraft(): CheckoutDraft | null {
@@ -62,30 +68,13 @@ function loadDraft(): CheckoutDraft | null {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Validation & formatage carte (paiement simulé)                             */
+/* Validation                                                                 */
 /* -------------------------------------------------------------------------- */
 
 type Errors = Record<string, string>
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9 ().-]{8,}$/
-
-function formatCardNumber(value: string): string {
-  return value
-    .replace(/\D/g, '')
-    .slice(0, 16)
-    .replace(/(\d{4})(?=\d)/g, '$1 ')
-}
-
-function formatExpiry(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 4)
-  return digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits
-}
-
-function splitInThree(totalCents: number): [number, number, number] {
-  const third = Math.floor(totalCents / 3)
-  return [third, third, totalCents - 2 * third]
-}
 
 /* -------------------------------------------------------------------------- */
 /* Page                                                                       */
@@ -115,26 +104,40 @@ export default function Commander() {
   const [phone, setPhone] = useState(draft?.phone ?? '')
   const [weddingDate, setWeddingDate] = useState(draft?.weddingDate ?? '')
   const [venue, setVenue] = useState(draft?.venue ?? '')
-  const [payIn3, setPayIn3] = useState(draft?.payIn3 ?? false)
-
-  const [cardNumber, setCardNumber] = useState('')
-  const [cardExpiry, setCardExpiry] = useState('')
-  const [cardCvc, setCardCvc] = useState('')
 
   const [errors, setErrors] = useState<Errors>({})
   const [bump, setBump] = useState(0)
-  const [processing, setProcessing] = useState(false)
+  const [preparing, setPreparing] = useState(false)
   const [payError, setPayError] = useState<string | null>(null)
   const [recapOpen, setRecapOpen] = useState(false)
+
+  // Rempli une fois orders.createCheckout appelé : fait apparaître le
+  // Payment Element Stripe pour la saisie réelle de la carte. `null` tant
+  // que le client n'a pas validé le bloc "Vos informations" (cf.
+  // handlePrepare) — le PaymentIntent Stripe (et la commande "pending"
+  // associée, cf. api/ordersRouter.ts) n'est créé qu'à ce moment-là, pas
+  // avant.
+  const [checkoutResult, setCheckoutResult] = useState<{
+    orderId: number
+    clientSecret: string
+  } | null>(null)
 
   const product = getProduct(products, productId)
   const selectedOptions = options.filter((o) => optionIds.includes(o.id))
   const totalCents = product.priceCents + selectedOptions.reduce((sum, o) => sum + o.priceCents, 0)
   const eligible3x = totalCents >= 15000
-  const installments = splitInThree(totalCents)
-  const effectivePayIn3 = payIn3 && eligible3x
 
   const checkout = trpc.orders.createCheckout.useMutation()
+
+  // Le montant peut changer après coup (formule/options modifiées) — si un
+  // PaymentIntent existe déjà pour un montant désormais périmé, on
+  // réinitialise plutôt que de laisser confirmer un paiement pour le
+  // mauvais montant. L'ancienne commande "pending" reste en base
+  // (abandonnée), sans conséquence : elle ne passera jamais "paid" tant
+  // qu'aucun paiement Stripe ne lui correspond.
+  useEffect(() => {
+    setCheckoutResult(null)
+  }, [totalCents])
 
   const toggleOption = (id: string) =>
     setOptionIds((prev) => (prev.includes(id) ? prev.filter((o) => o !== id) : [...prev, id]))
@@ -150,15 +153,6 @@ export default function Commander() {
     if (!weddingDate) errs.weddingDate = 'Une date prévisionnelle nous aide à planifier.'
     else if (new Date(weddingDate).getTime() < Date.now() - 24 * 3600 * 1000)
       errs.weddingDate = 'Cette date semble être déjà passée.'
-    if (cardNumber.replace(/\D/g, '').length !== 16)
-      errs.cardNumber = '16 chiffres requis — carte de test : 4242 4242 4242 4242.'
-    else if (cardNumber.replace(/\D/g, '') === '4000000000000002')
-      errs.cardNumber = 'Cette carte est refusée (simulation).'
-    const expiryDigits = cardExpiry.replace(/\D/g, '')
-    const month = Number.parseInt(expiryDigits.slice(0, 2), 10)
-    if (expiryDigits.length !== 4 || month < 1 || month > 12)
-      errs.cardExpiry = 'Format MM/AA attendu.'
-    if (!/^\d{3}$/.test(cardCvc)) errs.cardCvc = '3 chiffres.'
     return errs
   }
 
@@ -172,7 +166,6 @@ export default function Commander() {
       phone,
       weddingDate,
       venue,
-      payIn3,
     }
     try {
       window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data))
@@ -181,34 +174,27 @@ export default function Commander() {
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
+  // Phase 1 — valide les informations, crée le PaymentIntent Stripe + la
+  // commande "pending" côté serveur, fait apparaître le Payment Element.
+  // Ne débite rien : c'est StripePaymentForm (phase 2, plus bas) qui
+  // confirme réellement le paiement avec Stripe.
+  async function handlePrepare(e: FormEvent) {
     e.preventDefault()
-    if (processing) return
+    if (preparing || checkoutResult) return
     const errs = validate()
     setErrors(errs)
     if (Object.keys(errs).length > 0) {
       setBump((b) => b + 1)
       return
     }
-    // Le paiement simulé crée la commande côté serveur → connexion requise.
-    // `state: { from: '/commander' }` est indispensable : Login.tsx retombe
-    // sinon sur son défaut ("/espace") après la connexion/inscription, et la
-    // commande — jamais réellement soumise puisque createCheckout exige un
-    // utilisateur authentifié — reste dans le brouillon sessionStorage sans
-    // que rien ne ramène le client ici pour la finaliser. Le client croit
-    // avoir payé (il vient de saisir sa carte) alors qu'aucune commande
-    // n'existe côté serveur : dashboard vide, aucun email, questionnaire
-    // introuvable.
     if (!isAuthenticated) {
       saveDraft()
       navigate(LOGIN_PATH, { state: { from: '/commander' } })
       return
     }
-    setProcessing(true)
+    setPreparing(true)
     setPayError(null)
     try {
-      // Délai simulé de traitement bancaire (pas de vrai Stripe).
-      await new Promise((resolve) => setTimeout(resolve, 1100))
       const result = await checkout.mutateAsync({
         product: productId,
         optionIds,
@@ -217,18 +203,35 @@ export default function Commander() {
         venue: venue.trim() || undefined,
       })
       window.sessionStorage.removeItem(DRAFT_KEY)
-      navigate(`/merci?order=${formatOrderNumber(result.orderId)}`)
+      if (!result.clientSecret) {
+        throw new Error("Le paiement n'a pas pu être initialisé. Réessayez dans un instant.")
+      }
+      setCheckoutResult({ orderId: result.orderId, clientSecret: result.clientSecret })
     } catch (err) {
-      setProcessing(false)
-      setPayError(
-        err instanceof Error
-          ? err.message
-          : 'Le paiement simulé a échoué. Réessayez dans un instant.',
-      )
+      setPayError(err instanceof Error ? err.message : 'Une erreur est survenue.')
+    } finally {
+      setPreparing(false)
     }
   }
 
   const summaryThumb = productId === 'FAIRE_PART' ? '/template-editorial.jpg' : '/template-minimal.jpg'
+
+  const elementsOptions: StripeElementsOptions | undefined = checkoutResult
+    ? {
+        clientSecret: checkoutResult.clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#C96F5A',
+            colorText: '#232326',
+            colorTextSecondary: '#6B6B70',
+            colorBackground: '#ffffff',
+            borderRadius: '12px',
+            fontFamily: '"Space Grotesk", system-ui, sans-serif',
+          },
+        },
+      }
+    : undefined
 
   return (
     <div className="min-h-[calc(100dvh-5rem)] bg-neutral-100 text-ink">
@@ -271,10 +274,7 @@ export default function Commander() {
           </motion.div>
         )}
 
-        {/* Bandeau retour de connexion : le brouillon a été restauré, mais
-            jamais les coordonnées de carte (jamais sauvegardées, même en
-            simulation) — sans ce rappel, "Payer" semble ne rien faire tant
-            que la carte n'est pas ressaisie. */}
+        {/* Bandeau retour de connexion */}
         {!authLoading && isAuthenticated && draft && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -283,10 +283,7 @@ export default function Commander() {
             className="mt-6 flex items-start gap-3 rounded-xl border border-terracotta-500/30 bg-terracotta-500/5 px-5 py-4 text-[14px] leading-[1.55] text-ink"
           >
             <Check size={18} className="mt-0.5 shrink-0 text-terracotta-500" />
-            <p>
-              Bon retour — votre commande a été restaurée. Il ne reste qu'à ressaisir votre carte pour
-              finaliser le paiement.
-            </p>
+            <p>Bon retour — votre commande a été restaurée.</p>
           </motion.div>
         )}
 
@@ -333,7 +330,7 @@ export default function Commander() {
           {/* ---------------------------------------------------------- */}
           {/* Formulaire                                                  */}
           {/* ---------------------------------------------------------- */}
-          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-12">
+          <form onSubmit={handlePrepare} noValidate className="flex flex-col gap-12">
             {/* Bloc 1 — Formule */}
             <section aria-labelledby="bloc-formule">
               <BlockTitle id="bloc-formule" index="01" title="Votre formule" />
@@ -412,6 +409,7 @@ export default function Commander() {
                   onChange={(e) => setPrenom1(e.target.value)}
                   error={errors.prenom1}
                   bump={bump}
+                  disabled={!!checkoutResult}
                 />
                 <FloatingField
                   label="Prénom de votre moitié"
@@ -420,6 +418,7 @@ export default function Commander() {
                   onChange={(e) => setPrenom2(e.target.value)}
                   error={errors.prenom2}
                   bump={bump}
+                  disabled={!!checkoutResult}
                 />
                 <FloatingField
                   label="Email"
@@ -432,6 +431,7 @@ export default function Commander() {
                   error={errors.email}
                   helper="Pour vous contacter au sujet de votre projet."
                   bump={bump}
+                  disabled={!!checkoutResult}
                 />
                 <FloatingField
                   label="Téléphone (optionnel, pour WhatsApp)"
@@ -442,6 +442,7 @@ export default function Commander() {
                   onChange={(e) => setPhone(e.target.value)}
                   error={errors.phone}
                   bump={bump}
+                  disabled={!!checkoutResult}
                 />
                 <FloatingField
                   label="Date prévisionnelle du mariage"
@@ -452,6 +453,7 @@ export default function Commander() {
                   onChange={(e) => setWeddingDate(e.target.value)}
                   error={errors.weddingDate}
                   bump={bump}
+                  disabled={!!checkoutResult}
                 />
                 <FloatingField
                   label="Ville / lieu envisagé (optionnel)"
@@ -461,6 +463,7 @@ export default function Commander() {
                   onChange={(e) => setVenue(e.target.value)}
                   error={errors.venue}
                   bump={bump}
+                  disabled={!!checkoutResult}
                 />
               </div>
             </section>
@@ -469,156 +472,88 @@ export default function Commander() {
             <section aria-labelledby="bloc-paiement">
               <BlockTitle id="bloc-paiement" index="04" title="Paiement" />
 
-              {/* Toggle 3x sans frais */}
-              <button
-                type="button"
-                role="switch"
-                aria-checked={effectivePayIn3}
-                disabled={!eligible3x}
-                onClick={() => setPayIn3((v) => !v)}
-                className={cn(
-                  'mt-5 flex w-full items-center justify-between rounded-2xl border bg-white p-5 text-left transition-colors',
-                  eligible3x ? 'border-neutral-200 hover:border-neutral-500/50' : 'cursor-not-allowed border-neutral-200 opacity-60',
-                )}
+              {/* 3x sans frais — pas encore implémenté (aucun prestataire de
+                  paiement fractionné n'est branché) : affiché grisé plutôt
+                  que fonctionnel, pour ne pas promettre un échéancier que
+                  rien ne débite réellement en 3 fois. */}
+              <div
+                aria-disabled
+                className="mt-5 flex w-full cursor-not-allowed items-center justify-between rounded-2xl border border-neutral-200 bg-white p-5 text-left opacity-60"
               >
                 <span>
                   <span className="block text-[15px] font-semibold text-ink">Payer en 3x sans frais</span>
                   <span className="mt-0.5 block text-[13px] text-neutral-500">
-                    {eligible3x
-                      ? 'Trois prélèvements, un mois d’écart, aucun frais.'
-                      : 'Disponible dès 150 € de commande.'}
+                    {eligible3x ? 'Bientôt disponible.' : 'Disponible dès 150 € de commande.'}
                   </span>
                 </span>
-                <span
-                  aria-hidden
-                  className={cn(
-                    'relative h-7 w-12 shrink-0 rounded-full transition-colors duration-300',
-                    effectivePayIn3 ? 'bg-terracotta-500' : 'bg-neutral-200',
-                  )}
-                >
-                  <motion.span
-                    layout
-                    transition={{ type: 'spring', stiffness: 500, damping: 32 }}
-                    className={cn(
-                      'absolute top-1 h-5 w-5 rounded-full bg-white shadow',
-                      effectivePayIn3 ? 'right-1' : 'left-1',
-                    )}
-                  />
+                <span className="rounded-full bg-neutral-200/70 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-neutral-500">
+                  bientôt
                 </span>
-              </button>
-
-              {/* Échéancier */}
-              <AnimatePresence initial={false}>
-                {effectivePayIn3 && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-                    className="overflow-hidden"
-                  >
-                    <ul className="mt-3 flex flex-col gap-2 rounded-2xl border border-neutral-200 bg-white p-5">
-                      {['Aujourd’hui', 'Dans 30 jours', 'Dans 60 jours'].map((label, i) => (
-                        <li key={label} className="flex items-center justify-between text-[14px]">
-                          <span className="flex items-center gap-2 text-neutral-500">
-                            <CalendarHeart size={14} className="text-terracotta-500" />
-                            {label}
-                          </span>
-                          <span className="tabular font-medium text-ink">{formatEuros(installments[i])}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Carte (placeholder Stripe — paiement simulé) */}
-              <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-5">
-                <p className="mb-4 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                  <CreditCard size={16} className="text-terracotta-500" />
-                  Carte bancaire
-                  <span className="ml-auto rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
-                    Mode test
-                  </span>
-                </p>
-                <div className="grid gap-4 sm:grid-cols-[1fr_auto_auto]">
-                  <FloatingField
-                    label="Numéro de carte"
-                    name="cardNumber"
-                    inputMode="numeric"
-                    autoComplete="cc-number"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                    error={errors.cardNumber}
-                    bump={bump}
-                  />
-                  <div className="sm:w-28">
-                    <FloatingField
-                      label="MM/AA"
-                      name="cardExpiry"
-                      inputMode="numeric"
-                      autoComplete="cc-exp"
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
-                      error={errors.cardExpiry}
-                      bump={bump}
-                    />
-                  </div>
-                  <div className="sm:w-24">
-                    <FloatingField
-                      label="CVC"
-                      name="cardCvc"
-                      inputMode="numeric"
-                      autoComplete="cc-csc"
-                      value={cardCvc}
-                      onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                      error={errors.cardCvc}
-                      bump={bump}
-                    />
-                  </div>
-                </div>
               </div>
 
-              {/* Erreur paiement */}
-              <AnimatePresence>
-                {payError && (
-                  <motion.p
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="mt-4 rounded-xl border border-error/30 bg-error/5 px-5 py-4 text-[14px] font-medium text-error"
-                  >
-                    {payError}
-                  </motion.p>
-                )}
-              </AnimatePresence>
+              {!checkoutResult ? (
+                <>
+                  <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-5">
+                    <p className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                      <CreditCard size={16} className="text-terracotta-500" />
+                      Carte bancaire
+                      <span className="ml-auto rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
+                        Mode test
+                      </span>
+                    </p>
+                    <p className="mt-3 text-[13px] leading-[1.6] text-neutral-500">
+                      Les coordonnées de carte se saisissent à l'étape suivante, directement
+                      auprès de Stripe.
+                    </p>
+                  </div>
 
-              {/* CTA payer */}
-              <motion.button
-                type="submit"
-                disabled={processing || authLoading}
-                whileHover={processing ? undefined : { y: -2 }}
-                whileTap={processing ? undefined : { scale: 0.98 }}
-                className={cn(
-                  'mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-terracotta-500 text-[15px] font-semibold text-white transition-colors hover:bg-terracotta-400',
-                  (processing || authLoading) && 'cursor-wait opacity-80',
-                )}
-              >
-                {processing ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Paiement en cours…
-                  </>
-                ) : effectivePayIn3 ? (
-                  <>Payer {formatEuros(installments[0])} — 1re échéance</>
-                ) : (
-                  <>Payer {formatEuros(totalCents)}</>
-                )}
-              </motion.button>
+                  <AnimatePresence>
+                    {payError && (
+                      <motion.p
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="mt-4 rounded-xl border border-error/30 bg-error/5 px-5 py-4 text-[14px] font-medium text-error"
+                      >
+                        {payError}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+
+                  <motion.button
+                    type="submit"
+                    disabled={preparing || authLoading}
+                    whileHover={preparing ? undefined : { y: -2 }}
+                    whileTap={preparing ? undefined : { scale: 0.98 }}
+                    className={cn(
+                      'mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-terracotta-500 text-[15px] font-semibold text-white transition-colors hover:bg-terracotta-400',
+                      (preparing || authLoading) && 'cursor-wait opacity-80',
+                    )}
+                  >
+                    {preparing ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Un instant…
+                      </>
+                    ) : (
+                      <>Continuer vers le paiement — {formatEuros(totalCents)}</>
+                    )}
+                  </motion.button>
+                </>
+              ) : stripePromise ? (
+                <Elements stripe={stripePromise} options={elementsOptions}>
+                  <StripePaymentForm orderId={checkoutResult.orderId} totalCents={totalCents} />
+                </Elements>
+              ) : (
+                <p className="mt-4 rounded-xl border border-error/30 bg-error/5 px-5 py-4 text-[14px] font-medium text-error">
+                  Le paiement en ligne n'est pas configuré sur cet environnement.
+                </p>
+              )}
+
               <p className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[12px] text-neutral-500">
                 <ShieldCheck size={14} className="text-terracotta-500" />
-                Paiement simulé (aucune carte débitée) · Stripe · 3D Secure · Vous ne créez votre
-                compte qu'après le paiement.
+                Paiement sécurisé par Stripe · 3D Secure · Mode test — carte 4242 4242 4242 4242,
+                toute date future, tout CVC.
               </p>
             </section>
           </form>
@@ -640,6 +575,113 @@ export default function Commander() {
         </div>
       </div>
     </div>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
+/* Formulaire de paiement Stripe (phase 2)                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Doit être rendu à l'intérieur d'un <Elements> déjà monté avec le
+ * `clientSecret` du PaymentIntent — c'est ce qui donne accès à
+ * `useStripe()`/`useElements()`. Confirme le paiement DIRECTEMENT avec
+ * Stripe (`stripe.confirmPayment`) : les données de carte ne transitent
+ * jamais par nos serveurs, seul le résultat (succès/échec) en revient.
+ * La commande ne passe "paid" qu'une fois le webhook Stripe reçu (cf.
+ * api/webhooks/stripe.ts) — cet écran peut donc naviguer vers /merci avant
+ * que ce ne soit tout à fait le cas ; Merci.tsx affiche la commande dès
+ * qu'elle existe (statut "pending" ou "paid"), pas seulement une fois payée.
+ */
+function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCents: number }) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const navigate = useNavigate()
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleConfirm(e: FormEvent) {
+    e.preventDefault()
+    if (!stripe || !elements || submitting) return
+    setSubmitting(true)
+    setError(null)
+
+    const returnUrl = `${window.location.origin}/merci?order=${formatOrderNumber(orderId)}`
+
+    // `elements.submit()` valide le Payment Element côté client avant
+    // confirmation — requis par l'API Stripe actuelle en amont de
+    // `confirmPayment`.
+    const submitResult = await elements.submit()
+    if (submitResult.error) {
+      setError(submitResult.error.message ?? 'Vérifiez les informations de votre carte.')
+      setSubmitting(false)
+      return
+    }
+
+    // `redirect: 'if_required'` : reste sur cette page pour une carte
+    // standard (mode test inclus) ; ne redirige que si Stripe l'exige
+    // réellement (ex. authentification 3D Secure).
+    const { error: confirmError } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: returnUrl },
+      redirect: 'if_required',
+    })
+
+    if (confirmError) {
+      setError(confirmError.message ?? 'Le paiement a été refusé. Réessayez avec une autre carte.')
+      setSubmitting(false)
+      return
+    }
+
+    navigate(returnUrl.replace(window.location.origin, ''))
+  }
+
+  return (
+    <form onSubmit={handleConfirm} className="mt-4 flex flex-col gap-4">
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <p className="mb-4 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+          <CreditCard size={16} className="text-terracotta-500" />
+          Carte bancaire
+          <span className="ml-auto rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
+            Mode test
+          </span>
+        </p>
+        <PaymentElement />
+      </div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="rounded-xl border border-error/30 bg-error/5 px-5 py-4 text-[14px] font-medium text-error"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      <motion.button
+        type="submit"
+        disabled={!stripe || submitting}
+        whileHover={submitting ? undefined : { y: -2 }}
+        whileTap={submitting ? undefined : { scale: 0.98 }}
+        className={cn(
+          'flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-terracotta-500 text-[15px] font-semibold text-white transition-colors hover:bg-terracotta-400',
+          (!stripe || submitting) && 'cursor-wait opacity-80',
+        )}
+      >
+        {submitting ? (
+          <>
+            <Loader2 size={18} className="animate-spin" />
+            Paiement en cours…
+          </>
+        ) : (
+          <>Payer {formatEuros(totalCents)}</>
+        )}
+      </motion.button>
+    </form>
   )
 }
 
