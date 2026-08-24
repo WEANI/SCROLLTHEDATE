@@ -6,6 +6,9 @@ import NotFound from '@/pages/NotFound'
 import Offres from '@/pages/Offres'
 import Commander from '@/pages/Commander'
 import Merci from '@/pages/Merci'
+import MentionsLegales from '@/pages/MentionsLegales'
+import CGV from '@/pages/CGV'
+import Confidentialite from '@/pages/Confidentialite'
 import Demo from '@/pages/Demo'
 import DemoInfos from '@/pages/DemoInfos'
 import DemoFairePart from '@/pages/DemoFairePart'
@@ -46,6 +49,9 @@ export default function App() {
         <Route path="demo" element={<Demo />} />
         <Route path="demo/infos" element={<DemoInfos />} />
         <Route path="demofairepart" element={<DemoFairePart />} />
+        <Route path="mentions-legales" element={<MentionsLegales />} />
+        <Route path="cgv" element={<CGV />} />
+        <Route path="confidentialite" element={<Confidentialite />} />
       </Route>
 
       {/* Login — clair, hors Layout public sombre (comme /espace et /admin) */}
