@@ -12,6 +12,7 @@ import {
   findNotificationsByUser,
 } from "./queries/analytics";
 import { getSiteSetting, upsertSiteSetting } from "./queries/orders";
+import { isEmailConfigured } from "./lib/email";
 
 export const analyticsRouter = createRouter({
   adminOverview: adminQuery
@@ -61,4 +62,10 @@ export const settingsRouter = createRouter({
       await upsertSiteSetting(input.key, input.value);
       return { success: true };
     }),
+
+  // État RÉEL de l'intégration email (Resend), pour la carte "Email
+  // transactionnel" du panneau admin — cf. api/lib/email.ts. Remplace un
+  // état auparavant codé en dur ("connecté", "domaine vérifié") qui ne
+  // reflétait rien de réel : aucun service d'emailing n'existait.
+  emailStatus: adminQuery.query(() => ({ configured: isEmailConfigured() })),
 });

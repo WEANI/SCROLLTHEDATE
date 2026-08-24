@@ -14,6 +14,10 @@ import {
   notifyUser,
 } from "./queries/helpers";
 import { findProjectById, updateProjectStatus } from "./queries/projects";
+import { findUserById } from "./queries/orders";
+import { sendEmail } from "./lib/email";
+import { videoDeliveredEmail, adminAlertEmail } from "./lib/emailTemplates";
+import { env } from "./lib/env";
 
 async function requireCurrentProject(userId: number) {
   const project = await findCurrentProject(userId);
@@ -79,6 +83,16 @@ export const videosRouter = createRouter({
           slug: project.slug,
           version,
         });
+        const owner = await findUserById(project.userId);
+        if (owner?.email) {
+          await sendEmail(
+            videoDeliveredEmail({
+              to: owner.email,
+              coupleNames: owner.name ?? "",
+              slug: project.slug,
+            }),
+          );
+        }
       }
       return { videoId, version };
     }),
@@ -106,6 +120,16 @@ export const videosRouter = createRouter({
         slug: project.slug,
         version: video.version,
       });
+      if (env.ownerEmail) {
+        await sendEmail(
+          adminAlertEmail({
+            to: env.ownerEmail,
+            title: "Vidéo approuvée par le client",
+            detail: `Version ${video.version}`,
+            projectSlug: project.slug,
+          }),
+        );
+      }
       return { success: true };
     }),
 
@@ -138,6 +162,16 @@ export const videosRouter = createRouter({
         version: video.version,
         message: input.message,
       });
+      if (env.ownerEmail) {
+        await sendEmail(
+          adminAlertEmail({
+            to: env.ownerEmail,
+            title: "Retouches vidéo demandées",
+            detail: `Version ${video.version}${input.message ? ` — "${input.message}"` : ""}`,
+            projectSlug: project.slug,
+          }),
+        );
+      }
       return { success: true };
     }),
 });

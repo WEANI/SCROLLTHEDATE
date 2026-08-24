@@ -14,6 +14,10 @@ import {
   notifyUser,
 } from "./queries/helpers";
 import { findProjectById, updateProjectStatus } from "./queries/projects";
+import { findUserById } from "./queries/orders";
+import { sendEmail } from "./lib/email";
+import { scenariosReadyEmail, adminAlertEmail } from "./lib/emailTemplates";
+import { env } from "./lib/env";
 
 async function requireCurrentProject(userId: number) {
   const project = await findCurrentProject(userId);
@@ -84,6 +88,16 @@ export const scenariosRouter = createRouter({
         projectId: project.id,
         slug: project.slug,
       });
+      const owner = await findUserById(project.userId);
+      if (owner?.email) {
+        await sendEmail(
+          scenariosReadyEmail({
+            to: owner.email,
+            coupleNames: owner.name ?? "",
+            slug: project.slug,
+          }),
+        );
+      }
       return { success: true };
     }),
 
@@ -110,6 +124,16 @@ export const scenariosRouter = createRouter({
         slug: project.slug,
         title: scenario.title,
       });
+      if (env.ownerEmail) {
+        await sendEmail(
+          adminAlertEmail({
+            to: env.ownerEmail,
+            title: "Scénario choisi",
+            detail: `« ${scenario.title} »`,
+            projectSlug: project.slug,
+          }),
+        );
+      }
       return { success: true };
     }),
 
@@ -139,6 +163,16 @@ export const scenariosRouter = createRouter({
         title: scenario.title,
         comment: input.comment,
       });
+      if (env.ownerEmail) {
+        await sendEmail(
+          adminAlertEmail({
+            to: env.ownerEmail,
+            title: "Retouches demandées",
+            detail: `« ${scenario.title} » — "${input.comment}"`,
+            projectSlug: project.slug,
+          }),
+        );
+      }
       return { success: true };
     }),
 });

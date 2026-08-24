@@ -226,8 +226,9 @@ export default function Merci() {
             transition={{ duration: 0.7, delay: 0.55, ease: EASE_EDITORIAL }}
             className="mx-auto mt-8 max-w-lg text-[16px] leading-[1.65] text-white/60"
           >
-            Votre place est réservée dans notre planning de production. Un email vient de partir :
-            il contient votre lien de remerciement et le lien pour créer votre espace Scroll The Date.
+            Votre place est réservée dans notre planning de production. Un email de confirmation
+            vient de vous être envoyé avec le récapitulatif de votre commande — votre espace est
+            accessible dès maintenant ci-dessous.
           </motion.p>
         </div>
       </section>
@@ -248,7 +249,11 @@ export default function Merci() {
             number="1"
             icon={<UserRound size={20} className="text-terracotta-300" aria-hidden />}
             title="Créez votre espace"
-            text="Cliquez sur le lien reçu par email, choisissez un mot de passe. Votre espace centralisera tout : questionnaire, scénarios, RSVP."
+            text={
+              isAuthenticated
+                ? 'Votre espace est actif : questionnaire, scénarios, RSVP, tout est centralisé ici.'
+                : 'Connectez-vous ou créez votre compte pour accéder à votre espace : questionnaire, scénarios, RSVP.'
+            }
           >
             {isAuthenticated ? (
               <span className="inline-flex items-center gap-2 rounded-full border border-success/40 bg-success/10 px-5 py-2.5 text-[13px] font-semibold text-success">

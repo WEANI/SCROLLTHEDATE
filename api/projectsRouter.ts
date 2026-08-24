@@ -13,6 +13,9 @@ import {
 } from "./queries/projects";
 import { findVideosByProject } from "./queries/domain";
 import { actorOf, logAudit, notifyUser } from "./queries/helpers";
+import { findUserById } from "./queries/orders";
+import { sendEmail } from "./lib/email";
+import { projectStatusChangedEmail } from "./lib/emailTemplates";
 
 export const projectsRouter = createRouter({
   // Faire-part public (par slug) — sans auth. Rendu du hero scrub +
@@ -99,6 +102,16 @@ export const projectsRouter = createRouter({
         slug: project.slug,
         status: input.status,
       });
+      const owner = await findUserById(project.userId);
+      if (owner?.email) {
+        await sendEmail(
+          projectStatusChangedEmail({
+            to: owner.email,
+            coupleNames: owner.name ?? "",
+            status: input.status,
+          }),
+        );
+      }
       return { success: true };
     }),
 

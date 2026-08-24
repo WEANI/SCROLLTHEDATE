@@ -15,6 +15,10 @@ import {
   notifyUser,
 } from "./queries/helpers";
 import { findProjectById } from "./queries/projects";
+import { findUserById } from "./queries/orders";
+import { sendEmail } from "./lib/email";
+import { newMessageForClientEmail, newMessageForAdminEmail } from "./lib/emailTemplates";
+import { env } from "./lib/env";
 
 const attachmentsSchema = z
   .array(
@@ -99,11 +103,23 @@ export const messagesRouter = createRouter({
             projectId: project.id,
             slug: project.slug,
           });
+          const owner = await findUserById(project.userId);
+          if (owner?.email) {
+            await sendEmail(newMessageForClientEmail({ to: owner.email }));
+          }
         } else {
           await notifyAdmins("message.received", {
             projectId: project.id,
             slug: project.slug,
           });
+          if (env.ownerEmail) {
+            await sendEmail(
+              newMessageForAdminEmail({
+                to: env.ownerEmail,
+                projectSlug: project.slug,
+              }),
+            );
+          }
         }
       }
       return { messageId };

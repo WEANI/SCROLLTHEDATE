@@ -918,6 +918,10 @@ function TabNotifications({ push }: { push: Push }) {
 
 function TabIntegrations({ push }: { push: Push }) {
   const [testing, setTesting] = useState<string | null>(null);
+  // État RÉEL de l'intégration Resend (cf. api/lib/email.ts / miscRouters.ts)
+  // — remplace un statut auparavant codé en dur ("connecté", "domaine
+  // vérifié") qui ne reflétait rien de réel.
+  const emailStatus = trpc.settings.emailStatus.useQuery();
 
   const test = (name: string, ok: boolean) => {
     setTesting(name);
@@ -960,9 +964,13 @@ function TabIntegrations({ push }: { push: Push }) {
       id: "email",
       icon: Mail,
       name: "Email transactionnel",
-      status: "connected" as const,
-      lines: ["Domaine scrollthedate.fr vérifié", "SPF ✓ · DKIM ✓"],
-      ok: true,
+      status: emailStatus.data?.configured ? ("connected" as const) : ("error" as const),
+      lines: emailStatus.isLoading
+        ? ["Vérification…"]
+        : emailStatus.data?.configured
+          ? ["Resend configuré (RESEND_API_KEY + EMAIL_FROM)"]
+          : ["Non configuré — aucun email n'est envoyé", "Renseigner RESEND_API_KEY et EMAIL_FROM"],
+      ok: emailStatus.data?.configured ?? false,
     },
   ];
 

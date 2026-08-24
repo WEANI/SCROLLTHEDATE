@@ -11,7 +11,14 @@ import {
   findOrdersByUser,
   updateOrderPaymentStatus,
 } from "./queries/orders";
-import { actorOf, logAudit } from "./queries/helpers";
+import { actorOf, logAudit, notifyUser } from "./queries/helpers";
+import { sendEmail } from "./lib/email";
+import { orderConfirmationEmail } from "./lib/emailTemplates";
+
+/** Même format que formatOrderNumber côté client (src/components/commerce/pricing.ts) — dupliqué à dessein plutôt qu'importé : ce fichier reste pur frontend. */
+function formatOrderNumber(orderId: number, date: Date): string {
+  return `FL-${date.getFullYear()}-${String(orderId).padStart(4, "0")}`;
+}
 
 export const productEnum = z.enum(["FAIRE_PART", "SAVE_THE_DATE"]);
 export const projectStatusEnum = z.enum([
@@ -76,6 +83,21 @@ export const ordersRouter = createRouter({
         options: input.optionIds,
       });
       await logAudit(projectId, "system", "project.created", { orderId });
+      await notifyUser(ctx.user.id, "order.confirmed", { orderId, projectId });
+      // Ne bloque jamais la commande : sendEmail ne lève jamais (cf.
+      // api/lib/email.ts) et ce await ne fait qu'attendre son retour, pas
+      // relancer une erreur. Pas de "lien pour créer votre espace" ici — le
+      // compte existe déjà (authedQuery : la commande exige d'être connecté).
+      if (ctx.user.email) {
+        await sendEmail(
+          orderConfirmationEmail({
+            to: ctx.user.email,
+            coupleNames: input.names ?? "",
+            orderRef: formatOrderNumber(orderId, new Date()),
+            amountCents,
+          }),
+        );
+      }
       return { orderId, projectId, amountCents };
     }),
 

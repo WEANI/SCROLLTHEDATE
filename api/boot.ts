@@ -6,8 +6,10 @@ import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
 import { bootstrapDatabase } from "./db-bootstrap";
+import { warnIfEmailMisconfigured } from "./lib/email";
 
 bootstrapDatabase();
+warnIfEmailMisconfigured();
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 

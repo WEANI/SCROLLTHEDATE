@@ -430,7 +430,7 @@ export default function Commander() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   error={errors.email}
-                  helper="C'est ici que vous recevrez le lien pour créer votre espace."
+                  helper="Pour vous contacter au sujet de votre projet."
                   bump={bump}
                 />
                 <FloatingField
