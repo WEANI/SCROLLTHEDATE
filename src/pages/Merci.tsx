@@ -162,7 +162,7 @@ export default function Merci() {
   const baseDate = matchedOrder ? new Date(matchedOrder.createdAt) : new Date()
   const timeline = [
     { label: 'Questionnaire', detail: 'Votre histoire, vos mots', date: "Aujourd'hui" },
-    { label: '3 scénarios', detail: 'Trois propositions à choisir', date: dateFmt.format(addDays(baseDate, 5)) },
+    { label: 'Scénarios', detail: 'Des propositions à choisir', date: dateFmt.format(addDays(baseDate, 5)) },
     { label: 'Vidéo en filigrane', detail: 'Vous validez avant la finale', date: dateFmt.format(addDays(baseDate, 14)) },
     {
       label: 'Faire-part en ligne',

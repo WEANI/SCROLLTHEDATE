@@ -106,8 +106,8 @@ const DEFAULT_EMAIL_TEMPLATES: EmailTemplateDraft[] = [
   {
     id: "scenarios-envoyes",
     name: "Scénarios envoyés",
-    subject: "Vos 3 scénarios sont prêts, {{prenoms}}",
-    body: "Nous avons imaginé 3 façons de raconter votre histoire. Découvrez-les : {{lien_espace}}.",
+    subject: "Vos scénarios sont prêts, {{prenoms}}",
+    body: "Nous avons imaginé plusieurs façons de raconter votre histoire. Découvrez-les : {{lien_espace}}.",
     active: true,
   },
   {

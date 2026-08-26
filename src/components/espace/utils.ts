@@ -103,7 +103,7 @@ export function auditLabel(action: string, meta?: unknown): string {
     case 'voice_note.received':
       return 'Note vocale reçue'
     case 'scenarios.sent':
-      return 'Vos 3 scénarios ont été envoyés'
+      return 'Vos scénarios ont été envoyés'
     case 'scenario.chosen':
       return m.title ? `Scénario choisi — « ${String(m.title)} »` : 'Scénario choisi'
     case 'scenario.changes_requested':
@@ -135,7 +135,7 @@ export function auditLabel(action: string, meta?: unknown): string {
 export function notificationLabel(type: string): { title: string; detail?: string } {
   switch (type) {
     case 'scenarios.sent':
-      return { title: 'Vos 3 scénarios sont arrivés', detail: 'À découvrir dans Projet & scénarios' }
+      return { title: 'Vos scénarios sont arrivés', detail: 'À découvrir dans Projet & scénarios' }
     case 'video.sent':
       return { title: 'Votre vidéo filigrane est prête', detail: 'Validez-la depuis Projet & scénarios' }
     case 'project.status_changed':

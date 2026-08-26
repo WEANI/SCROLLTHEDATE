@@ -10,7 +10,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Et si la vidéo ne me plaît pas ?',
-    a: "C'est justement pour ça que vous validez d'abord un scénario parmi 3 propositions, puis une version filigrane. Deux allers-retours de modifications sont inclus. Nous ajustons jusqu'à ce que ce soit vous.",
+    a: "C'est justement pour ça que vous validez d'abord un scénario parmi plusieurs propositions, puis une version filigrane. Des retouches sont incluses. Nous ajustons jusqu'à ce que ce soit vous.",
   },
   {
     q: "Combien d'invités peuvent recevoir le faire-part ?",

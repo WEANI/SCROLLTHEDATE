@@ -313,7 +313,7 @@ export default function Projet() {
                   Choisissez votre histoire.
                 </h3>
                 <p className="mt-1 text-[13.5px] text-neutral-500">
-                  Trois propositions écrites à partir de votre questionnaire et de votre note vocale.
+                  Des propositions écrites à partir de votre questionnaire et de votre note vocale.
                 </p>
               </div>
               {chosenScenario && <StatusBadge tone="success">Scénario choisi ✓</StatusBadge>}
@@ -326,7 +326,7 @@ export default function Projet() {
                 <Clock3 className="mx-auto text-terracotta-500" size={22} />
                 <p className="mt-3 text-[14px] font-medium text-ink">Rédaction en cours</p>
                 <p className="mt-1 text-[13px] text-neutral-500">
-                  Élise écrit vos 3 propositions — vous serez notifié dès qu'elles arrivent.
+                  Élise écrit vos propositions — vous serez notifié dès qu'elles arrivent.
                 </p>
               </div>
             ) : (

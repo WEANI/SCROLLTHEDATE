@@ -271,7 +271,7 @@ function ScenarioEditor({ project }: { project: Project360 }) {
             >
               <h3 className="font-display text-[20px] font-medium">Envoyer les propositions ?</h3>
               <p className="mt-2 text-[13px] text-neutral-500">
-                Le client recevra un email « Vos 3 scénarios sont prêts » et un message système sera ajouté au
+                Le client recevra un email « Vos scénarios sont prêts » et un message système sera ajouté au
                 fil du projet.
               </p>
               <ul className="mt-4 space-y-2 rounded-xl bg-neutral-100 p-4">

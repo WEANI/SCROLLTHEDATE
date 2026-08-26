@@ -228,8 +228,8 @@ export default function Offres() {
     { label: 'Durée de la vidéo', std: tx('30–45 s'), fp: tx('60–90 s') },
     { label: 'Page web', std: tx("Page d'annonce"), fp: tx('Page complète') },
     { label: 'RSVP intégré', std: da, fp: ck },
-    { label: 'Scénarios au choix', std: da, fp: tx('3 propositions') },
-    { label: 'Révisions incluses', std: tx('1 aller-retour'), fp: tx('2 allers-retours') },
+    { label: 'Scénarios au choix', std: da, fp: ck },
+    { label: 'Révisions incluses', std: tx('Incluses'), fp: tx('Incluses') },
     { label: 'Lien illimité + QR code', std: ck, fp: ck },
     { label: 'Délai de livraison', std: tx('~10 jours'), fp: tx('~3 semaines') },
     { label: 'Prix', std: tx(formatEuros(saveTheDate.priceCents)), fp: tx(formatEuros(fairePart.priceCents)) },
@@ -292,7 +292,7 @@ export default function Offres() {
               'Vidéo personnalisée 30–45 s, issue de votre questionnaire',
               "Page d'annonce : vos noms, la date, le lieu",
               'Lien illimité + QR code pour vos supports papier',
-              '1 aller-retour de révision inclus',
+              'Retouche incluse',
               'Livraison en ~10 jours',
             ]}
             ctaLabel="Commander le Save the Date"
@@ -320,7 +320,7 @@ export default function Offres() {
               'Vidéo cinématique 60–90 s en héros scrub-scroll de votre faire-part',
               'Page complète : votre histoire, programme, lieu & hébergements, dress code',
               'RSVP intégré — réponses en temps réel, export CSV',
-              '3 propositions de scénario, 2 allers-retours inclus',
+              'Propositions de scénario à choisir, retouches incluses',
               'Suivi de production dans votre espace client',
               'Lien illimité + QR + kit de partage WhatsApp/SMS/email',
               'Livraison en ~3 semaines',

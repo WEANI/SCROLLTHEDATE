@@ -4,10 +4,13 @@ import LegalLayout, { TodoBlock } from '@/components/legal/LegalLayout'
 /**
  * Conditions générales de vente — le contenu commercial (produits, prix,
  * délais, politique de révisions) est repris tel quel depuis le code réel
- * (cf. src/components/commerce/pricing.ts, FALLBACK_PRODUCTS/OPTIONS, et le
- * FAQ de Home.tsx pour "2 allers-retours inclus") plutôt que reformulé —
- * même principe que le reste du payload du site : jamais de chiffre
- * inventé. Les clauses sans équivalent existant dans le produit
+ * (cf. src/components/commerce/pricing.ts, FALLBACK_PRODUCTS/OPTIONS) plutôt
+ * que reformulé — même principe que le reste du payload du site : jamais de
+ * chiffre inventé. Le nombre précis de propositions de scénario et de
+ * retouches incluses n'est volontairement plus affiché nulle part sur le
+ * site (demande client du 26/08/2026) — la mécanique (scénarios proposés,
+ * retouches incluses) reste réelle, seul l'engagement chiffré public a été
+ * retiré. Les clauses sans équivalent existant dans le produit
  * (rétractation, remboursement, médiation) sont rédigées sur une base
  * standard/conservatrice et clairement signalées comme à faire valider par
  * un professionnel du droit avant mise en ligne réelle — cf. TodoBlock.
@@ -81,7 +84,7 @@ export default function CGV() {
             photos, informations pratiques) nécessaires à la réalisation.
           </li>
           <li>
-            Trois propositions de scénario sont soumises au client, qui en choisit une (ou
+            Plusieurs propositions de scénario sont soumises au client, qui en choisit une (ou
             demande des ajustements avant de choisir).
           </li>
           <li>
@@ -90,8 +93,8 @@ export default function CGV() {
           </li>
         </ul>
         <p>
-          Deux allers-retours de modifications sont inclus dans le prix de chaque formule.
-          L'option "Révisions illimitées" lève cette limite.
+          Des retouches sont incluses dans le prix de chaque formule. L'option "Révisions
+          illimitées" lève toute limite sur leur nombre.
         </p>
       </section>
 

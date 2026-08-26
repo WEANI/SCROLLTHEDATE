@@ -93,29 +93,29 @@ Accéder à mon espace : ${espaceUrl()}
   return { to: params.to, subject, html, text };
 }
 
-/** Les 3 scénarios sont prêts à être choisis (scenarios.sent). */
+/** Les scénarios sont prêts à être choisis (scenarios.sent). */
 export function scenariosReadyEmail(params: {
   to: string;
   coupleNames: string;
   slug: string;
 }): EmailMessage {
   const url = `${env.appUrl}/espace/projet`;
-  const subject = "Vos 3 scénarios sont prêts";
+  const subject = "Vos scénarios sont prêts";
   const html = wrap({
-    preheader: "Trois propositions vous attendent, à choisir ou ajuster.",
+    preheader: "Des propositions vous attendent, à choisir ou ajuster.",
     bodyHtml: `
       <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.accent};">Vos scénarios sont prêts</p>
-      <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:400;font-size:26px;line-height:1.2;color:${BRAND.ink};">Trois propositions vous attendent</h1>
+      <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:400;font-size:26px;line-height:1.2;color:${BRAND.ink};">Des propositions vous attendent</h1>
       <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:${BRAND.inkSoft};">
-        Nous avons imaginé 3 façons de raconter votre histoire. Prenez le temps de les regarder, choisissez
+        Nous avons imaginé plusieurs façons de raconter votre histoire. Prenez le temps de les regarder, choisissez
         celle qui vous ressemble — ou demandez des ajustements.
       </p>
       ${button("Voir mes scénarios", url)}
     `,
   });
-  const text = `Trois propositions vous attendent
+  const text = `Des propositions vous attendent
 
-Nous avons imaginé 3 façons de raconter votre histoire. Choisissez celle qui vous ressemble, ou demandez des ajustements.
+Nous avons imaginé plusieurs façons de raconter votre histoire. Choisissez celle qui vous ressemble, ou demandez des ajustements.
 
 Voir mes scénarios : ${url}
 

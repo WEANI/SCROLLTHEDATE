@@ -25,7 +25,7 @@ const STEPS = [
   {
     num: '03',
     title: 'Validez',
-    text: '3 propositions de scénario, vous choisissez. Puis une vidéo en filigrane avant la version finale.',
+    text: 'Des propositions de scénario, vous choisissez. Puis une vidéo en filigrane avant la version finale.',
     icon: ClipboardCheck,
     dark: false,
   },
