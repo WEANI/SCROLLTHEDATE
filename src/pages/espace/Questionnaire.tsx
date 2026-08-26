@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  Camera,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -9,6 +10,7 @@ import {
   Loader2,
   Mic,
   Plus,
+  RefreshCw,
   Trash2,
   X,
 } from 'lucide-react'
@@ -186,6 +188,113 @@ function InspirationButton({ questionId, onUse }: { questionId: string; onUse: (
   )
 }
 
+/**
+ * Question de type "photo" — upload d'une seule image directement dans le
+ * wizard, distinct de la médiathèque générale plus bas sur la page : ici,
+ * la photo sert un rôle nommé et précis (photo d'ouverture, photo du
+ * lieu…), pas une pioche libre de 10-30 photos pour la vidéo. Réutilise
+ * `media.addMedia` (même mutation que la médiathèque, même pipeline —
+ * dataURI en base, pas de S3 en V1, cf. api/mediaRouter.ts) : la photo
+ * existe donc aussi dans la médiathèque générale, juste pas taguée par un
+ * rôle particulier côté table `media` pour l'instant.
+ *
+ * La réponse stockée est l'URL (dataURI) elle-même, pas l'id du média —
+ * cohérent avec le reste du questionnaire (chaînes/tableaux dans le JSONB
+ * `answers`), au prix d'alourdir un peu ce blob pour les questions photo.
+ * Accepté sciemment plutôt que d'introduire une résolution par id
+ * seulement pour ce type de question.
+ */
+function PhotoQuestionField({
+  question,
+  value,
+  onChange,
+}: {
+  question: Question
+  value: unknown
+  onChange: (v: unknown) => void
+}) {
+  const url = typeof value === 'string' ? value : ''
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const addMediaMutation = trpc.media.addMedia.useMutation()
+
+  async function handleFile(file: File) {
+    setError(null)
+    if (!file.type.startsWith('image/')) {
+      setError('Seules les images sont acceptées.')
+      return
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError('Fichier trop lourd (8 Mo max).')
+      return
+    }
+    setUploading(true)
+    try {
+      const dataUri = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(String(reader.result))
+        reader.onerror = () => reject(new Error('read failed'))
+        reader.readAsDataURL(file)
+      })
+      await addMediaMutation.mutateAsync({ type: 'photo', url: dataUri, filename: file.name })
+      onChange(dataUri)
+    } catch {
+      setError('Échec de l’envoi — réessayez.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <FieldShell question={question}>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) void handleFile(file)
+          e.target.value = ''
+        }}
+      />
+      {url ? (
+        <div className="relative w-fit overflow-hidden rounded-2xl border border-neutral-200">
+          <img src={url} alt="" className="h-40 w-auto max-w-full object-cover" />
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-anthracite-950/70 py-2 text-[12px] font-medium text-white backdrop-blur-sm transition-colors hover:bg-anthracite-950/85"
+          >
+            {uploading ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+            Remplacer
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className={cn(
+            'flex w-full max-w-xs flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-neutral-200 bg-white px-6 py-8 text-center transition-colors',
+            uploading ? 'cursor-wait opacity-70' : 'cursor-pointer hover:border-terracotta-400',
+          )}
+        >
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-terracotta-500">
+            {uploading ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
+          </span>
+          <span className="text-[13px] font-medium text-ink">
+            {uploading ? 'Envoi…' : 'Choisir une photo'}
+          </span>
+        </button>
+      )}
+      {error && <p className="text-[12.5px] font-medium text-error">{error}</p>}
+    </FieldShell>
+  )
+}
+
 function QuestionField({
   question,
   value,
@@ -196,6 +305,43 @@ function QuestionField({
   onChange: (v: unknown) => void
 }) {
   const str = typeof value === 'string' ? value : ''
+
+  if (question.type === 'toggle') {
+    return (
+      <FieldShell question={question}>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onChange(true)}
+            className={cn(
+              'rounded-full border px-5 py-2 text-[13px] font-medium transition-all',
+              value === true
+                ? 'border-terracotta-500 bg-terracotta-500 text-white'
+                : 'border-neutral-200 bg-white text-ink hover:border-terracotta-400',
+            )}
+          >
+            Oui
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange(false)}
+            className={cn(
+              'rounded-full border px-5 py-2 text-[13px] font-medium transition-all',
+              value === false
+                ? 'border-terracotta-500 bg-terracotta-500 text-white'
+                : 'border-neutral-200 bg-white text-ink hover:border-terracotta-400',
+            )}
+          >
+            Non
+          </button>
+        </div>
+      </FieldShell>
+    )
+  }
+
+  if (question.type === 'photo') {
+    return <PhotoQuestionField question={question} value={value} onChange={onChange} />
+  }
 
   if (question.type === 'textarea') {
     const words = wordCount(str)

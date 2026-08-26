@@ -42,10 +42,9 @@ export default function MentionsLegales() {
           États-Unis) — <a href="https://railway.com" target="_blank" rel="noreferrer">railway.com</a>.
         </p>
         <p>
-          Les données de production (base de données, fichiers médias) sont hébergées via{' '}
-          <strong>Supabase</strong> (base de données et authentification) et{' '}
-          <strong>Amazon Web Services — service S3</strong> (stockage des fichiers médias :
-          photos, vidéos, notes vocales).
+          Les données de production, y compris les fichiers médias transmis par les clients
+          (photos, vidéos, notes vocales), sont hébergées via <strong>Supabase</strong> (base de
+          données et authentification).
         </p>
       </section>
 

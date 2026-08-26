@@ -191,6 +191,7 @@ export const QUESTION_TYPES: { value: string; label: string }[] = [
   { value: "date", label: "Date" },
   { value: "list", label: "Liste" },
   { value: "toggle", label: "Oui / non" },
+  { value: "photo", label: "Photo" },
   { value: "color", label: "Pastilles couleur" },
   { value: "cards", label: "Choix cards" },
 ];

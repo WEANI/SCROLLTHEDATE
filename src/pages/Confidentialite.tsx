@@ -87,11 +87,8 @@ export default function Confidentialite() {
         <p>Les données sont hébergées et traitées par les prestataires suivants :</p>
         <ul>
           <li>
-            <strong>Supabase</strong> — authentification des comptes et base de données.
-          </li>
-          <li>
-            <strong>Amazon Web Services (S3)</strong> — stockage des fichiers médias (photos,
-            vidéos, notes vocales).
+            <strong>Supabase</strong> — authentification des comptes, base de données et
+            stockage des fichiers médias transmis (photos, vidéos, notes vocales).
           </li>
           <li>
             <strong>Railway</strong> — hébergement de l'application.
