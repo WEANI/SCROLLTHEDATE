@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { adminQuery, authedQuery, createRouter, publicQuery } from "./middleware";
 import { projectStatusEnum, templateEnum } from "./ordersRouter";
 import { bespokePaletteSchema, heroChaptersSchema } from "../contracts/bespokePalette";
+import { QUESTIONNAIRE_KEYS } from "../contracts/questionnaireKeys";
 import {
   findAllProjects,
   findCurrentProjectFull,
@@ -42,6 +43,22 @@ export const projectsRouter = createRouter({
         typeof answers[key] === "string" && (answers[key] as string).trim()
           ? (answers[key] as string)
           : null;
+      // Questions `type: "list"` (programme, hébergements, FAQ, mots-clés)
+      // — un tableau de chaînes, une ligne par élément (cf.
+      // src/pages/espace/Questionnaire.tsx, le rendu `list`). Renvoyées
+      // ici TELLES QUELLES, pas encore découpées en objets : le format
+      // par élément ("Horaire — Titre — Détail" pour le programme,
+      // "Question — Réponse" pour la FAQ) reste un texte libre saisi par
+      // le couple, à interpréter côté page publique au moment du rendu
+      // (Phase 4, avec `parseProgrammeItem`/équivalent — cf.
+      // DetailsSombre.tsx) plutôt qu'ici : cette fonction ne fait
+      // qu'extraire des données, jamais les mettre en forme visuelle.
+      const list = (key: string): string[] => {
+        const v = answers[key];
+        return Array.isArray(v)
+          ? v.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+          : [];
+      };
       return {
         slug: project.slug,
         template: project.template,
@@ -53,6 +70,30 @@ export const projectsRouter = createRouter({
         ceremonyTime: str("jourj.heure"),
         dressCode: str("jourj.dress_code"),
         practicalInfo: str("jourj.infos_pratiques"),
+        // Généralisation bespoke (PLAN-GENERALISATION-THEMES.md, Phase 3)
+        // — sections optionnelles : `null`/`[]` si le couple n'a pas
+        // répondu, jamais de contenu inventé. Les 3 photos de la galerie
+        // (`q_mtaf...`, cf. contracts/questionnaireKeys.ts) sont déjà des
+        // data URI complètes — stockées directement comme réponse (cf.
+        // PhotoQuestionField, Questionnaire.tsx), donc `str()` suffit,
+        // aucune résolution de média séparée à faire.
+        histoire: str(QUESTIONNAIRE_KEYS.histoire),
+        histoireMotsCles: list(QUESTIONNAIRE_KEYS.histoireMotsCles),
+        galeriePhotos: [
+          str(QUESTIONNAIRE_KEYS.galeriePhoto1),
+          str(QUESTIONNAIRE_KEYS.galeriePhoto2),
+          str(QUESTIONNAIRE_KEYS.galeriePhoto3),
+        ].filter((x): x is string => x !== null),
+        programme: list(QUESTIONNAIRE_KEYS.programme),
+        hebergements: list("jourj.hebergements"),
+        faq: list(QUESTIONNAIRE_KEYS.faq),
+        photoLieu: str(QUESTIONNAIRE_KEYS.photoLieu),
+        photoOuverture: str(QUESTIONNAIRE_KEYS.photoOuverture),
+        // Posés à la main par le studio (StudioPanel, Phase 2) — jamais
+        // générés ici. `null` tant que non validés : la page publique
+        // (Phase 4) doit alors retomber sur une palette par défaut sobre.
+        palette: project.palette,
+        heroChapters: project.heroChapters,
       };
     }),
 

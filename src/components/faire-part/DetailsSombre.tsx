@@ -43,27 +43,22 @@ import type { CSSProperties, ReactNode } from 'react'
  * particulier à gérer. Respecte `prefers-reduced-motion` : le contenu
  * apparaît directement, sans cascade.
  *
- * IMPORTANT — `programme` : la frise horaire (Accueil/Cérémonie/Cocktail/
- * Dîner/Soirée…) n'existe pas encore dans le modèle de données. Ne rien
- * inventer ici : la section reste masquée tant qu'aucun `programme` n'est
- * fourni. cf. le schéma proposé en commentaire au-dessus de `ProgrammeItem`
- * ci-dessous pour l'ajouter proprement (question `list` générique,
- * infra déjà existante côté questionnaire — aucune migration DB requise).
+ * IMPORTANT — `programme` : section rendue uniquement si `programme` est
+ * fourni — jamais de contenu inventé. Ne rien passer tant que le couple
+ * n'a pas répondu.
  */
 
 /**
- * Schéma proposé pour « Le Programme » (pas encore implémenté) :
- * ajouter une question `{ id: 'jourj.programme', step: 3, type: 'list',
- * label: 'Programme de la journée', help: 'Un moment par ligne — Horaire —
- * Titre — Détail (optionnel), ex. 16h00 — Cérémonie — Au jardin',
- * showOnInvite: true }` au template de formulaire actif (via Admin →
- * Formulaires, aucun code ni migration nécessaire : `formTemplates.
- * questions` est déjà un jsonb éditable, et le type "list" a déjà son UI
- * de saisie répétable côté client comme côté admin — cf. jourj.hebergements
- * pour le même pattern). Les réponses arriveraient comme `string[]`, un
- * élément par ligne au format "Horaire — Titre — Détail", à parser avec
- * `parseProgrammeItem` ci-dessous côté `getPublicInvite` avant de les
- * passer en `programme` ici.
+ * Question "Programme de la journée" — ajoutée au template actif en
+ * Phase 1 du plan de généralisation bespoke (question `list`, cf.
+ * contracts/questionnaireKeys.ts::QUESTIONNAIRE_KEYS.programme — l'admin
+ * a généré un ID non sémantique, pas `jourj.programme` comme prévu au
+ * départ). `getPublicInvite` (api/projectsRouter.ts) renvoie les réponses
+ * telles quelles, en `string[]`, un élément par ligne au format
+ * "Horaire — Titre — Détail" (`sub` optionnel) — à parser AVEC
+ * `parseProgrammeItem` ci-dessous côté page publique (FairePart.tsx, pas
+ * ici côté serveur : l'API se contente d'extraire, jamais de mettre en
+ * forme) avant de passer le résultat en `programme` à ce composant.
  */
 export type ProgrammeItem = { time: string; label: string; sub?: string }
 
