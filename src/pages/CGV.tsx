@@ -118,8 +118,7 @@ export default function CGV() {
         <h2>5. Modalités de paiement</h2>
         <p>
           Le paiement s'effectue en ligne, par carte bancaire, via un prestataire de paiement
-          sécurisé (Stripe), avec authentification 3D Secure. Un paiement en 3 fois sans frais est
-          proposé pour les commandes à partir de 150 €.
+          sécurisé (Stripe), avec authentification 3D Secure.
         </p>
         <p>La totalité du prix est due au moment de la commande.</p>
       </section>

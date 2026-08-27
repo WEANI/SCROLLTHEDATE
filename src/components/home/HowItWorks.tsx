@@ -11,7 +11,7 @@ const STEPS = [
   {
     num: '01',
     title: 'Commandez',
-    text: 'Choisissez votre formule, en quelques minutes. Paiement sécurisé, en 3x sans frais possible.',
+    text: 'Choisissez votre formule, en quelques minutes. Paiement sécurisé.',
     icon: ShoppingBag,
     dark: false,
   },

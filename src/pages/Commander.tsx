@@ -125,7 +125,6 @@ export default function Commander() {
   const product = getProduct(products, productId)
   const selectedOptions = options.filter((o) => optionIds.includes(o.id))
   const totalCents = product.priceCents + selectedOptions.reduce((sum, o) => sum + o.priceCents, 0)
-  const eligible3x = totalCents >= 15000
 
   const checkout = trpc.orders.createCheckout.useMutation()
 
@@ -471,25 +470,6 @@ export default function Commander() {
             {/* Bloc 4 — Paiement */}
             <section aria-labelledby="bloc-paiement">
               <BlockTitle id="bloc-paiement" index="04" title="Paiement" />
-
-              {/* 3x sans frais — pas encore implémenté (aucun prestataire de
-                  paiement fractionné n'est branché) : affiché grisé plutôt
-                  que fonctionnel, pour ne pas promettre un échéancier que
-                  rien ne débite réellement en 3 fois. */}
-              <div
-                aria-disabled
-                className="mt-5 flex w-full cursor-not-allowed items-center justify-between rounded-2xl border border-neutral-200 bg-white p-5 text-left opacity-60"
-              >
-                <span>
-                  <span className="block text-[15px] font-semibold text-ink">Payer en 3x sans frais</span>
-                  <span className="mt-0.5 block text-[13px] text-neutral-500">
-                    {eligible3x ? 'Bientôt disponible.' : 'Disponible dès 150 € de commande.'}
-                  </span>
-                </span>
-                <span className="rounded-full bg-neutral-200/70 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-neutral-500">
-                  bientôt
-                </span>
-              </div>
 
               {!checkoutResult ? (
                 <>

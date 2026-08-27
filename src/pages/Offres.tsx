@@ -190,7 +190,7 @@ const GARANTIES = [
   {
     icon: ShieldCheck,
     title: 'Paiement sécurisé Stripe',
-    text: 'Transactions chiffrées, 3D Secure, 3x sans frais dès 150 €.',
+    text: 'Transactions chiffrées, authentification 3D Secure.',
   },
 ]
 
@@ -412,7 +412,7 @@ export default function Offres() {
                   ))}
                 </motion.ul>
                 <p className="mt-6 text-center text-[13px] text-white/50">
-                  Paiement en 3x sans frais dès 150 € — sélectionnable au moment de la commande.
+                  Paiement sécurisé, en une fois, au moment de la commande.
                 </p>
               </div>
             </div>

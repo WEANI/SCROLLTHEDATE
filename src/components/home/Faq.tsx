@@ -24,10 +24,6 @@ const FAQ_ITEMS = [
     q: 'Comment se passent les RSVP ?',
     a: "Vos invités répondent directement sur le faire-part : présence, accompagnants, allergies, même leur chanson pour la soirée. Vous suivez les réponses en temps réel dans votre espace client.",
   },
-  {
-    q: 'Le paiement en plusieurs fois est-il possible ?',
-    a: "Oui, le paiement en 3x sans frais est disponible au moment de la commande. Le paiement est sécurisé et vous recevez une facture pour chaque échéance.",
-  },
 ]
 
 /** FAQ — 2 colonnes : titre + CTA WhatsApp / accordéon 6 questions. */
