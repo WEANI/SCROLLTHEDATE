@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
 import LegalLayout, { TodoBlock } from '@/components/legal/LegalLayout'
+import { useSeo } from '@/hooks/useSeo'
 
 /**
  * Politique de confidentialité — catégories de données et sous-traitants
@@ -10,9 +10,11 @@ import LegalLayout, { TodoBlock } from '@/components/legal/LegalLayout'
  * données plutôt qu'un texte passe-partout copié d'ailleurs.
  */
 export default function Confidentialite() {
-  useEffect(() => {
-    document.title = 'Politique de confidentialité — Scroll The Date'
-  }, [])
+  useSeo({
+    title: 'Politique de confidentialité — Scroll The Date',
+    description: 'Politique de confidentialité de Scroll The Date : données collectées, sous-traitants, droits RGPD.',
+    path: '/confidentialite',
+  })
 
   return (
     <LegalLayout kicker="Informations légales" title="Politique de confidentialité" lastUpdated="24 août 2026">

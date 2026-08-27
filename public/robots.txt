@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /espace
+Disallow: /login
+Disallow: /commander
+Disallow: /merci
+Disallow: /demofairepart
+
+Sitemap: https://scrollthedate-production.up.railway.app/sitemap.xml

@@ -1,9 +1,9 @@
-import { useEffect } from 'react'
 import DemoBanner from '@/components/demo/DemoBanner'
 import RsvpSection from '@/components/demo/RsvpSection'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { CINEMA_THEME } from '@/components/hero-scrub/themes'
 import { HERO_CHAPTERS } from '@/components/demo/demoContent'
+import { useSeo } from '@/hooks/useSeo'
 
 /**
  * Page démo — faire-part « Anna & Théo » (20 juin 2026), nouvelle
@@ -13,15 +13,20 @@ import { HERO_CHAPTERS } from '@/components/demo/demoContent'
  * code" / hébergement — cf. brief-claude-code-nouvelle-architecture.md.
  */
 export default function Demo() {
-  useEffect(() => {
-    document.title = 'Anna & Théo — 20 juin 2026 · Scroll The Date (démo)'
-    return () => {
-      document.title = 'Scroll The Date'
-    }
-  }, [])
+  useSeo({
+    title: 'Anna & Théo — 20 juin 2026 · Scroll The Date (démo)',
+    description:
+      "Exemple réel de faire-part de mariage digital Scroll The Date : vidéo cinématique, programme, RSVP intégré — le rendu que recevront vos invités.",
+    path: '/demo',
+  })
 
   return (
     <>
+      {/* Audit SEO du 27/08/2026 : aucun H1 sur cette page (HeroScrub rend
+          son titre en <p>, jamais en heading — cf. doc de ce composant). */}
+      <h1 className="sr-only">
+        Exemple de faire-part de mariage digital Scroll The Date — la vidéo cinématique d'Anna & Théo
+      </h1>
       <DemoBanner />
 
       {/* Héros plein écran : sort du padding du Layout via -mt-20. */}

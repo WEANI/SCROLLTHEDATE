@@ -26,6 +26,8 @@ export interface ScrubHeroProps {
   videoSrc: string
   posterSrc: string
   beats: ScrubHeroBeat[]
+  /** Titre réel, unique, de la page — rendu en `<h1 className="sr-only">`, cf. doc du composant. */
+  heading: string
   /** Contenu persistant (CTA…), révélé à partir de `persistentFrom`. */
   persistent?: ReactNode
   persistentFrom?: number
@@ -47,18 +49,30 @@ interface WordRef {
 }
 
 /**
- * ScrubHero — héros vidéo scrub-scroll (pattern signature Scroll The Date).
- * Section épinglée (350vh par défaut) : `video.currentTime` est piloté par la
- * progression du scroll avec amorti lerp 0.12. Beats typographiques découpés
- * en mots (y 60px→0, rotateX 35°→0, stagger) qui s'enchaînent selon la
- * progression. Fallbacks : vidéo indisponible → poster fixe ;
- * prefers-reduced-motion → poster + beats statiques empilés, aucun pin.
- * Réutilisé par la home et la page démo.
+ * ScrubHero — héros vidéo scrub-scroll (pattern signature Scroll The Date),
+ * utilisé par la home (`/demo` utilise le composant distinct
+ * `hero-scrub/HeroScrub.tsx`, malgré le nom proche). Section épinglée
+ * (350vh par défaut) : `video.currentTime` est piloté par la progression du
+ * scroll avec amorti lerp 0.12. Beats typographiques découpés en mots
+ * (y 60px→0, rotateX 35°→0, stagger) qui s'enchaînent selon la progression.
+ * Fallbacks : vidéo indisponible → poster fixe ; prefers-reduced-motion →
+ * poster + beats statiques empilés, aucun pin.
+ *
+ * `heading` — audit SEO du 27/08/2026 : chaque beat rendait son propre
+ * `<h1>` (jusqu'à 4 sur la home), dont certains vides (aucun `segments`,
+ * juste un kicker) et les autres inertes tant que le scroll n'a pas
+ * déclenché leur révélation GSAP (`opacity: 0` posé en style, cf. plus
+ * bas) — une page ne doit avoir qu'UN SEUL `<h1>`, toujours présent, pas
+ * dépendant du JS/scroll. Les beats restent l'effet visuel (texte dupliqué,
+ * `aria-hidden`, tags `<p>` non porteurs de sens document) ; `heading`
+ * fournit le vrai titre de page, unique, en `sr-only` (invisible à l'écran,
+ * lu par les lecteurs d'écran et les moteurs de recherche).
  */
 export default function ScrubHero({
   videoSrc,
   posterSrc,
   beats,
+  heading,
   persistent,
   persistentFrom = 0.55,
   durationVh = 350,
@@ -217,15 +231,16 @@ export default function ScrubHero({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-anthracite-950/60 to-anthracite-950/20" />
         <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-5xl flex-col items-center justify-center gap-10 px-6 py-32 text-center">
+          <h1 className="sr-only">{heading}</h1>
           {beats.map((beat, i) => (
-            <div key={i} className="flex flex-col items-center gap-4">
+            <div key={i} className="flex flex-col items-center gap-4" aria-hidden="true">
               {beat.kicker && (
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
                   {beat.kicker}
                 </p>
               )}
               {beat.segments && (
-                <h1 className="font-display text-[clamp(3.5rem,9vw,8.5rem)] font-light leading-[1.02] tracking-[-0.02em] text-white">
+                <p className="font-display text-[clamp(3.5rem,9vw,8.5rem)] font-light leading-[1.02] tracking-[-0.02em] text-white">
                   {beat.segments.map((seg, si) => (
                     <span
                       key={si}
@@ -234,7 +249,7 @@ export default function ScrubHero({
                       {seg.text}{' '}
                     </span>
                   ))}
-                </h1>
+                </p>
               )}
             </div>
           ))}
@@ -268,6 +283,7 @@ export default function ScrubHero({
 
         {/* Beats typographiques */}
         <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
+          <h1 className="sr-only">{heading}</h1>
           {beats.map((beat, bi) => (
             <div
               key={bi}
@@ -276,13 +292,14 @@ export default function ScrubHero({
               }}
               style={{ opacity: 0, visibility: 'hidden' }}
               className="absolute inset-x-0 flex flex-col items-center gap-6 text-center [perspective:800px]"
+              aria-hidden="true"
             >
               {beat.kicker && (
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
                   {beat.kicker}
                 </p>
               )}
-              <h1 className="font-display max-w-6xl text-[clamp(3.5rem,9vw,8.5rem)] font-light leading-[1.02] tracking-[-0.02em] text-white">
+              <p className="font-display max-w-6xl text-[clamp(3.5rem,9vw,8.5rem)] font-light leading-[1.02] tracking-[-0.02em] text-white">
                 {beatWords[bi].map((word, wi) => (
                   <span key={wi} className="inline-block overflow-visible whitespace-pre">
                     <span
@@ -302,7 +319,7 @@ export default function ScrubHero({
                     {wi < beatWords[bi].length - 1 ? ' ' : ''}
                   </span>
                 ))}
-              </h1>
+              </p>
             </div>
           ))}
         </div>

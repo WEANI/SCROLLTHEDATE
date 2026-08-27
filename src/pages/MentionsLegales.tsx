@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
 import LegalLayout, { TodoBlock } from '@/components/legal/LegalLayout'
+import { useSeo } from '@/hooks/useSeo'
 
 /**
  * Mentions légales — obligatoires (art. 6-III de la LCEN) pour tout site
@@ -10,9 +10,11 @@ import LegalLayout, { TodoBlock } from '@/components/legal/LegalLayout'
  * contact) est vérifiable depuis le projet lui-même.
  */
 export default function MentionsLegales() {
-  useEffect(() => {
-    document.title = 'Mentions légales — Scroll The Date'
-  }, [])
+  useSeo({
+    title: 'Mentions légales — Scroll The Date',
+    description: 'Mentions légales de Scroll The Date : éditeur, hébergement, propriété intellectuelle, contact.',
+    path: '/mentions-legales',
+  })
 
   return (
     <LegalLayout kicker="Informations légales" title="Mentions légales" lastUpdated="24 août 2026">

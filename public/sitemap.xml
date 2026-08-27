@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sitemap statique — routes marketing publiques uniquement. Volontairement
+  exclu :
+  - /faire-part/edwige-wilfried et /faire-part/lea-olivier : vraies pages
+    clientes utilisées comme démo, données personnelles réelles (nom,
+    date, lieu du mariage) — indexation à décider avec le client
+    concerné, pas une décision technique par défaut.
+  - /faire-part/:slug (tout futur vrai client) : lien privé partagé aux
+    invités, jamais destiné à la recherche publique.
+  - /admin, /espace, /login, /commander, /merci, /demofairepart : privés
+    ou sans valeur de recherche (cf. robots.txt).
+
+  URLs pointées sur le domaine Railway actuel (scrollthedate.fr/.com ne
+  résolvent pas encore, cf. audit SEO du 27/08/2026) — à régénérer avec
+  le domaine définitif une fois branché (garder synchronisé avec
+  public/robots.txt et SITE_URL dans src/hooks/useSeo.ts).
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://scrollthedate-production.up.railway.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://scrollthedate-production.up.railway.app/offres</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://scrollthedate-production.up.railway.app/demo</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://scrollthedate-production.up.railway.app/mentions-legales</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://scrollthedate-production.up.railway.app/cgv</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://scrollthedate-production.up.railway.app/confidentialite</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>

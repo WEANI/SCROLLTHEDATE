@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router'
 import ScrubHero from '@/components/ScrubHero'
 import type { ScrubHeroBeat } from '@/components/ScrubHero'
+import { useSeo } from '@/hooks/useSeo'
 import SocialProof from '@/components/home/SocialProof'
 import Concept from '@/components/home/Concept'
 import HowItWorks from '@/components/home/HowItWorks'
@@ -57,6 +58,13 @@ function HeroCta() {
 export default function Home() {
   const location = useLocation()
 
+  useSeo({
+    title: 'Scroll The Date — Faire-parts de mariage digitaux cinématiques',
+    description:
+      'Scroll The Date — faire-parts de mariage digitaux cinématiques. Racontez votre histoire dans une vidéo personnalisée qui ouvre votre faire-part.',
+    path: '/',
+  })
+
   // Deep-links d'ancres (/#concept, /#faq…) depuis les autres pages
   useEffect(() => {
     if (!location.hash) return
@@ -74,6 +82,7 @@ export default function Home() {
         <ScrubHero
           videoSrc="/hero-film.mp4"
           posterSrc="/hero-poster.jpg"
+          heading="Votre histoire, racontée en images — le faire-part de mariage digital que vos invités n'oublieront pas"
           beats={HERO_BEATS}
           persistent={<HeroCta />}
           persistentFrom={0.55}

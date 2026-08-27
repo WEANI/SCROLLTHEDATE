@@ -11,6 +11,7 @@ import {
   Stamp,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useSeo } from '@/hooks/useSeo'
 import { FadeUp, WordReveal } from '@/components/commerce/Reveal'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
 import OptionToggle from '@/components/commerce/OptionToggle'
@@ -210,6 +211,13 @@ const FAQ_ITEMS = [
 ]
 
 export default function Offres() {
+  useSeo({
+    title: 'Nos offres — Save the Date & Faire-part digital · Scroll The Date',
+    description:
+      'Save the Date digital (149 €) et Faire-part digital (349 €) : vidéo cinématique personnalisée, page complète, RSVP intégré. Prix unique, quel que soit le nombre d\'invités.',
+    path: '/offres',
+  })
+
   const { products, options } = usePricing()
   const fairePart = getProduct(products, 'FAIRE_PART')
   const saveTheDate = getProduct(products, 'SAVE_THE_DATE')

@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
 import LegalLayout, { TodoBlock } from '@/components/legal/LegalLayout'
+import { useSeo } from '@/hooks/useSeo'
 
 /**
  * Conditions générales de vente — le contenu commercial (produits, prix,
@@ -22,9 +22,11 @@ import LegalLayout, { TodoBlock } from '@/components/legal/LegalLayout'
  * engager de vrais clients tant que ce paiement n'est pas réellement câblé.
  */
 export default function CGV() {
-  useEffect(() => {
-    document.title = 'Conditions générales de vente — Scroll The Date'
-  }, [])
+  useSeo({
+    title: 'Conditions générales de vente — Scroll The Date',
+    description: 'Conditions générales de vente de Scroll The Date : prestations, tarifs, paiement, livraison, rétractation.',
+    path: '/cgv',
+  })
 
   return (
     <LegalLayout kicker="Informations légales" title="Conditions générales de vente" lastUpdated="24 août 2026">
