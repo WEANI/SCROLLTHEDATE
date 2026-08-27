@@ -1,21 +1,59 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Loader2 } from 'lucide-react'
 import { trpc } from '@/providers/trpc'
 import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
+import PhotoSplitCinematique from '@/components/faire-part/PhotoSplitCinematique'
+import DetailsSombre, { parseFaqItem, parseProgrammeItem } from '@/components/faire-part/DetailsSombre'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { HERO_THEMES } from '@/components/hero-scrub/themes'
 import type { HeroChapter } from '@/components/hero-scrub/types'
+import {
+  BespokePaletteProvider,
+  DressCodeCard,
+  EW_PALETTE,
+  EwEffectsStyles,
+  FoireAuxQuestions,
+  HorizontalProgramme,
+  LieuMagnifier,
+  LodgingCascadeCard,
+  NotreHistoire,
+  ScatterDateCard,
+  WaxSealRsvp,
+  type BespokePalette,
+} from '@/components/faire-part/edwigeWilfriedEffects'
 
 /**
  * Faire-part client — page publique dynamique, une par projet réel (par
- * opposition à `/demo` et `/faire-part/edwige-wilfried`, câblées en dur).
- * Alimentée par `projects.getPublicInvite` : vidéo hero (première version
- * livrée non filigranée) + réponses du questionnaire marquées "affiché sur
- * le faire-part". Hors du `Layout` public — pas de Navbar/Footer marketing
- * devant les invités, cf. FairePartEdwigeWilfried.
+ * opposition à `/demo` et aux pages câblées en dur comme
+ * FairePartLeaOlivier/FairePartEdwigeWilfried). Alimentée par
+ * `projects.getPublicInvite` : vidéo hero (première version livrée non
+ * filigranée) + réponses du questionnaire marquées "affiché sur le
+ * faire-part" + palette/timings posés par le studio (Phase 2/3 de
+ * PLAN-GENERALISATION-THEMES.md, local, non commité). Hors du `Layout`
+ * public — pas de Navbar/Footer marketing devant les invités.
+ *
+ * Généralisation bespoke (Phase 4) : cette page reprend la STRUCTURE de
+ * Léa & Olivier/Edwige & Wilfried (DetailsSombre + composants bespoke de
+ * edwigeWilfriedEffects.tsx) plutôt que la pile de cartes générique
+ * d'origine — même moteur, données réelles à la place des constantes
+ * câblées en dur. Deux systèmes de couleurs cohabitent volontairement,
+ * comme sur les pages câblées en dur elles-mêmes :
+ * - `theme` (HeroTheme, catalogue HERO_THEMES existant, piloté par
+ *   `project.template`) : chrome du hero scrub, fond de page, thème de
+ *   PayloadSection/ClosingSection — INCHANGÉ par rapport à l'ancienne
+ *   version de cette page. L'ancien sélecteur de template reste actif
+ *   tant que la Phase 5 ne l'a pas retiré.
+ * - `palette` (BespokePalette, posée par le studio en Phase 2, ou
+ *   EW_PALETTE en repli sobre si pas encore validée) : couleurs internes
+ *   des composants bespoke (date, lieu, programme, dress code,
+ *   hébergements, histoire, FAQ, sceau RSVP), via BespokePaletteProvider.
+ *
+ * Chaque section bespoke ne s'affiche que si sa donnée existe (géré par
+ * DetailsSombre pour programme/dressCode/lodging, ici pour histoire/FAQ/
+ * photo d'ouverture) — jamais de contenu inventé.
  */
 export default function FairePart() {
   const { slug } = useParams<{ slug: string }>()
@@ -26,6 +64,54 @@ export default function FairePart() {
 
   const invite = query.data
   const theme = HERO_THEMES[(invite?.template as keyof typeof HERO_THEMES) ?? 'cinema'] ?? HERO_THEMES.cinema
+
+  // Palette bespoke posée par le studio (Phase 2) — repli sur EW_PALETTE
+  // (charte claire sobre déjà éprouvée en prod) tant qu'aucune palette
+  // n'a été validée pour ce projet, plutôt que planter ou improviser des
+  // couleurs. `unknown` côté tRPC (colonne jsonb non typée, cf.
+  // db/schema.ts) — cast assumé : la forme est garantie par
+  // `bespokePaletteSchema` côté écriture (adminSetPalette).
+  const palette = (invite?.palette as BespokePalette | null) ?? EW_PALETTE
+
+  // Timings du hero (Phase 2) sont stockés en SECONDES, pas en ratio
+  // [0,1] — il faut la durée réelle de la vidéo livrée pour les
+  // convertir (cf. contracts/bespokePalette.ts::heroChapterTimingSchema).
+  // Sondée uniquement si des timings existent : les projets sans palette/
+  // timings validés (repli generique ci-dessous) n'ont pas besoin
+  // d'attendre cette étape.
+  const studioChapters =
+    invite?.heroChapters && Array.isArray(invite.heroChapters) && invite.heroChapters.length === 3
+      ? (invite.heroChapters as { fromSec: number; toSec: number }[])
+      : null
+  const [videoDuration, setVideoDuration] = useState<number | null>(null)
+  useEffect(() => {
+    if (!invite || !studioChapters) return
+    const probe = document.createElement('video')
+    probe.preload = 'metadata'
+    probe.src = invite.heroVideoUrl
+    probe.onloadedmetadata = () => setVideoDuration(probe.duration)
+    return () => {
+      probe.onloadedmetadata = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invite?.heroVideoUrl, !!studioChapters])
+
+  // Aspect ratio réel de la photo d'ouverture — inconnu à l'avance
+  // (contrairement aux couples câblés en dur, dont le fichier et son
+  // ratio exact sont connus au moment d'écrire le code) : PhotoSplitCinematique
+  // stretche ses moitiés à la taille de leur boîte, un ratio faux déforme
+  // visiblement l'image (cf. sa doc). Repli 4/5 (portrait sobre) le temps
+  // que l'image réelle charge.
+  const [openingRatio, setOpeningRatio] = useState('4 / 5')
+  useEffect(() => {
+    const src = invite?.photoOuverture
+    if (!src) return
+    const img = new Image()
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) setOpeningRatio(`${img.naturalWidth} / ${img.naturalHeight}`)
+    }
+    img.src = src
+  }, [invite?.photoOuverture])
 
   useEffect(() => {
     if (!invite) return
@@ -43,7 +129,7 @@ export default function FairePart() {
     }
   }, [invite, theme.colorScheme])
 
-  if (query.isLoading) {
+  if (query.isLoading || (studioChapters && videoDuration === null)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-anthracite-950">
         <Loader2 className="animate-spin text-terracotta-500" size={28} />
@@ -78,36 +164,84 @@ export default function FairePart() {
     nameParts.length === 3
       ? [{ text: nameParts[0] }, { text: nameParts[1], accent: true }, { text: nameParts[2] }]
       : [{ text: coupleNames }]
-  const initials = nameParts.length === 3 ? `${nameParts[0][0]} & ${nameParts[2][0]}` : undefined
+  const eyebrowInitials = nameParts.length === 3 ? `${nameParts[0][0]} & ${nameParts[2][0]}` : undefined
+  // Format dédié au sceau RSVP (WaxSealRsvp) — " · " plutôt que " & ",
+  // demande client d'origine (cf. Léa & Olivier "L · O") ; une valeur
+  // réelle toujours fournie (jamais `undefined`), sans quoi le composant
+  // retomberait sur son défaut d'origine "É · W" (Edwige & Wilfried).
+  const sealInitials = nameParts.length === 3 ? `${nameParts[0][0]} · ${nameParts[2][0]}` : coupleNames.slice(0, 1).toUpperCase()
 
-  const chapters: HeroChapter[] = [
-    {
-      id: 0,
-      kind: 'text',
-      from: 0.9,
-      to: 1,
-      eyebrow: initials,
-      segments,
-      rule: true,
-      sub: invite.weddingDate
-        ? new Date(invite.weddingDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-        : undefined,
-    },
-  ]
+  const weddingDateShort = invite.weddingDate
+    ? new Date(invite.weddingDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    : undefined
+  // DetailsSombre/ScatterDateCard exigent une date+heure ISO (pour le
+  // compte à rebours) — `ceremonyTime` est un texte libre ("17h00", "à
+  // 15h30"…), pas une heure structurée : on tente une extraction simple,
+  // et on retombe sur minuit si le format ne correspond pas plutôt que de
+  // planter. Léger flou assumé (le compte à rebours vise minuit au lieu
+  // de l'heure exacte) plutôt qu'une donnée inventée.
+  const weddingDateTime = (() => {
+    const d = invite.weddingDate ? new Date(invite.weddingDate) : new Date()
+    const m = invite.ceremonyTime?.match(/(\d{1,2})\s*[h:]\s*(\d{1,2})?/)
+    d.setHours(m ? Number(m[1]) : 0, m?.[2] ? Number(m[2]) : 0, 0, 0)
+    return d.toISOString()
+  })()
 
-  const fields = [
-    invite.weddingDate && {
-      label: 'Date',
-      value: new Date(invite.weddingDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
-    },
-    invite.venueName && { label: 'Lieu', value: invite.venueName },
-    invite.ceremonyTime && { label: 'Heure de cérémonie', value: invite.ceremonyTime },
-    invite.dressCode && { label: 'Dress code', value: invite.dressCode },
-    invite.practicalInfo && { label: 'Infos pratiques', value: invite.practicalInfo },
-  ].filter((f): f is { label: string; value: string } => !!f)
+  const programme = invite.programme.map(parseProgrammeItem)
+  const faqItems = invite.faq.map(parseFaqItem)
+
+  const chapters: HeroChapter[] =
+    studioChapters && videoDuration
+      ? [
+          {
+            id: 0,
+            kind: 'text',
+            from: studioChapters[0].fromSec / videoDuration,
+            to: studioChapters[0].toSec / videoDuration,
+            segments,
+            segmentLayout: 'stack',
+            titleSize: 'lg',
+            sub: 'vous invite à leur mariage',
+          },
+          {
+            id: 1,
+            kind: 'text',
+            from: studioChapters[1].fromSec / videoDuration,
+            to: studioChapters[1].toSec / videoDuration,
+            segments: weddingDateShort ? [{ text: weddingDateShort }] : [],
+            rule: true,
+            subLines: [invite.ceremonyTime, invite.venueName].filter((x): x is string => !!x),
+            subSize: 'md',
+            sub: invite.dressCode ?? undefined,
+          },
+          {
+            id: 2,
+            kind: 'text',
+            from: studioChapters[2].fromSec / videoDuration,
+            to: studioChapters[2].toSec / videoDuration,
+            lead: 'Nous sommes ravis de partager ce moment avec vous',
+            segments,
+          },
+        ]
+      : [
+          // Repli générique (pas de timings studio validés) — comportement
+          // historique inchangé de cette page : un seul chapitre de clôture.
+          {
+            id: 0,
+            kind: 'text',
+            from: 0.9,
+            to: 1,
+            eyebrow: eyebrowInitials,
+            segments,
+            rule: true,
+            sub: weddingDateShort,
+          },
+        ]
 
   return (
+    <BespokePaletteProvider palette={palette}>
     <div style={{ background: theme.pageBg }}>
+      <EwEffectsStyles />
       <header className="absolute inset-x-0 top-0 z-40 flex items-center justify-center px-6 py-5">
         <Link to="/" aria-label="Scroll The Date — accueil" className="rounded-full bg-black/25 px-4 py-2 backdrop-blur-sm">
           <img src="/logo.svg" alt="Scroll The Date" className="h-6 w-auto brightness-0 invert" />
@@ -124,23 +258,11 @@ export default function FairePart() {
       />
 
       {/* Le corps de page recouvre le plan final au lieu de s'enchaîner en
-          dessous — même mécanique que sur Edwige & Wilfried / Léa & Olivier
-          (pages câblées en dur) : `.hs-frame` (dans HeroScrub) reste épinglé
-          en `position: sticky` tant que la piste de scrub (700vh) n'est pas
-          épuisée. En tirant ce bloc vers le haut via une marge négative, son
-          bord d'attaque entre dans le viewport un peu avant la fin de cette
-          piste, pendant que la vidéo est donc encore épinglée dessous —
-          il glisse depuis le bas et referme progressivement le cadre vidéo.
-          -100vh (pas -20vh, cf. le même correctif sur les pages câblées en
-          dur pour l'explication complète) : le recouvrement doit être
-          COMPLET pile au moment où `.hs-frame` se libère de son épinglage,
-          quelle que soit la hauteur de la piste — sinon un vrai trou reste
-          visible dès que le scroll dépasse la piste.
-          Couleurs dérivées du thème de l'ambiance (HeroTheme), pas d'un
-          PayloadTheme/ClosingTheme dédié comme les pages câblées en dur :
-          ce composant sert n'importe quel projet réel, quelle que soit son
-          ambiance (cinema/minimal/editorial) — pas de charte propre à un
-          couple en particulier ici. */}
+          dessous — même mécanique que sur les pages câblées en dur (cf.
+          FairePartLeaOlivier pour l'explication complète du calcul
+          -100vh). Couleurs dérivées du thème de l'ambiance (HeroTheme),
+          pas de la palette bespoke : ce bloc reste le chrome de page,
+          inchangé par rapport à l'ancienne version de cette page. */}
       <div
         className="relative z-10 -mt-[100vh] rounded-t-[32px]"
         style={{
@@ -151,10 +273,21 @@ export default function FairePart() {
               : '0 -24px 60px rgba(46, 38, 32, 0.18)',
         }}
       >
+        {/* Photo d'ouverture — uniquement si le couple en a fourni une
+            (question facultative, cf. Phase 1). Colonne centrée à largeur
+            limitée plutôt que pleine largeur : cf. FairePartLeaOlivier
+            pour pourquoi (portrait, object-fit aurait coupé les têtes). */}
+        {invite.photoOuverture && (
+          <section className="px-6 pt-16 sm:pt-20" aria-label="Photo du couple">
+            <figure className="mx-auto max-w-[420px]">
+              <PhotoSplitCinematique src={invite.photoOuverture} alt={coupleNames} aspectRatio={openingRatio} />
+            </figure>
+          </section>
+        )}
+
         <PayloadSection
           slug={invite.slug}
           coupleNames={coupleNames}
-          fields={fields}
           theme={{
             sectionBg: theme.pageBg,
             cardBg: theme.cardBg,
@@ -164,7 +297,61 @@ export default function FairePart() {
             heading: theme.textPrimary,
             text: theme.textPrimary,
           }}
-        />
+          eyebrow={null}
+          heading="Nous nous marions"
+          headingCascade
+        >
+          {(openRsvp) => (
+            <DetailsSombre
+              weddingDateTime={weddingDateTime}
+              venueName={invite.venueName ?? 'Lieu à confirmer'}
+              // La question "Lieu de cérémonie + adresse" collecte les deux
+              // dans un seul champ libre (cf. Phase 1) — pas de 2e ligne
+              // distincte à fournir ici plutôt que de dupliquer le même
+              // texte ou d'inventer un découpage hasardeux.
+              venueAddress=""
+              programme={programme}
+              dressCode={invite.dressCode ?? undefined}
+              lodging={invite.hebergements}
+              openRsvp={openRsvp}
+              theme={{
+                ink: theme.textPrimary,
+                inkSoft: theme.textSecondary,
+                accent: theme.accent,
+                line: theme.cardBorder,
+              }}
+              renderDate={(_accent, revealed, reducedMotion) => (
+                <ScatterDateCard weddingDateTime={weddingDateTime} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
+              renderLieu={({ venueName, venueAddress, mapsUrl }) => (
+                <LieuMagnifier
+                  venueName={venueName}
+                  venueAddress={venueAddress}
+                  mapsUrl={mapsUrl}
+                  photoSrc={invite.photoLieu ?? ''}
+                />
+              )}
+              renderProgramme={(items, _accent, revealed, reducedMotion) => (
+                <HorizontalProgramme programme={items} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
+              renderDressCode={(dressCode, _accent, revealed, reducedMotion) => (
+                <DressCodeCard dressCode={dressCode} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
+              renderLodging={(lodging, _accent, revealed, reducedMotion) => (
+                <LodgingCascadeCard lodging={lodging} revealed={revealed} reducedMotion={reducedMotion} />
+              )}
+              renderBeforeRsvp={
+                invite.histoire
+                  ? () => <NotreHistoire text={invite.histoire!} keywords={invite.histoireMotsCles} photos={invite.galeriePhotos} />
+                  : undefined
+              }
+              renderBeforeRsvp2={faqItems.length > 0 ? () => <FoireAuxQuestions items={faqItems} /> : undefined}
+              renderRsvp={({ label, onClick }) => (
+                <WaxSealRsvp label={label} weddingDateLabel={weddingDateShort ?? ''} initials={sealInitials} onClick={onClick} />
+              )}
+            />
+          )}
+        </PayloadSection>
         <PhotosSection bg={theme.pageBg} />
         <ClosingSection
           coupleNames={coupleNames}
@@ -178,5 +365,6 @@ export default function FairePart() {
         />
       </div>
     </div>
+    </BespokePaletteProvider>
   )
 }

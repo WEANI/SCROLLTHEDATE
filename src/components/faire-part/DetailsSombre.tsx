@@ -68,6 +68,19 @@ export function parseProgrammeItem(raw: string): ProgrammeItem {
   return { time, label, sub: rest.join(' — ') || undefined }
 }
 
+/**
+ * Parse un élément de liste FAQ "Peut-on venir avec nos enfants ? — Bien
+ * sûr, ravis de les accueillir." en `{ q, a }` — même convention " — " que
+ * `parseProgrammeItem` ci-dessus, pour la question `list` "Questions
+ * fréquentes de vos invités" (cf. contracts/questionnaireKeys.ts::faq).
+ * Utilisé côté page publique (FairePart.tsx), jamais côté `getPublicInvite`
+ * — cf. doc de `parseProgrammeItem`, l'API se contente d'extraire.
+ */
+export function parseFaqItem(raw: string): { q: string; a: string } {
+  const [q = '', ...rest] = raw.split(' — ').map((s) => s.trim())
+  return { q, a: rest.join(' — ') }
+}
+
 export interface DetailsSombreTheme {
   ink: string
   inkSoft: string
