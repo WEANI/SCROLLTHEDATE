@@ -890,9 +890,9 @@ function HorizontalPhotos({ photos }: { photos: string[] }) {
   if (reducedMotion) {
     return (
       <div className="-mx-6 mt-14 flex gap-6 overflow-x-auto px-6 pb-4 sm:mx-0 sm:px-0" style={{ scrollSnapType: 'x mandatory' }}>
-        {photos.map((src) => (
+        {photos.map((src, i) => (
           <img
-            key={src}
+            key={i}
             src={src}
             alt=""
             className="h-auto max-h-[60vh] w-auto max-w-[84vw] shrink-0 rounded-2xl object-contain"
@@ -920,8 +920,8 @@ function HorizontalPhotos({ photos }: { photos: string[] }) {
               précédente ne dépasse plus dans le cadre à la fin du scroll
               (constaté sur mobile avant ce correctif). Chaque photo reste
               entière dans sa diapo via `object-contain`. */}
-          {photos.map((src) => (
-            <div key={src} className="flex h-full w-[100cqw] shrink-0 items-center justify-center px-[8cqw]">
+          {photos.map((src, i) => (
+            <div key={i} className="flex h-full w-[100cqw] shrink-0 items-center justify-center px-[8cqw]">
               <img
                 src={src}
                 alt=""
