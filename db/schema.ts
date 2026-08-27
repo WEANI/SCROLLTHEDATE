@@ -171,6 +171,20 @@ export const projects = pgTable(
     progress: integer("progress").default(0).notNull(),
     slug: varchar("slug", { length: 255 }).notNull().unique(),
     template: projectTemplateEnum("template").default("editorial").notNull(),
+    // Généralisation bespoke (PLAN-GENERALISATION-THEMES.md, Phase 2) —
+    // posés à la main par le studio (StudioPanel), jamais générés seuls
+    // côté rendu public. `null` tant que le studio n'a pas encore validé
+    // : le rendu bespoke (Phase 4) doit alors retomber sur une palette
+    // par défaut sobre plutôt que planter.
+    // palette : les 19 champs de BespokePalette (cf.
+    // src/components/faire-part/edwigeWilfriedEffects.tsx), validés par
+    // contracts/bespokePalette.ts::bespokePaletteSchema.
+    palette: jsonb("palette"),
+    // heroChapters : exactement 3 { fromSec, toSec } (cf.
+    // contracts/bespokePalette.ts::heroChaptersSchema) — timings du hero
+    // vidéo repérés à l'image sur le montage livré, le contenu textuel de
+    // chaque chapitre étant lui généré depuis le questionnaire (Phase 3).
+    heroChapters: jsonb("heroChapters"),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),

@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ExternalLink, Loader2, Plus, Send, Sparkles, Upload, X } from "lucide-react";
+import { Camera, Check, ExternalLink, Loader2, Plus, Send, Sparkles, Upload, Wand2, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
+import { suggestPalette, hexToRgbString } from "@/lib/suggestPalette";
+import type { BespokePaletteInput, HeroChaptersInput } from "@contracts/bespokePalette";
+import { QUESTIONNAIRE_KEYS } from "@contracts/questionnaireKeys";
 import {
   coupleNamesFromSlug,
   formatDateTime,
@@ -648,6 +651,383 @@ function FairePartActivation({ project }: { project: Project360 }) {
 }
 
 // ---------------------------------------------------------------------------
+// Palette bespoke + timings du hero (PLAN-GENERALISATION-THEMES.md, Phase 2)
+// ---------------------------------------------------------------------------
+const FALLBACK_ACCENT = "#C96F5A"; // terracotta-500 — point de départ si le studio n'a pas encore choisi de couleur.
+
+const BLANK_PALETTE: BespokePaletteInput = {
+  bg: "",
+  bgDate: "transparent",
+  bgProgramme: "",
+  cream: "#F3EAD9",
+  ink: "",
+  inkRgb: "",
+  inkOnCard: "",
+  inkOnCardRgb: "",
+  mapLine: "",
+  bordeaux: "",
+  bordeauxRgb: "",
+  gold: "",
+  goldRgb: "",
+  sectionTitle: "",
+  timelineAccent: "",
+  stepLabel: "",
+  seal: "",
+  sealLight: "",
+  sealDark: "",
+};
+
+const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
+const BLANK_HERO_CHAPTERS: HeroChaptersInput = [
+  { fromSec: 0, toSec: 0 },
+  { fromSec: 0, toSec: 0 },
+  { fromSec: 0, toSec: 0 },
+];
+
+/** Un champ couleur = swatch + saisie texte (certains champs comme `bg`/`bgDate` peuvent contenir "transparent" ou une rgba(), pas seulement du hex — le swatch retombe alors sur noir plutôt que de planter). */
+function ColorField({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const isHex = /^#[0-9a-fA-F]{6}$/.test(value);
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[11px] font-semibold text-neutral-500">{label}</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={isHex ? value : "#000000"}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 w-8 shrink-0 cursor-pointer rounded-md border border-neutral-200 bg-transparent p-0"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 font-mono text-[12px] outline-none focus:border-terracotta-500"
+        />
+      </div>
+      {hint && <span className="text-[10px] leading-snug text-neutral-500">{hint}</span>}
+    </label>
+  );
+}
+
+function PaletteHeroEditor({ project }: { project: Project360 }) {
+  const utils = trpc.useUtils();
+  const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
+  const modeHint = answers[QUESTIONNAIRE_KEYS.paletteMode] === true ? "dark" : "light";
+  const preferenceHint =
+    typeof answers[QUESTIONNAIRE_KEYS.palettePreference] === "string"
+      ? (answers[QUESTIONNAIRE_KEYS.palettePreference] as string).trim()
+      : "";
+  const avoidHint =
+    typeof answers[QUESTIONNAIRE_KEYS.paletteAEviter] === "string"
+      ? (answers[QUESTIONNAIRE_KEYS.paletteAEviter] as string).trim()
+      : "";
+
+  const existingPalette = project.palette as BespokePaletteInput | null;
+  const [mode, setMode] = useState<"light" | "dark">(modeHint);
+  const [accentColor, setAccentColor] = useState(existingPalette?.gold ?? FALLBACK_ACCENT);
+  const [palette, setPalette] = useState<BespokePaletteInput>(existingPalette ?? BLANK_PALETTE);
+
+  const setField = (key: keyof BespokePaletteInput, value: string) =>
+    setPalette((prev) => ({ ...prev, [key]: value }));
+
+  const generate = () => setPalette(suggestPalette(accentColor, mode));
+
+  const savePalette = trpc.projects.adminSetPalette.useMutation({
+    onSuccess: () => {
+      utils.projects.adminGet.invalidate({ projectId: project.id });
+      toast.success("Palette enregistrée");
+    },
+    onError: () => toast.error("Échec de l'enregistrement de la palette"),
+  });
+
+  const submitPalette = () => {
+    // Les 4 champs `...Rgb` ne sont jamais saisis à la main — recalculés
+    // ici depuis leur compagnon hex pour ne jamais désynchroniser les deux.
+    const complete: BespokePaletteInput = {
+      ...palette,
+      inkRgb: hexToRgbString(palette.ink),
+      inkOnCardRgb: hexToRgbString(palette.inkOnCard),
+      bordeauxRgb: hexToRgbString(palette.bordeaux),
+      goldRgb: hexToRgbString(palette.gold),
+    };
+    savePalette.mutate({ projectId: project.id, palette: complete });
+  };
+
+  // Timings du hero
+  const existingChapters = project.heroChapters as HeroChaptersInput | null;
+  const [chapters, setChapters] = useState<HeroChaptersInput>(existingChapters ?? BLANK_HERO_CHAPTERS);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const approvedVideo =
+    project.videoVersions.find((v) => v.status === "approved" || v.status === "final") ??
+    project.videoVersions.at(0);
+
+  const setChapterField = (index: number, key: "fromSec" | "toSec", value: number) =>
+    setChapters((prev) => {
+      const next = [...prev] as HeroChaptersInput;
+      next[index] = { ...next[index], [key]: value };
+      return next;
+    });
+
+  const capture = (index: number, key: "fromSec" | "toSec") => {
+    const t = videoRef.current?.currentTime;
+    if (t === undefined) return;
+    setChapterField(index, key, Math.round(t * 10) / 10);
+  };
+
+  const saveChapters = trpc.projects.adminSetHeroChapters.useMutation({
+    onSuccess: () => {
+      utils.projects.adminGet.invalidate({ projectId: project.id });
+      toast.success("Timings du hero enregistrés");
+    },
+    onError: () => toast.error("Échec de l'enregistrement des timings"),
+  });
+
+  return (
+    <section className="space-y-8">
+      {/* Indications du client — jamais appliquées automatiquement, juste un repère pour le studio */}
+      <div className="rounded-xl border border-neutral-200 bg-white p-4">
+        <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+          Indications du client (questionnaire)
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <p className="text-[11px] font-semibold text-neutral-500">Fond souhaité</p>
+            <p className="text-[13px] font-medium">{modeHint === "dark" ? "Sombre" : "Clair"}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-neutral-500">Couleur souhaitée</p>
+            <p className="text-[13px] font-medium">{preferenceHint || "—"}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-neutral-500">Couleur à éviter</p>
+            <p className="text-[13px] font-medium">{avoidHint || "—"}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Générateur de proposition */}
+      <div className="rounded-xl border border-dashed border-terracotta-500/40 bg-white p-4">
+        <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+          Proposition de départ
+        </h3>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex gap-1 rounded-full border border-neutral-200 bg-neutral-100 p-1">
+            {(["light", "dark"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={cn(
+                  "rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-colors",
+                  mode === m ? "bg-anthracite-800 text-white" : "text-neutral-500 hover:text-ink",
+                )}
+              >
+                {m === "light" ? "Clair" : "Sombre"}
+              </button>
+            ))}
+          </div>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-semibold text-neutral-500">Couleur approximative (à l'œil, d'après l'indication client)</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={/^#[0-9a-fA-F]{6}$/.test(accentColor) ? accentColor : FALLBACK_ACCENT}
+                onChange={(e) => setAccentColor(e.target.value)}
+                className="h-9 w-9 shrink-0 cursor-pointer rounded-md border border-neutral-200 bg-transparent p-0"
+              />
+              <input
+                type="text"
+                value={accentColor}
+                onChange={(e) => setAccentColor(e.target.value)}
+                className="w-28 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 font-mono text-[12px] outline-none focus:border-terracotta-500"
+              />
+            </div>
+          </label>
+          <button
+            type="button"
+            onClick={generate}
+            className="flex items-center gap-2 rounded-full bg-anthracite-800 px-4 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-anthracite-700"
+          >
+            <Wand2 size={14} />
+            Générer une proposition
+          </button>
+        </div>
+        <p className="mt-3 text-[11px] leading-relaxed text-neutral-500">
+          Remplit les 19 champs ci-dessous à partir de cette seule couleur — un point de départ à retoucher, jamais
+          le résultat final.
+        </p>
+      </div>
+
+      {/* 19 champs, retouchables à la main */}
+      <div className="space-y-5">
+        <div>
+          <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Fonds</h4>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <ColorField label="Fond des cartes" value={palette.bg} onChange={(v) => setField("bg", v)} />
+            <ColorField label="Fond case Date" value={palette.bgDate} onChange={(v) => setField("bgDate", v)} />
+            <ColorField
+              label="Fond piste Programme"
+              value={palette.bgProgramme}
+              onChange={(v) => setField("bgProgramme", v)}
+            />
+            <ColorField label="Crème du sceau" value={palette.cream} onChange={(v) => setField("cream", v)} />
+          </div>
+        </div>
+        <div>
+          <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Encre</h4>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ColorField
+              label="Texte sur le fond de page"
+              value={palette.ink}
+              onChange={(v) => setField("ink", v)}
+            />
+            <ColorField
+              label="Texte sur les cartes"
+              value={palette.inkOnCard}
+              onChange={(v) => setField("inkOnCard", v)}
+            />
+            <ColorField
+              label="Traits de la carte (Lieu)"
+              value={palette.mapLine}
+              onChange={(v) => setField("mapLine", v)}
+            />
+          </div>
+        </div>
+        <div>
+          <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Accents</h4>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ColorField label="Accent principal" value={palette.gold} onChange={(v) => setField("gold", v)} />
+            <ColorField
+              label="Accent secondaire"
+              value={palette.bordeaux}
+              onChange={(v) => setField("bordeaux", v)}
+            />
+            <ColorField
+              label="Titres de section"
+              value={palette.sectionTitle}
+              onChange={(v) => setField("sectionTitle", v)}
+            />
+            <ColorField
+              label="Chiffre de l'heure (Programme)"
+              value={palette.timelineAccent}
+              onChange={(v) => setField("timelineAccent", v)}
+            />
+            <ColorField
+              label="Titre de l'étape (Programme)"
+              value={palette.stepLabel}
+              onChange={(v) => setField("stepLabel", v)}
+            />
+          </div>
+        </div>
+        <div>
+          <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Sceau RSVP</h4>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ColorField label="Sceau" value={palette.seal} onChange={(v) => setField("seal", v)} />
+            <ColorField
+              label="Sceau — teinte claire"
+              value={palette.sealLight}
+              onChange={(v) => setField("sealLight", v)}
+            />
+            <ColorField
+              label="Sceau — teinte sombre"
+              value={palette.sealDark}
+              onChange={(v) => setField("sealDark", v)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          disabled={savePalette.isPending}
+          onClick={submitPalette}
+          className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
+        >
+          {savePalette.isPending && <Loader2 size={14} className="animate-spin" />}
+          Enregistrer la palette
+        </button>
+      </div>
+
+      {/* Timings du hero */}
+      <div className="border-t border-neutral-200 pt-6">
+        <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+          Timings du hero vidéo
+        </h3>
+        <p className="mb-4 text-[12px] text-neutral-500">
+          3 chapitres fixes (ouverture, détails pratiques, clôture) — le texte de chacun vient du questionnaire,
+          seuls les instants où ils apparaissent à l'image se règlent ici.
+        </p>
+
+        {approvedVideo ? (
+          <video ref={videoRef} src={approvedVideo.url} controls className="mb-4 w-full max-w-md rounded-xl bg-black" />
+        ) : (
+          <p className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 text-[13px] text-neutral-500">
+            Aucune vidéo disponible pour repérer les instants — ajoutez d'abord une version dans l'onglet Vidéo.
+          </p>
+        )}
+
+        <div className="space-y-3">
+          {HERO_CHAPTER_LABELS.map((label, i) => (
+            <div key={label} className="grid items-end gap-3 rounded-xl border border-neutral-200 bg-white p-3 sm:grid-cols-[120px_1fr_1fr]">
+              <span className="text-[13px] font-semibold">{label}</span>
+              {(["fromSec", "toSec"] as const).map((key) => (
+                <label key={key} className="flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">
+                    {key === "fromSec" ? "Début (s)" : "Fin (s)"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step={0.1}
+                      min={0}
+                      value={chapters[i][key]}
+                      onChange={(e) => setChapterField(i, key, Number(e.target.value))}
+                      className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={!approvedVideo}
+                      title="Capturer l'instant courant de la vidéo"
+                      onClick={() => capture(i, key)}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-200 text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Camera size={14} />
+                    </button>
+                  </div>
+                </label>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            disabled={saveChapters.isPending}
+            onClick={() => saveChapters.mutate({ projectId: project.id, heroChapters: chapters })}
+            className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
+          >
+            {saveChapters.isPending && <Loader2 size={14} className="animate-spin" />}
+            Enregistrer les timings
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Onglet Studio complet
 // ---------------------------------------------------------------------------
 export default function StudioPanel({ project }: { project: Project360 }) {
@@ -657,6 +1037,7 @@ export default function StudioPanel({ project }: { project: Project360 }) {
       { id: "scenarios", label: "Scénarios" },
       { id: "video", label: `Vidéo${videoCount > 0 ? ` (v${project.videoVersions.at(0)?.version})` : ""}` },
       { id: "fairepart", label: "Faire-part" },
+      { id: "palette", label: "Palette & Hero" },
     ],
     [project.videoVersions, videoCount],
   );
@@ -690,6 +1071,7 @@ export default function StudioPanel({ project }: { project: Project360 }) {
           {section === "scenarios" && <ScenarioEditor project={project} />}
           {section === "video" && <VideoManager project={project} />}
           {section === "fairepart" && <FairePartActivation project={project} />}
+          {section === "palette" && <PaletteHeroEditor project={project} />}
         </motion.div>
       </AnimatePresence>
     </div>

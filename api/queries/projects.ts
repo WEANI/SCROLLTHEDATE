@@ -111,4 +111,20 @@ export async function updateProjectTemplate(
   await getDb().update(projects).set({ template }).where(eq(projects.id, projectId));
 }
 
+/** Palette bespoke posée à la main par le studio (cf. commentaire sur la colonne, db/schema.ts). */
+export async function updateProjectPalette(
+  projectId: number,
+  palette: Record<string, string>,
+) {
+  await getDb().update(projects).set({ palette }).where(eq(projects.id, projectId));
+}
+
+/** Timings des 3 chapitres du hero, en secondes — cf. commentaire sur la colonne, db/schema.ts. */
+export async function updateProjectHeroChapters(
+  projectId: number,
+  heroChapters: { fromSec: number; toSec: number }[],
+) {
+  await getDb().update(projects).set({ heroChapters }).where(eq(projects.id, projectId));
+}
+
 export type ProjectStatus = Project["status"];

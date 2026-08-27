@@ -2,12 +2,15 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { adminQuery, authedQuery, createRouter, publicQuery } from "./middleware";
 import { projectStatusEnum, templateEnum } from "./ordersRouter";
+import { bespokePaletteSchema, heroChaptersSchema } from "../contracts/bespokePalette";
 import {
   findAllProjects,
   findCurrentProjectFull,
   findProject360,
   findProjectById,
   findProjectBySlug,
+  updateProjectHeroChapters,
+  updateProjectPalette,
   updateProjectStatus,
   updateProjectTemplate,
 } from "./queries/projects";
@@ -130,6 +133,43 @@ export const projectsRouter = createRouter({
         from: project.template,
         to: input.template,
       });
+      return { success: true };
+    }),
+
+  // Généralisation bespoke (PLAN-GENERALISATION-THEMES.md, Phase 2) — le
+  // studio pose les 19 champs à la main dans StudioPanel, éventuellement
+  // pré-remplis par suggestPalette() côté client, jamais générés côté
+  // serveur : cf. commentaire sur la colonne, db/schema.ts.
+  adminSetPalette: adminQuery
+    .input(
+      z.object({
+        projectId: z.number().int().positive(),
+        palette: bespokePaletteSchema,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const project = await findProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+      await updateProjectPalette(input.projectId, input.palette);
+      await logAudit(input.projectId, actorOf(ctx.user), "project.palette_changed", {});
+      return { success: true };
+    }),
+
+  // Timings des 3 chapitres du hero vidéo, repérés à l'image par le
+  // studio sur le montage livré — cf. commentaire sur la colonne,
+  // db/schema.ts.
+  adminSetHeroChapters: adminQuery
+    .input(
+      z.object({
+        projectId: z.number().int().positive(),
+        heroChapters: heroChaptersSchema,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const project = await findProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+      await updateProjectHeroChapters(input.projectId, input.heroChapters);
+      await logAudit(input.projectId, actorOf(ctx.user), "project.hero_chapters_changed", {});
       return { success: true };
     }),
 });
