@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import JSZip from "jszip";
 import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
 import {
@@ -199,17 +200,52 @@ function TabResume({ project }: { project: Project360 }) {
 // ---------------------------------------------------------------------------
 // Onglet Questionnaire
 // ---------------------------------------------------------------------------
+/** Extension de fichier déduite du en-tête MIME d'une data URI ("data:image/png;base64,..." -> "png") — repli "jpg" si absent/non reconnu, jamais d'extension vide. */
+function extensionFromDataUri(dataUri: string): string {
+  const m = /^data:image\/([a-zA-Z0-9.+-]+);base64,/.exec(dataUri);
+  const type = m?.[1]?.toLowerCase();
+  return type === "jpeg" ? "jpg" : (type ?? "jpg");
+}
+
+/** Nom de fichier sûr pour un zip — dérivé du libellé de la question, pas du filename d'origine (jamais stocké pour ces réponses, cf. PhotoQuestionField : la data URI est la réponse elle-même). */
+function slugifyLabel(label: string): string {
+  return label
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function TabQuestionnaire({ project }: { project: Project360 }) {
   const { data: template } = trpc.questionnaire.getActiveTemplate.useQuery();
   const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
   const questions =
-    (template?.questions as { id: string; label: string; step: string }[] | null | undefined) ?? [];
+    (template?.questions as { id: string; label: string; step: string; type: string }[] | null | undefined) ?? [];
   const voiceNote = project.voiceNotes.at(0);
+  const [zipping, setZipping] = useState(false);
+
+  const photoAnswers = questions
+    .filter((q) => q.type === "photo")
+    .map((q) => ({ label: q.label, dataUri: answers[q.id] }))
+    .filter((p): p is { label: string; dataUri: string } => typeof p.dataUri === "string" && p.dataUri.startsWith("data:image/"));
 
   const copyBrief = () => {
     const lines = questions.map((q) => {
       const v = answers[q.id];
-      const text = Array.isArray(v) ? v.join(", ") : String(v ?? "—");
+      // Question photo : la réponse est la data URI de l'image elle-même
+      // (cf. PhotoQuestionField) — la coller telle quelle noierait le
+      // brief texte sous des mégaoctets de base64 illisibles. Repère
+      // textuel à la place ; les vraies images sont dans le zip
+      // (bouton "Télécharger les photos", juste à côté).
+      const text =
+        q.type === "photo"
+          ? typeof v === "string" && v.startsWith("data:image/")
+            ? "[photo jointe — voir le zip téléchargé]"
+            : "—"
+          : Array.isArray(v)
+            ? v.join(", ")
+            : String(v ?? "—");
       return `## ${q.label}\n${text}`;
     });
     const brief = `# Brief — ${coupleNamesFromSlug(project.slug)}\n\n${lines.join("\n\n")}`;
@@ -217,6 +253,51 @@ function TabQuestionnaire({ project }: { project: Project360 }) {
       .writeText(brief)
       .then(() => toast.success("Brief copié — prêt pour la rédaction du scénario"))
       .catch(() => toast.error("Impossible de copier le brief"));
+  };
+
+  const downloadPhotos = async () => {
+    if (photoAnswers.length === 0) {
+      toast.error("Aucune photo dans le questionnaire pour l'instant");
+      return;
+    }
+    setZipping(true);
+    try {
+      const zip = new JSZip();
+      const usedNames = new Set<string>();
+      for (const p of photoAnswers) {
+        const res = await fetch(p.dataUri);
+        // ArrayBuffer plutôt que Blob : JSZip peine à lire un Blob selon
+        // l'environnement (constaté en testant cette logique côté Node —
+        // "Can't read the data of..."), l'ArrayBuffer est le format
+        // universellement supporté par `zip.file()`.
+        const buf = await res.arrayBuffer();
+        let name = `${slugifyLabel(p.label)}.${extensionFromDataUri(p.dataUri)}`;
+        // Deux questions au libellé proche (ex. "Photo 1"/"Photo 2" déjà
+        // distinctes en pratique, mais par sécurité) ne doivent jamais
+        // s'écraser dans le zip.
+        let i = 2;
+        while (usedNames.has(name)) {
+          name = `${slugifyLabel(p.label)}-${i}.${extensionFromDataUri(p.dataUri)}`;
+          i += 1;
+        }
+        usedNames.add(name);
+        zip.file(name, buf);
+      }
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `photos-${coupleNamesFromSlug(project.slug).toLowerCase().replace(/\s+/g, "-")}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`${photoAnswers.length} photo${photoAnswers.length > 1 ? "s" : ""} téléchargée${photoAnswers.length > 1 ? "s" : ""}`);
+    } catch {
+      toast.error("Échec de la création du zip");
+    } finally {
+      setZipping(false);
+    }
   };
 
   return (
@@ -252,6 +333,16 @@ function TabQuestionnaire({ project }: { project: Project360 }) {
             <span className="tabular text-[12px] font-semibold text-terracotta-500">
               {project.questionnaire?.completionPct ?? 0} % complet
             </span>
+            <button
+              type="button"
+              onClick={() => void downloadPhotos()}
+              disabled={zipping || photoAnswers.length === 0}
+              title={photoAnswers.length === 0 ? "Aucune photo dans le questionnaire pour l'instant" : undefined}
+              className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-[11px] font-semibold text-ink transition-colors hover:border-terracotta-500 hover:text-terracotta-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-neutral-200 disabled:hover:text-ink"
+            >
+              {zipping ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+              Télécharger les photos{photoAnswers.length > 0 ? ` (${photoAnswers.length})` : ""}
+            </button>
             <button
               type="button"
               onClick={copyBrief}
