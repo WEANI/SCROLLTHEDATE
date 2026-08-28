@@ -230,7 +230,7 @@ function TabQuestionnaire({ project }: { project: Project360 }) {
     .map((q) => ({ label: q.label, dataUri: answers[q.id] }))
     .filter((p): p is { label: string; dataUri: string } => typeof p.dataUri === "string" && p.dataUri.startsWith("data:image/"));
 
-  const copyBrief = () => {
+  const buildBrief = () => {
     const lines = questions.map((q) => {
       const v = answers[q.id];
       // Question photo : la réponse est la data URI de l'image elle-même
@@ -248,11 +248,26 @@ function TabQuestionnaire({ project }: { project: Project360 }) {
             : String(v ?? "—");
       return `## ${q.label}\n${text}`;
     });
-    const brief = `# Brief — ${coupleNamesFromSlug(project.slug)}\n\n${lines.join("\n\n")}`;
+    return `# Brief — ${coupleNamesFromSlug(project.slug)}\n\n${lines.join("\n\n")}`;
+  };
+
+  const copyBrief = () => {
     navigator.clipboard
-      .writeText(brief)
+      .writeText(buildBrief())
       .then(() => toast.success("Brief copié — prêt pour la rédaction du scénario"))
       .catch(() => toast.error("Impossible de copier le brief"));
+  };
+
+  const downloadBrief = () => {
+    const blob = new Blob([buildBrief()], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `brief-${coupleNamesFromSlug(project.slug).toLowerCase().replace(/\s+/g, "-")}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   const downloadPhotos = async () => {
@@ -349,6 +364,13 @@ function TabQuestionnaire({ project }: { project: Project360 }) {
               className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-[11px] font-semibold text-ink transition-colors hover:border-terracotta-500 hover:text-terracotta-500"
             >
               <Copy size={12} /> Copier le brief
+            </button>
+            <button
+              type="button"
+              onClick={downloadBrief}
+              className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-[11px] font-semibold text-ink transition-colors hover:border-terracotta-500 hover:text-terracotta-500"
+            >
+              <Download size={12} /> Brief en .md
             </button>
           </div>
         </div>
