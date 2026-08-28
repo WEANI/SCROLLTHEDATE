@@ -217,6 +217,9 @@ function PhotoQuestionField({
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Retour visuel pendant le survol d'un fichier glissé — pas un état
+  // "actif/inactif" binaire au clic, juste `dragover`/`dragleave`.
+  const [dragOver, setDragOver] = useState(false)
   const addMediaMutation = trpc.media.addMedia.useMutation()
 
   async function handleFile(file: File) {
@@ -246,6 +249,23 @@ function PhotoQuestionField({
     }
   }
 
+  // Partagés par la zone vide et la zone "photo déjà choisie" — glisser un
+  // nouveau fichier sur une photo existante la remplace, même logique que
+  // le bouton "Remplacer".
+  const dragHandlers = {
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault()
+      setDragOver(true)
+    },
+    onDragLeave: () => setDragOver(false),
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault()
+      setDragOver(false)
+      const file = e.dataTransfer.files?.[0]
+      if (file) void handleFile(file)
+    },
+  }
+
   return (
     <FieldShell question={question}>
       <input
@@ -260,8 +280,23 @@ function PhotoQuestionField({
         }}
       />
       {url ? (
-        <div className="relative w-fit overflow-hidden rounded-2xl border border-neutral-200">
+        <div
+          {...dragHandlers}
+          className={cn(
+            'group relative w-fit overflow-hidden rounded-2xl border transition-colors',
+            dragOver ? 'border-terracotta-400' : 'border-neutral-200',
+          )}
+        >
           <img src={url} alt="" className="h-40 w-auto max-w-full object-cover" />
+          <button
+            type="button"
+            aria-label="Supprimer la photo"
+            onClick={() => onChange('')}
+            disabled={uploading}
+            className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-500 opacity-0 shadow backdrop-blur transition-all hover:bg-error hover:text-white group-hover:opacity-100 focus-visible:opacity-100"
+          >
+            <Trash2 size={14} />
+          </button>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
@@ -277,8 +312,10 @@ function PhotoQuestionField({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
+          {...dragHandlers}
           className={cn(
-            'flex w-full max-w-xs flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-neutral-200 bg-white px-6 py-8 text-center transition-colors',
+            'flex w-full max-w-xs flex-col items-center gap-2 rounded-2xl border-2 border-dashed bg-white px-6 py-8 text-center transition-colors',
+            dragOver ? 'border-terracotta-400 bg-terracotta-500/5' : 'border-neutral-200',
             uploading ? 'cursor-wait opacity-70' : 'cursor-pointer hover:border-terracotta-400',
           )}
         >
@@ -286,7 +323,7 @@ function PhotoQuestionField({
             {uploading ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
           </span>
           <span className="text-[13px] font-medium text-ink">
-            {uploading ? 'Envoi…' : 'Choisir une photo'}
+            {uploading ? 'Envoi…' : 'Choisir une photo, ou glisser-déposer'}
           </span>
         </button>
       )}
@@ -975,7 +1012,7 @@ export default function Questionnaire() {
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-display text-2xl font-medium italic text-ink">
-                  Vos photos & vidéos.
+                  Vos photos.
                 </h3>
                 <p className="mt-1 text-[13.5px] text-neutral-500">
                   Ces images alimentent votre vidéo. 10–30 photos, c'est l'idéal.
@@ -994,7 +1031,11 @@ export default function Questionnaire() {
                 [
                   ['all', 'Tous'],
                   ['photo', 'Photos'],
-                  ['video', 'Vidéos'],
+                  // 'video' retiré (2026-08-27, demande client) : l'envoi
+                  // n'accepte plus que des images (cf. UploadZone
+                  // ci-dessus, accept="image/*") — d'éventuelles vidéos
+                  // envoyées avant ce changement restent visibles dans
+                  // "Tous", juste plus filtrables par un onglet dédié.
                 ] as const
               ).map(([key, label]) => (
                 <button

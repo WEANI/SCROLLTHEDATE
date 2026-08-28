@@ -7,6 +7,10 @@ import { cn } from '@/lib/utils'
 // ---------------------------------------------------------------------------
 // UploadZone — drag & drop + parcourir. Lit les fichiers en dataURI et les
 // transmet au parent (media.addMedia). Limite 8 Mo par fichier (V1 dataURI).
+// Images uniquement (vidéos retirées le 2026-08-27, demande client) — le
+// type `'video'` reste dans PendingUpload/onFiles pour ne pas casser le
+// typage des fichiers déjà en base envoyés avant ce changement, mais ce
+// composant n'en produit plus.
 // ---------------------------------------------------------------------------
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024
@@ -38,8 +42,10 @@ export default function UploadZone({
     const rejected: string[] = []
     for (const file of Array.from(list)) {
       const isImage = file.type.startsWith('image/')
-      const isVideo = file.type.startsWith('video/')
-      if (!isImage && !isVideo) {
+      // Vidéos retirées de cette zone (2026-08-27, demande client) — un
+      // fichier vidéo glissé/parcouru est refusé comme n'importe quel
+      // autre type non pris en charge, pas de traitement spécial.
+      if (!isImage) {
         rejected.push(file.name)
         continue
       }
@@ -55,9 +61,9 @@ export default function UploadZone({
       })
       accepted.push({
         filename: file.name,
-        type: isImage ? 'photo' : 'video',
+        type: 'photo',
         dataUri,
-        previewUrl: isImage ? dataUri : '',
+        previewUrl: dataUri,
       })
     }
     if (rejected.length > 0) {
@@ -105,13 +111,13 @@ export default function UploadZone({
           Glissez vos fichiers ou <span className="text-terracotta-500 underline underline-offset-4">parcourez</span>
         </span>
         <span className="text-[12px] text-neutral-500">
-          Photos & vidéos — 8 Mo max par fichier
+          Photos — 8 Mo max par fichier
         </span>
       </motion.button>
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,video/*"
+        accept="image/*"
         multiple
         className="hidden"
         onChange={(e) => {
