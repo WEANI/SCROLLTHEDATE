@@ -36,7 +36,7 @@ import {
 } from "@/components/admin/shared";
 import { StatusBadge } from "@/components/admin/badges";
 
-const TABS = [
+export const TABS = [
   { id: "resume", label: "Résumé" },
   { id: "questionnaire", label: "Questionnaire" },
   { id: "medias", label: "Médias" },
@@ -46,7 +46,7 @@ const TABS = [
   { id: "historique", label: "Historique" },
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"] | "studio";
+export type TabId = (typeof TABS)[number]["id"] | "studio";
 
 const STATUS_ORDER: ProjectStatus[] = [
   "ONBOARDING",

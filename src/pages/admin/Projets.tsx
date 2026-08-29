@@ -5,7 +5,7 @@ import { Clock, FolderKanban, Loader2, PenLine, Send } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
-import ProjectDrawer from "@/components/admin/ProjectDrawer";
+import ProjectDrawer, { TABS as PROJECT_DRAWER_TABS, type TabId } from "@/components/admin/ProjectDrawer";
 import StudioPanel from "@/components/admin/StudioPanel";
 import {
   coupleNamesFromSlug,
@@ -219,8 +219,13 @@ export default function Projets() {
   // Dérivé de l'URL plutôt que d'un state local : reste correct aussi bien
   // pour les clics internes (WorkQueues, table) que pour une navigation
   // entrante depuis un autre onglet/page (ex. le lien "Créer les
-  // scénarios" de TabScenarios, qui pointe vers ?projet=…&studio=1).
+  // scénarios" de TabScenarios, qui pointe vers ?projet=…&studio=1, ou une
+  // notification cliquée dans AdminShell, qui pointe vers ?projet=…&tab=…).
   const studioRequested = searchParams.get("studio") === "1";
+  const KNOWN_TAB_IDS: readonly string[] = [...PROJECT_DRAWER_TABS.map((t) => t.id), "studio"];
+  const tabParam = searchParams.get("tab");
+  const requestedTab: TabId | null =
+    tabParam && KNOWN_TAB_IDS.includes(tabParam) ? (tabParam as TabId) : null;
 
   const setOpenProject = (id: number | null, studio = false) => {
     setSearchParams(
@@ -359,7 +364,7 @@ export default function Projets() {
         projectId={openProjectId}
         onClose={() => setOpenProject(null)}
         studio={(project) => <StudioPanel project={project} />}
-        initialTab={studioRequested ? "studio" : "resume"}
+        initialTab={requestedTab ?? (studioRequested ? "studio" : "resume")}
       />
     </div>
   );

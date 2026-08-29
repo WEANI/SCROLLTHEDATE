@@ -21,6 +21,7 @@ import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { formatDateTime, initials } from "@/components/admin/shared";
+import type { TabId } from "@/components/admin/ProjectDrawer";
 
 const NAV = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -46,9 +47,27 @@ function notifLabel(type: string) {
   return NOTIF_LABEL[type] ?? type.replaceAll(".", " · ");
 }
 
+/**
+ * Onglet de la fiche projet (ProjectDrawer) vers lequel router chaque type
+ * de notification — cliquer une notif ne faisait jusqu'ici que la marquer
+ * lue, sans mener nulle part. `payload.projectId` est présent pour tous les
+ * types déclenchés en pratique (cf. notifyAdmins(...) dans scenariosRouter/
+ * videosRouter/messagesRouter — chacun y inclut systématiquement projectId
+ * + slug) ; `order.paid` est dans NOTIF_LABEL mais n'est déclenché nulle
+ * part dans le code actuel, laissé sans route dédiée (repli sur "resume").
+ */
+const NOTIF_TAB: Partial<Record<string, TabId>> = {
+  "message.received": "messages",
+  "scenario.chosen": "studio",
+  "scenario.changes_requested": "studio",
+  "video.approved": "video",
+  "video.changes_requested": "video",
+};
+
 /** Cloche de notifications (données réelles via notifications.listMine). */
 function NotificationsBell() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const utils = trpc.useUtils();
   const { data: notifications } = trpc.notifications.listMine.useQuery(undefined, {
     refetchInterval: 30_000,
@@ -118,6 +137,12 @@ function NotificationsBell() {
                       type="button"
                       onClick={() => {
                         if (!n.readAt) markRead.mutate({ notificationId: n.id });
+                        const payload = n.payload as { projectId?: number } | null;
+                        const tab = NOTIF_TAB[n.type];
+                        if (payload?.projectId && tab) {
+                          setOpen(false);
+                          navigate(`/admin/projets?projet=${payload.projectId}&tab=${tab}`);
+                        }
                       }}
                       className={cn(
                         "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-neutral-100",
