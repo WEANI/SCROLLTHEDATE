@@ -618,7 +618,7 @@ function FairePartActivation({ project }: { project: Project360 }) {
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-semibold">Prêt à activer ?</p>
               <p className="text-[12px] text-neutral-500">
-                L'URL publique sera <span className="tabular font-medium text-ink">/m/{project.slug}</span> — QR
+                L'URL publique sera <span className="tabular font-medium text-ink">/faire-part/{project.slug}</span> — QR
                 généré, email de livraison et message client automatiques.
               </p>
             </div>
