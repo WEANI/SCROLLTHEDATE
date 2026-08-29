@@ -28,6 +28,14 @@ const FAIRE_PARTS: FairePartLink[] = [
     description: 'Photo qui se reconstitue au scroll, programme en défilement épinglé, hébergements en cascade',
     accent: '#8B1E28',
   },
+  {
+    slug: 'camille-adrien',
+    names: 'Camille & Adrien',
+    date: '13 juin 2027',
+    eyebrow: 'Charte sombre · Bord de mer breton',
+    description: 'Grille de mots croisés qui devient fil aérien, programme en défilement épinglé, sceau argenté',
+    accent: '#B5764C',
+  },
 ]
 
 /**
@@ -51,7 +59,7 @@ export default function DemoFairePart() {
         Faire-parts livrés
       </h1>
       <p className="mx-auto mt-4 max-w-[480px] text-center text-[15px] leading-[1.6] text-neutral-500">
-        Deux réalisations récentes, chacune avec sa propre mise en scène — parcourez-les comme le feraient vos
+        Trois réalisations récentes, chacune avec sa propre mise en scène — parcourez-les comme le feraient vos
         invités.
       </p>
 

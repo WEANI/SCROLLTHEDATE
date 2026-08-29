@@ -14,6 +14,7 @@ import DemoInfos from '@/pages/DemoInfos'
 import DemoFairePart from '@/pages/DemoFairePart'
 import FairePartEdwigeWilfried from '@/pages/FairePartEdwigeWilfried'
 import FairePartLeaOlivier from '@/pages/FairePartLeaOlivier'
+import FairePartCamilleAdrien from '@/pages/FairePartCamilleAdrien'
 import FairePart from '@/pages/FairePart'
 import ClientShell from '@/components/espace/ClientShell'
 import TableauDeBord from '@/pages/espace/TableauDeBord'
@@ -66,6 +67,7 @@ export default function App() {
           statiques sur le paramétré, ils coexistent sans conflit. */}
       <Route path="/faire-part/edwige-wilfried" element={<FairePartEdwigeWilfried />} />
       <Route path="/faire-part/lea-olivier" element={<FairePartLeaOlivier />} />
+      <Route path="/faire-part/camille-adrien" element={<FairePartCamilleAdrien />} />
       <Route path="/faire-part/:slug" element={<FairePart />} />
 
       {/* Espace client — shell clair dédié (hors Layout public) */}
