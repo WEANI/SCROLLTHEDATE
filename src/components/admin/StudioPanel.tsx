@@ -319,7 +319,16 @@ function VideoManager({ project }: { project: Project360 }) {
   const utils = trpc.useUtils();
   const [url, setUrl] = useState("");
   const [watermark, setWatermark] = useState(true);
-  const [status, setStatus] = useState<"draft" | "sent">("sent");
+  const [status, setStatus] = useState<"draft" | "sent" | "final">("sent");
+
+  // "Vidéo finale" = déposée directement sans filigrane, aucune étape de
+  // validation client — le circuit "envoyer filigranée → le client
+  // approuve → insérer en HD" (cf. plus bas, bouton "Insérer dans le
+  // faire-part") reste disponible pour qui veut faire valider une
+  // version avant de la publier, mais n'est plus obligatoire : un
+  // filigrane n'a pas de sens sur une version déjà finale, watermark
+  // forcé à faux dans ce cas.
+  const isFinal = status === "final";
 
   const addVersion = trpc.videos.adminAddVersion.useMutation({
     onSuccess: (r) => {
@@ -327,9 +336,11 @@ function VideoManager({ project }: { project: Project360 }) {
       utils.projects.adminList.invalidate();
       setUrl("");
       toast.success(
-        status === "sent"
-          ? `Version ${r.version} envoyée au client`
-          : `Version ${r.version} enregistrée en brouillon`,
+        status === "final"
+          ? `Version finale (v${r.version}) déposée — visible immédiatement sur le faire-part`
+          : status === "sent"
+            ? `Version ${r.version} envoyée au client`
+            : `Version ${r.version} enregistrée en brouillon`,
       );
     },
     onError: () => toast.error("Échec de l'ajout de la version"),
@@ -384,36 +395,57 @@ function VideoManager({ project }: { project: Project360 }) {
               </div>
             )}
             <div className="flex flex-wrap items-center gap-4">
-              <label className="flex cursor-pointer items-center gap-2 text-[12px] font-medium text-neutral-500">
+              <label
+                className={cn(
+                  "flex items-center gap-2 text-[12px] font-medium",
+                  isFinal ? "cursor-not-allowed text-neutral-500/50" : "cursor-pointer text-neutral-500",
+                )}
+              >
                 <button
                   type="button"
                   role="switch"
-                  aria-checked={watermark}
+                  aria-checked={watermark && !isFinal}
+                  disabled={isFinal}
                   onClick={() => setWatermark((v) => !v)}
-                  className={cn("relative h-5 w-9 rounded-full transition-colors", watermark ? "bg-terracotta-500" : "bg-neutral-200")}
+                  className={cn(
+                    "relative h-5 w-9 rounded-full transition-colors",
+                    watermark && !isFinal ? "bg-terracotta-500" : "bg-neutral-200",
+                    isFinal && "cursor-not-allowed opacity-60",
+                  )}
                 >
-                  <span className={cn("absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all", watermark ? "left-[18px]" : "left-0.5")} />
+                  <span
+                    className={cn(
+                      "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all",
+                      watermark && !isFinal ? "left-[18px]" : "left-0.5",
+                    )}
+                  />
                 </button>
-                Filigrane (recommandé avant approbation)
+                {isFinal ? "Sans filigrane (version finale)" : "Filigrane (recommandé avant approbation)"}
               </label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as "draft" | "sent")}
+                onChange={(e) => setStatus(e.target.value as "draft" | "sent" | "final")}
                 className="h-9 rounded-[10px] border border-neutral-200 bg-white px-3 text-[12px] font-medium outline-none focus:border-terracotta-500"
               >
-                <option value="sent">Envoyer au client</option>
+                <option value="final">Vidéo finale (publiée immédiatement, sans validation)</option>
+                <option value="sent">Envoyer au client (avec filigrane, pour approbation)</option>
                 <option value="draft">Brouillon (invisible client)</option>
               </select>
               <button
                 type="button"
                 disabled={url.trim().length === 0 || addVersion.isPending}
                 onClick={() =>
-                  addVersion.mutate({ projectId: project.id, url: url.trim(), watermark, status })
+                  addVersion.mutate({
+                    projectId: project.id,
+                    url: url.trim(),
+                    watermark: isFinal ? false : watermark,
+                    status,
+                  })
                 }
                 className="ml-auto flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:bg-terracotta-400 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {addVersion.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                {status === "sent" ? "Ajouter & envoyer" : "Ajouter le brouillon"}
+                {status === "final" ? "Publier la version finale" : status === "sent" ? "Ajouter & envoyer" : "Ajouter le brouillon"}
               </button>
             </div>
           </div>
