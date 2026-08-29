@@ -546,7 +546,10 @@ function FairePartActivation({ project }: { project: Project360 }) {
     onError: () => toast.error("Échec de l'activation"),
   });
 
-  const publicUrl = `${window.location.origin}/m/${project.slug}`;
+  // "/faire-part/", pas "/m/" — la vraie route publique (cf. App.tsx). Le
+  // "/m/" affiché ici jusqu'au 29/08/2026 était une 404 pour tout vrai
+  // client qui suivait ce lien ou scannait le QR code.
+  const publicUrl = `${window.location.origin}/faire-part/${project.slug}`;
   const delivered = project.status === "DELIVERED";
 
   return (
