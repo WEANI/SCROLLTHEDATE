@@ -217,8 +217,8 @@ export default function Commander() {
       // commander en invité sur une adresse déjà rattachée à un compte, sinon
       // n'importe qui accéderait à l'espace d'autrui : on invite à se
       // connecter, en conservant le panier.
-      const code = (err as { data?: { code?: string } })?.data?.code
-      if (code === 'CONFLICT') {
+      const errData = (err as { data?: { code?: string; httpStatus?: number } })?.data
+      if (errData?.code === 'CONFLICT' || errData?.httpStatus === 409) {
         saveDraft()
         setAccountExists(true)
         setPayError(null)
@@ -541,12 +541,19 @@ export default function Commander() {
 
                   <motion.button
                     type="submit"
-                    disabled={preparing || authLoading}
+                    // Volontairement PAS désactivé pendant `authLoading` :
+                    // commander ne demande plus de compte, l'état de connexion
+                    // n'est donc plus un prérequis. Le 31/08/2026, une réponse
+                    // anormalement lente de auth.me (jusqu'à 186 s côté
+                    // Supabase) a rendu ce bouton inerte avec un curseur
+                    // d'attente — un client ne pouvait plus payer du tout, pour
+                    // une requête dont le paiement n'a pas besoin.
+                    disabled={preparing}
                     whileHover={preparing ? undefined : { y: -2 }}
                     whileTap={preparing ? undefined : { scale: 0.98 }}
                     className={cn(
                       'mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-terracotta-500 text-[15px] font-semibold text-white transition-colors hover:bg-terracotta-400',
-                      (preparing || authLoading) && 'cursor-wait opacity-80',
+                      preparing && 'cursor-wait opacity-80',
                     )}
                   >
                     {preparing ? (

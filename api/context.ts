@@ -3,6 +3,9 @@ import type { User } from "@db/schema";
 import { supabaseAdmin } from "./lib/supabaseAdmin";
 import { findUserByAuthId, upsertUser } from "./queries/users";
 
+/** Au-delà, Supabase Auth est considéré injoignable (cf. authenticateRequest). */
+const AUTH_TIMEOUT_MS = 10_000;
+
 export type TrpcContext = {
   req: Request;
   resHeaders: Headers;
@@ -21,7 +24,23 @@ async function authenticateRequest(headers: Headers): Promise<User | undefined> 
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
   if (!token) return undefined;
 
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  // Garde-fou de latence : le 31/08/2026, getUser a mis jusqu'à 186 s à
+  // répondre (incident passager côté Supabase Auth), immobilisant les
+  // requêtes et, côté client, gelant l'interface — un acheteur ne pouvait
+  // plus rien faire. Mieux vaut échouer vite et être considéré comme non
+  // connecté que suspendre la requête indéfiniment.
+  const timeout = new Promise<null>((resolve) =>
+    setTimeout(() => resolve(null), AUTH_TIMEOUT_MS),
+  );
+  const result = await Promise.race([supabaseAdmin.auth.getUser(token), timeout]);
+  if (!result) {
+    console.warn(
+      `[auth] getUser n'a pas répondu en ${AUTH_TIMEOUT_MS} ms — requête traitée comme non authentifiée`,
+    );
+    return undefined;
+  }
+
+  const { data, error } = result;
   if (error || !data.user) return undefined;
 
   const authUser = data.user;
