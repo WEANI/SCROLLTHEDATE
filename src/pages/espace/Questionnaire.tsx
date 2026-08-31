@@ -35,7 +35,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import {
+  formatDate,
   formatDurationLong,
+  formatTime,
   WHATSAPP_URL,
 } from '@/components/espace/utils'
 import VoiceRecorder from '@/components/espace/VoiceRecorder'
@@ -809,6 +811,63 @@ export default function Questionnaire() {
   }
   const completionPct = getQuery.data?.questionnaire?.completionPct ?? 0
 
+  // --- Validation du questionnaire -------------------------------------------
+  // L'autosave enregistre en continu, ce qui ne dit rien de l'intention du
+  // client. Cette validation explicite est ce qui prévient le studio que le
+  // dossier est prêt (notification admin + email). Le questionnaire reste
+  // modifiable ensuite : on propose alors de revalider.
+  const submittedAt = getQuery.data?.questionnaire?.submittedAt ?? null
+  const [submitFeedback, setSubmitFeedback] = useState<string | null>(null)
+
+  const submitMutation = trpc.questionnaire.submit.useMutation({
+    onSuccess: async () => {
+      setSubmitFeedback('Merci ! Nous avons été prévenus, la production peut démarrer.')
+      await utils.questionnaire.get.invalidate()
+    },
+    onError: (err) =>
+      setSubmitFeedback(err.message || "La validation n'a pas pu être enregistrée."),
+  })
+
+  const saveDraft = useCallback(() => {
+    setSubmitFeedback(null)
+    flushSave()
+    // Rien à enregistrer (tout est déjà sauvegardé) : on le dit quand même,
+    // sinon le bouton semble sans effet.
+    setSaveState('saved')
+    setSavedAt(new Date())
+  }, [flushSave])
+
+  const missingRequired = useMemo(
+    () =>
+      questions.filter((q) => {
+        if (!q.required) return false
+        const v = answers[q.id]
+        if (v === undefined || v === null) return true
+        if (typeof v === 'string') return v.trim().length === 0
+        if (Array.isArray(v)) return v.length === 0
+        return false
+      }).length,
+    [questions, answers],
+  )
+
+  const handleSubmitQuestionnaire = useCallback(() => {
+    setSubmitFeedback(null)
+    flushSave()
+    if (completionPct < 100) {
+      const details = [
+        `Votre questionnaire est complété à ${completionPct} %.`,
+        missingRequired > 0
+          ? `${missingRequired} question${missingRequired > 1 ? 's' : ''} obligatoire${missingRequired > 1 ? 's' : ''} sans réponse.`
+          : '',
+        'Vous pouvez valider maintenant et compléter plus tard — souhaitez-vous continuer ?',
+      ]
+        .filter(Boolean)
+        .join('\n\n')
+      if (!window.confirm(details)) return
+    }
+    submitMutation.mutate()
+  }, [flushSave, completionPct, missingRequired, submitMutation])
+
   // --- Médiathèque ------------------------------------------------------------
   const [mediaFilter, setMediaFilter] = useState<'all' | 'photo' | 'video'>('all')
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; filename: string } | null>(null)
@@ -1066,11 +1125,46 @@ export default function Questionnaire() {
                   Suivant <ChevronRight size={15} />
                 </button>
               ) : (
-                <StatusBadge tone={completionPct >= 100 ? 'success' : 'terracotta'}>
-                  {completionPct >= 100 ? 'Questionnaire complété ✓' : `Complété à ${completionPct} %`}
-                </StatusBadge>
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  <StatusBadge tone={completionPct >= 100 ? 'success' : 'terracotta'}>
+                    {completionPct >= 100 ? 'Complété ✓' : `Complété à ${completionPct} %`}
+                  </StatusBadge>
+                  <button
+                    type="button"
+                    onClick={saveDraft}
+                    disabled={saveMutation.isPending}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-5 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-100 disabled:opacity-50"
+                  >
+                    {saveMutation.isPending ? 'Enregistrement…' : 'Enregistrer le brouillon'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSubmitQuestionnaire}
+                    disabled={submitMutation.isPending}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-terracotta-500 px-6 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97] disabled:opacity-60"
+                  >
+                    {submitMutation.isPending
+                      ? 'Envoi…'
+                      : submittedAt
+                        ? 'Revalider le questionnaire'
+                        : 'Valider le questionnaire'}
+                  </button>
+                </div>
               )}
             </div>
+
+            {step === 4 && submitFeedback && (
+              <p className="mt-3 text-right text-[12px] font-medium text-[#4d7a62]">
+                {submitFeedback}
+              </p>
+            )}
+
+            {step === 4 && submittedAt && (
+              <p className="mt-2 text-right text-[12px] text-neutral-500">
+                Validé le {formatDate(submittedAt)} à {formatTime(submittedAt)}. Vous pouvez
+                encore modifier vos réponses — pensez à revalider pour nous prévenir.
+              </p>
+            )}
           </SectionCard>
 
           {/* Note vocale */}

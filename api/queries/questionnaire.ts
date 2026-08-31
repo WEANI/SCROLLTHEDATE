@@ -38,6 +38,20 @@ export async function upsertQuestionnaire(
     });
 }
 
+/**
+ * Marque le questionnaire comme validé par le client, et renvoie la ligne
+ * à jour. Réécrit la date à chaque validation : un client qui corrige une
+ * réponse puis revalide doit produire une nouvelle alerte côté studio.
+ */
+export async function markQuestionnaireSubmitted(projectId: number) {
+  const rows = await getDb()
+    .update(questionnaires)
+    .set({ submittedAt: new Date() })
+    .where(eq(questionnaires.projectId, projectId))
+    .returning();
+  return rows.at(0);
+}
+
 export async function findActiveFormTemplate() {
   return getDb().query.formTemplates.findFirst({
     where: eq(formTemplates.active, true),

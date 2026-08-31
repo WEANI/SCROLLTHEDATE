@@ -214,6 +214,12 @@ export const questionnaires = pgTable(
     // Réponses indexées par id de question : { [questionId]: value }
     answers: jsonb("answers"),
     completionPct: integer("completionPct").default(0).notNull(),
+    // Validation explicite par le client (bouton « Valider le questionnaire »).
+    // Nul tant qu'il n'a pas validé : le questionnaire s'enregistre en
+    // autosave à chaque frappe, ce qui ne dit pas s'il se considère prêt.
+    // Le client garde la main après validation — il peut corriger puis
+    // revalider, et cette date est alors réécrite.
+    submittedAt: timestamp("submittedAt", { withTimezone: true }),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
       .notNull()

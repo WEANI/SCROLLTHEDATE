@@ -6,6 +6,7 @@ import {
   findActiveFormTemplate,
   findAllFormTemplates,
   findQuestionnaireByProject,
+  markQuestionnaireSubmitted,
   saveFormTemplate,
   upsertQuestionnaire,
 } from "./queries/questionnaire";
@@ -13,7 +14,11 @@ import {
   actorOf,
   findCurrentProject,
   logAudit,
+  notifyAdmins,
 } from "./queries/helpers";
+import { env } from "./lib/env";
+import { sendEmail } from "./lib/email";
+import { adminAlertEmail } from "./lib/emailTemplates";
 import {
   findAllProjects,
   updateProjectStatus,
@@ -148,6 +153,60 @@ export const questionnaireRouter = createRouter({
       }
       return { completionPct };
     }),
+
+  /**
+   * Validation explicite par le client : « j'ai fini, vous pouvez lancer la
+   * production ». Distinct de `save`, qui tourne en autosave à chaque frappe
+   * et ne dit rien de l'intention du client.
+   *
+   * Volontairement autorisée même à moins de 100 % (beaucoup de questions
+   * sont facultatives) — le taux de complétion part dans l'alerte pour que
+   * le studio voie tout de suite s'il manque des éléments. Le questionnaire
+   * reste modifiable ensuite : le client peut corriger puis revalider, ce
+   * qui réémet une alerte.
+   */
+  submit: authedQuery.mutation(async ({ ctx }) => {
+    const project = await requireCurrentProject(ctx.user.id);
+    const existing = await findQuestionnaireByProject(project.id);
+    if (!existing) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Répondez à au moins une question avant de valider.",
+      });
+    }
+
+    const updated = await markQuestionnaireSubmitted(project.id);
+    const completionPct = updated?.completionPct ?? existing.completionPct;
+    const isResubmission = Boolean(existing.submittedAt);
+
+    await logAudit(project.id, actorOf(ctx.user), "questionnaire.submitted", {
+      completionPct,
+      isResubmission,
+    });
+    await notifyAdmins("questionnaire.submitted", {
+      projectId: project.id,
+      slug: project.slug,
+      completionPct,
+    });
+
+    if (env.ownerEmail) {
+      await sendEmail(
+        adminAlertEmail({
+          to: env.ownerEmail,
+          title: isResubmission
+            ? "Questionnaire mis à jour"
+            : "Questionnaire validé — prêt pour la production",
+          detail:
+            completionPct >= 100
+              ? "Toutes les réponses sont là, la vidéo du faire-part peut être lancée."
+              : `Validé par le client à ${completionPct} % de complétion — vérifiez les réponses manquantes avant de lancer la production.`,
+          projectSlug: project.slug,
+        }),
+      );
+    }
+
+    return { submittedAt: updated?.submittedAt ?? new Date(), completionPct };
+  }),
 
   // `?? null` : findActiveFormTemplate (findFirst) renvoie `undefined` tant
   // qu'aucun template n'est actif — React Query v5 interdit qu'une query se

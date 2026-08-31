@@ -41,6 +41,7 @@ const NOTIF_LABEL: Record<string, string> = {
   "video.approved": "Vidéo approuvée",
   "video.changes_requested": "Retours sur la vidéo",
   "order.paid": "Nouvelle commande",
+  "questionnaire.submitted": "Questionnaire validé",
 };
 
 function notifLabel(type: string) {
@@ -62,6 +63,7 @@ const NOTIF_TAB: Partial<Record<string, TabId>> = {
   "scenario.changes_requested": "studio",
   "video.approved": "video",
   "video.changes_requested": "video",
+  "questionnaire.submitted": "questionnaire",
 };
 
 /** Cloche de notifications (données réelles via notifications.listMine). */
