@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
@@ -23,6 +23,7 @@ import {
 } from '@/components/espace/shared'
 import {
   formatTime,
+  notificationHref,
   notificationLabel,
 } from '@/components/espace/utils'
 
@@ -68,6 +69,7 @@ function breadcrumb(pathname: string): string[] {
 
 function NotificationsBell() {
   const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
   const utils = trpc.useUtils()
   const { isAuthenticated } = useAuth()
   const { data: notifications } = trpc.notifications.listMine.useQuery(undefined, {
@@ -75,6 +77,9 @@ function NotificationsBell() {
     refetchInterval: 30_000,
   })
   const markAllRead = trpc.notifications.markAllRead.useMutation({
+    onSuccess: () => utils.notifications.listMine.invalidate(),
+  })
+  const markRead = trpc.notifications.markRead.useMutation({
     onSuccess: () => utils.notifications.listMine.invalidate(),
   })
   const unread = (notifications ?? []).filter((n) => !n.readAt).length
@@ -130,11 +135,22 @@ function NotificationsBell() {
                 ) : (
                   (notifications ?? []).slice(0, 12).map((n) => {
                     const label = notificationLabel(n.type)
+                    const href = notificationHref(n.type)
                     return (
-                      <div
+                      <button
                         key={n.id}
+                        type="button"
+                        disabled={!href && Boolean(n.readAt)}
+                        onClick={() => {
+                          if (!n.readAt) markRead.mutate({ notificationId: n.id })
+                          if (href) {
+                            setOpen(false)
+                            navigate(href)
+                          }
+                        }}
                         className={cn(
-                          'flex gap-3 border-b border-neutral-200/60 px-4 py-3 last:border-0',
+                          'flex w-full gap-3 border-b border-neutral-200/60 px-4 py-3 text-left last:border-0',
+                          href && 'transition-colors hover:bg-neutral-100',
                           !n.readAt && 'bg-terracotta-500/[0.04]',
                         )}
                       >
@@ -153,7 +169,7 @@ function NotificationsBell() {
                             {formatTime(n.createdAt)}
                           </p>
                         </div>
-                      </div>
+                      </button>
                     )
                   })
                 )}

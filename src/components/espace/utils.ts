@@ -142,7 +142,32 @@ export function notificationLabel(type: string): { title: string; detail?: strin
       return { title: 'Votre projet avance', detail: 'Une nouvelle étape vient de commencer' }
     case 'message.received':
       return { title: 'Nouveau message de Scroll The Date', detail: 'Élise vous a répondu' }
+    case 'order.confirmed':
+      // Sans ce cas, un client qui venait de payer voyait « Notification »
+      // suivi du code technique brut « order.confirmed ».
+      return { title: 'Commande confirmée', detail: 'Votre paiement a bien été reçu' }
     default:
       return { title: 'Notification', detail: type }
+  }
+}
+
+/**
+ * Page de l'espace client vers laquelle mène chaque notification. Les
+ * libellés ci-dessus annonçaient déjà la destination (« À découvrir dans
+ * Projet & scénarios ») alors que rien n'était cliquable — le clic y mène
+ * désormais réellement.
+ */
+export function notificationHref(type: string): string | null {
+  switch (type) {
+    case 'scenarios.sent':
+    case 'video.sent':
+    case 'project.status_changed':
+      return '/espace/projet'
+    case 'message.received':
+      return '/espace/messages'
+    case 'order.confirmed':
+      return '/espace/commandes'
+    default:
+      return null
   }
 }
