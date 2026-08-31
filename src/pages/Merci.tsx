@@ -227,8 +227,10 @@ export default function Merci() {
             className="mx-auto mt-8 max-w-lg text-[16px] leading-[1.65] text-white/60"
           >
             Votre place est réservée dans notre planning de production. Un email de confirmation
-            vient de vous être envoyé avec le récapitulatif de votre commande — votre espace est
-            accessible dès maintenant ci-dessous.
+            vient de vous être envoyé avec le récapitulatif de votre commande
+            {isAuthenticated
+              ? ' — votre espace est accessible dès maintenant ci-dessous.'
+              : " — il contient le lien pour activer votre espace en choisissant votre mot de passe."}
           </motion.p>
         </div>
       </section>
@@ -248,11 +250,11 @@ export default function Merci() {
           <StepCard
             number="1"
             icon={<UserRound size={20} className="text-terracotta-300" aria-hidden />}
-            title="Créez votre espace"
+            title="Activez votre espace"
             text={
               isAuthenticated
                 ? 'Votre espace est actif : questionnaire, scénarios, RSVP, tout est centralisé ici.'
-                : 'Connectez-vous ou créez votre compte pour accéder à votre espace : questionnaire, scénarios, RSVP.'
+                : "Ouvrez l'email de confirmation et cliquez sur « Activer mon espace » pour choisir votre mot de passe. Vous y retrouverez questionnaire, scénarios et RSVP."
             }
           >
             {isAuthenticated ? (
@@ -261,13 +263,10 @@ export default function Merci() {
                 Espace actif{user?.name ? ` — ${user.name}` : ''}
               </span>
             ) : (
-              <Link
-                to={LOGIN_PATH}
-                className="inline-flex items-center gap-2 rounded-full border border-anthracite-700 px-6 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:border-terracotta-500 hover:text-terracotta-300"
-              >
-                Créer mon espace
-                <ArrowRight size={14} aria-hidden />
-              </Link>
+              <span className="inline-flex items-center gap-2 rounded-full border border-anthracite-700 px-5 py-2.5 text-[13px] font-semibold text-white/70">
+                <Mail size={15} className="text-terracotta-500" aria-hidden />
+                Lien envoyé par email
+              </span>
             )}
           </StepCard>
 

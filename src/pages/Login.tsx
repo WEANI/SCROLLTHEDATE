@@ -56,8 +56,11 @@ export default function Login() {
         return;
       }
       // forgot
+      // Renvoyait vers /login, qui n'offre aucun moyen de saisir un nouveau
+      // mot de passe : le lien ouvrait une session et laissait l'utilisateur
+      // sans issue. /definir-mot-de-passe existe désormais pour ça.
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/definir-mot-de-passe`,
       });
       if (error) throw error;
       setInfo("Email de réinitialisation envoyé — vérifiez votre boîte mail.");

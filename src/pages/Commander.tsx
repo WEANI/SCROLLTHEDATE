@@ -82,7 +82,9 @@ const PHONE_RE = /^[+0-9 ().-]{8,}$/
 
 export default function Commander() {
   const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
+  // Plus de useNavigate ici : la redirection vers /login au moment de payer a
+  // disparu avec le checkout invité. StripePaymentForm garde le sien pour
+  // aller vers /merci une fois le paiement confirmé.
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { products, options } = usePricing()
 
@@ -109,6 +111,9 @@ export default function Commander() {
   const [bump, setBump] = useState(0)
   const [preparing, setPreparing] = useState(false)
   const [payError, setPayError] = useState<string | null>(null)
+  // Email déjà rattaché à un compte : on affiche une invitation à se
+  // connecter plutôt qu'une erreur sèche (le panier est conservé).
+  const [accountExists, setAccountExists] = useState(false)
   const [recapOpen, setRecapOpen] = useState(false)
 
   // Rempli une fois orders.createCheckout appelé : fait apparaître le
@@ -186,13 +191,13 @@ export default function Commander() {
       setBump((b) => b + 1)
       return
     }
-    if (!isAuthenticated) {
-      saveDraft()
-      navigate(LOGIN_PATH, { state: { from: '/commander' } })
-      return
-    }
+    // Plus de redirection vers /login ici : le compte est désormais créé
+    // APRÈS le paiement (checkout invité — cf. orders.createCheckout et
+    // api/lib/guestAccount.ts). L'email saisi ci-dessus suffit ; le client
+    // choisira son mot de passe via l'email de confirmation.
     setPreparing(true)
     setPayError(null)
+    setAccountExists(false)
     try {
       const result = await checkout.mutateAsync({
         product: productId,
@@ -200,6 +205,7 @@ export default function Commander() {
         names: `${prenom1.trim()} & ${prenom2.trim()}`,
         weddingDate: weddingDate ? new Date(`${weddingDate}T12:00:00`) : undefined,
         venue: venue.trim() || undefined,
+        email: email.trim(),
       })
       window.sessionStorage.removeItem(DRAFT_KEY)
       if (!result.clientSecret) {
@@ -207,7 +213,18 @@ export default function Commander() {
       }
       setCheckoutResult({ orderId: result.orderId, clientSecret: result.clientSecret })
     } catch (err) {
-      setPayError(err instanceof Error ? err.message : 'Une erreur est survenue.')
+      // CONFLICT = un compte existe déjà pour cet email. On ne peut pas
+      // commander en invité sur une adresse déjà rattachée à un compte, sinon
+      // n'importe qui accéderait à l'espace d'autrui : on invite à se
+      // connecter, en conservant le panier.
+      const code = (err as { data?: { code?: string } })?.data?.code
+      if (code === 'CONFLICT') {
+        saveDraft()
+        setAccountExists(true)
+        setPayError(null)
+      } else {
+        setPayError(err instanceof Error ? err.message : 'Une erreur est survenue.')
+      }
     } finally {
       setPreparing(false)
     }
@@ -264,10 +281,10 @@ export default function Commander() {
           >
             <LogIn size={18} className="mt-0.5 shrink-0 text-terracotta-500" />
             <p>
-              Aucun compte à créer à l'avance : une simple connexion vous sera demandée au moment du
-              paiement, et vos choix seront conservés.{' '}
+              Aucun compte à créer : votre espace est activé après le paiement, avec le mot de
+              passe de votre choix.{' '}
               <Link to={LOGIN_PATH} className="font-semibold text-terracotta-500 underline-offset-4 hover:underline">
-                Se connecter maintenant
+                Déjà client ? Se connecter
               </Link>
             </p>
           </motion.div>
@@ -488,6 +505,28 @@ export default function Commander() {
                   </div>
 
                   <AnimatePresence>
+                    {accountExists && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="mt-4 flex items-start gap-3 rounded-xl border border-terracotta-500/30 bg-terracotta-500/5 px-5 py-4 text-[14px] leading-[1.55] text-ink"
+                      >
+                        <LogIn size={18} className="mt-0.5 shrink-0 text-terracotta-500" />
+                        <p>
+                          Un compte existe déjà avec l'adresse <strong>{email.trim()}</strong>.
+                          Connectez-vous pour finaliser cette commande — votre panier est
+                          conservé.{' '}
+                          <Link
+                            to={LOGIN_PATH}
+                            state={{ from: '/commander' }}
+                            className="font-semibold text-terracotta-500 underline-offset-4 hover:underline"
+                          >
+                            Se connecter
+                          </Link>
+                        </p>
+                      </motion.div>
+                    )}
                     {payError && (
                       <motion.p
                         initial={{ opacity: 0, y: 8 }}

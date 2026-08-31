@@ -62,11 +62,21 @@ export function orderConfirmationEmail(params: {
   coupleNames: string;
   orderRef: string;
   amountCents: number;
+  /**
+   * Checkout invité : lien à usage unique pour choisir son mot de passe et
+   * activer son espace (cf. api/lib/guestAccount.ts). Null/absent quand le
+   * client était déjà connecté au moment de la commande — l'email affiche
+   * alors simplement le lien vers l'espace.
+   */
+  setPasswordUrl?: string | null;
 }): EmailMessage {
   const amount = (params.amountCents / 100).toLocaleString("fr-FR", {
     style: "currency",
     currency: "EUR",
   });
+  const isGuest = Boolean(params.setPasswordUrl);
+  const ctaUrl = params.setPasswordUrl ?? espaceUrl();
+  const ctaLabel = isGuest ? "Activer mon espace" : "Accéder à mon espace";
   const subject = `Commande confirmée — ${params.orderRef}`;
   const html = wrap({
     preheader: `Votre commande ${params.orderRef} est confirmée (${amount}).`,
@@ -75,20 +85,32 @@ export function orderConfirmationEmail(params: {
       <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:400;font-size:26px;line-height:1.2;color:${BRAND.ink};">Merci${params.coupleNames ? `, ${params.coupleNames}` : ""} !</h1>
       <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:${BRAND.inkSoft};">Référence : <strong style="color:${BRAND.ink};">${params.orderRef}</strong> — ${amount}</p>
       <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:${BRAND.inkSoft};">
-        Votre place est réservée dans notre planning de production. Prochaine étape : le questionnaire,
-        pour nous raconter votre histoire et les infos pratiques du jour J.
+        ${
+          isGuest
+            ? "Votre place est réservée dans notre planning de production. Dernière étape pour activer votre espace : choisissez votre mot de passe. Vous pourrez ensuite remplir le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J."
+            : "Votre place est réservée dans notre planning de production. Prochaine étape : le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J."
+        }
       </p>
-      ${button("Accéder à mon espace", espaceUrl())}
+      ${button(ctaLabel, ctaUrl)}
+      ${
+        isGuest
+          ? `<p style="margin:20px 0 0;font-size:12px;line-height:1.6;color:${BRAND.inkSoft};">Ce lien est personnel et à usage unique. S'il a expiré, utilisez « Mot de passe oublié » depuis la page de connexion avec cette même adresse email.</p>`
+          : ""
+      }
     `,
   });
   const text = `Merci${params.coupleNames ? `, ${params.coupleNames}` : ""} !
 
 Commande confirmée — ${params.orderRef} (${amount}).
 
-Votre place est réservée dans notre planning de production. Prochaine étape : le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J.
+${
+  isGuest
+    ? "Votre place est réservée dans notre planning de production. Dernière étape pour activer votre espace : choisissez votre mot de passe. Vous pourrez ensuite remplir le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J."
+    : "Votre place est réservée dans notre planning de production. Prochaine étape : le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J."
+}
 
-Accéder à mon espace : ${espaceUrl()}
-
+${ctaLabel} : ${ctaUrl}
+${isGuest ? "\nCe lien est personnel et à usage unique. S'il a expiré, utilisez « Mot de passe oublié » depuis la page de connexion avec cette même adresse email.\n" : ""}
 — Scroll The Date`;
   return { to: params.to, subject, html, text };
 }

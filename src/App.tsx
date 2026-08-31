@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router'
 import Layout from '@/components/Layout'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
+import DefinirMotDePasse from '@/pages/DefinirMotDePasse'
 import NotFound from '@/pages/NotFound'
 import Offres from '@/pages/Offres'
 import Commander from '@/pages/Commander'
@@ -58,6 +59,9 @@ export default function App() {
 
       {/* Login — clair, hors Layout public sombre (comme /espace et /admin) */}
       <Route path="/login" element={<Login />} />
+      {/* Atterrissage des liens Supabase "recovery" : activation d'espace
+          après un checkout invité, et mot de passe oublié. */}
+      <Route path="/definir-mot-de-passe" element={<DefinirMotDePasse />} />
 
       {/* Faire-part client livrés — hors Layout public (pas de Navbar/Footer
           marketing devant les invités). /edwige-wilfried et /lea-olivier

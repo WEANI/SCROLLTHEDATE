@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
-import { adminQuery, authedQuery, createRouter } from "./middleware";
+import { adminQuery, authedQuery, createRouter, publicQuery } from "./middleware";
 import {
   computeAmount,
   createOrder,
@@ -12,7 +12,9 @@ import {
   updateOrderPaymentStatus,
 } from "./queries/orders";
 import { actorOf, logAudit } from "./queries/helpers";
+import { createGuestUser, findUserByEmail } from "./queries/users";
 import { stripe, isStripeConfigured } from "./lib/stripe";
+import { allowRequest, clientIp } from "./lib/rateLimit";
 
 export const productEnum = z.enum(["FAIRE_PART", "SAVE_THE_DATE"]);
 export const projectStatusEnum = z.enum([
@@ -44,7 +46,7 @@ export const ordersRouter = createRouter({
   // `clientSecret` sert au frontend à monter Stripe Elements et à confirmer
   // le paiement directement avec Stripe, sans jamais faire transiter les
   // données de carte par nos serveurs.
-  createCheckout: authedQuery
+  createCheckout: publicQuery
     .input(
       z.object({
         product: productEnum,
@@ -52,6 +54,10 @@ export const ordersRouter = createRouter({
         names: z.string().max(255).optional(), // ex. "Anna & Théo"
         weddingDate: z.coerce.date().optional(),
         venue: z.string().max(500).optional(),
+        // Obligatoire pour un acheteur non connecté (checkout invité) :
+        // c'est l'adresse à laquelle le compte sera créé après paiement.
+        // Ignoré si l'appelant est déjà authentifié — son compte fait foi.
+        email: z.string().email().max(320).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -62,6 +68,46 @@ export const ordersRouter = createRouter({
             "Le paiement en ligne n'est pas encore configuré. Contactez-nous pour finaliser votre commande.",
         });
       }
+
+      // Procédure publique depuis le passage au checkout invité : sans compte
+      // obligatoire, plus rien n'empêchait d'enchaîner les PaymentIntents.
+      if (!allowRequest(`checkout:${clientIp(ctx.req.headers)}`, 10, 60_000)) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "Trop de tentatives. Patientez une minute avant de réessayer.",
+        });
+      }
+
+      // Utilisateur de la commande : le compte connecté, ou une ligne `users`
+      // créée à la volée pour l'invité (sans compte Supabase Auth — celui-ci
+      // n'est créé qu'après paiement confirmé, cf. webhooks/stripe.ts).
+      let user = ctx.user;
+      let createdGuest = false;
+      if (!user) {
+        const email = input.email?.trim().toLowerCase();
+        if (!email) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Une adresse email est nécessaire pour finaliser la commande.",
+          });
+        }
+        const existing = await findUserByEmail(email);
+        if (existing?.authUserId) {
+          // Un vrai compte existe déjà pour cette adresse : laisser commander
+          // en invité reviendrait à offrir l'accès à l'espace d'autrui à
+          // quiconque connaît son email.
+          throw new TRPCError({
+            code: "CONFLICT",
+            message:
+              "Un compte existe déjà avec cette adresse. Connectez-vous pour finaliser votre commande.",
+          });
+        }
+        // `existing` sans authUserId = invité déjà passé par ici (paiement
+        // abandonné, puis nouvelle tentative) : on réutilise sa ligne.
+        user = existing ?? (await createGuestUser({ email, name: input.names ?? null }));
+        createdGuest = !existing;
+      }
+
       const { amountCents, options } = await computeAmount(
         input.product,
         input.optionIds,
@@ -79,31 +125,36 @@ export const ordersRouter = createRouter({
         // rouvrir la liste automatique.
         payment_method_types: ["card"],
         metadata: {
-          userId: String(ctx.user.id),
+          userId: String(user.id),
           product: input.product,
           names: input.names ?? "",
         },
       });
 
       const orderId = await createOrder({
-        userId: ctx.user.id,
+        userId: user.id,
         product: input.product,
         options,
         amountCents,
         paymentStatus: "pending",
         stripeRef: paymentIntent.id,
       });
-      const slugBase = slugify(input.names ?? ctx.user.name ?? "projet") || "projet";
+      const slugBase = slugify(input.names ?? user.name ?? "projet") || "projet";
       const projectId = await createProject({
         orderId,
-        userId: ctx.user.id,
+        userId: user.id,
         status: "ONBOARDING",
         slug: `${slugBase}-${nanoid(6).toLowerCase()}`,
         weddingDate: input.weddingDate ?? null,
         venue: input.venue ?? null,
         progress: 5,
       });
-      await logAudit(projectId, actorOf(ctx.user), "order.created", {
+      if (createdGuest) {
+        await logAudit(projectId, "system", "user.guest_created", {
+          userId: user.id,
+        });
+      }
+      await logAudit(projectId, actorOf(user), "order.created", {
         orderId,
         product: input.product,
         amountCents,

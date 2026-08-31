@@ -10,6 +10,7 @@ import {
 import { logAudit, notifyUser } from "../queries/helpers";
 import { sendEmail } from "../lib/email";
 import { orderConfirmationEmail } from "../lib/emailTemplates";
+import { provisionAccountForGuest } from "../lib/guestAccount";
 
 /** Même format que formatOrderNumber côté client (src/components/commerce/pricing.ts) — dupliqué à dessein, ce fichier reste pur frontend. */
 function formatOrderNumber(orderId: number, date: Date): string {
@@ -74,12 +75,17 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
 
       const user = await findUserById(order.userId);
       if (user?.email) {
+        // Checkout invité : le compte n'est créé qu'ici, une fois le paiement
+        // réellement encaissé. `setPasswordUrl` est null pour un client déjà
+        // connecté au moment de la commande — l'email reste alors inchangé.
+        const setPasswordUrl = await provisionAccountForGuest(user);
         await sendEmail(
           orderConfirmationEmail({
             to: user.email,
             coupleNames: pi.metadata?.names ?? "",
             orderRef: formatOrderNumber(order.id, order.createdAt),
             amountCents: order.amountCents,
+            setPasswordUrl,
           }),
         );
       }
