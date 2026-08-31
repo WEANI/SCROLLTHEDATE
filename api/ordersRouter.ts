@@ -70,10 +70,14 @@ export const ordersRouter = createRouter({
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amountCents,
         currency: "eur",
-        // automatic_payment_methods plutôt qu'un payment_method_types figé
-        // en dur : les moyens de paiement activables évoluent depuis le
-        // tableau de bord Stripe, sans redéploiement.
-        automatic_payment_methods: { enabled: true },
+        // Carte uniquement : `automatic_payment_methods: { enabled: true }`
+        // faisait apparaître tous les moyens de paiement activés sur le
+        // compte Stripe (Klarna, Bancontact, Amazon Pay, MB WAY…), avec
+        // Klarna pré-sélectionné par défaut au lieu de la carte — jamais
+        // voulu pour ce produit. Si un autre moyen de paiement est
+        // souhaité un jour, l'ajouter explicitement ici plutôt que de
+        // rouvrir la liste automatique.
+        payment_method_types: ["card"],
         metadata: {
           userId: String(ctx.user.id),
           product: input.product,

@@ -580,8 +580,7 @@ function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCent
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleConfirm(e: FormEvent) {
-    e.preventDefault()
+  async function handleConfirm() {
     if (!stripe || !elements || submitting) return
     setSubmitting(true)
     setError(null)
@@ -617,7 +616,15 @@ function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCent
   }
 
   return (
-    <form onSubmit={handleConfirm} className="mt-4 flex flex-col gap-4">
+    // `<div>` et non `<form>` : ce composant est rendu à l'intérieur du
+    // <form onSubmit={handlePrepare}> de Commander.tsx (bloc "04 Paiement").
+    // Un <form> imbriqué dans un <form> est du HTML invalide — le clic sur
+    // "Payer" finissait par déclencher une VRAIE soumission native du
+    // formulaire (rechargement complet vers /commander, sans passer par
+    // handleConfirm ni par Stripe) au lieu du paiement, un bug confirmé en
+    // reproduction live le 31/08/2026. Le bouton plus bas est donc
+    // type="button" + onClick, pas type="submit".
+    <div className="mt-4 flex flex-col gap-4">
       <div className="rounded-2xl border border-neutral-200 bg-white p-5">
         <p className="mb-4 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
           <CreditCard size={16} className="text-terracotta-500" />
@@ -643,7 +650,8 @@ function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCent
       </AnimatePresence>
 
       <motion.button
-        type="submit"
+        type="button"
+        onClick={handleConfirm}
         disabled={!stripe || submitting}
         whileHover={submitting ? undefined : { y: -2 }}
         whileTap={submitting ? undefined : { scale: 0.98 }}
@@ -661,7 +669,7 @@ function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCent
           <>Payer {formatEuros(totalCents)}</>
         )}
       </motion.button>
-    </form>
+    </div>
   )
 }
 
