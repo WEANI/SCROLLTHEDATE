@@ -766,6 +766,14 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
     typeof answers[QUESTIONNAIRE_KEYS.paletteAEviter] === "string"
       ? (answers[QUESTIONNAIRE_KEYS.paletteAEviter] as string).trim()
       : "";
+  // Couleur de fond exacte (champ `color` du questionnaire) : contrairement
+  // aux autres indications, c'est une valeur directement exploitable — d'où
+  // le bouton « Utiliser » ci-dessous, qui la reporte dans la palette.
+  const fondHint =
+    typeof answers[QUESTIONNAIRE_KEYS.paletteFond] === "string" &&
+    /^#[0-9a-fA-F]{6}$/.test(answers[QUESTIONNAIRE_KEYS.paletteFond] as string)
+      ? (answers[QUESTIONNAIRE_KEYS.paletteFond] as string).toLowerCase()
+      : "";
 
   const existingPalette = project.palette as BespokePaletteInput | null;
   const [mode, setMode] = useState<"light" | "dark">(modeHint);
@@ -834,10 +842,31 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
         <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
           Indications du client (questionnaire)
         </h3>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-4">
           <div>
             <p className="text-[11px] font-semibold text-neutral-500">Fond souhaité</p>
             <p className="text-[13px] font-medium">{modeHint === "dark" ? "Sombre" : "Clair"}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-neutral-500">Couleur de fond exacte</p>
+            {fondHint ? (
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-4 w-4 shrink-0 rounded-full border border-neutral-200"
+                  style={{ backgroundColor: fondHint }}
+                />
+                <span className="font-mono text-[12px] font-medium">{fondHint}</span>
+                <button
+                  type="button"
+                  onClick={() => setField("bg", fondHint)}
+                  className="text-[11px] text-terracotta-500 underline-offset-2 hover:underline"
+                >
+                  Utiliser
+                </button>
+              </div>
+            ) : (
+              <p className="text-[13px] font-medium">—</p>
+            )}
           </div>
           <div>
             <p className="text-[11px] font-semibold text-neutral-500">Couleur souhaitée</p>

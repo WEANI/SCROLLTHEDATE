@@ -26,6 +26,8 @@ export const QUESTIONNAIRE_KEYS = {
   photoOuverture: "q_mtafohy9_9",
   /** Toggle "Souhaitez-vous un fond sombre ?" — false/absent = clair, true = sombre. */
   paletteMode: "q_mtafopo1_10",
+  /** Couleur de fond exacte choisie par le client (type `color`, "#rrggbb"). */
+  paletteFond: "q_mtafcolorbg_13",
   palettePreference: "q_mtafoyxr_11",
   paletteAEviter: "q_mtafp82d_12",
 } as const;

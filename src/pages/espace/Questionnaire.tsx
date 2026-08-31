@@ -204,6 +204,121 @@ function InspirationButton({ questionId, onUse }: { questionId: string; onUse: (
  * Accepté sciemment plutôt que d'introduire une résolution par id
  * seulement pour ce type de question.
  */
+/**
+ * Champ couleur — pastille + code hexadécimal.
+ *
+ * Le type `color` était déjà proposé par l'éditeur admin
+ * (`QUESTION_TYPES`, "Pastilles couleur") mais n'avait aucun rendu ici :
+ * une question de ce type retombait sur un simple champ texte. Ajouté le
+ * 31/08/2026 pour la couleur de fond du faire-part, où l'on veut une
+ * valeur exacte et non une description à interpréter.
+ *
+ * La valeur stockée est toujours une chaîne "#rrggbb" en minuscules, pour
+ * que le Studio puisse la réutiliser telle quelle dans la palette.
+ */
+const SUGGESTIONS_COULEUR = [
+  { hex: '#1b1b1e', nom: 'Anthracite' },
+  { hex: '#2e4a3d', nom: 'Vert forêt' },
+  { hex: '#1f3448', nom: 'Bleu nuit' },
+  { hex: '#f5f1ea', nom: 'Lin' },
+  { hex: '#e8ded3', nom: 'Sable' },
+  { hex: '#c96f5a', nom: 'Terracotta' },
+]
+
+const HEX_VALIDE = /^#[0-9a-fA-F]{6}$/
+
+function ColorQuestionField({
+  question,
+  value,
+  onChange,
+}: {
+  question: Question
+  value: unknown
+  onChange: (v: unknown) => void
+}) {
+  const courant = typeof value === 'string' && HEX_VALIDE.test(value) ? value.toLowerCase() : ''
+  // Saisie libre tolérée pendant la frappe (« #2e4 » n'est pas encore
+  // valide) : on ne remonte la valeur que lorsqu'elle est complète.
+  const [saisie, setSaisie] = useState(courant)
+
+  useEffect(() => {
+    setSaisie(courant)
+  }, [courant])
+
+  const appliquer = (hex: string) => {
+    const normalise = hex.toLowerCase()
+    setSaisie(normalise)
+    if (HEX_VALIDE.test(normalise)) onChange(normalise)
+  }
+
+  return (
+    <FieldShell question={question}>
+      <div className="flex flex-wrap items-center gap-3">
+        <label
+          className="relative h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-full border border-neutral-200 shadow-inner"
+          style={{ backgroundColor: courant || '#ffffff' }}
+          title="Choisir une couleur"
+        >
+          <input
+            type="color"
+            value={courant || '#ffffff'}
+            onChange={(e) => appliquer(e.target.value)}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            aria-label={question.label}
+          />
+          {!courant && (
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[16px] text-neutral-500">
+              +
+            </span>
+          )}
+        </label>
+
+        <input
+          type="text"
+          value={saisie}
+          onChange={(e) => {
+            const v = e.target.value.startsWith('#') ? e.target.value : `#${e.target.value}`
+            appliquer(v)
+          }}
+          placeholder="#2e4a3d"
+          spellCheck={false}
+          className="h-11 w-36 rounded-xl border border-neutral-200 bg-white px-4 font-mono text-[14px] text-ink outline-none transition-colors placeholder:text-neutral-500 focus:border-terracotta-500"
+        />
+
+        {courant && (
+          <button
+            type="button"
+            onClick={() => {
+              setSaisie('')
+              onChange('')
+            }}
+            className="text-[12px] text-neutral-500 underline-offset-2 transition-colors hover:text-terracotta-500 hover:underline"
+          >
+            Effacer
+          </button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {SUGGESTIONS_COULEUR.map((c) => (
+          <button
+            key={c.hex}
+            type="button"
+            onClick={() => appliquer(c.hex)}
+            title={`${c.nom} — ${c.hex}`}
+            className={cn(
+              'h-7 w-7 rounded-full border-2 transition-transform hover:scale-110',
+              courant === c.hex ? 'border-terracotta-500' : 'border-neutral-200',
+            )}
+            style={{ backgroundColor: c.hex }}
+            aria-label={c.nom}
+          />
+        ))}
+      </div>
+    </FieldShell>
+  )
+}
+
 function PhotoQuestionField({
   question,
   value,
@@ -378,6 +493,10 @@ function QuestionField({
 
   if (question.type === 'photo') {
     return <PhotoQuestionField question={question} value={value} onChange={onChange} />
+  }
+
+  if (question.type === 'color') {
+    return <ColorQuestionField question={question} value={value} onChange={onChange} />
   }
 
   if (question.type === 'textarea') {
