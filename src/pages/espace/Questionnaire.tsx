@@ -91,7 +91,7 @@ const INSPIRATION: Record<string, string[]> = {
     '« La fois où on a dansé sous la pluie devant un restaurant fermé. »',
   ],
   'style.a_eviter': [
-    '« Rien de trop guindé ni de musique “mariage chic” à la harpe. »',
+    '« Rien de trop guindé, pas de clichés “mariage chic”. »',
     '« Pas de photos posées façon studio, on préfère le volé. »',
   ],
 }

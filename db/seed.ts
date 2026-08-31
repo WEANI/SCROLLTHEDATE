@@ -274,7 +274,7 @@ async function seed() {
         ordre: 3,
         title: "La marée montante",
         summary:
-          "Structure cinéma : ellipses, contre-jours, musique qui monte. Le plus ambitieux visuellement, le moins narratif.",
+          "Structure cinéma : ellipses, contre-jours, intensité qui monte au fil du défilement. Le plus ambitieux visuellement, le moins narratif.",
         moodboard: [
           { url: "/gallery-3.jpg", caption: "Confettis" },
           { url: "/gallery-4.jpg", caption: "Le voile" },
