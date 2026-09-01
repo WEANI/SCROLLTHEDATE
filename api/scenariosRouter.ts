@@ -16,7 +16,11 @@ import {
 import { findProjectById, updateProjectStatus } from "./queries/projects";
 import { findUserById } from "./queries/orders";
 import { sendEmail } from "./lib/email";
-import { scenariosReadyEmail, adminAlertEmail } from "./lib/emailTemplates";
+import {
+  adminAlertEmail,
+  scenariosReadyEmail,
+  scenariosUpdatedEmail,
+} from "./lib/emailTemplates";
 import { env } from "./lib/env";
 
 async function requireCurrentProject(userId: number) {
@@ -68,6 +72,13 @@ export const scenariosRouter = createRouter({
     .mutation(async ({ ctx, input }) => {
       const project = await findProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+      // Renvoi après retouches ou tout premier envoi ? `replaceScenarios`
+      // supprime les propositions existantes : il faut regarder AVANT.
+      // Sans cette distinction, un client qui avait demandé une
+      // modification recevait à l'identique « Vos scénarios sont prêts »,
+      // sans aucun signe qu'on avait tenu compte de sa demande.
+      const previous = await findScenariosByProject(input.projectId);
+      const isUpdate = previous.length > 0;
       await replaceScenarios(
         input.projectId,
         input.proposals.map((p) => ({
@@ -84,14 +95,15 @@ export const scenariosRouter = createRouter({
         count: input.proposals.length,
         titles: input.proposals.map((p) => p.title),
       });
-      await notifyUser(project.userId, "scenarios.sent", {
+      await notifyUser(project.userId, isUpdate ? "scenarios.updated" : "scenarios.sent", {
         projectId: project.id,
         slug: project.slug,
       });
       const owner = await findUserById(project.userId);
       if (owner?.email) {
+        const build = isUpdate ? scenariosUpdatedEmail : scenariosReadyEmail;
         await sendEmail(
-          scenariosReadyEmail({
+          build({
             to: owner.email,
             coupleNames: owner.name ?? "",
             slug: project.slug,

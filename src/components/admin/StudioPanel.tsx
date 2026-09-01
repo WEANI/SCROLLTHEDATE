@@ -56,6 +56,73 @@ function loadDrafts(projectId: number, existing: Project360["scenarioProposals"]
   });
 }
 
+/**
+ * Retours du client sur les scénarios, affichés dans l'éditeur.
+ *
+ * Deux sources complémentaires :
+ *  - le scénario lui-même (`status` + `clientComment`) pour la demande en
+ *    cours ;
+ *  - les événements d'audit pour l'HISTORIQUE, car renvoyer des scénarios
+ *    passe par `replaceScenarios`, qui les supprime et les recrée : le
+ *    `clientComment` est alors perdu, alors que l'audit, lui, subsiste.
+ *    Sans ça, le studio corrigeait sans plus voir ce qui lui avait été
+ *    demandé.
+ */
+function ClientFeedback({ project }: { project: Project360 }) {
+  const enCours = project.scenarioProposals.filter(
+    (s) => s.status === "changes_requested" && s.clientComment,
+  );
+
+  const historique = project.auditEvents
+    .filter((e) => e.action === "scenario.changes_requested")
+    .map((e) => {
+      const meta = (e.meta ?? {}) as { title?: string; comment?: string };
+      return { id: e.id, date: e.createdAt, titre: meta.title ?? "—", commentaire: meta.comment ?? "" };
+    })
+    .filter((h) => h.commentaire);
+
+  if (enCours.length === 0 && historique.length === 0) return null;
+
+  return (
+    <div className="mb-5 rounded-xl border border-pending/30 bg-pending/[0.06] p-4">
+      <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-pending">
+        Retours du client
+      </h4>
+
+      {enCours.length > 0 && (
+        <div className="mb-3 space-y-2">
+          {enCours.map((s) => (
+            <div key={s.id} className="rounded-lg border border-pending/30 bg-white p-3">
+              <p className="text-[12px] font-semibold text-ink">
+                Modification demandée sur « {s.title} »
+              </p>
+              <p className="mt-1 text-[12px] italic leading-relaxed text-neutral-500">
+                « {s.clientComment} »
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {historique.length > 0 && (
+        <details className="text-[12px]">
+          <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+            Historique des retours ({historique.length})
+          </summary>
+          <ul className="mt-2 space-y-1.5">
+            {historique.map((h) => (
+              <li key={h.id} className="text-[11px] leading-relaxed text-neutral-500">
+                <span className="tabular">{formatDateTime(h.date)}</span> — «&nbsp;{h.titre}&nbsp;» :{" "}
+                <span className="italic">{h.commentaire}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
+  );
+}
+
 function ScenarioEditor({ project }: { project: Project360 }) {
   const utils = trpc.useUtils();
   const [drafts, setDrafts] = useState<DraftProposal[]>(() => loadDrafts(project.id, project.scenarioProposals));
@@ -120,6 +187,8 @@ function ScenarioEditor({ project }: { project: Project360 }) {
           {savedAt ? `Brouillon enregistré à ${savedAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}` : "Sauvegarde auto"}
         </span>
       </div>
+
+      <ClientFeedback project={project} />
 
       <div className="grid gap-4 xl:grid-cols-3">
         {drafts.map((d, i) => (

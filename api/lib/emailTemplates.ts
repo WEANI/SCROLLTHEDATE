@@ -145,6 +145,42 @@ Voir mes scénarios : ${url}
   return { to: params.to, subject, html, text };
 }
 
+/**
+ * Scénarios retravaillés après une demande de modification du client.
+ *
+ * Distinct de `scenariosReadyEmail` : recevoir « Vos scénarios sont prêts »
+ * une seconde fois, à l'identique, ne dit pas au client qu'on a tenu compte
+ * de sa demande — il pouvait croire à un doublon.
+ */
+export function scenariosUpdatedEmail(params: {
+  to: string;
+  coupleNames: string;
+  slug: string;
+}): EmailMessage {
+  const url = `${env.appUrl}/espace/projet`;
+  const subject = "Vos scénarios ont été retravaillés";
+  const html = wrap({
+    preheader: "Nous avons pris en compte vos retours.",
+    bodyHtml: `
+      <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.accent};">Vos retours ont été pris en compte</p>
+      <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:400;font-size:26px;line-height:1.2;color:${BRAND.ink};">Une nouvelle version vous attend</h1>
+      <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:${BRAND.inkSoft};">
+        Nous avons retravaillé les propositions à partir de vos remarques. Dites-nous si nous sommes
+        cette fois au bon endroit — ou demandez d'autres ajustements, autant de fois qu'il le faudra.
+      </p>
+      ${button("Voir les nouvelles propositions", url)}
+    `,
+  });
+  const text = `Une nouvelle version vous attend
+
+Nous avons retravaillé les propositions à partir de vos remarques. Dites-nous si nous sommes cette fois au bon endroit, ou demandez d'autres ajustements.
+
+Voir les nouvelles propositions : ${url}
+
+— Scroll The Date`;
+  return { to: params.to, subject, html, text };
+}
+
 /** Une nouvelle version de la vidéo vient d'être livrée (video.sent). */
 export function videoDeliveredEmail(params: {
   to: string;

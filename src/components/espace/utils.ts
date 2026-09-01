@@ -136,6 +136,11 @@ export function notificationLabel(type: string): { title: string; detail?: strin
   switch (type) {
     case 'scenarios.sent':
       return { title: 'Vos scénarios sont arrivés', detail: 'À découvrir dans Projet & scénarios' }
+    case 'scenarios.updated':
+      return {
+        title: 'Vos scénarios ont été retravaillés',
+        detail: 'Nous avons pris en compte vos retours',
+      }
     case 'video.sent':
       return { title: 'Votre vidéo filigrane est prête', detail: 'Validez-la depuis Projet & scénarios' }
     case 'project.status_changed':
@@ -160,6 +165,7 @@ export function notificationLabel(type: string): { title: string; detail?: strin
 export function notificationHref(type: string): string | null {
   switch (type) {
     case 'scenarios.sent':
+    case 'scenarios.updated':
     case 'video.sent':
     case 'project.status_changed':
       return '/espace/projet'
