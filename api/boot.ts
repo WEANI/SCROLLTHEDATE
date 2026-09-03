@@ -9,8 +9,12 @@ import { bootstrapDatabase } from "./db-bootstrap";
 import { warnIfEmailMisconfigured } from "./lib/email";
 import { warnIfStripeMisconfigured } from "./lib/stripe";
 import { handleStripeWebhook } from "./webhooks/stripe";
+import { ensureVideosBucket, uploadVideo } from "./lib/supabaseStorage";
+import { supabaseAdmin } from "./lib/supabaseAdmin";
+import { findUserByAuthId } from "./queries/users";
 
 bootstrapDatabase();
+ensureVideosBucket();
 warnIfEmailMisconfigured();
 warnIfStripeMisconfigured();
 
@@ -36,6 +40,33 @@ app.use("/api/trpc/*", async (c) => {
 // Stripe exige le corps de requête BRUT, incompatible avec le parsing JSON
 // automatique de tRPC. Doit rester avant le catch-all /api/* ci-dessous.
 app.post("/api/webhooks/stripe", handleStripeWebhook);
+
+// Upload vidéo (multipart) — réservé aux admins. Route brute comme le
+// webhook Stripe : tRPC ne gère pas le multipart, et le base64 gonflerait
+// la taille de 33 % (un fichier de 37 Mo franchirait le body limit de 50 Mo).
+app.post("/api/upload/video", async (c) => {
+  // 1. Auth — même logique que context.ts / authenticateRequest
+  const authHeader = c.req.header("authorization") ?? "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  if (!token) return c.json({ error: "Non authentifié" }, 401);
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !data.user) return c.json({ error: "Token invalide" }, 401);
+  const user = await findUserByAuthId(data.user.id);
+  if (!user || user.role !== "admin") return c.json({ error: "Accès refusé" }, 403);
+
+  // 2. Multipart
+  const formData = await c.req.formData();
+  const file = formData.get("file");
+  const projectId = formData.get("projectId");
+  if (!(file instanceof File)) return c.json({ error: "Fichier manquant" }, 400);
+  if (!projectId) return c.json({ error: "projectId manquant" }, 400);
+  if (!file.type.startsWith("video/")) return c.json({ error: "Le fichier doit être une vidéo" }, 400);
+
+  // 3. Upload vers Supabase Storage
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const url = await uploadVideo(Number(projectId), file.name, buffer, file.type);
+  return c.json({ url });
+});
 
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 

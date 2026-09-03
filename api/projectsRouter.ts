@@ -34,7 +34,13 @@ export const projectsRouter = createRouter({
       const project = await findProjectBySlug(input.slug);
       if (!project) return null;
       const videos = await findVideosByProject(project.id);
-      const heroVideo = videos.find((v) => !v.watermark) ?? null;
+      // Priorité : version non filigranée (finale/approuvée), sinon dernière
+      // version envoyée (filigranée, visible avec overlay sur le faire-part
+      // tant que le projet n'est pas DELIVERED).
+      const heroVideo =
+        videos.find((v) => !v.watermark) ??
+        videos.find((v) => v.status === "sent" || v.status === "final") ??
+        null;
       if (!heroVideo) return null;
       const answers =
         (project.questionnaire?.answers as Record<string, unknown> | null) ??
@@ -61,6 +67,7 @@ export const projectsRouter = createRouter({
       };
       return {
         slug: project.slug,
+        status: project.status,
         template: project.template,
         weddingDate: project.weddingDate,
         heroVideoUrl: heroVideo.url,

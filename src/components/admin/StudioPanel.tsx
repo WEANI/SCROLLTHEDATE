@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Check, ExternalLink, Loader2, Plus, Send, Sparkles, Upload, Wand2, X } from "lucide-react";
+import { Camera, Check, CloudUpload, ExternalLink, FileVideo, Loader2, Plus, Send, Sparkles, Upload, Wand2, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
@@ -13,6 +13,7 @@ import {
   formatDateTime,
   type Project360,
 } from "@/components/admin/shared";
+import { supabase } from "@/lib/supabaseClient";
 
 // ---------------------------------------------------------------------------
 // Éditeur de scénarios — 3 propositions
@@ -389,6 +390,11 @@ function VideoManager({ project }: { project: Project360 }) {
   const [url, setUrl] = useState("");
   const [watermark, setWatermark] = useState(true);
   const [status, setStatus] = useState<"draft" | "sent" | "final">("sent");
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   // "Vidéo finale" = déposée directement sans filigrane, aucune étape de
   // validation client — le circuit "envoyer filigranée → le client
@@ -443,13 +449,89 @@ function VideoManager({ project }: { project: Project360 }) {
             <p className="text-[13px] font-medium">
               Nouvelle version <span className="tabular text-neutral-500">(v{nextVersion})</span>
             </p>
+
+            {/* Upload drag & drop */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                const f = e.dataTransfer.files[0];
+                if (f?.type.startsWith("video/")) { setFile(f); setUrl(""); }
+                else toast.error("Le fichier doit être une vidéo MP4");
+              }}
+              className={cn(
+                "flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed px-6 py-6 transition-colors",
+                dragOver ? "border-terracotta-500 bg-terracotta-500/5" : "border-neutral-200 bg-neutral-50 hover:border-terracotta-400",
+                file && "border-terracotta-500/50 bg-terracotta-500/5",
+              )}
+            >
+              {file ? (
+                <>
+                  <FileVideo size={20} className="text-terracotta-500" />
+                  <span className="text-[13px] font-medium text-ink">{file.name}</span>
+                  <span className="text-[11px] text-neutral-500">{(file.size / 1024 / 1024).toFixed(1)} Mo</span>
+                </>
+              ) : (
+                <>
+                  <CloudUpload size={22} className={dragOver ? "text-terracotta-500" : "text-neutral-500"} />
+                  <span className="text-[13px] font-medium text-ink">
+                    Glissez un fichier MP4 ou <span className="text-terracotta-500 underline underline-offset-4">parcourez</span>
+                  </span>
+                  <span className="text-[11px] text-neutral-500">50 Mo max</span>
+                </>
+              )}
+            </button>
             <input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="URL de la vidéo (https://… ou /demo-film.mp4)"
-              className="w-full rounded-lg border border-neutral-200 bg-neutral-100 px-3 py-2.5 text-[13px] outline-none placeholder:text-neutral-500 focus:border-terracotta-500"
+              ref={fileInputRef}
+              type="file"
+              accept="video/mp4,video/quicktime"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) { setFile(f); setUrl(""); }
+                e.target.value = "";
+              }}
             />
-            {clientVideos.length > 0 && (
+            {file && (
+              <button
+                type="button"
+                onClick={() => setFile(null)}
+                className="text-[11px] font-medium text-neutral-500 underline-offset-2 hover:text-error hover:underline"
+              >
+                Retirer le fichier
+              </button>
+            )}
+
+            {/* Barre de progression upload */}
+            {isUploading && (
+              <div className="space-y-1">
+                <div className="h-1.5 overflow-hidden rounded-full bg-neutral-200">
+                  <div
+                    className="h-full rounded-full bg-terracotta-500 transition-all"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-[11px] tabular text-neutral-500">Upload en cours… {uploadProgress} %</p>
+              </div>
+            )}
+
+            {/* URL en alternative (input réduit) */}
+            {!file && (
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-medium text-neutral-500">ou URL :</span>
+                <input
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://… ou /demo-film.mp4"
+                  className="flex-1 rounded-lg border border-neutral-200 bg-neutral-100 px-3 py-2 text-[12px] outline-none placeholder:text-neutral-500 focus:border-terracotta-500"
+                />
+              </div>
+            )}
+            {!file && clientVideos.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {clientVideos.map((m) => (
                   <button
@@ -464,56 +546,69 @@ function VideoManager({ project }: { project: Project360 }) {
               </div>
             )}
             <div className="flex flex-wrap items-center gap-4">
-              <label
-                className={cn(
-                  "flex items-center gap-2 text-[12px] font-medium",
-                  isFinal ? "cursor-not-allowed text-neutral-500/50" : "cursor-pointer text-neutral-500",
-                )}
-              >
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={watermark && !isFinal}
-                  disabled={isFinal}
-                  onClick={() => setWatermark((v) => !v)}
-                  className={cn(
-                    "relative h-5 w-9 rounded-full transition-colors",
-                    watermark && !isFinal ? "bg-terracotta-500" : "bg-neutral-200",
-                    isFinal && "cursor-not-allowed opacity-60",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all",
-                      watermark && !isFinal ? "left-[18px]" : "left-0.5",
-                    )}
-                  />
-                </button>
-                {isFinal ? "Sans filigrane (version finale)" : "Filigrane (recommandé avant approbation)"}
-              </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as "draft" | "sent" | "final")}
                 className="h-9 rounded-[10px] border border-neutral-200 bg-white px-3 text-[12px] font-medium outline-none focus:border-terracotta-500"
               >
-                <option value="final">Vidéo finale (publiée immédiatement, sans validation)</option>
-                <option value="sent">Envoyer au client (avec filigrane, pour approbation)</option>
+                <option value="final">Vidéo finale (publiée immédiatement)</option>
+                <option value="sent">Envoyer au client (faire-part filigrané, pour approbation)</option>
                 <option value="draft">Brouillon (invisible client)</option>
               </select>
               <button
                 type="button"
-                disabled={url.trim().length === 0 || addVersion.isPending}
-                onClick={() =>
+                disabled={(url.trim().length === 0 && !file) || addVersion.isPending || isUploading}
+                onClick={async () => {
+                  let videoUrl = url.trim();
+                  // Si fichier sélectionné → upload d'abord
+                  if (file) {
+                    setIsUploading(true);
+                    setUploadProgress(0);
+                    try {
+                      const { data: session } = await supabase.auth.getSession();
+                      const token = session.session?.access_token;
+                      if (!token) { toast.error("Session expirée — reconnectez-vous"); setIsUploading(false); return; }
+                      const formData = new FormData();
+                      formData.append("file", file);
+                      formData.append("projectId", String(project.id));
+                      // XHR pour le suivi de progression
+                      videoUrl = await new Promise<string>((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", "/api/upload/video");
+                        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+                        xhr.upload.onprogress = (e) => {
+                          if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+                        };
+                        xhr.onload = () => {
+                          if (xhr.status >= 200 && xhr.status < 300) {
+                            const res = JSON.parse(xhr.responseText) as { url: string };
+                            resolve(res.url);
+                          } else {
+                            const err = JSON.parse(xhr.responseText) as { error?: string };
+                            reject(new Error(err.error ?? "Upload échoué"));
+                          }
+                        };
+                        xhr.onerror = () => reject(new Error("Erreur réseau"));
+                        xhr.send(formData);
+                      });
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Upload échoué");
+                      setIsUploading(false);
+                      return;
+                    }
+                    setIsUploading(false);
+                    setFile(null);
+                  }
                   addVersion.mutate({
                     projectId: project.id,
-                    url: url.trim(),
+                    url: videoUrl,
                     watermark: isFinal ? false : watermark,
                     status,
-                  })
-                }
+                  });
+                }}
                 className="ml-auto flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:bg-terracotta-400 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {addVersion.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                {(addVersion.isPending || isUploading) ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 {status === "final" ? "Publier la version finale" : status === "sent" ? "Ajouter & envoyer" : "Ajouter le brouillon"}
               </button>
             </div>

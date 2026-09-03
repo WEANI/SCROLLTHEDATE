@@ -248,14 +248,38 @@ export default function FairePart() {
         </Link>
       </header>
 
-      <HeroScrub
-        theme={theme}
-        chapters={chapters}
-        video={{ desktopSrc: invite.heroVideoUrl, posterSrc: invite.heroPosterUrl ?? undefined }}
-        trackHeightVh={800}
-        tailVh={100}
-        ariaLabel={`Faire-part — ${coupleNames}`}
-      />
+      <div className="relative">
+        <HeroScrub
+          theme={theme}
+          chapters={chapters}
+          video={{ desktopSrc: invite.heroVideoUrl, posterSrc: invite.heroPosterUrl ?? undefined }}
+          trackHeightVh={800}
+          tailVh={100}
+          ariaLabel={`Faire-part — ${coupleNames}`}
+        />
+        {invite.status !== 'DELIVERED' && (
+          <>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none fixed inset-0 z-[2] opacity-[0.12]"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(-35deg, transparent 0 90px, rgba(255,255,255,0) 90px 92px), repeating-linear-gradient(-35deg, transparent 0 180px, rgba(255,255,255,0.9) 180px 181px)",
+              }}
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none fixed inset-0 z-[2] flex rotate-[-18deg] flex-wrap content-center justify-center gap-x-16 gap-y-10 opacity-[0.14]"
+            >
+              {Array.from({ length: 12 }).map((_, i) => (
+                <span key={i} className="whitespace-nowrap text-lg font-bold tracking-[0.2em] text-white">
+                  SCROLL THE DATE — APERÇU
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Le corps de page recouvre le plan final au lieu de s'enchaîner en
           dessous — même mécanique que sur les pages câblées en dur (cf.
