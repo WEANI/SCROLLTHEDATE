@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useLocation } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Check,
@@ -113,6 +113,7 @@ const STATUS_RANK: Record<string, number> = {
 
 export default function Projet() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { hash } = useLocation()
   const utils = trpc.useUtils()
   // `enabled: isAuthenticated` — cf. TableauDeBord.tsx pour l'explication
   // complète : sans cette garde, ces requêtes partent avant que la session
@@ -171,6 +172,17 @@ export default function Projet() {
     setToast(msg)
     setTimeout(() => setToast(null), 2500)
   }
+
+  // Scroll vers l'ancre (ex. #scenarios, #video) après le chargement
+  useEffect(() => {
+    if (!hash || projectQuery.isLoading) return
+    const id = hash.slice(1)
+    // Petit délai pour laisser le DOM se rendre
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
+    return () => clearTimeout(t)
+  }, [hash, projectQuery.isLoading])
 
   if (authLoading || projectQuery.isLoading) return <PageSkeleton />
   if (projectQuery.error && projectQuery.error.data?.code !== 'NOT_FOUND') {
@@ -306,7 +318,7 @@ export default function Projet() {
           </div>
 
           {/* Bloc 2 — Scénarios */}
-          <SectionCard>
+          <SectionCard id="scenarios">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-display text-2xl font-medium italic text-ink">
@@ -475,7 +487,7 @@ export default function Projet() {
           </SectionCard>
 
           {/* Bloc 3 — Vidéo */}
-          <SectionCard>
+          <SectionCard id="video">
             <h3 className="font-display mb-1 text-2xl font-medium italic text-ink">Votre vidéo.</h3>
             <p className="mb-6 text-[13.5px] text-neutral-500">
               La version de travail est filigranée — la version finale sera sans filigrane et en haute
@@ -621,7 +633,7 @@ export default function Projet() {
           </SectionCard>
 
           {/* Bloc 4 — Livraison */}
-          <SectionCard>
+          <SectionCard id="livraison">
             <h3 className="font-display mb-6 text-2xl font-medium italic text-ink">
               {rank >= 5 ? 'Votre faire-part est en ligne.' : 'Livraison & partage.'}
             </h3>

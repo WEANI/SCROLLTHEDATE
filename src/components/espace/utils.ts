@@ -166,7 +166,9 @@ export function notificationHref(type: string): string | null {
   switch (type) {
     case 'scenarios.sent':
     case 'scenarios.updated':
+      return '/espace/projet#scenarios'
     case 'video.sent':
+      return '/espace/projet#video'
     case 'project.status_changed':
       return '/espace/projet'
     case 'message.received':
