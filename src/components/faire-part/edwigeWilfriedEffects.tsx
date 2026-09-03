@@ -486,7 +486,8 @@ export function HorizontalProgramme({
         const rect = outer.getBoundingClientRect()
         const total = rect.height - window.innerHeight
         const progress = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 0
-        const maxShift = track.scrollWidth - track.clientWidth
+        const visibleWidth = track.parentElement?.clientWidth ?? window.innerWidth
+        const maxShift = track.scrollWidth - visibleWidth
         track.style.transform = `translateX(${-progress * maxShift}px)`
       })
     }
@@ -875,7 +876,8 @@ function HorizontalPhotos({ photos }: { photos: string[] }) {
         const rect = outer.getBoundingClientRect()
         const total = rect.height - window.innerHeight
         const progress = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 0
-        const maxShift = track.scrollWidth - track.clientWidth
+        const visibleWidth = track.parentElement?.clientWidth ?? window.innerWidth
+        const maxShift = track.scrollWidth - visibleWidth
         track.style.transform = `translateX(${-progress * maxShift}px)`
       })
     }
