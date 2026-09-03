@@ -16,7 +16,8 @@ const PRODUCTS = [
     cta: '/commander?produit=save-the-date',
     recommended: false,
     features: [
-      { icon: Clapperboard, label: 'Vidéo courte personnalisée (30–45 s)' },
+      { icon: Clapperboard, label: 'Vidéo courte personnalisée (40 s)' },
+      { icon: CalendarHeart, label: 'Votre page personnalisée' },
       { icon: CalendarHeart, label: "Page d'annonce avec date & lieu" },
       { icon: InfinityIcon, label: 'Lien illimité, partageable partout' },
       { icon: QrCode, label: 'QR code pour vos supports papier' },
@@ -29,7 +30,8 @@ const PRODUCTS = [
     cta: '/commander?produit=faire-part',
     recommended: true,
     features: [
-      { icon: Clapperboard, label: 'Vidéo cinématique complète (60–90 s)' },
+      { icon: Clapperboard, label: 'Vidéo cinématique complète (60 s)' },
+      { icon: CalendarHeart, label: 'Votre page personnalisée + tableau de bord' },
       { icon: MapPin, label: 'Programme, lieu & hébergements, dress code' },
       { icon: Rss, label: 'RSVP intégré, réponses en temps réel' },
       { icon: InfinityIcon, label: 'Lien illimité + QR code' },

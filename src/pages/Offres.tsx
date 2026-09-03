@@ -202,7 +202,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Quels sont les délais de livraison ?',
-    a: "Comptez environ 10 jours pour le Save the Date et 3 semaines pour le faire-part, à partir de votre questionnaire complété. Un mariage dans moins de 3 semaines ? Écrivez-nous sur WhatsApp, on trouve toujours une solution.",
+    a: "Comptez environ 72 h pour le faire-part comme pour le Save the Date, à partir de votre questionnaire complété. Un besoin encore plus urgent ? Écrivez-nous sur WhatsApp, on trouve toujours une solution.",
   },
   {
     q: 'Peut-on personnaliser après la livraison ?',
@@ -233,13 +233,13 @@ export default function Offres() {
 
   const compareRows: { label: string; std: Cell; fp: Cell }[] = [
     { label: 'Vidéo personnalisée', std: ck, fp: ck },
-    { label: 'Durée de la vidéo', std: tx('30–45 s'), fp: tx('60–90 s') },
+    { label: 'Durée de la vidéo', std: tx('40 s'), fp: tx('60 s') },
     { label: 'Page web', std: tx("Page d'annonce"), fp: tx('Page complète') },
     { label: 'RSVP intégré', std: da, fp: ck },
     { label: 'Scénarios au choix', std: da, fp: ck },
     { label: 'Révisions incluses', std: tx('Incluses'), fp: tx('Incluses') },
     { label: 'Lien illimité + QR code', std: ck, fp: ck },
-    { label: 'Délai de livraison', std: tx('~10 jours'), fp: tx('~3 semaines') },
+    { label: 'Délai de livraison', std: tx('~72 h'), fp: tx('~72 h') },
     { label: 'Prix', std: tx(formatEuros(saveTheDate.priceCents)), fp: tx(formatEuros(fairePart.priceCents)) },
   ]
 
@@ -297,11 +297,11 @@ export default function Offres() {
             priceCents={saveTheDate.priceCents}
             tagline="Annoncez la date comme au cinéma."
             features={[
-              'Vidéo personnalisée 30–45 s, issue de votre questionnaire',
+              'Vidéo personnalisée 40 s, issue de votre questionnaire',
               "Page d'annonce : vos noms, la date, le lieu",
               'Lien illimité + QR code pour vos supports papier',
               'Retouche incluse',
-              'Livraison en ~10 jours',
+              'Livraison en ~72 h',
             ]}
             ctaLabel="Commander le Save the Date"
             ctaHref={checkoutHref('SAVE_THE_DATE')}
@@ -325,13 +325,13 @@ export default function Offres() {
             tagline="L'invitation complète, racontée en images."
             reversed
             features={[
-              'Vidéo cinématique 60–90 s en héros scrub-scroll de votre faire-part',
+              'Vidéo cinématique 60 s en héros scrub-scroll de votre faire-part',
               'Page complète : votre histoire, programme, lieu & hébergements, dress code',
               'RSVP intégré — réponses en temps réel, export CSV',
               'Propositions de scénario à choisir, retouches incluses',
               'Suivi de production dans votre espace client',
               'Lien illimité + QR + kit de partage WhatsApp/SMS/email',
-              'Livraison en ~3 semaines',
+              'Livraison en ~72 h',
             ]}
             ctaLabel="Commander le faire-part"
             ctaHref={checkoutHref('FAIRE_PART')}

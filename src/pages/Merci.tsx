@@ -321,7 +321,7 @@ export default function Merci() {
               Ce qui se passe ensuite
             </p>
             <h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.2rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-              Quatre étapes, <em className="italic text-terracotta-300">trois semaines</em>.
+              4 étapes, <em className="italic text-terracotta-300">72 h</em>.
             </h2>
           </FadeUp>
 
@@ -397,11 +397,11 @@ export default function Merci() {
               Écrivez-nous sur WhatsApp
             </a>
             <a
-              href="mailto:contact@scrollthedate.fr"
+              href="mailto:contact@scrollthedate.com"
               className="inline-flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.1em] text-white/70 transition-colors hover:text-terracotta-300"
             >
               <Mail size={15} className="text-terracotta-500" aria-hidden />
-              contact@scrollthedate.fr
+              contact@scrollthedate.com
             </a>
           </div>
         </FadeUp>

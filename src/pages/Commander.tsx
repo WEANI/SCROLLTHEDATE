@@ -374,8 +374,8 @@ export default function Commander() {
                           <p className="text-[15px] font-semibold text-ink">{p.name}</p>
                           <p className="mt-1 text-[13px] leading-[1.5] text-neutral-500">
                             {id === 'FAIRE_PART'
-                              ? 'Vidéo 60–90 s, page complète + RSVP, scénarios personnalisés.'
-                              : "Vidéo 30–45 s, page d'annonce, lien illimité."}
+                              ? 'Vidéo 60 s, page complète + RSVP, scénarios personnalisés.'
+                              : "Vidéo 40 s, page d'annonce, lien illimité."}
                           </p>
                         </div>
                         <span

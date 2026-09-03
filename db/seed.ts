@@ -125,7 +125,7 @@ async function seed() {
   await upsertSetting("texts", {
     baseline: "Votre histoire, racontée en images.",
     contactWhatsApp: "+33600000000",
-    deliveryEstimateDays: 21,
+    deliveryEstimateDays: 3,
   });
 
   // --- Template de questionnaire actif (~15 questions) ----------------------

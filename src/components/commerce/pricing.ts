@@ -43,7 +43,7 @@ export const FALLBACK_OPTIONS: CheckoutOption[] = [
 export const FALLBACK_TEXTS: Required<SiteTexts> = {
   baseline: 'Votre histoire, racontée en images.',
   contactWhatsApp: '+33600000000',
-  deliveryEstimateDays: 21,
+  deliveryEstimateDays: 3,
 }
 
 /** "349 €" / "49,67 €" (décimales uniquement si nécessaire). */

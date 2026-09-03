@@ -9,8 +9,8 @@ const NAVIGATION = [
 ]
 
 const OFFRES = [
-  { label: 'Faire-part digital — 349 €', href: '/offres' },
-  { label: 'Save the Date digital — 149 €', href: '/offres' },
+  { label: 'Faire-part digital', href: '/offres' },
+  { label: 'Save the Date digital', href: '/offres' },
   { label: 'Voir la démo', href: '/demo' },
 ]
 

@@ -106,8 +106,8 @@ export default function CGV() {
           À titre indicatif, à compter de la réception du questionnaire complété par le client :
         </p>
         <ul>
-          <li>Save the Date digital : environ 10 jours.</li>
-          <li>Faire-part digital : environ 3 semaines (21 jours).</li>
+          <li>Save the Date digital : environ 72 h.</li>
+          <li>Faire-part digital : environ 72 h.</li>
         </ul>
         <p>
           Ces délais sont des moyennes et peuvent varier selon la charge de production et la
