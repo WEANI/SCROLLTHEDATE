@@ -187,24 +187,24 @@ export function videoDeliveredEmail(params: {
   coupleNames: string;
   slug: string;
 }): EmailMessage {
-  const url = `${env.appUrl}/espace/projet`;
-  const subject = "Votre vidéo est prête à être visionnée";
+  const url = `${env.appUrl}/espace/projet#video`;
+  const subject = "Votre faire-part provisoire est prêt";
   const html = wrap({
-    preheader: "Une nouvelle version de votre film est disponible.",
+    preheader: "Découvrez votre faire-part en avant-première.",
     bodyHtml: `
-      <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.accent};">Votre vidéo est prête</p>
-      <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:400;font-size:26px;line-height:1.2;color:${BRAND.ink};">Une nouvelle version vous attend</h1>
+      <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.accent};">Votre faire-part est prêt</p>
+      <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:400;font-size:26px;line-height:1.2;color:${BRAND.ink};">Découvrez-le en avant-première</h1>
       <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:${BRAND.inkSoft};">
-        Regardez-la tranquillement, puis validez ou demandez des retouches directement depuis votre espace.
+        Votre faire-part est disponible avec un filigrane sur la vidéo. Parcourez-le tranquillement, puis validez ou demandez des retouches depuis votre espace.
       </p>
-      ${button("Visionner la vidéo", url)}
+      ${button("Voir mon faire-part", url)}
     `,
   });
-  const text = `Une nouvelle version vous attend
+  const text = `Découvrez votre faire-part en avant-première
 
-Regardez votre vidéo, puis validez ou demandez des retouches depuis votre espace.
+Votre faire-part est disponible avec un filigrane sur la vidéo. Parcourez-le, puis validez ou demandez des retouches depuis votre espace.
 
-Visionner la vidéo : ${url}
+Voir mon faire-part : ${url}
 
 — Scroll The Date`;
   return { to: params.to, subject, html, text };

@@ -142,7 +142,7 @@ export function notificationLabel(type: string): { title: string; detail?: strin
         detail: 'Nous avons pris en compte vos retours',
       }
     case 'video.sent':
-      return { title: 'Votre vidéo filigrane est prête', detail: 'Validez-la depuis Projet & scénarios' }
+      return { title: 'Votre faire-part provisoire est prêt', detail: 'Découvrez-le et donnez votre retour' }
     case 'project.status_changed':
       return { title: 'Votre projet avance', detail: 'Une nouvelle étape vient de commencer' }
     case 'message.received':

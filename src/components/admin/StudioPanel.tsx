@@ -947,7 +947,7 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
   const setField = (key: keyof BespokePaletteInput, value: string) =>
     setPalette((prev) => ({ ...prev, [key]: value }));
 
-  const generate = () => setPalette(suggestPalette(accentColor, mode));
+  const generate = () => setPalette(suggestPalette(accentColor, mode, fondHint || undefined));
 
   const savePalette = trpc.projects.adminSetPalette.useMutation({
     onSuccess: () => {

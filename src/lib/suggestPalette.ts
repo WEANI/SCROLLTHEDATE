@@ -19,7 +19,7 @@ import type { BespokePaletteInput } from "@contracts/bespokePalette";
  * arbitraire. C'est exactement le compromis acté en Phase 0/D1 : la
  * fonction ne fait QUE gagner du temps de saisie, jamais le dernier mot.
  */
-export function suggestPalette(accentColor: string, mode: "light" | "dark"): BespokePaletteInput {
+export function suggestPalette(accentColor: string, mode: "light" | "dark", exactBg?: string): BespokePaletteInput {
   const parsed = parseHex(accentColor) ?? parseHex(FALLBACK_ACCENT)!;
   const { h, s, l } = rgbToHsl(parsed);
 
@@ -43,7 +43,7 @@ export function suggestPalette(accentColor: string, mode: "light" | "dark"): Bes
   const inkDark = "#2E2620";
   const inkDarkRgb = "46, 38, 32";
 
-  const bg = mode === "light" ? cream : "rgba(255, 255, 255, 0.05)";
+  const bg = exactBg && /^#[0-9a-fA-F]{6}$/.test(exactBg) ? exactBg : mode === "light" ? cream : "rgba(255, 255, 255, 0.05)";
   const ink = mode === "light" ? inkDark : cream;
   const inkRgb = mode === "light" ? inkDarkRgb : creamRgb;
 

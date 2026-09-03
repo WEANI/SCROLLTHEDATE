@@ -72,6 +72,9 @@ export default function FairePart() {
   // db/schema.ts) — cast assumé : la forme est garantie par
   // `bespokePaletteSchema` côté écriture (adminSetPalette).
   const palette = (invite?.palette as BespokePalette | null) ?? EW_PALETTE
+  // Si la palette bespoke définit un fond, il prévaut sur le pageBg du thème
+  // (ex. client qui demande un fond sombre sur un template "minimal" clair).
+  const effectivePageBg = palette.bg && palette.bg !== EW_PALETTE.bg ? palette.bg : theme.pageBg
 
   // Timings du hero (Phase 2) sont stockés en SECONDES, pas en ratio
   // [0,1] — il faut la durée réelle de la vidéo livrée pour les
@@ -240,7 +243,7 @@ export default function FairePart() {
 
   return (
     <BespokePaletteProvider palette={palette}>
-    <div style={{ background: theme.pageBg }}>
+    <div style={{ background: effectivePageBg }}>
       <EwEffectsStyles />
       <header className="absolute inset-x-0 top-0 z-40 flex items-center justify-center px-6 py-5">
         <Link to="/" aria-label="Scroll The Date — accueil" className="rounded-full bg-black/25 px-4 py-2 backdrop-blur-sm">
@@ -290,7 +293,7 @@ export default function FairePart() {
       <div
         className="relative z-10 -mt-[100vh] rounded-t-[32px]"
         style={{
-          background: theme.pageBg,
+          background: effectivePageBg,
           boxShadow:
             theme.colorScheme === 'dark'
               ? '0 -24px 60px rgba(0, 0, 0, 0.5)'
@@ -313,7 +316,7 @@ export default function FairePart() {
           slug={invite.slug}
           coupleNames={coupleNames}
           theme={{
-            sectionBg: theme.pageBg,
+            sectionBg: effectivePageBg,
             cardBg: theme.cardBg,
             cardBorder: theme.cardBorder,
             accent: theme.accent,
@@ -376,11 +379,11 @@ export default function FairePart() {
             />
           )}
         </PayloadSection>
-        <PhotosSection bg={theme.pageBg} />
+        <PhotosSection bg={effectivePageBg} />
         <ClosingSection
           coupleNames={coupleNames}
           theme={{
-            bg: theme.pageBg,
+            bg: effectivePageBg,
             border: theme.cardBorder,
             heading: theme.textPrimary,
             accent: theme.accent,
