@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -10,7 +10,6 @@ import {
   Lock,
   MessageCircle,
   PencilLine,
-  Plus,
   Send,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -27,7 +26,6 @@ import {
   auditLabel,
   formatDate,
   formatDateShort,
-  formatTimecode,
 } from '@/components/espace/utils'
 import QrShare from '@/components/espace/QrShare'
 
@@ -160,13 +158,11 @@ export default function Projet() {
   const [changesFor, setChangesFor] = useState<number | null>(null)
   const [changesText, setChangesText] = useState('')
   const [confirmApprove, setConfirmApprove] = useState(false)
-  const [timecodes, setTimecodes] = useState<{ timecode: string; comment: string }[]>([])
   const [videoMessage, setVideoMessage] = useState('')
   const [shareMessage, setShareMessage] = useState('')
   const [welcomeText, setWelcomeText] = useState<string | null>(null)
   const [editingWelcome, setEditingWelcome] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -198,13 +194,6 @@ export default function Projet() {
 
   const auditEvents = project?.auditEvents ?? []
   const chosenScenario = scenarios.find((s) => s.status === 'chosen')
-
-  const addTimecode = () => {
-    const t = videoRef.current?.currentTime ?? 0
-    const tc = formatTimecode(t)
-    setTimecodes((prev) => [...prev, { timecode: tc, comment: '' }])
-    showToast(`${tc} ajouté`)
-  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -486,56 +475,50 @@ export default function Projet() {
             )}
           </SectionCard>
 
-          {/* Bloc 3 — Vidéo */}
+          {/* Bloc 3 — Faire-part provisoire */}
           <SectionCard id="video">
-            <h3 className="font-display mb-1 text-2xl font-medium italic text-ink">Votre vidéo.</h3>
+            <h3 className="font-display mb-1 text-2xl font-medium italic text-ink">Votre faire-part.</h3>
             <p className="mb-6 text-[13.5px] text-neutral-500">
-              La version de travail est filigranée — la version finale sera sans filigrane et en haute
-              définition.
+              Découvrez votre faire-part en avant-première — la section vidéo est filigranée.
+              Une fois approuvé, le filigrane disparaît et votre faire-part est prêt à partager.
             </p>
             {rank < 4 && !currentVideo ? (
-              <LockedBlock label="La vidéo filigrane arrive après le choix du scénario et le montage" />
+              <LockedBlock label="Votre faire-part provisoire arrive après le choix du scénario et le montage" />
             ) : !currentVideo ? (
               <div className="rounded-xl border border-dashed border-neutral-200 px-6 py-10 text-center">
                 <Clapperboard className="mx-auto text-terracotta-500" size={22} />
                 <p className="mt-3 text-[14px] font-medium text-ink">Montage en cours</p>
                 <p className="mt-1 text-[13px] text-neutral-500">
-                  La première version arrive sous quelques jours.
+                  Votre faire-part provisoire sera disponible sous quelques jours.
                 </p>
               </div>
             ) : (
               <div className="flex flex-col gap-5">
-                <div className="relative overflow-hidden rounded-2xl bg-anthracite-950">
-                  <video
-                    ref={videoRef}
-                    src={currentVideo.url}
-                    poster="/demo-poster.jpg"
-                    controls
-                    className="aspect-video w-full"
-                  />
-                  {currentVideo.watermark && (
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 opacity-[0.12]"
-                      style={{
-                        backgroundImage:
-                          "repeating-linear-gradient(-35deg, transparent 0 90px, rgba(255,255,255,0) 90px 92px), repeating-linear-gradient(-35deg, transparent 0 180px, rgba(255,255,255,0.9) 180px 181px)",
-                        backgroundColor: 'transparent',
-                      }}
-                    />
-                  )}
-                  {currentVideo.watermark && (
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 flex rotate-[-18deg] flex-wrap content-center justify-center gap-x-16 gap-y-10 opacity-[0.14]"
-                    >
-                      {Array.from({ length: 12 }).map((_, i) => (
-                        <span key={i} className="whitespace-nowrap text-lg font-bold tracking-[0.2em] text-white">
-                          SCROLL THE DATE — APERÇU
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                {/* Lien vers le faire-part provisoire */}
+                <div className="flex flex-wrap items-center gap-4 rounded-xl bg-anthracite-800 p-5 text-white">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-terracotta-500/20 text-terracotta-300">
+                    <ExternalLink size={20} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-medium text-white/90">
+                      {currentVideo.status === 'approved' || currentVideo.status === 'final'
+                        ? 'Votre faire-part est approuvé !'
+                        : 'Votre faire-part provisoire est prêt'}
+                    </p>
+                    <p className="mt-0.5 text-[12px] text-white/60">
+                      {currentVideo.status === 'approved' || currentVideo.status === 'final'
+                        ? 'Le filigrane sera retiré lors de la livraison finale.'
+                        : 'La vidéo est filigranée — visionnez le résultat et donnez-nous votre retour.'}
+                    </p>
+                  </div>
+                  <a
+                    href={`/faire-part/${project.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-[13px] font-semibold text-anthracite-900 transition-all hover:-translate-y-0.5 active:scale-[0.97]"
+                  >
+                    Voir mon faire-part <ExternalLink size={13} />
+                  </a>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -553,55 +536,22 @@ export default function Projet() {
                       >
                         J'approuve cette version
                       </button>
-                      <button
-                        type="button"
-                        onClick={addTimecode}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-4 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-100"
-                      >
-                        <Plus size={14} /> Ajouter un timecode
-                      </button>
                     </div>
                   )}
                 </div>
 
-                {/* Commentaires timecodés */}
+                {/* Demander des modifications (message simple, sans timecodes) */}
                 {currentVideo.status === 'sent' && (
                   <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-neutral-100/50 p-4">
                     <p className="text-[13px] font-semibold text-ink">Demander des modifications</p>
-                    {timecodes.map((tc, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className="shrink-0 rounded-md bg-anthracite-800 px-2 py-1 font-mono text-[12px] text-white">
-                          {tc.timecode}
-                        </span>
-                        <input
-                          type="text"
-                          value={tc.comment}
-                          onChange={(e) =>
-                            setTimecodes((prev) =>
-                              prev.map((p, j) => (j === i ? { ...p, comment: e.target.value } : p)),
-                            )
-                          }
-                          placeholder="Votre commentaire…"
-                          className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[13px] outline-none focus:border-terracotta-500"
-                        />
-                        <button
-                          type="button"
-                          aria-label="Supprimer ce timecode"
-                          onClick={() => setTimecodes((prev) => prev.filter((_, j) => j !== i))}
-                          className="shrink-0 text-neutral-500 hover:text-error"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
                     <textarea
                       value={videoMessage}
                       onChange={(e) => setVideoMessage(e.target.value)}
-                      rows={2}
-                      placeholder="Un message général pour Élise (optionnel)…"
+                      rows={3}
+                      placeholder="Dites-nous ce que vous aimeriez changer…"
                       className="w-full resize-none rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[13px] outline-none focus:border-terracotta-500"
                     />
-                    {(timecodes.length > 0 || videoMessage.trim()) && (
+                    {videoMessage.trim() && (
                       <button
                         type="button"
                         disabled={videoChangesMutation.isPending}
@@ -609,21 +559,19 @@ export default function Projet() {
                           videoChangesMutation.mutate(
                             {
                               videoId: currentVideo.id,
-                              comments: timecodes.filter((t) => t.comment.trim()),
                               message: videoMessage.trim() || undefined,
                             },
                             {
                               onSuccess: () => {
-                                setTimecodes([])
                                 setVideoMessage('')
-                                showToast('Modifications envoyées')
+                                showToast('Modifications envoyées à Élise')
                               },
                             },
                           )
                         }}
                         className="inline-flex w-fit items-center gap-1.5 rounded-full bg-anthracite-800 px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-anthracite-700 disabled:opacity-50"
                       >
-                        <Send size={12} /> Envoyer les modifications
+                        <Send size={12} /> Envoyer à Élise
                       </button>
                     )}
                   </div>
