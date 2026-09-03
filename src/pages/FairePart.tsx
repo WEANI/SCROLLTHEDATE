@@ -63,17 +63,23 @@ export default function FairePart() {
   )
 
   const invite = query.data
-  const theme = HERO_THEMES[(invite?.template as keyof typeof HERO_THEMES) ?? 'cinema'] ?? HERO_THEMES.cinema
-
-  // Palette bespoke posée par le studio (Phase 2) — repli sur EW_PALETTE
-  // (charte claire sobre déjà éprouvée en prod) tant qu'aucune palette
-  // n'a été validée pour ce projet, plutôt que planter ou improviser des
-  // couleurs. `unknown` côté tRPC (colonne jsonb non typée, cf.
-  // db/schema.ts) — cast assumé : la forme est garantie par
-  // `bespokePaletteSchema` côté écriture (adminSetPalette).
   const palette = (invite?.palette as BespokePalette | null) ?? EW_PALETTE
+
+  // Détecte si la palette bespoke définit un fond sombre : luminance < 40 %
+  // → bascule sur le thème "cinema" (sombre) au lieu du thème stocké en base,
+  // sinon tout le chrome (texte, cartes, ombres) reste clair et illisible.
+  const hasDarkBespokeBg = (() => {
+    const hex = palette.bg?.match(/^#([0-9a-f]{6})$/i)?.[1]
+    if (!hex) return false
+    const r = parseInt(hex.slice(0, 2), 16) / 255
+    const g = parseInt(hex.slice(2, 4), 16) / 255
+    const b = parseInt(hex.slice(4, 6), 16) / 255
+    return 0.299 * r + 0.587 * g + 0.114 * b < 0.4
+  })()
+  const templateKey = hasDarkBespokeBg ? 'cinema' : ((invite?.template as keyof typeof HERO_THEMES) ?? 'cinema')
+  const theme = HERO_THEMES[templateKey] ?? HERO_THEMES.cinema
+
   // Si la palette bespoke définit un fond, il prévaut sur le pageBg du thème
-  // (ex. client qui demande un fond sombre sur un template "minimal" clair).
   const effectivePageBg = palette.bg && palette.bg !== EW_PALETTE.bg ? palette.bg : theme.pageBg
 
   // Timings du hero (Phase 2) sont stockés en SECONDES, pas en ratio
