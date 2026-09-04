@@ -25,6 +25,7 @@ import Projet from '@/pages/espace/Projet'
 import CommandesClient from '@/pages/espace/Commandes'
 import MessagesClient from '@/pages/espace/Messages'
 import ParametresClient from '@/pages/espace/Parametres'
+import RsvpClient from '@/pages/espace/Rsvp'
 import AdminShell from '@/components/admin/AdminShell'
 import AdminDashboard from '@/pages/admin/Dashboard'
 import AdminCommandes from '@/pages/admin/Commandes'
@@ -112,6 +113,7 @@ export default function App() {
           <Route path="projet" element={<Projet />} />
           <Route path="commandes" element={<CommandesClient />} />
           <Route path="messages" element={<MessagesClient />} />
+          <Route path="rsvp" element={<RsvpClient />} />
           <Route path="parametres" element={<ParametresClient />} />
         </Route>
 

@@ -76,6 +76,7 @@ export const projectsRouter = createRouter({
         venueName: str("jourj.lieu_ceremonie") ?? project.venue,
         ceremonyTime: str("jourj.heure"),
         dressCode: str("jourj.dress_code"),
+        dressCodeCouleur: str("jourj.dress_code_couleur"),
         practicalInfo: str("jourj.infos_pratiques"),
         // Généralisation bespoke (PLAN-GENERALISATION-THEMES.md, Phase 3)
         // — sections optionnelles : `null`/`[]` si le couple n'a pas

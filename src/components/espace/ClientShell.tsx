@@ -13,6 +13,7 @@ import {
   MessageCircle,
   Settings,
   ShoppingBag,
+  Users,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -45,6 +46,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Médias', to: '/espace/questionnaire#medias', icon: Images },
   { label: 'Projet & scénarios', to: '/espace/projet', icon: Clapperboard },
   { label: 'Commandes', to: '/espace/commandes', icon: ShoppingBag },
+  { label: 'RSVP', to: '/espace/rsvp', icon: Users },
   { label: 'Messages', to: '/espace/messages', icon: MessageCircle },
   { label: 'Paramètres', to: '/espace/parametres', icon: Settings },
 ]
@@ -54,6 +56,7 @@ const CRUMB_LABEL: Record<string, string> = {
   questionnaire: 'Questionnaire',
   projet: 'Projet & scénarios',
   commandes: 'Commandes',
+  rsvp: 'RSVP',
   messages: 'Messages',
   parametres: 'Paramètres',
 }

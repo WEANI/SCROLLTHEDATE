@@ -175,6 +175,8 @@ export function notificationHref(type: string): string | null {
       return '/espace/messages'
     case 'order.confirmed':
       return '/espace/commandes'
+    case 'rsvp.submitted':
+      return '/espace/rsvp'
     default:
       return null
   }

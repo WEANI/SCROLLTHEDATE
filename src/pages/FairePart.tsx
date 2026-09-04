@@ -368,7 +368,7 @@ export default function FairePart() {
                 <HorizontalProgramme programme={items} revealed={revealed} reducedMotion={reducedMotion} />
               )}
               renderDressCode={(dressCode, _accent, revealed, reducedMotion) => (
-                <DressCodeCard dressCode={dressCode} revealed={revealed} reducedMotion={reducedMotion} />
+                <DressCodeCard dressCode={dressCode} colors={invite.dressCodeCouleur ? [invite.dressCodeCouleur] : undefined} revealed={revealed} reducedMotion={reducedMotion} />
               )}
               renderLodging={(lodging, _accent, revealed, reducedMotion) => (
                 <LodgingCascadeCard lodging={lodging} revealed={revealed} reducedMotion={reducedMotion} />
