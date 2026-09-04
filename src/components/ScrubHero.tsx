@@ -266,7 +266,18 @@ export default function ScrubHero({
 
       // Vidéo scrubbée
       if (video && !videoFailed && Number.isFinite(video.duration) && video.duration > 0) {
-        const t = p * video.duration
+        let t = p * video.duration
+        // Safari iOS affiche une frame NOIRE en cherchant au-delà de ce qui
+        // est déjà téléchargé (les navigateurs desktop gardent la dernière
+        // frame affichée à la place) — sensible sur mobile quand l'utilisateur
+        // scrolle plus vite que le fichier ne se bufferise. On plafonne la
+        // cible au buffer disponible : la vidéo s'immobilise sur sa dernière
+        // frame chargée plutôt que de clignoter en noir, et rattrape dès que
+        // le téléchargement progresse.
+        if (video.buffered.length > 0) {
+          const bufferedEnd = video.buffered.end(video.buffered.length - 1)
+          t = Math.min(t, bufferedEnd)
+        }
         if (Math.abs(video.currentTime - t) > 0.03) {
           try {
             video.currentTime = t
