@@ -97,6 +97,17 @@ export const projectsRouter = createRouter({
         faq: list(QUESTIONNAIRE_KEYS.faq),
         photoLieu: str(QUESTIONNAIRE_KEYS.photoLieu),
         photoOuverture: str(QUESTIONNAIRE_KEYS.photoOuverture),
+        // "Menu du dîner" et "Liste de mariage" (modifications a faire.md)
+        // — mêmes conventions que ci-dessus : `list`/`str` bruts, jamais de
+        // contenu inventé, absents (`[]`/`null`) tant que le couple n'a pas
+        // répondu. Le lien de cagnotte fait foi pour "Liste de mariage" —
+        // pas d'IBAN, cf. doc de ListeDeMariage (edwigeWilfriedEffects.tsx).
+        menuCocktail: list("jourj.menu_cocktail"),
+        menuEntree: list("jourj.menu_entree"),
+        menuPlat: list("jourj.menu_plat"),
+        menuDessert: list("jourj.menu_dessert"),
+        listeMariageLien: str("jourj.liste_mariage_lien"),
+        listeMariageMessage: str("jourj.liste_mariage_message"),
         // Posés à la main par le studio (StudioPanel, Phase 2) — jamais
         // générés ici. `null` tant que non validés : la page publique
         // (Phase 4) doit alors retomber sur une palette par défaut sobre.

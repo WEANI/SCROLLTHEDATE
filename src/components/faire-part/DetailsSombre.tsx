@@ -600,8 +600,10 @@ export default function DetailsSombre({
   renderLieu,
   renderProgramme,
   renderDressCode,
+  renderMenu,
   renderLodging,
   renderBeforeRsvp,
+  renderBeforeFaq,
   renderBeforeRsvp2,
   renderRsvp,
 }: {
@@ -638,17 +640,25 @@ export default function DetailsSombre({
   ) => ReactNode
   renderProgramme?: (programme: ProgrammeItem[], accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
   renderDressCode?: (dressCode: string, accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
+  /** Bloc additionnel "Menu du dîner" — inséré juste après Dress code, jamais rendu tant que non fourni (cf. `renderBeforeRsvp` pour le même principe des blocs additionnels). */
+  renderMenu?: (revealed: boolean, reducedMotion: boolean) => ReactNode
   renderLodging?: (lodging: string[], accent: string, revealed: boolean, reducedMotion: boolean) => ReactNode
   /**
-   * Blocs additionnels insérés juste avant RSVP, dans l'ordre — pas un
-   * remplacement d'un bloc existant comme les 4 slots ci-dessus, mais des
-   * EN PLUS (cf. Edwige & Wilfried « Notre histoire » puis
-   * « Foire aux questions », toutes deux avant RSVP). Chacun garde son
-   * propre filet + RevealBlock (donc son propre déclenchement au scroll),
-   * comme n'importe quel autre bloc — `renderBeforeRsvp2` n'est qu'un 2e
-   * emplacement du même type, pas un mécanisme différent.
+   * Blocs additionnels — pas un remplacement d'un bloc existant comme les
+   * slots ci-dessus, mais des EN PLUS, chacun avec son propre filet +
+   * RevealBlock (donc son propre déclenchement au scroll), comme n'importe
+   * quel autre bloc. Positions FIXES dans l'ordre global (cf. plus bas où
+   * chacun est poussé dans `blocks`), pas de simple empilement en fin de
+   * liste :
+   *  - `renderBeforeRsvp` ("Notre histoire") : juste après Le Programme
+   *    (ou après Le Lieu si pas de programme).
+   *  - `renderMenu` ("Menu du dîner", ci-dessus) : juste après Dress code.
+   *  - `renderBeforeFaq` ("Liste de mariage") : juste avant `renderBeforeRsvp2`.
+   *  - `renderBeforeRsvp2` ("Foire aux questions") : juste avant RSVP.
    */
   renderBeforeRsvp?: (revealed: boolean, reducedMotion: boolean) => ReactNode
+  /** Bloc additionnel "Liste de mariage" — inséré juste avant `renderBeforeRsvp2` (FAQ), jamais rendu tant que non fourni. */
+  renderBeforeFaq?: (revealed: boolean, reducedMotion: boolean) => ReactNode
   renderBeforeRsvp2?: (revealed: boolean, reducedMotion: boolean) => ReactNode
   renderRsvp?: (
     props: { label: string; accent: string; onClick: () => void },
@@ -758,6 +768,14 @@ export default function DetailsSombre({
       ),
     )
   }
+  // "Notre histoire" : juste après Le Programme (ou après Le Lieu si pas de
+  // programme) — cf. doc de `renderBeforeRsvp` ci-dessus pour les positions
+  // fixes des 4 blocs additionnels. Poussé ICI, pas en fin de liste comme
+  // avant (déplacement demandé par le client, cf. modifications a faire.md).
+  if (renderBeforeRsvp) {
+    blocks.push((revealed, reducedMotion) => renderBeforeRsvp(revealed, reducedMotion))
+  }
+
   if (dressCode) {
     blocks.push((revealed, reducedMotion) =>
       renderDressCode ? (
@@ -774,6 +792,12 @@ export default function DetailsSombre({
       ),
     )
   }
+
+  // "Menu du dîner" : juste après Dress code.
+  if (renderMenu) {
+    blocks.push((revealed, reducedMotion) => renderMenu(revealed, reducedMotion))
+  }
+
   if (lodging && lodging.length > 0) {
     blocks.push((revealed, reducedMotion) =>
       renderLodging ? (
@@ -796,8 +820,9 @@ export default function DetailsSombre({
     )
   }
 
-  if (renderBeforeRsvp) {
-    blocks.push((revealed, reducedMotion) => renderBeforeRsvp(revealed, reducedMotion))
+  // "Liste de mariage" : juste avant la FAQ.
+  if (renderBeforeFaq) {
+    blocks.push((revealed, reducedMotion) => renderBeforeFaq(revealed, reducedMotion))
   }
 
   if (renderBeforeRsvp2) {

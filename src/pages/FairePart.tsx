@@ -18,7 +18,9 @@ import {
   FoireAuxQuestions,
   HorizontalProgramme,
   LieuMagnifier,
+  ListeDeMariage,
   LodgingCascadeCard,
+  MenuDuDiner,
   NotreHistoire,
   ScatterDateCard,
   WaxSealRsvp,
@@ -212,6 +214,15 @@ export default function FairePart() {
     return invite.dressCodeCouleur ? [invite.dressCodeCouleur] : undefined
   })()
 
+  // "Menu du dîner" (DetailsSombre, slot `renderMenu`) : absent tant
+  // qu'aucune des 4 sous-sections n'a de contenu — jamais de contenu
+  // inventé, cf. MenuDuDiner (edwigeWilfriedEffects.tsx).
+  const hasMenu =
+    invite.menuCocktail.length > 0 ||
+    invite.menuEntree.length > 0 ||
+    invite.menuPlat.length > 0 ||
+    invite.menuDessert.length > 0
+
   const chapters: HeroChapter[] =
     studioChapters && videoDuration
       ? [
@@ -389,6 +400,28 @@ export default function FairePart() {
               renderBeforeRsvp={
                 invite.histoire
                   ? () => <NotreHistoire text={invite.histoire!} keywords={invite.histoireMotsCles} photos={invite.galeriePhotos} />
+                  : undefined
+              }
+              renderMenu={
+                hasMenu
+                  ? () => (
+                      <MenuDuDiner
+                        cocktail={invite.menuCocktail}
+                        entree={invite.menuEntree}
+                        plat={invite.menuPlat}
+                        dessert={invite.menuDessert}
+                      />
+                    )
+                  : undefined
+              }
+              renderBeforeFaq={
+                invite.listeMariageLien
+                  ? () => (
+                      <ListeDeMariage
+                        link={invite.listeMariageLien!}
+                        message={invite.listeMariageMessage ?? undefined}
+                      />
+                    )
                   : undefined
               }
               renderBeforeRsvp2={faqItems.length > 0 ? () => <FoireAuxQuestions items={faqItems} /> : undefined}

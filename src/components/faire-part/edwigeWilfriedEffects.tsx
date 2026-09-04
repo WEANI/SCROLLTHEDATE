@@ -820,9 +820,9 @@ export function NotreHistoire({
     // HorizontalProgramme). Fond transparent (et non plus #0d0a08) sur
     // retour client : la section doit se fondre dans le fond clair de la
     // page (même mécanisme que la case Date), pas trancher comme une bande
-    // sombre. Positionnée juste avant RSVP via le slot `renderBeforeRsvp`
-    // (cf. FairePartEdwigeWilfried.tsx) — déplacée depuis avant Le
-    // Programme sur retour client.
+    // sombre. Positionnée via le slot `renderBeforeRsvp` de DetailsSombre,
+    // juste après Le Programme (cf. modifications a faire.md — remise à
+    // cette position après un premier aller-retour côté client).
     <section className="relative ml-[calc(50%-50vw)] w-screen py-20" style={{ background: 'transparent' }}>
       <EwLabel>Notre histoire</EwLabel>
       <div className="mx-auto max-w-[26ch]">
@@ -1419,6 +1419,128 @@ export function LodgingCascadeCard({
             </div>
           )
         })}
+      </div>
+    </section>
+  )
+}
+
+// 8. Menu du dîner --------------------------------------------------------
+
+/**
+ * Une sous-section du menu (Cocktail / Entrée / Plat / Dessert) — chaque
+ * ligne saisie par le couple (cf. jourj.menu_cocktail/entree/plat/dessert)
+ * est un plat/élément brut, SANS le préfixe "Option N" : c'est ce
+ * composant qui le génère (`numbered`), pour que le couple n'ait qu'à
+ * taper le plat, pas la mise en forme — cf. maquette fournie (Cocktail en
+ * liste à puces, Entrée/Plat/Dessert en options numérotées). Absente si
+ * `items` est vide, jamais un titre de sous-section sans contenu.
+ */
+function MenuCourse({ title, items, numbered }: { title: string; items: string[]; numbered?: boolean }) {
+  const p = usePalette()
+  if (items.length === 0) return null
+  return (
+    <div>
+      <p className="mb-3 text-center text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: p.bordeaux }}>
+        {title}
+      </p>
+      <ul className="list-none p-0 text-center">
+        {items.map((item, i) => (
+          <li key={i} className="py-1 text-[14.5px] leading-[1.6]" style={{ color: `rgba(${p.inkRgb}, 0.8)` }}>
+            {numbered ? (
+              <>
+                <span className="font-semibold" style={{ color: p.bordeaux }}>
+                  Option {i + 1} —{' '}
+                </span>
+                {item}
+              </>
+            ) : (
+              item
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/**
+ * Section "Menu du dîner" — sous DetailsSombre via le slot `renderMenu`,
+ * juste après Dress code (cf. modifications a faire.md). 4 sous-sections
+ * optionnelles, chacune n'apparaît que si le couple l'a renseignée ; toute
+ * la section reste absente de la page tant qu'aucune des 4 n'a de contenu
+ * — géré par l'appelant (FairePart.tsx), pas ici : ce composant se contente
+ * d'omettre les sous-sections vides qu'on lui passe.
+ */
+export function MenuDuDiner({
+  cocktail = [],
+  entree = [],
+  plat = [],
+  dessert = [],
+}: {
+  cocktail?: string[]
+  entree?: string[]
+  plat?: string[]
+  dessert?: string[]
+}) {
+  const p = usePalette()
+  const courses = [
+    { title: 'Cocktail', items: cocktail, numbered: false },
+    { title: 'Entrée', items: entree, numbered: true },
+    { title: 'Plat', items: plat, numbered: true },
+    { title: 'Dessert', items: dessert, numbered: true },
+  ].filter((c) => c.items.length > 0)
+
+  return (
+    <section className="text-center">
+      <EwLabel>Menu du dîner</EwLabel>
+      <div className="flex flex-col gap-7">
+        {courses.map((course, i) => (
+          <div key={course.title}>
+            {i > 0 && <div className="mx-auto mb-7 h-px w-14" style={{ background: p.gold }} aria-hidden />}
+            <MenuCourse title={course.title} items={course.items} numbered={course.numbered} />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// 9. Liste de mariage -------------------------------------------------------
+
+/**
+ * Section "Liste de mariage" — sous DetailsSombre via le slot
+ * `renderBeforeFaq`, juste avant la FAQ (cf. modifications a faire.md).
+ * La maquette fournie par le client montre un encart "IBAN", mais le
+ * texte de la demande précise explicitement un LIEN vers une cagnotte en
+ * ligne — c'est ce dernier qui fait foi ici (le style d'encart bordé de
+ * la maquette est repris pour afficher ce lien, pas un IBAN). N'apparaît
+ * que si `link` est fourni (géré par l'appelant, FairePart.tsx) — sans
+ * lien, une "liste de mariage" n'a pas de destination possible.
+ */
+export function ListeDeMariage({
+  link,
+  message = "Votre présence est notre plus beau cadeau. Si vous souhaitez contribuer à notre voyage de noces, votre geste nous touchera profondément.",
+}: {
+  link: string
+  message?: string
+}) {
+  const p = usePalette()
+  return (
+    <section className="text-center">
+      <EwLabel>Liste de mariage</EwLabel>
+      <p className="mx-auto max-w-[34ch] text-[14.5px] leading-[1.7]" style={{ color: `rgba(${p.inkRgb}, 0.75)` }}>
+        {message}
+      </p>
+      <div className="mt-7 flex justify-center">
+        <a
+          href={link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="max-w-full truncate rounded-xl border px-6 py-3.5 text-[13.5px] font-semibold"
+          style={{ borderColor: p.gold, color: p.bordeaux, background: p.bg }}
+        >
+          {link}
+        </a>
       </div>
     </section>
   )
