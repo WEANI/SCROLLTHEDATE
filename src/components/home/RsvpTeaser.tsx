@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
 
 const RECEIVED = [
-  { label: 'Présence', text: 'oui, non ou peut-être — précisée par invité quand ils sont plusieurs.' },
+  { label: 'Présence', text: 'oui, non — précisée par invités.' },
   { label: 'Adultes et enfants', text: 'le nombre exact, pour adapter tables et plan de salle.' },
   { label: 'Allergies et régimes', text: 'un champ libre, rempli par chaque invité lui-même.' },
   { label: 'Un mot pour vous', text: 'félicitations et petits messages reçus avec chaque réponse.' },
@@ -38,13 +38,13 @@ export default function RsvpTeaser() {
           variants={{ hidden: { y: 16, opacity: 0 }, show: { y: 0, opacity: 1, transition: { duration: 0.6 } } }}
           className="mb-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300"
         >
-          Ce qui change pour vous
+          RSVP
         </motion.p>
         <motion.h2
           variants={{ hidden: { y: 24, opacity: 0 }, show: { y: 0, opacity: 1, transition: { duration: 0.7 } } }}
           className="font-display max-w-2xl text-[clamp(2.4rem,5vw,4.5rem)] font-light leading-[1.05] tracking-[-0.015em] text-white"
         >
-          Vos réponses arrivent <em className="italic text-terracotta-300">seules</em>.
+          Gestion <em className="italic text-terracotta-300">rapide</em> des réponses des invités
         </motion.h2>
         <motion.p
           variants={{ hidden: { y: 16, opacity: 0 }, show: { y: 0, opacity: 1, transition: { duration: 0.7 } } }}
@@ -63,7 +63,7 @@ export default function RsvpTeaser() {
             className="rounded-lg bg-anthracite-800 p-8 lg:p-10"
           >
             <p className="font-display text-2xl font-medium text-white">
-              Ce que vous recevez pour chaque invité
+              Les informations pour chaque invité
             </p>
             <ul className="mt-6 flex flex-col gap-4">
               {RECEIVED.map((item) => (
@@ -84,7 +84,7 @@ export default function RsvpTeaser() {
             }}
             className="rounded-lg bg-anthracite-800 p-8 lg:p-10"
           >
-            <p className="font-display text-2xl font-medium text-white">Et ensuite, sans vous</p>
+            <p className="font-display text-2xl font-medium text-white">Depuis votre tableau de bord</p>
             <div className="mt-6 flex flex-col gap-6">
               {AFTER.map((item) => (
                 <div key={item.title}>

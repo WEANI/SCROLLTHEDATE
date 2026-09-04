@@ -5,7 +5,7 @@ import { useGSAP } from '@gsap/react'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
-const TITLE_WORDS = ['Pas', 'un', 'template.', 'Votre', 'film.']
+const TITLE_WORDS = ['Un', 'faire-part', 'unique', 'qui', 'raconte', 'votre', 'histoire.']
 
 /** Section concept — split éditorial 55/45, reveal mot-par-mot + parallaxe. */
 export default function Concept() {
