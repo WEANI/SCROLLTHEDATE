@@ -236,6 +236,27 @@ export default function ScrubHero({
 
     const state = { target: 0, current: 0 }
 
+    // Throttle des seeks vers une zone PAS ENCORE bufferisée — même bug/fix
+    // que hero-scrub/HeroScrub.tsx : sur connexion lente, un seek() à
+    // chaque tick (~16ms) interrompt le fetch réseau du seek précédent
+    // avant qu'il n'ait pu récupérer la moindre donnée, donc `buffered`
+    // reste vide en continu quelle que soit la durée du scroll — le clamp
+    // `video.buffered.end(...)` juste en dessous ne sert alors à rien
+    // puisque `buffered.length` ne quitte jamais 0 (constaté : « image
+    // figée puis écran noir » persistant malgré ce clamp seul). Une fois
+    // qu'une zone est bufferisée, le seek y redevient libre et instantané
+    // (lecture locale, aucun risque réseau) : le throttle ne s'applique
+    // QUE quand la cible n'est pas encore chargée.
+    let lastSeekAt = 0
+    const MIN_SEEK_INTERVAL_MS = 200
+    const isBuffered = (vid: HTMLVideoElement, time: number) => {
+      const ranges = vid.buffered
+      for (let i = 0; i < ranges.length; i++) {
+        if (time >= ranges.start(i) - 0.5 && time <= ranges.end(i) + 0.5) return true
+      }
+      return false
+    }
+
     const st = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
@@ -279,11 +300,18 @@ export default function ScrubHero({
           t = Math.min(t, bufferedEnd)
         }
         if (Math.abs(video.currentTime - t) > 0.03) {
-          try {
-            video.currentTime = t
-          } catch {
-            /* seek non disponible — ignorer */
+          const now = performance.now()
+          if (isBuffered(video, t) || now - lastSeekAt >= MIN_SEEK_INTERVAL_MS) {
+            lastSeekAt = now
+            try {
+              video.currentTime = t
+            } catch {
+              /* seek non disponible — ignorer */
+            }
           }
+          // Sinon : ce tick est ignoré (throttle actif, zone pas encore
+          // bufferisée) — le tick suivant retentera avec la position de
+          // scroll la plus récente, cf. commentaire plus haut.
         }
       }
 
