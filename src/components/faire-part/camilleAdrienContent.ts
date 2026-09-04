@@ -256,6 +256,10 @@ export const CA_PALETTE: BespokePalette = {
   seal: '#7C8698',
   sealLight: '#B7BEC9',
   sealDark: '#454C59',
+  // Reprend CA_DRESS_CODE_COLORS (cf. doc de cette constante plus bas).
+  dressCode1: '#2A3F66',
+  dressCode2: '#F0ECE4',
+  dressCode3: '#C9B79C',
 }
 
 /**

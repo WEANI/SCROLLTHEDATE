@@ -69,6 +69,19 @@ export type BespokePalette = {
   seal: string
   sealLight: string
   sealDark: string
+  /**
+   * Pastilles « Teintes suggérées » de la section Dress code (cf.
+   * `DressCodeSwatch`/`DressCodeCard` plus bas) — 1 à 3 teintes, posées
+   * par le studio plutôt que par le couple (contrairement au texte du
+   * dress code lui-même, qui vient du questionnaire). Chaîne vide =
+   * pastille non définie ; `DressCodeCard` retombe alors sur ses 3 teintes
+   * pastel par défaut (`EW_DRESS_CODE_COLORS`) si aucune des 3 n'est
+   * renseignée. Pas de rôle « 4e teinte » : au-delà de 3, le rendu (anneau
+   * qui se trace + pastille) devient illisible en une ligne.
+   */
+  dressCode1: string
+  dressCode2: string
+  dressCode3: string
 }
 
 export const EW_PALETTE: BespokePalette = {
@@ -91,6 +104,9 @@ export const EW_PALETTE: BespokePalette = {
   seal: '#b02634',
   sealLight: '#c8394a',
   sealDark: '#7c1a26',
+  dressCode1: '#B9A3CC',
+  dressCode2: '#D8B99A',
+  dressCode3: '#E8A9BC',
 }
 
 const PaletteContext = createContext<BespokePalette>(EW_PALETTE)

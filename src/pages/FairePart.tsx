@@ -199,6 +199,19 @@ export default function FairePart() {
   const programme = invite.programme.map(parseProgrammeItem)
   const faqItems = invite.faq.map(parseFaqItem)
 
+  // Teintes des pastilles « Dress code » : la palette posée au studio
+  // (curatée, jusqu'à 3 teintes) prévaut sur l'unique couleur choisie par
+  // le couple dans le questionnaire — même logique que `effectivePageBg`
+  // ci-dessus pour `palette.bg`/`paletteFond`. À défaut des deux,
+  // `undefined` laisse DressCodeCard retomber sur ses teintes par défaut.
+  const dressCodeColors = (() => {
+    const fromPalette = [palette.dressCode1, palette.dressCode2, palette.dressCode3].filter(
+      (c): c is string => !!c,
+    )
+    if (fromPalette.length > 0) return fromPalette
+    return invite.dressCodeCouleur ? [invite.dressCodeCouleur] : undefined
+  })()
+
   const chapters: HeroChapter[] =
     studioChapters && videoDuration
       ? [
@@ -368,7 +381,7 @@ export default function FairePart() {
                 <HorizontalProgramme programme={items} revealed={revealed} reducedMotion={reducedMotion} />
               )}
               renderDressCode={(dressCode, _accent, revealed, reducedMotion) => (
-                <DressCodeCard dressCode={dressCode} colors={invite.dressCodeCouleur ? [invite.dressCodeCouleur] : undefined} revealed={revealed} reducedMotion={reducedMotion} />
+                <DressCodeCard dressCode={dressCode} colors={dressCodeColors} revealed={revealed} reducedMotion={reducedMotion} />
               )}
               renderLodging={(lodging, _accent, revealed, reducedMotion) => (
                 <LodgingCascadeCard lodging={lodging} revealed={revealed} reducedMotion={reducedMotion} />

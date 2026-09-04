@@ -1,8 +1,9 @@
 import type { BespokePaletteInput } from "@contracts/bespokePalette";
 
 /**
- * Génère une proposition de départ pour les 19 champs de `BespokePalette`
- * à partir d'une seule couleur d'accent + du mode clair/sombre choisi par
+ * Génère une proposition de départ pour les champs fonds/encre/accents/sceau
+ * de `BespokePalette` (les teintes du dress code restent vides, cf. plus
+ * bas) à partir d'une seule couleur d'accent + du mode clair/sombre choisi par
  * le client (cf. PLAN-GENERALISATION-THEMES.md, Phase 0/D1 et Phase 2) —
  * jamais le résultat final : le studio retouche toujours à l'œil dans
  * StudioPanel avant de valider. N'est appelée que côté admin, jamais côté
@@ -78,6 +79,12 @@ export function suggestPalette(accentColor: string, mode: "light" | "dark", exac
     seal: primaryHex,
     sealLight,
     sealDark,
+    // Teintes du dress code : jamais dérivées de l'accent (un choix de
+    // goût propre au couple, pas déductible d'une seule couleur) —
+    // laissées vides, à saisir à la main au studio si besoin.
+    dressCode1: "",
+    dressCode2: "",
+    dressCode3: "",
   };
 }
 

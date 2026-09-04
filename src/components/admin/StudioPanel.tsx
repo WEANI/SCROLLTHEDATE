@@ -874,6 +874,9 @@ const BLANK_PALETTE: BespokePaletteInput = {
   seal: "",
   sealLight: "",
   sealDark: "",
+  dressCode1: "",
+  dressCode2: "",
+  dressCode3: "",
 };
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
@@ -1091,12 +1094,13 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
           </button>
         </div>
         <p className="mt-3 text-[11px] leading-relaxed text-neutral-500">
-          Remplit les 19 champs ci-dessous à partir de cette seule couleur — un point de départ à retoucher, jamais
-          le résultat final.
+          Remplit les champs de fonds/encre/accents/sceau ci-dessous à partir de cette seule couleur — un point de
+          départ à retoucher, jamais le résultat final. Les teintes du dress code (facultatives) ne sont pas
+          générées : à définir à la main si besoin.
         </p>
       </div>
 
-      {/* 19 champs, retouchables à la main */}
+      {/* 22 champs, retouchables à la main */}
       <div className="space-y-5">
         <div>
           <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Fonds</h4>
@@ -1171,6 +1175,20 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
               value={palette.sealDark}
               onChange={(v) => setField("sealDark", v)}
             />
+          </div>
+        </div>
+        <div>
+          <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+            Dress code — teintes suggérées
+          </h4>
+          <p className="mb-2 text-[11px] text-neutral-500">
+            1 à 3 pastilles affichées sous le dress code. Laisser vide pour retomber sur les teintes pastel par
+            défaut.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ColorField label="Teinte 1" value={palette.dressCode1} onChange={(v) => setField("dressCode1", v)} />
+            <ColorField label="Teinte 2" value={palette.dressCode2} onChange={(v) => setField("dressCode2", v)} />
+            <ColorField label="Teinte 3" value={palette.dressCode3} onChange={(v) => setField("dressCode3", v)} />
           </div>
         </div>
       </div>

@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 /**
- * Schéma partagé des 19 champs de `BespokePalette` (cf.
+ * Schéma partagé des 22 champs de `BespokePalette` (cf.
  * src/components/faire-part/edwigeWilfriedEffects.tsx pour le rôle exact
- * de chaque champ — fond des cartes, encre, accents, sceau…) — utilisé
- * côté serveur pour valider `projects.adminSetPalette` et côté client
- * (StudioPanel, suggestPalette) pour typer le formulaire admin. Ne
+ * de chaque champ — fond des cartes, encre, accents, sceau, dress code…) —
+ * utilisé côté serveur pour valider `projects.adminSetPalette` et côté
+ * client (StudioPanel, suggestPalette) pour typer le formulaire admin. Ne
  * réexporte pas le type `BespokePalette` du composant React (pas
  * importable depuis l'API, cf. séparation api//src actée ailleurs dans
  * ce repo) : cette liste de clés doit être tenue à la main en phase avec
@@ -31,6 +31,13 @@ export const bespokePaletteSchema = z.object({
   seal: z.string(),
   sealLight: z.string(),
   sealDark: z.string(),
+  // Pastilles « Teintes suggérées » de la section Dress code — 1 à 3
+  // teintes, chaîne vide = non définie (DressCodeCard retombe alors sur
+  // ses teintes pastel par défaut). Pas de compagnon *Rgb : utilisées
+  // telles quelles en background CSS, jamais en rgba() mélangé.
+  dressCode1: z.string(),
+  dressCode2: z.string(),
+  dressCode3: z.string(),
 });
 
 export type BespokePaletteInput = z.infer<typeof bespokePaletteSchema>;

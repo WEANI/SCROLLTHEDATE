@@ -274,6 +274,11 @@ export const LAO_PALETTE: BespokePalette = {
   seal: '#8B1E28',
   sealLight: '#A32732', // accentHover déjà établi dans PAYLOAD_THEME, pas une teinte inventée
   sealDark: '#5C1018',
+  // Reprend LAO_DRESS_CODE_COLORS (rouge/noir, 2 teintes — pas de 3e
+  // couleur inventée, cf. doc de cette constante plus bas).
+  dressCode1: '#8B1E28',
+  dressCode2: '#1A1512',
+  dressCode3: '',
 }
 
 /**
