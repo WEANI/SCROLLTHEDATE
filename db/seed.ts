@@ -143,7 +143,7 @@ async function seed() {
     { id: "jourj.heure", step: 3, type: "text", label: "Heure de la cérémonie", showOnInvite: true },
     { id: "jourj.hebergements", step: 3, type: "list", label: "Hébergements recommandés", help: "Nom + distance + lien, un par ligne", showOnInvite: true },
     { id: "jourj.dress_code", step: 3, type: "text", label: "Dress code", showOnInvite: true },
-    { id: "jourj.dress_code_couleur", step: 3, type: "color", label: "Couleur du dress code", help: "Si vous souhaitez imposer une couleur précise à vos invités", showOnInvite: true },
+    { id: "jourj.dress_code_couleur", step: 3, type: "color", label: "Couleur du dress code", help: "Facultatif — si vous avez une couleur précise en tête. Sinon nous la choisissons selon vos réponses ci-dessus.", showOnInvite: true },
     { id: "jourj.infos_pratiques", step: 3, type: "textarea", label: "Infos pratiques (navette, parking, enfants…)", showOnInvite: true },
     { id: "style.ambiance", step: 4, type: "choice", label: "Ambiance souhaitée (Éditorial / Cinéma / Minimal)", required: true },
     { id: "style.theme_couleurs", step: 4, type: "text", label: "Thème et couleurs du mariage", placeholder: "Bohème chic — terracotta, sauge, lin", help: "La palette qui inspire le montage et le faire-part", showOnInvite: true },

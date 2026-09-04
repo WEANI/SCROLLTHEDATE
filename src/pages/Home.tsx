@@ -1,17 +1,29 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router'
 import ScrubHero from '@/components/ScrubHero'
-import type { ScrubHeroBeat } from '@/components/ScrubHero'
+import type { ScrubHeroBeat, ScrubHeroSnapWindow } from '@/components/ScrubHero'
 import { useSeo } from '@/hooks/useSeo'
 import SocialProof from '@/components/home/SocialProof'
 import Concept from '@/components/home/Concept'
+import Included from '@/components/home/Included'
 import HowItWorks from '@/components/home/HowItWorks'
 import Advantages from '@/components/home/Advantages'
+import RsvpTeaser from '@/components/home/RsvpTeaser'
 import Products from '@/components/home/Products'
 import Gallery from '@/components/home/Gallery'
 import Faq from '@/components/home/Faq'
 import FinalCta from '@/components/home/FinalCta'
 
+/**
+ * Calé sur le contenu réel de home-hero-scrub.mp4 (9,13 s, 3 plans séparés
+ * par des whip-pans) plutôt que sur un découpage à l'aveugle :
+ *  - 0 → 0.28 : sortie de cérémonie, confettis (plan large, établit l'histoire)
+ *  - transition whip-pan  0.28 → 0.36
+ *  - 0.36 → 0.62 : mains alliées sur le bouquet (plan serré, « les images »)
+ *  - transition whip-pan  0.62 → 0.68
+ *  - 0.68 → 1   : silhouette, échange d'alliance sur fond blanc (plan fixe,
+ *    le plus calme du clip — CTA révélé ici, cf. persistentFrom)
+ */
 const HERO_BEATS: ScrubHeroBeat[] = [
   {
     from: 0,
@@ -20,12 +32,12 @@ const HERO_BEATS: ScrubHeroBeat[] = [
   },
   {
     from: 0.08,
-    to: 0.38,
+    to: 0.26,
     segments: [{ text: 'Votre histoire.' }],
   },
   {
-    from: 0.38,
-    to: 0.68,
+    from: 0.36,
+    to: 0.6,
     segments: [{ text: 'Racontée en' }, { text: 'images.', accent: true }],
   },
   {
@@ -35,7 +47,16 @@ const HERO_BEATS: ScrubHeroBeat[] = [
   },
 ]
 
-/** CTA persistant du héros (révélé à 55 % de progression). */
+// Cf. commentaire ScrubHeroProps.snapWindows — référence stable (module-level,
+// comme HERO_BEATS) : un littéral inline dans le JSX serait recréé à chaque
+// rendu de Home et réinitialiserait inutilement le ScrollTrigger du héros.
+const HERO_SNAP_WINDOWS: ScrubHeroSnapWindow[] = [
+  { from: 0.28, to: 0.36 },
+  { from: 0.62, to: 0.68 },
+]
+
+/** CTA persistant du héros (révélé à 80 % de progression, sur le plan
+ * silhouette fixe — le plus calme du clip, cf. commentaire HERO_BEATS). */
 function HeroCta() {
   return (
     <div className="flex flex-wrap items-center justify-center gap-5">
@@ -80,19 +101,27 @@ export default function Home() {
       {/* Héros plein écran : sort du padding du Layout (navbar overlay) via -mt-20 */}
       <div className="-mt-20">
         <ScrubHero
-          videoSrc="/hero-film.mp4"
-          posterSrc="/hero-poster.jpg"
+          videoSrc="/home-hero-scrub.mp4"
+          posterSrc="/home-hero-poster.jpg"
           heading="Votre histoire, racontée en images — le faire-part de mariage digital que vos invités n'oublieront pas"
           beats={HERO_BEATS}
           persistent={<HeroCta />}
-          persistentFrom={0.55}
-          durationVh={350}
+          persistentFrom={0.8}
+          durationVh={250}
+          // Les deux whip-pans (glitch RGB) ne supportent pas le scrub : figés
+          // au milieu, ils montrent une image volontairement floue au lieu
+          // d'un cut rapide. On comprime leur part de scroll (4 % chacun,
+          // contre ~14 % de la durée vidéo naturellement) pour que
+          // l'utilisateur les traverse vite plutôt que de s'y arrêter.
+          snapWindows={HERO_SNAP_WINDOWS}
         />
       </div>
       <SocialProof />
       <Concept />
+      <Included />
       <HowItWorks />
       <Advantages />
+      <RsvpTeaser />
       <Products />
       <Gallery />
       <Faq />

@@ -22,6 +22,14 @@ export interface ScrubHeroBeat {
   segments?: ScrubHeroSegment[]
 }
 
+export interface ScrubHeroSnapWindow {
+  /** Fenêtre de progression vidéo (0 → 1) à traverser vite au scroll — cf. `buildSnapRemap`. */
+  from: number
+  to: number
+  /** Part du scroll total allouée à cette fenêtre (défaut 0.04 = 4 %). */
+  scrollShare?: number
+}
+
 export interface ScrubHeroProps {
   videoSrc: string
   posterSrc: string
@@ -33,15 +41,86 @@ export interface ScrubHeroProps {
   persistentFrom?: number
   /** Hauteur de scroll de la section épinglée, en vh (défaut 350). */
   durationVh?: number
+  /**
+   * Fenêtres de progression vidéo à comprimer dans l'espace de scroll — pensé
+   * pour les plans de montage (whip-pan, glitch RGB…) qui ne supportent pas
+   * le scrub : figés au milieu de l'effet, ces plans-là montrent une image
+   * volontairement moche (flou de mouvement, split RGB) au lieu d'un cut
+   * rapide. Sans `snapWindows`, `beat.from/to` = fraction de scroll = fraction
+   * vidéo (mapping 1:1) ; avec, la vidéo garde ses fractions (`beats` reste
+   * inchangé) mais le scroll nécessaire pour les traverser est réduit à
+   * `scrollShare` — l'utilisateur les passe vite plutôt que de s'y arrêter.
+   */
+  snapWindows?: ScrubHeroSnapWindow[]
   className?: string
 }
 
 const LERP = 0.12
 const ENTER = 0.055 // durée d'entrée d'un beat (fraction de la progression globale)
 const EXIT = 0.045 // durée de sortie
+const DEFAULT_SNAP_SCROLL_SHARE = 0.04
+// Référence stable : un `[]` littéral en valeur par défaut de paramètre serait
+// recréé à chaque appel, invalidant le useMemo(remap) et l'effet qui en
+// dépend à chaque rendu (cf. `snapWindows` dans ScrubHeroProps).
+const EMPTY_SNAP_WINDOWS: ScrubHeroSnapWindow[] = []
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
+
+/**
+ * Construit `remap(s)` : scroll-progress amorti (0→1, linéaire en pixels) →
+ * video-progress (0→1, ce que `beats`/`video.currentTime` attendent).
+ * Identité si `windows` est vide. Sinon, chaque fenêtre vidéo consomme
+ * seulement `scrollShare` de scroll (au lieu de sa largeur naturelle) ; le
+ * scroll restant est réparti au prorata sur les segments vidéo hors fenêtres
+ * — dilatés d'un facteur `scale` égal partout, donc sans à-coup de vitesse
+ * perceptible sur les plans fixes (seul l'écart entre plans fixes et
+ * transitions change, c'est le but).
+ */
+function buildSnapRemap(windows: ScrubHeroSnapWindow[]): (s: number) => number {
+  if (windows.length === 0) return (s) => s
+  const sorted = [...windows].sort((a, b) => a.from - b.from)
+  const totalSnapScroll = sorted.reduce((acc, w) => acc + (w.scrollShare ?? DEFAULT_SNAP_SCROLL_SHARE), 0)
+  const totalSnapVideo = sorted.reduce((acc, w) => acc + (w.to - w.from), 0)
+  const remainingScroll = Math.max(0, 1 - totalSnapScroll)
+  const remainingVideo = Math.max(0.0001, 1 - totalSnapVideo)
+  const scale = remainingScroll / remainingVideo
+
+  interface Seg {
+    sStart: number
+    sEnd: number
+    vStart: number
+    vEnd: number
+  }
+  const segs: Seg[] = []
+  let vCursor = 0
+  let sCursor = 0
+  for (const w of sorted) {
+    if (w.from > vCursor) {
+      const vWidth = w.from - vCursor
+      const sWidth = vWidth * scale
+      segs.push({ sStart: sCursor, sEnd: sCursor + sWidth, vStart: vCursor, vEnd: w.from })
+      sCursor += sWidth
+    }
+    const sWidth = w.scrollShare ?? DEFAULT_SNAP_SCROLL_SHARE
+    segs.push({ sStart: sCursor, sEnd: sCursor + sWidth, vStart: w.from, vEnd: w.to })
+    sCursor += sWidth
+    vCursor = w.to
+  }
+  if (vCursor < 1) {
+    const vWidth = 1 - vCursor
+    const sWidth = vWidth * scale
+    segs.push({ sStart: sCursor, sEnd: sCursor + sWidth, vStart: vCursor, vEnd: 1 })
+  }
+
+  return (s: number) => {
+    const clamped = clamp01(s)
+    const seg = segs.find((seg) => clamped <= seg.sEnd + 1e-6) ?? segs[segs.length - 1]
+    const span = seg.sEnd - seg.sStart
+    const localT = span > 0 ? (clamped - seg.sStart) / span : 0
+    return seg.vStart + localT * (seg.vEnd - seg.vStart)
+  }
+}
 
 interface WordRef {
   el: HTMLSpanElement
@@ -76,6 +155,7 @@ export default function ScrubHero({
   persistent,
   persistentFrom = 0.55,
   durationVh = 350,
+  snapWindows = EMPTY_SNAP_WINDOWS,
   className,
 }: ScrubHeroProps) {
   const sectionRef = useRef<HTMLElement>(null)
@@ -113,6 +193,10 @@ export default function ScrubHero({
     [beats],
   )
 
+  // Scroll amorti → progression vidéo : identité si `snapWindows` est vide,
+  // sinon compresse ces fenêtres dans l'espace de scroll (cf. buildSnapRemap).
+  const remap = useMemo(() => buildSnapRemap(snapWindows), [snapWindows])
+
   useEffect(() => {
     if (reducedMotion) return
     const section = sectionRef.current
@@ -144,9 +228,11 @@ export default function ScrubHero({
     })
 
     const render = () => {
-      // Amorti du scrub
+      // Amorti du scrub, puis compression éventuelle des `snapWindows`
+      // (identité si aucune) — `p` ci-dessous est la progression VIDÉO,
+      // celle qu'attendent `beats`/`video.currentTime`/`persistentFrom`.
       state.current += (state.target - state.current) * LERP
-      const p = clamp01(state.current)
+      const p = remap(clamp01(state.current))
 
       // Vidéo scrubbée
       if (video && !videoFailed && Number.isFinite(video.duration) && video.duration > 0) {
@@ -214,7 +300,7 @@ export default function ScrubHero({
       gsap.ticker.remove(render)
       st.kill()
     }
-  }, [reducedMotion, videoFailed, beats, durationVh, persistentFrom])
+  }, [reducedMotion, videoFailed, beats, durationVh, persistentFrom, remap])
 
   /* ---------- Fallback reduced-motion : poster + beats statiques ---------- */
   if (reducedMotion) {
