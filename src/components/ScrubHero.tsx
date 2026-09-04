@@ -389,7 +389,19 @@ export default function ScrubHero({
             muted
             playsInline
             preload="auto"
-            onError={() => setVideoFailed(true)}
+            onError={(e) => {
+              // Un <source> dont le `media` ne correspond pas (ex. mobileSrc
+              // évalué sur un viewport desktop) peut déclencher un événement
+              // `error` qui remonte jusqu'ici sans jamais avoir été la source
+              // réellement chargée — reproduit en isolant exactement cette
+              // structure (mobileSrc + source par défaut) : le navigateur
+              // laisse `video.error` à `null` dans ce cas, contrairement à un
+              // vrai échec de la source active. Ne basculer sur le poster
+              // fixe que si `video.error` est réellement renseigné, sous
+              // peine de perdre le scrub pour une erreur non fatale.
+              if (!e.currentTarget.error) return
+              setVideoFailed(true)
+            }}
             className="absolute inset-0 h-full w-full object-cover"
           >
             {mobileSrc && <source src={mobileSrc} media="(max-width: 767px)" />}
