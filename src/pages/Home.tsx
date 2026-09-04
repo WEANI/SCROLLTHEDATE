@@ -95,7 +95,7 @@ function HeroCta() {
         Créer notre faire-part
       </Link>
       <Link
-        to="/demo"
+        to="/demofairepart"
         className="rounded-full border border-white/25 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white/85 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-white/60 hover:text-white"
       >
         Voir la démo

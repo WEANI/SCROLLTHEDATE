@@ -94,7 +94,7 @@ export default function FinalCta() {
             Créer notre faire-part
           </Link>
           <Link
-            to="/demo"
+            to="/demofairepart"
             className="group inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-white/70 transition-colors hover:text-white"
           >
             Voir la démo

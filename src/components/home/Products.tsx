@@ -138,7 +138,7 @@ export default function Products() {
                   Commander
                 </Link>
                 <Link
-                  to="/demo"
+                  to="/demofairepart"
                   className="group/link relative text-[13px] font-semibold uppercase tracking-[0.1em] text-white/80 transition-colors hover:text-white"
                 >
                   Voir la démo

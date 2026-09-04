@@ -15,7 +15,7 @@ const NAV_LINKS: NavLink[] = [
   { label: 'Concept', href: '#concept' },
   { label: 'Comment ça marche', href: '#comment-ca-marche' },
   { label: 'Offres', href: '/offres' },
-  { label: 'Démo', href: '/demo' },
+  { label: 'Démo', href: '/demofairepart' },
   { label: 'FAQ', href: '#faq' },
 ]
 
