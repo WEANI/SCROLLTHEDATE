@@ -187,6 +187,15 @@ export default function ScrubHero({
   const [reducedMotion, setReducedMotion] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
+  // Overlay de diagnostic (?debug=1) — même outil que hero-scrub/HeroScrub.tsx
+  // pour le même genre de bug (« figé/noir sur mobile réel » signalé sans se
+  // reproduire en environnement de test) : lit l'état exact du lecteur
+  // (readyState, buffered, erreur…) directement sur l'enregistrement d'écran
+  // du client, faute de pouvoir brancher un débogueur sur son téléphone.
+  // Retirer une fois le bug confirmé résolu en conditions réelles.
+  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1'
+  const [debugState, setDebugState] = useState<Record<string, string | number | boolean>>({})
+
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     setReducedMotion(mq.matches)
@@ -204,6 +213,31 @@ export default function ScrubHero({
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
   }, [])
+
+  // iOS Safari reste très conservateur sur le buffering en arrière-plan tant
+  // qu'une vidéo n'a jamais été « jouée » au moins une fois (surtout sur
+  // cellulaire) — même avec `preload="auto"` : `buffered` peut rester
+  // scotché à la métadonnée seule indéfiniment, quel que soit le temps
+  // écoulé, tant que .play() n'a jamais été appelé. Ce n'est alors pas nos
+  // propres seeks qui empêchent le téléchargement (cf. throttle plus bas,
+  // qui ne peut rien résoudre à lui seul dans ce cas) : Safari ne tente
+  // simplement rien de plus tant que la vidéo est restée en pause depuis le
+  // chargement. Un play()+pause() quasi instantané (mute + playsInline,
+  // donc autorisé sans geste utilisateur) débloque son pipeline de
+  // téléchargement normal.
+  useEffect(() => {
+    if (reducedMotion) return
+    const video = videoRef.current
+    if (!video) return
+    const playPromise = video.play()
+    if (playPromise && typeof playPromise.then === 'function') {
+      playPromise
+        .then(() => video.pause())
+        .catch(() => {
+          /* autoplay refusé — le clamp/throttle du scrub restent le filet de sécurité */
+        })
+    }
+  }, [reducedMotion])
 
   const effectiveBeats = isMobile && mobileBeats ? mobileBeats : beats
 
@@ -248,6 +282,7 @@ export default function ScrubHero({
     // (lecture locale, aucun risque réseau) : le throttle ne s'applique
     // QUE quand la cible n'est pas encore chargée.
     let lastSeekAt = 0
+    let debugFrameCount = 0
     const MIN_SEEK_INTERVAL_MS = 200
     const isBuffered = (vid: HTMLVideoElement, time: number) => {
       const ranges = vid.buffered
@@ -315,6 +350,29 @@ export default function ScrubHero({
         }
       }
 
+      if (isDebug) {
+        debugFrameCount++
+        // ~4x/s (pas à chaque frame, pour ne pas spammer les re-renders).
+        if (debugFrameCount % 15 === 0 && video) {
+          const buffered: string[] = []
+          for (let i = 0; i < video.buffered.length; i++) {
+            buffered.push(`${video.buffered.start(i).toFixed(1)}-${video.buffered.end(i).toFixed(1)}`)
+          }
+          setDebugState({
+            readyState: video.readyState,
+            networkState: video.networkState,
+            paused: video.paused,
+            currentTime: Number(video.currentTime.toFixed(2)),
+            duration: Number.isFinite(video.duration) ? Number(video.duration.toFixed(2)) : NaN,
+            buffered: buffered.join(',') || '(vide)',
+            error: video.error ? `${video.error.code}:${video.error.message}` : '-',
+            videoFailed,
+            currentSrc: video.currentSrc.split('/').pop() || '',
+            p: Number(p.toFixed(3)),
+          })
+        }
+      }
+
       // Beats typographiques
       effectiveBeats.forEach((beat, bi) => {
         const beatEl = beatRefs.current[bi]
@@ -369,7 +427,7 @@ export default function ScrubHero({
       gsap.ticker.remove(render)
       st.kill()
     }
-  }, [reducedMotion, videoFailed, effectiveBeats, durationVh, persistentFrom, remap])
+  }, [reducedMotion, videoFailed, effectiveBeats, durationVh, persistentFrom, remap, isDebug])
 
   /* ---------- Fallback reduced-motion : poster + beats statiques ---------- */
   if (reducedMotion) {
@@ -521,6 +579,17 @@ export default function ScrubHero({
             />
           </div>
         </div>
+
+        {isDebug && (
+          <div
+            className="fixed inset-x-0 bottom-0 z-[999] max-h-[45vh] overflow-y-auto bg-black/85 p-2 font-mono text-[10px] leading-tight text-lime-300"
+            style={{ pointerEvents: 'auto' }}
+          >
+            {Object.entries(debugState)
+              .map(([k, v]) => `${k}=${v}`)
+              .join(' | ')}
+          </div>
+        )}
       </div>
     </section>
   )
