@@ -142,11 +142,11 @@ export default function Home() {
       </div>
       <SocialProof />
       <Concept />
+      <Products />
       <Included />
       <HowItWorks />
       <Advantages />
       <RsvpTeaser />
-      <Products />
       <Gallery />
       <Faq />
       <FinalCta />
