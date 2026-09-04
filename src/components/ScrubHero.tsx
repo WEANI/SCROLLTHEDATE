@@ -32,8 +32,23 @@ export interface ScrubHeroSnapWindow {
 
 export interface ScrubHeroProps {
   videoSrc: string
+  /**
+   * Variante mobile (`<source media="(max-width: 767px)">`, même seuil que
+   * `HeroScrub`) — un montage différent, pas juste un fichier redimensionné,
+   * n'a aucune raison de garder les mêmes proportions de plans que la
+   * variante desktop (vérifié : ~9 % d'écart sur les fenêtres de transition
+   * entre les deux exports du hero home). D'où `mobileBeats` ci-dessous.
+   */
+  mobileSrc?: string
   posterSrc: string
   beats: ScrubHeroBeat[]
+  /**
+   * Beats spécifiques à `mobileSrc`, sélectionnés au même seuil (max-width:
+   * 767px) — sans eux, `beats` (calé sur `videoSrc`) s'applique aussi au
+   * scrub mobile même si ses plans tombent à des fractions différentes.
+   * Retombe sur `beats` si absent.
+   */
+  mobileBeats?: ScrubHeroBeat[]
   /** Titre réel, unique, de la page — rendu en `<h1 className="sr-only">`, cf. doc du composant. */
   heading: string
   /** Contenu persistant (CTA…), révélé à partir de `persistentFrom`. */
@@ -149,8 +164,10 @@ interface WordRef {
  */
 export default function ScrubHero({
   videoSrc,
+  mobileSrc,
   posterSrc,
   beats,
+  mobileBeats,
   heading,
   persistent,
   persistentFrom = 0.55,
@@ -168,6 +185,7 @@ export default function ScrubHero({
   const wordRefs = useRef<WordRef[][]>([])
   const [videoFailed, setVideoFailed] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -177,10 +195,22 @@ export default function ScrubHero({
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
+  // Même seuil que le <source media="…"> ci-dessous — pour choisir le bon
+  // jeu de beats en cohérence avec la vidéo effectivement chargée.
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    setIsMobile(mq.matches)
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  const effectiveBeats = isMobile && mobileBeats ? mobileBeats : beats
+
   // Découpage des beats en mots (stable)
   const beatWords = useMemo(
     () =>
-      beats.map((beat) => {
+      effectiveBeats.map((beat) => {
         const words: { text: string; accent: boolean }[] = []
         beat.segments?.forEach((seg) => {
           seg.text
@@ -190,7 +220,7 @@ export default function ScrubHero({
         })
         return words
       }),
-    [beats],
+    [effectiveBeats],
   )
 
   // Scroll amorti → progression vidéo : identité si `snapWindows` est vide,
@@ -247,10 +277,10 @@ export default function ScrubHero({
       }
 
       // Beats typographiques
-      beats.forEach((beat, bi) => {
+      effectiveBeats.forEach((beat, bi) => {
         const beatEl = beatRefs.current[bi]
         if (!beatEl) return
-        const isLast = bi === beats.length - 1
+        const isLast = bi === effectiveBeats.length - 1
         // Le premier beat (kicker) est visible dès le chargement
         const enterT = bi === 0 ? 1 : easeOut(clamp01((p - beat.from) / ENTER))
         const exitT = isLast ? 0 : easeOut(clamp01((p - (beat.to - EXIT)) / EXIT))
@@ -300,7 +330,7 @@ export default function ScrubHero({
       gsap.ticker.remove(render)
       st.kill()
     }
-  }, [reducedMotion, videoFailed, beats, durationVh, persistentFrom, remap])
+  }, [reducedMotion, videoFailed, effectiveBeats, durationVh, persistentFrom, remap])
 
   /* ---------- Fallback reduced-motion : poster + beats statiques ---------- */
   if (reducedMotion) {
@@ -318,7 +348,7 @@ export default function ScrubHero({
         <div className="absolute inset-0 bg-gradient-to-t from-anthracite-950/60 to-anthracite-950/20" />
         <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-5xl flex-col items-center justify-center gap-10 px-6 py-32 text-center">
           <h1 className="sr-only">{heading}</h1>
-          {beats.map((beat, i) => (
+          {effectiveBeats.map((beat, i) => (
             <div key={i} className="flex flex-col items-center gap-4" aria-hidden="true">
               {beat.kicker && (
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
@@ -355,14 +385,16 @@ export default function ScrubHero({
         ) : (
           <video
             ref={videoRef}
-            src={videoSrc}
             poster={posterSrc}
             muted
             playsInline
             preload="auto"
             onError={() => setVideoFailed(true)}
             className="absolute inset-0 h-full w-full object-cover"
-          />
+          >
+            {mobileSrc && <source src={mobileSrc} media="(max-width: 767px)" />}
+            <source src={videoSrc} />
+          </video>
         )}
         {/* Overlay lisibilité */}
         <div className="absolute inset-0 bg-gradient-to-t from-anthracite-950/60 via-anthracite-950/25 to-anthracite-950/20" />
@@ -370,7 +402,7 @@ export default function ScrubHero({
         {/* Beats typographiques */}
         <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
           <h1 className="sr-only">{heading}</h1>
-          {beats.map((beat, bi) => (
+          {effectiveBeats.map((beat, bi) => (
             <div
               key={bi}
               ref={(el) => {
