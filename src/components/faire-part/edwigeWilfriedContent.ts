@@ -55,6 +55,32 @@ export const DRESS_CODE = 'Une tenue élégante est souhaitée pour célébrer c
 export const ACCENT_PALE = '#E8C9C4' // rose poudré — fonds, filets, puces
 export const ACCENT_DEEP = '#B9776C' // même teinte, assombrie — texte, CTA, icônes
 
+/**
+ * Photo d'ouverture du corps de page — placée AVANT le bloc payload, en
+ * transition entre le plan final du film et les informations pratiques
+ * (même emplacement/effet que chez Léa & Olivier, cf. leaOlivierContent.ts).
+ * Ratio portrait 520x936 conservé (dimensions réelles du fichier fourni par
+ * le couple) — obligatoire pour PhotoSplitCinematique, qui étire les
+ * moitiés à la taille exacte de leur boîte plutôt que de recadrer en
+ * object-fit: cover.
+ */
+export const OPENING_PHOTO = {
+  src: '/edwige-wilfried-photo-1.png',
+  alt: 'Edwige & Wilfried, front contre front',
+}
+
+/**
+ * Galerie sous « Notre histoire » — réintroduite (le couple avait d'abord
+ * demandé son retrait, cf. commit bd54c88, puis fourni ces 3 photos).
+ * Fournie explicitement à NotreHistoire.photos (défaut = [] sinon, cf.
+ * edwigeWilfriedEffects.tsx).
+ */
+export const GALLERY_PHOTOS = [
+  '/edwige-wilfried-gallery-1.png',
+  '/edwige-wilfried-gallery-2.png',
+  '/edwige-wilfried-gallery-3.png',
+]
+
 export const RSVP_CTA_LABEL = 'Répondre à l’invitation'
 
 /**

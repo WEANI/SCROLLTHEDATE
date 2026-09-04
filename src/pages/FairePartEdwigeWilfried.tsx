@@ -4,6 +4,7 @@ import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import DetailsSombre from '@/components/faire-part/DetailsSombre'
+import PhotoSplitCinematique from '@/components/faire-part/PhotoSplitCinematique'
 import {
   BespokePaletteProvider,
   DressCodeCard,
@@ -22,7 +23,9 @@ import {
   ACCENT_PALE,
   DETAILS_THEME,
   DRESS_CODE,
+  GALLERY_PHOTOS,
   HERO_CHAPTERS,
+  OPENING_PHOTO,
   PROGRAMME,
   RSVP_CTA_LABEL,
   SLUG,
@@ -109,6 +112,18 @@ export default function FairePartEdwigeWilfried() {
           mesure DOM en production — -20vh ne comblait que 20 % de l'écran
           au moment critique. */}
       <div className="relative z-10 -mt-[100vh] rounded-t-[32px] bg-[#FBF7F1] shadow-[0_-24px_60px_rgba(46,38,32,0.18)]">
+        {/* Photo d'ouverture — même emplacement/effet « split cinématique »
+            que chez Léa & Olivier (cf. leaOlivierContent.ts::OPENING_PHOTO) :
+            première chose vue après le film, avant les informations
+            pratiques. Colonne centrée à largeur limitée (portrait 520x936),
+            pas une image pleine largeur — object-cover la rognerait trop
+            violemment sur desktop. */}
+        <section className="px-6 pt-16 sm:pt-20" aria-label="Photo du couple">
+          <figure className="mx-auto max-w-[420px]">
+            <PhotoSplitCinematique src={OPENING_PHOTO.src} alt={OPENING_PHOTO.alt} aspectRatio="520 / 936" />
+          </figure>
+        </section>
+
         {/* DetailsSombre (children de PayloadSection) — Dress code garde le
             rendu par défaut (thème clair, cf. DETAILS_THEME), mais Date,
             Lieu, Programme et RSVP passent par les slots `renderDate`/
@@ -151,7 +166,7 @@ export default function FairePartEdwigeWilfried() {
               renderDressCode={(dressCode, _accent, revealed, reducedMotion) => (
                 <DressCodeCard dressCode={dressCode} revealed={revealed} reducedMotion={reducedMotion} />
               )}
-              renderBeforeRsvp={() => <NotreHistoire photos={[]} />}
+              renderBeforeRsvp={() => <NotreHistoire photos={GALLERY_PHOTOS} />}
               renderBeforeRsvp2={() => <FoireAuxQuestions />}
               renderRsvp={({ label, onClick }) => (
                 <WaxSealRsvp label={label} weddingDateLabel={WEDDING_DATE_LABEL} onClick={onClick} />
