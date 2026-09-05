@@ -75,10 +75,24 @@ export function parseProgrammeItem(raw: string): ProgrammeItem {
  * fréquentes de vos invités" (cf. contracts/questionnaireKeys.ts::faq).
  * Utilisé côté page publique (FairePart.tsx), jamais côté `getPublicInvite`
  * — cf. doc de `parseProgrammeItem`, l'API se contente d'extraire.
+ *
+ * Repli sur d'autres séparateurs si " — " est absent : un vrai couple
+ * (commande 19, Nora & Baptiste) a tapé "Question ? » → Réponse." sans
+ * jamais voir d'erreur — la réponse restait juste invisible dans
+ * l'accordéon (rest vide, réponse = chaîne vide). Les guillemets « »
+ * qu'ils avaient ajoutés autour de la question sont aussi retirés. Ce
+ * filet ne change rien pour un contenu déjà au format documenté (" — "
+ * reste toujours essayé en premier).
  */
 export function parseFaqItem(raw: string): { q: string; a: string } {
-  const [q = '', ...rest] = raw.split(' — ').map((s) => s.trim())
-  return { q, a: rest.join(' — ') }
+  const cleaned = raw.replace(/[«»]/g, '').trim()
+  for (const sep of [' — ', ' → ', ' - ']) {
+    const idx = cleaned.indexOf(sep)
+    if (idx !== -1) {
+      return { q: cleaned.slice(0, idx).trim(), a: cleaned.slice(idx + sep.length).trim() }
+    }
+  }
+  return { q: cleaned, a: '' }
 }
 
 export interface DetailsSombreTheme {
