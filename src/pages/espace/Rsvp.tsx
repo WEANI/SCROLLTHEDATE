@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  Baby,
   Check,
   ChevronDown,
   Download,
@@ -29,7 +30,8 @@ interface RsvpResponse {
   guestName: string
   email: string | null
   attending: 'yes' | 'no' | 'maybe'
-  plusOnes: number
+  adults: number
+  children: number
   allergies: string | null
   song: string | null
   message: string | null
@@ -49,12 +51,13 @@ const ATTENDING_LABEL: Record<string, { label: string; tone: 'success' | 'error'
 type FilterValue = 'all' | 'yes' | 'no' | 'maybe'
 
 function exportCsv(responses: RsvpResponse[]) {
-  const headers = ['Nom', 'Email', 'Réponse', 'Accompagnants', 'Allergies', 'Chanson', 'Message', 'Date']
+  const headers = ['Nom', 'Email', 'Réponse', 'Adultes', 'Enfants', 'Allergies', 'Chanson', 'Message', 'Date']
   const rows = responses.map((r) => [
     r.guestName,
     r.email ?? '',
     ATTENDING_LABEL[r.attending]?.label ?? r.attending,
-    String(r.plusOnes),
+    String(r.adults),
+    String(r.children),
     r.allergies ?? '',
     r.song ?? '',
     r.message ?? '',
@@ -82,12 +85,14 @@ export default function Rsvp() {
   const responses = (data?.responses ?? []) as RsvpResponse[]
 
   const counts = useMemo(() => {
-    const c = { yes: 0, no: 0, maybe: 0, plusOnes: 0, total: responses.length }
+    const c = { yes: 0, no: 0, maybe: 0, adults: 0, children: 0, total: responses.length }
     for (const r of responses) {
-      if (r.attending === 'yes') c.yes++
-      else if (r.attending === 'no') c.no++
+      if (r.attending === 'yes') {
+        c.yes++
+        c.adults += r.adults
+        c.children += r.children
+      } else if (r.attending === 'no') c.no++
       else c.maybe++
-      c.plusOnes += r.plusOnes
     }
     return c
   }, [responses])
@@ -112,11 +117,12 @@ export default function Rsvp() {
       </div>
 
       {/* Compteurs */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <CountCard label="Réponses" value={counts.total} tone="info" />
         <CountCard label="Présents" value={counts.yes} tone="success" />
         <CountCard label="Absents" value={counts.no} tone="error" />
-        <CountCard label="Accompagnants" value={counts.plusOnes} tone="pending" />
+        <CountCard label="Adultes" value={counts.adults} tone="pending" />
+        <CountCard label="Enfants" value={counts.children} tone="pending" />
       </div>
 
       {responses.length === 0 ? (
@@ -201,10 +207,19 @@ export default function Rsvp() {
                         <p className="text-[12px] text-neutral-500">{formatDate(r.createdAt)}</p>
                       </div>
 
-                      {/* Accompagnants */}
-                      {r.plusOnes > 0 && (
-                        <span className="hidden items-center gap-1 text-[12px] text-neutral-500 sm:flex">
-                          <Users size={13} />+{r.plusOnes}
+                      {/* Adultes / enfants */}
+                      {r.attending === 'yes' && (r.adults > 1 || r.children > 0) && (
+                        <span className="hidden items-center gap-3 text-[12px] text-neutral-500 sm:flex">
+                          <span className="inline-flex items-center gap-1">
+                            <Users size={13} />
+                            {r.adults}
+                          </span>
+                          {r.children > 0 && (
+                            <span className="inline-flex items-center gap-1">
+                              <Baby size={13} />
+                              {r.children}
+                            </span>
+                          )}
                         </span>
                       )}
 

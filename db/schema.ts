@@ -370,6 +370,14 @@ export const rsvpResponses = pgTable(
     guestName: varchar("guestName", { length: 255 }).notNull(),
     email: varchar("email", { length: 320 }),
     attending: rsvpAttendingEnum("attending").notNull(),
+    // `adults`/`children` : nombre exact renseigné par l'invité (compte
+    // tenu de lui-même dans `adults`), pour adapter tables et plan de
+    // salle — cf. RsvpTeaser sur la home, qui promettait déjà ce détail.
+    // `plusOnes` reste calculé automatiquement (adults - 1 + children) à
+    // l'écriture pour ne rien casser des lectures existantes (stats admin,
+    // espace/Commandes.tsx) qui ne connaissent que ce total agrégé.
+    adults: integer("adults").default(1).notNull(),
+    children: integer("children").default(0).notNull(),
     plusOnes: integer("plusOnes").default(0).notNull(),
     allergies: text("allergies"),
     song: varchar("song", { length: 500 }),

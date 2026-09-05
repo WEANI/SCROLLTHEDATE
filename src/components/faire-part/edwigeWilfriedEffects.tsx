@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react'
 import { useCountdown, type ProgrammeItem } from './DetailsSombre'
+import type { RsvpTheme } from './PayloadSection'
 
 /**
  * Refonte bespoke de plusieurs sections de faire-part — date (lettres qui
@@ -107,6 +108,47 @@ export const EW_PALETTE: BespokePalette = {
   dressCode1: '#B9A3CC',
   dressCode2: '#D8B99A',
   dressCode3: '#E8A9BC',
+}
+
+function darken(hex: string, amount: number): string {
+  const m = hex.replace('#', '')
+  const full = m.length === 3 ? m.split('').map((c) => c + c).join('') : m
+  const channel = (start: number) => {
+    const v = Math.round(parseInt(full.slice(start, start + 2), 16) * (1 - amount))
+    return Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')
+  }
+  return `#${channel(0)}${channel(2)}${channel(4)}`
+}
+
+/**
+ * Dérive un `RsvpTheme` (Dialog RSVP, cf. PayloadSection.tsx) depuis la
+ * palette du couple — pour les pages qui n'ont pas de RSVP_THEME écrit à la
+ * main (FairePart.tsx, la page générique servant à tous les vrais clients ;
+ * FairePartEdwigeWilfried.tsx). Réutilise `bg`/`inkOnCard` — déjà la même
+ * carte claire-sur-page-sombre/sombre-sur-page-claire que Lieu/Programme/
+ * FAQ (cf. doc de BespokePalette) — pour le fond et le texte du Dialog, et
+ * `gold` (l'accent PRINCIPAL du couple, cf. doc de BespokePalette : c'est ce
+ * champ qui vaut le rouge de Léa & Olivier malgré son nom) pour les boutons/
+ * l'état actif. Suppose `bg` opaque — toujours le cas pour une couleur posée
+ * au studio via un `<input type="color">`. Léa & Olivier et Camille & Adrien
+ * gardent leur RSVP_THEME écrit à la main (fond du Dialog volontairement
+ * plus sombre que leur `bg`, choix client déjà validé) plutôt que cette
+ * dérivation générique.
+ */
+export function rsvpThemeFromPalette(palette: BespokePalette): Partial<RsvpTheme> {
+  return {
+    modalBg: palette.bg,
+    heading: palette.inkOnCard,
+    text: palette.inkOnCard,
+    textMuted: `rgba(${palette.inkOnCardRgb}, 0.7)`,
+    accent: palette.gold,
+    accentHover: darken(palette.gold, 0.12),
+    accentSoft: `rgba(${palette.goldRgb}, 0.12)`,
+    inputBg: palette.bg,
+    inputBorder: `rgba(${palette.inkOnCardRgb}, 0.16)`,
+    inputText: palette.inkOnCard,
+    inputPlaceholder: `rgba(${palette.inkOnCardRgb}, 0.45)`,
+  }
 }
 
 const PaletteContext = createContext<BespokePalette>(EW_PALETTE)

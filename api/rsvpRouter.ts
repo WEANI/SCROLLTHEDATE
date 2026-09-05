@@ -51,7 +51,12 @@ export const rsvpRouter = createRouter({
         guestName: z.string().min(1).max(255),
         email: z.string().email().max(320).optional(),
         attending: z.enum(["yes", "no", "maybe"]),
-        plusOnes: z.number().int().min(0).max(10).default(0),
+        // Nombre exact d'adultes (l'invité principal inclus) et d'enfants
+        // qui l'accompagnent, saisi dans RsvpForm (PayloadSection.tsx).
+        // `plusOnes` reste calculé ici (adults - 1 + children) pour ne rien
+        // casser des lectures existantes (stats admin, espace/Commandes.tsx).
+        adults: z.number().int().min(0).max(20).default(1),
+        children: z.number().int().min(0).max(20).default(0),
         allergies: z.string().optional(),
         song: z.string().max(500).optional(),
         message: z.string().optional(),
@@ -65,19 +70,23 @@ export const rsvpRouter = createRouter({
           code: "FORBIDDEN",
           message: "Les RSVP sont fermés pour ce faire-part",
         });
+      const plusOnes = Math.max(0, input.adults - 1) + input.children;
       const responseId = await addRsvpResponse({
         projectId: project.id,
         guestName: input.guestName,
         email: input.email ?? null,
         attending: input.attending,
-        plusOnes: input.plusOnes,
+        adults: input.adults,
+        children: input.children,
+        plusOnes,
         allergies: input.allergies ?? null,
         song: input.song ?? null,
         message: input.message ?? null,
       });
       await logAudit(project.id, `guest:${input.guestName}`, "rsvp.submitted", {
         attending: input.attending,
-        plusOnes: input.plusOnes,
+        adults: input.adults,
+        children: input.children,
       });
       return { responseId };
     }),

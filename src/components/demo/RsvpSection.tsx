@@ -202,7 +202,14 @@ function RsvpForm() {
         guestName: payload.guestName,
         email: payload.email || undefined,
         attending: payload.attending,
-        plusOnes: payload.plusOnes,
+        // Ce formulaire démo ne distingue pas adultes/enfants (juste un
+        // compteur générique `plusOnes` + un champ texte "âges des
+        // enfants" replié dans `message` ci-dessous) — reporté tel quel
+        // sur `adults` (soi-même inclus) pour matcher le contrat actuel
+        // de rsvp.submit, cf. RsvpForm (PayloadSection.tsx) pour le vrai
+        // formulaire adultes/enfants du produit.
+        adults: 1 + payload.plusOnes,
+        children: 0,
         allergies: payload.allergies || undefined,
         song: payload.song || undefined,
         message:

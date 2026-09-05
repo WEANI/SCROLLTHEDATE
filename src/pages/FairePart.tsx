@@ -22,6 +22,7 @@ import {
   LodgingCascadeCard,
   MenuDuDiner,
   NotreHistoire,
+  rsvpThemeFromPalette,
   ScatterDateCard,
   WaxSealRsvp,
   type BespokePalette,
@@ -354,6 +355,7 @@ export default function FairePart() {
             heading: theme.textPrimary,
             text: theme.textPrimary,
           }}
+          rsvpTheme={rsvpThemeFromPalette(palette)}
           eyebrow={null}
           heading="Nous nous marions"
           headingCascade

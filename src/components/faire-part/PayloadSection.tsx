@@ -347,6 +347,8 @@ function RsvpForm({
   const [guestName, setGuestName] = useState('')
   const [email, setEmail] = useState('')
   const [attending, setAttending] = useState<Attending>('yes')
+  const [adults, setAdults] = useState(1)
+  const [children, setChildren] = useState(0)
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [localOnly, setLocalOnly] = useState(false)
@@ -360,7 +362,14 @@ function RsvpForm({
     }
   })
 
-  const saveLocal = (payload: { guestName: string; email: string; attending: Attending; message: string }) => {
+  const saveLocal = (payload: {
+    guestName: string
+    email: string
+    attending: Attending
+    adults: number
+    children: number
+    message: string
+  }) => {
     try {
       window.localStorage.setItem(storageKey, JSON.stringify({ ...payload, at: new Date().toISOString() }))
     } catch {
@@ -372,7 +381,16 @@ function RsvpForm({
     e.preventDefault()
     if (submitting) return
     setSubmitting(true)
-    const payload = { guestName: guestName.trim(), email: email.trim(), attending, message: message.trim() }
+    // Adultes/enfants seulement pertinents si l'invité vient — évite
+    // d'enregistrer "1 adulte" par défaut pour une réponse "Hélas non".
+    const payload = {
+      guestName: guestName.trim(),
+      email: email.trim(),
+      attending,
+      adults: attending === 'yes' ? adults : 0,
+      children: attending === 'yes' ? children : 0,
+      message: message.trim(),
+    }
 
     if (backendDown) {
       saveLocal(payload)
@@ -388,7 +406,8 @@ function RsvpForm({
         guestName: payload.guestName,
         email: payload.email || undefined,
         attending: payload.attending,
-        plusOnes: 0,
+        adults: payload.adults,
+        children: payload.children,
         message: payload.message || undefined,
       })
       saveLocal(payload)
@@ -568,6 +587,63 @@ function RsvpForm({
                 })}
               </div>
             </div>
+
+            {/* Adultes/enfants — seulement pertinent si l'invité vient,
+                masqué sinon plutôt que désactivé (cf. le nombre exact,
+                promis dès la home, sert à adapter tables et plan de
+                salle : aucune valeur à collecter pour une absence). */}
+            <AnimatePresence initial={false}>
+              {attending === 'yes' && (
+                <motion.div
+                  key="headcount"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="fp-rsvp-adults" className={labelClass} style={{ color: t.textMuted }}>
+                        Adultes (vous inclus)
+                      </label>
+                      <input
+                        id="fp-rsvp-adults"
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={20}
+                        required
+                        value={adults}
+                        onChange={(e) => setAdults(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+                        onFocus={onFieldFocus}
+                        onBlur={onFieldBlur}
+                        className={fieldClass}
+                        style={fieldStyle}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="fp-rsvp-children" className={labelClass} style={{ color: t.textMuted }}>
+                        Enfants
+                      </label>
+                      <input
+                        id="fp-rsvp-children"
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={20}
+                        value={children}
+                        onChange={(e) => setChildren(Math.max(0, Math.min(20, Number(e.target.value) || 0)))}
+                        onFocus={onFieldFocus}
+                        onBlur={onFieldBlur}
+                        className={fieldClass}
+                        style={fieldStyle}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="mt-5">
               <label htmlFor="fp-rsvp-message" className={labelClass} style={{ color: t.textMuted }}>

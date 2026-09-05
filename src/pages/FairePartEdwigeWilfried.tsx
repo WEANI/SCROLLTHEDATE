@@ -14,6 +14,7 @@ import {
   HorizontalProgramme,
   LieuMagnifier,
   NotreHistoire,
+  rsvpThemeFromPalette,
   ScatterDateCard,
   WaxSealRsvp,
 } from '@/components/faire-part/edwigeWilfriedEffects'
@@ -139,6 +140,7 @@ export default function FairePartEdwigeWilfried() {
           slug={SLUG}
           coupleNames={COUPLE_NAMES}
           rsvpCtaLabel={RSVP_CTA_LABEL}
+          rsvpTheme={rsvpThemeFromPalette(EW_PALETTE)}
           eyebrow={null}
           heading="Nous avons le plaisir de vous inviter à notre mariage"
           headingCascade
