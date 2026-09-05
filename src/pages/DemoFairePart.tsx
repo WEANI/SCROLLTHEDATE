@@ -28,14 +28,6 @@ const FAIRE_PARTS: FairePartLink[] = [
     description: 'Photo qui se reconstitue au scroll, programme en défilement épinglé, hébergements en cascade',
     accent: '#8B1E28',
   },
-  {
-    slug: 'camille-adrien',
-    names: 'Camille & Adrien',
-    date: '13 juin 2027',
-    eyebrow: 'Charte sombre · Bord de mer breton',
-    description: 'Grille de mots croisés qui devient fil aérien, programme en défilement épinglé, sceau argenté',
-    accent: '#B5764C',
-  },
 ]
 
 /**
@@ -49,17 +41,17 @@ const FAIRE_PARTS: FairePartLink[] = [
  */
 export default function DemoFairePart() {
   useEffect(() => {
-    document.title = 'Faire-parts livrés — Scroll The Date'
+    document.title = 'Demo faire-parts — Scroll The Date'
   }, [])
 
   return (
     <section className="mx-auto max-w-[960px] px-6 pb-32 pt-16 sm:pt-20">
       <p className="text-center text-[12px] uppercase tracking-[0.18em] text-terracotta-300">Scroll The Date</p>
       <h1 className="mt-4 text-center font-display text-[34px] italic leading-[1.1] sm:text-[54px]">
-        Faire-parts livrés
+        Demo faire-parts
       </h1>
       <p className="mx-auto mt-4 max-w-[480px] text-center text-[15px] leading-[1.6] text-neutral-500">
-        Trois réalisations récentes, chacune avec sa propre mise en scène — parcourez-les comme le feraient vos
+        Deux exemples de faire-parts, chacun avec sa propre mise en scène — parcourez-les comme le feraient vos
         invités.
       </p>
 
