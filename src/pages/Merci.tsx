@@ -142,18 +142,32 @@ export default function Merci() {
   }, [ordersQuery.data, parsedId])
 
   // Redirections : aucune commande valide → retour à l'accueil.
+  //
+  // Un `?order=` dans l'URL suffit à lui seul à afficher la page, QUEL QUE
+  // SOIT l'état d'authentification — un acheteur invité qui vient de payer
+  // n'a JAMAIS de session à ce stade (le compte n'est provisionné qu'après
+  // coup par le webhook Stripe, cf. api/lib/guestAccount.ts) : `isAuthenticated`
+  // reflète alors une session complètement étrangère à cette commande si le
+  // navigateur en avait déjà une active (ex. testeur resté connecté à un
+  // autre compte). Avant ce correctif, `ordersQuery` portait sur ce AUTRE
+  // compte, n'y trouvait jamais la commande invitée, et renvoyait vers
+  // l'accueil un paiement parfaitement valide — bug confirmé le 05/09/2026
+  // (commande factice sous une adresse jamais utilisée, session d'un autre
+  // compte encore active dans le navigateur). Sans référence dans l'URL, le
+  // comportement de garde d'origine reste inchangé (accès direct à /merci
+  // sans query string → il faut être connecté et avoir au moins une commande).
   useEffect(() => {
     if (authLoading) return
+    if (parsedId != null) return
     if (!isAuthenticated) {
-      if (parsedId == null) navigate('/', { replace: true })
+      navigate('/', { replace: true })
       return
     }
     if (!ordersQuery.isSuccess) return
-    const list = ordersQuery.data ?? []
-    if (list.length === 0 || (parsedId != null && !matchedOrder)) {
+    if ((ordersQuery.data ?? []).length === 0) {
       navigate('/', { replace: true })
     }
-  }, [authLoading, isAuthenticated, ordersQuery.isSuccess, ordersQuery.data, parsedId, matchedOrder, navigate])
+  }, [authLoading, isAuthenticated, ordersQuery.isSuccess, ordersQuery.data, parsedId, navigate])
 
   const displayRef = matchedOrder
     ? formatOrderNumber(matchedOrder.id, new Date(matchedOrder.createdAt))
