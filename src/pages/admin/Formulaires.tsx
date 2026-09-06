@@ -596,6 +596,23 @@ function TemplateEditor({
                   />
                 </label>
 
+                {q.type === "color" && (
+                  <label className="mt-2 flex max-w-[220px] flex-col gap-1 text-[11px] font-medium text-neutral-500">
+                    Couleurs sélectionnables (1 à 3)
+                    <select
+                      value={q.maxColors ?? 1}
+                      onChange={(e) => update(q.id, { maxColors: Number(e.target.value) })}
+                      className={selectClass}
+                    >
+                      {[1, 2, 3].map((n) => (
+                        <option key={n} value={n}>
+                          {n} couleur{n > 1 ? "s" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
                 {q.type === "toggle" && (
                   <div className="mt-2 grid grid-cols-2 gap-3">
                     <label className="flex flex-col gap-1 text-[11px] font-medium text-neutral-500">

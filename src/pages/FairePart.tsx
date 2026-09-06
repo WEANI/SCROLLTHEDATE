@@ -203,16 +203,18 @@ export default function FairePart() {
   const faqItems = invite.faq.map(parseFaqItem)
 
   // Teintes des pastilles « Dress code » : la palette posée au studio
-  // (curatée, jusqu'à 3 teintes) prévaut sur l'unique couleur choisie par
-  // le couple dans le questionnaire — même logique que `effectivePageBg`
-  // ci-dessus pour `palette.bg`/`paletteFond`. À défaut des deux,
-  // `undefined` laisse DressCodeCard retomber sur ses teintes par défaut.
+  // (curatée, jusqu'à 3 teintes) prévaut sur les couleurs choisies par le
+  // couple dans le questionnaire (jusqu'à 3 aussi désormais, cf.
+  // MultiColorQuestionField, Questionnaire.tsx) — même logique que
+  // `effectivePageBg` ci-dessus pour `palette.bg`/`paletteFond`. À défaut
+  // des deux, `undefined` laisse DressCodeCard retomber sur ses teintes
+  // par défaut.
   const dressCodeColors = (() => {
     const fromPalette = [palette.dressCode1, palette.dressCode2, palette.dressCode3].filter(
       (c): c is string => !!c,
     )
     if (fromPalette.length > 0) return fromPalette
-    return invite.dressCodeCouleur ? [invite.dressCodeCouleur] : undefined
+    return invite.dressCodeCouleurs.length > 0 ? invite.dressCodeCouleurs : undefined
   })()
 
   // "Menu du dîner" (DetailsSombre, slot `renderMenu`) : absent tant

@@ -92,6 +92,8 @@ export interface FormQuestion {
   /** Libellés des 2 boutons d'une question `toggle` — "Oui"/"Non" par défaut, personnalisables (ex. "Clair"/"Sombre"). */
   trueLabel?: string;
   falseLabel?: string;
+  /** Nombre de couleurs sélectionnables pour une question `color` — 1 (défaut) ou jusqu'à 3. */
+  maxColors?: number;
 }
 
 export interface FormTemplate {

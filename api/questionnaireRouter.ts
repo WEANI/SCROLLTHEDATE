@@ -67,6 +67,10 @@ const questionSchema = z.object({
   // "Sombre" pour la couleur de fond).
   trueLabel: z.string().optional(),
   falseLabel: z.string().optional(),
+  // Nombre de couleurs sélectionnables pour une question `color` — 1
+  // (comportement historique, une seule couleur) à 3 (ex. teintes du dress
+  // code, cf. MultiColorQuestionField dans Questionnaire.tsx).
+  maxColors: z.number().int().min(1).max(3).optional(),
 });
 
 /**

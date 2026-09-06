@@ -66,6 +66,18 @@ export const projectsRouter = createRouter({
           ? v.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
           : [];
       };
+      // jourj.dress_code_couleur : question `color` avec maxColors (cf.
+      // Questionnaire.tsx) — historiquement une seule couleur (chaîne),
+      // désormais jusqu'à 3 (tableau). Les deux formats coexistent en base
+      // selon la date de la réponse, jamais de migration a posteriori :
+      // une ancienne chaîne unique est ramenée à un tableau à un élément.
+      const colorList = (key: string): string[] => {
+        const v = answers[key];
+        if (typeof v === "string" && v.trim()) return [v];
+        return Array.isArray(v)
+          ? v.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+          : [];
+      };
       return {
         slug: project.slug,
         status: project.status,
@@ -77,7 +89,7 @@ export const projectsRouter = createRouter({
         venueName: str("jourj.lieu_ceremonie") ?? project.venue,
         ceremonyTime: str("jourj.heure"),
         dressCode: str("jourj.dress_code"),
-        dressCodeCouleur: str("jourj.dress_code_couleur"),
+        dressCodeCouleurs: colorList("jourj.dress_code_couleur"),
         practicalInfo: str("jourj.infos_pratiques"),
         // Généralisation bespoke (PLAN-GENERALISATION-THEMES.md, Phase 3)
         // — sections optionnelles : `null`/`[]` si le couple n'a pas

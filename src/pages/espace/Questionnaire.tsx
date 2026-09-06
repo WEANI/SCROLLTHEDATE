@@ -61,6 +61,8 @@ interface Question {
   /** Libellés des 2 boutons d'une question `toggle` — "Oui"/"Non" par défaut (cf. QuestionField), personnalisables pour un choix binaire qui n'est pas une question oui/non (ex. "Clair"/"Sombre" pour la couleur de fond). */
   trueLabel?: string
   falseLabel?: string
+  /** Nombre de couleurs sélectionnables pour une question `color` — 1 (défaut, comportement historique inchangé) ou jusqu'à 3 (ex. teintes du dress code, plutôt qu'une seule couleur imposée). */
+  maxColors?: number
 }
 
 type Answers = Record<string, unknown>
@@ -232,6 +234,127 @@ const SUGGESTIONS_COULEUR = [
 ]
 
 const HEX_VALIDE = /^#[0-9a-fA-F]{6}$/
+
+/**
+ * Question `color` avec `maxColors` > 1 (ex. teintes du dress code, jusqu'à
+ * 3 plutôt qu'une seule couleur imposée) — le client compose sa propre
+ * petite palette : pastilles déjà choisies (remplaçables/supprimables) +
+ * emplacement "+" tant que `maxColors` n'est pas atteint, mêmes suggestions
+ * que le mode simple (ajoutent/retirent au lieu de remplacer). La réponse
+ * est un tableau de hex — une ancienne réponse au format simple (chaîne
+ * unique, avant l'existence de `maxColors`) reste lisible, ramenée à un
+ * tableau à un élément.
+ */
+function MultiColorQuestionField({
+  question,
+  value,
+  onChange,
+  maxColors,
+}: {
+  question: Question
+  value: unknown
+  onChange: (v: unknown) => void
+  maxColors: number
+}) {
+  const colors = Array.isArray(value)
+    ? value.filter((v): v is string => typeof v === 'string' && HEX_VALIDE.test(v)).map((v) => v.toLowerCase())
+    : typeof value === 'string' && HEX_VALIDE.test(value)
+      ? [value.toLowerCase()]
+      : []
+
+  const removeAt = (i: number) => onChange(colors.filter((_, j) => j !== i))
+  const replaceAt = (i: number, hex: string) => {
+    const next = [...colors]
+    next[i] = hex.toLowerCase()
+    onChange(next)
+  }
+  const add = (hex: string) => {
+    const normalise = hex.toLowerCase()
+    if (colors.length >= maxColors || colors.includes(normalise)) return
+    onChange([...colors, normalise])
+  }
+  const toggleSuggestion = (hex: string) => {
+    const i = colors.indexOf(hex)
+    if (i !== -1) removeAt(i)
+    else add(hex)
+  }
+
+  return (
+    <FieldShell question={question}>
+      <div className="flex flex-wrap items-center gap-3">
+        {colors.map((hex, i) => (
+          <div key={i} className="relative">
+            <label
+              className="relative block h-11 w-11 cursor-pointer overflow-hidden rounded-full border border-neutral-200 shadow-inner"
+              style={{ backgroundColor: hex }}
+              title="Changer cette couleur"
+            >
+              <input
+                type="color"
+                value={hex}
+                onChange={(e) => replaceAt(i, e.target.value)}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                aria-label={`${question.label} — couleur ${i + 1}`}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => removeAt(i)}
+              aria-label="Retirer cette couleur"
+              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-neutral-500 shadow-sm ring-1 ring-neutral-200 transition-colors hover:text-error"
+            >
+              <X size={11} />
+            </button>
+          </div>
+        ))}
+
+        {colors.length < maxColors && (
+          <label
+            className="relative flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-neutral-300 text-[16px] text-neutral-500 transition-colors hover:border-terracotta-400 hover:text-terracotta-500"
+            title="Ajouter une couleur"
+          >
+            +
+            <input
+              type="color"
+              value="#ffffff"
+              onChange={(e) => add(e.target.value)}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              aria-label="Ajouter une couleur"
+            />
+          </label>
+        )}
+
+        <span className="text-[12px] text-neutral-500">
+          {colors.length}/{maxColors} couleur{maxColors > 1 ? 's' : ''}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {SUGGESTIONS_COULEUR.map((c) => {
+          const selected = colors.includes(c.hex)
+          const disabled = !selected && colors.length >= maxColors
+          return (
+            <button
+              key={c.hex}
+              type="button"
+              disabled={disabled}
+              onClick={() => toggleSuggestion(c.hex)}
+              title={`${c.nom} — ${c.hex}`}
+              aria-pressed={selected}
+              className={cn(
+                'h-7 w-7 rounded-full border-2 transition-transform',
+                selected ? 'border-terracotta-500' : 'border-neutral-200',
+                disabled ? 'opacity-40' : 'hover:scale-110',
+              )}
+              style={{ backgroundColor: c.hex }}
+              aria-label={c.nom}
+            />
+          )
+        })}
+      </div>
+    </FieldShell>
+  )
+}
 
 function ColorQuestionField({
   question,
@@ -503,7 +626,12 @@ function QuestionField({
   }
 
   if (question.type === 'color') {
-    return <ColorQuestionField question={question} value={value} onChange={onChange} />
+    const maxColors = question.maxColors ?? 1
+    return maxColors > 1 ? (
+      <MultiColorQuestionField question={question} value={value} onChange={onChange} maxColors={maxColors} />
+    ) : (
+      <ColorQuestionField question={question} value={value} onChange={onChange} />
+    )
   }
 
   if (question.type === 'textarea') {
