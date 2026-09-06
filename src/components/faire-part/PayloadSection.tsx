@@ -154,6 +154,14 @@ export default function PayloadSection({
   const [open, setOpen] = useState(false)
   const rsvpStorageKey = `scrollthedate-fp-rsvp-${slug}`
   const t = { ...DEFAULT_PAYLOAD_THEME, ...theme }
+  // Même fusion que celle passée à RsvpForm plus bas (`theme={{
+  // ...DEFAULT_RSVP_THEME, ...rsvpTheme }}`) — remontée ici pour que le
+  // bouton de fermeture de la modale (juste en dessous) prenne la même
+  // couleur que son contenu réel plutôt qu'une couleur fixe : `text-ink/50`
+  // codé en dur ne se voyait quasiment plus sur une modale au fond sombre
+  // (cf. `rsvpThemeFromPalette`, dont `modalBg`/`heading` suivent la
+  // palette bespoke du couple — sombre chez un couple à fond sombre).
+  const rt = { ...DEFAULT_RSVP_THEME, ...rsvpTheme }
 
   return (
     <section
@@ -225,7 +233,17 @@ export default function PayloadSection({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           showCloseButton
-          className="max-w-lg border-none bg-transparent p-0 shadow-none [&_[data-slot=dialog-close]]:top-6 [&_[data-slot=dialog-close]]:right-6 [&_[data-slot=dialog-close]]:text-ink/50"
+          // Couleur de la croix de fermeture pilotée par `rt.heading` (via
+          // la variable CSS ci-dessous) plutôt qu'un `text-ink/50` fixe :
+          // sur une modale au fond sombre (couple à palette sombre, cf.
+          // rsvpThemeFromPalette), `ink` (quasi-noir) était pratiquement
+          // invisible sur son propre fond — le client n'avait alors aucun
+          // moyen visible de fermer la modale. `opacity-80` (au lieu du
+          // 50 % d'origine, cumulé au 70 % déjà posé par défaut sur la
+          // croix elle-même) : plus perceptible d'emblée plutôt que de
+          // compter sur un survol pour la découvrir.
+          style={{ '--rsvp-close-color': rt.heading } as CSSProperties}
+          className="max-w-lg border-none bg-transparent p-0 shadow-none [&_[data-slot=dialog-close]]:top-6 [&_[data-slot=dialog-close]]:right-6 [&_[data-slot=dialog-close]]:text-[color:var(--rsvp-close-color)] [&_[data-slot=dialog-close]]:opacity-80"
         >
           <VisuallyHidden>
             <DialogTitle>{rsvpCtaLabel}</DialogTitle>
@@ -234,7 +252,7 @@ export default function PayloadSection({
             slug={slug}
             coupleNames={coupleNames}
             storageKey={rsvpStorageKey}
-            theme={{ ...DEFAULT_RSVP_THEME, ...rsvpTheme }}
+            theme={rt}
           />
         </DialogContent>
       </Dialog>
