@@ -85,6 +85,13 @@ export const projectsRouter = createRouter({
         weddingDate: project.weddingDate,
         heroVideoUrl: heroVideo.url,
         heroPosterUrl: heroVideo.posterUrl,
+        // Mode "frames" (cf. api/lib/videoFrames.ts) — `null` pour une
+        // version en mode "video" (historique, comportement inchangé) :
+        // HeroScrub retombe alors sur la balise <video> avec heroVideoUrl.
+        heroFrames:
+          heroVideo.kind === "frames" && heroVideo.frameBaseUrl && heroVideo.frameCount && heroVideo.frameFps
+            ? { baseUrl: heroVideo.frameBaseUrl, count: heroVideo.frameCount, fps: heroVideo.frameFps }
+            : null,
         coupleNames: str("couple.prenoms"),
         venueName: str("jourj.lieu_ceremonie") ?? project.venue,
         ceremonyTime: str("jourj.heure"),

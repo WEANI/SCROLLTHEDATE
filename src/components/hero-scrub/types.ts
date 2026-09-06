@@ -72,4 +72,12 @@ export interface HeroVideoConfig {
   mobileSrc?: string
   /** Optionnel — un projet réel peut ne pas encore avoir d'affiche définie pour sa vidéo finale. */
   posterSrc?: string
+  /**
+   * Séquence d'images plutôt qu'un fichier vidéo unique (cf.
+   * api/lib/videoFrames.ts, FrameSequence.ts) — quand présent, prévaut sur
+   * `desktopSrc`/`mobileSrc` : HeroScrub dessine sur un <canvas> au lieu de
+   * piloter une balise <video>. `desktopSrc` reste toujours fourni par
+   * l'appelant (repli historique) même quand `frames` est utilisé.
+   */
+  frames?: { baseUrl: string; count: number; fps: number }
 }

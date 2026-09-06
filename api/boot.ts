@@ -9,7 +9,8 @@ import { bootstrapDatabase } from "./db-bootstrap";
 import { warnIfEmailMisconfigured } from "./lib/email";
 import { warnIfStripeMisconfigured } from "./lib/stripe";
 import { handleStripeWebhook } from "./webhooks/stripe";
-import { ensureVideosBucket, uploadVideo } from "./lib/supabaseStorage";
+import { ensureVideosBucket, MAX_VIDEO_BYTES, uploadVideo, uploadVideoFrames } from "./lib/supabaseStorage";
+import { extractFrames } from "./lib/videoFrames";
 import { supabaseAdmin } from "./lib/supabaseAdmin";
 import { findUserByAuthId } from "./queries/users";
 
@@ -65,7 +66,7 @@ app.post("/api/webhooks/stripe", handleStripeWebhook);
 app.post(
   "/api/upload/video",
   bodyLimit({
-    maxSize: 500 * 1024 * 1024,
+    maxSize: MAX_VIDEO_BYTES,
     onError: (c) => c.json({ error: "Vidéo trop volumineuse (500 Mo max)" }, 413),
   }),
   async (c) => {
@@ -82,18 +83,54 @@ app.post(
     const formData = await c.req.formData();
     const file = formData.get("file");
     const projectId = formData.get("projectId");
+    // "frames" (défaut, recommandé) découpe la vidéo en séquence d'images
+    // — cf. api/lib/videoFrames.ts pour pourquoi. "video" garde l'ancien
+    // comportement (un seul fichier), utile en repli/comparaison.
+    const mode = formData.get("mode") === "video" ? "video" : "frames";
     if (!(file instanceof File)) return c.json({ error: "Fichier manquant" }, 400);
     if (!projectId) return c.json({ error: "projectId manquant" }, 400);
     if (!file.type.startsWith("video/")) return c.json({ error: "Le fichier doit être une vidéo" }, 400);
 
-    // 3. Upload vers Supabase Storage
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const url = await uploadVideo(Number(projectId), file.name, buffer, file.type);
-    return c.json({ url });
+    // 3. Upload vers Supabase Storage — try/catch explicite : une exception
+    // laissée remonter ici (avant ce commentaire) atterrissait sur le
+    // gestionnaire d'erreur PAR DÉFAUT de Hono, qui répond en texte brut,
+    // pas en JSON. Le client (StudioPanel.tsx) fait un `JSON.parse` du
+    // corps de réponse quel que soit le status HTTP — sur du texte brut,
+    // ce parse lève une exception À L'INTÉRIEUR du callback `xhr.onload`,
+    // qui ne rejette jamais la Promise englobante (un throw dans un
+    // gestionnaire d'événement ne se propage pas ainsi) : le bouton
+    // "Ajouter & envoyer" restait bloqué en chargement indéfiniment, sans
+    // le moindre message d'erreur, même quand l'échec réel (ex. vidéo
+    // au-delà de la limite Supabase Storage) était par ailleurs correct.
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      if (mode === "video") {
+        const url = await uploadVideo(Number(projectId), file.name, buffer, file.type);
+        return c.json({ kind: "video" as const, url });
+      }
+      const { frames, fps } = await extractFrames(buffer);
+      const { count, baseUrl } = await uploadVideoFrames(Number(projectId), frames);
+      return c.json({ kind: "frames" as const, frameCount: count, frameFps: fps, frameBaseUrl: baseUrl });
+    } catch (err) {
+      console.error("[upload/video] échec :", err);
+      return c.json(
+        { error: err instanceof Error ? err.message : "Upload échoué" },
+        502,
+      );
+    }
   },
 );
 
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
+
+// Filet de sécurité global : toute exception non rattrapée ailleurs (pas
+// seulement /api/upload/video ci-dessus) répond en JSON propre plutôt que
+// via la page d'erreur par défaut de Hono (texte brut) — même raison que
+// le try/catch ci-dessus, généralisée à toute l'API.
+app.onError((err, c) => {
+  console.error("[api] exception non rattrapée :", err);
+  return c.json({ error: "Erreur serveur" }, 500);
+});
 
 export default app;
 

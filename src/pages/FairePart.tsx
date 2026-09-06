@@ -288,7 +288,11 @@ export default function FairePart() {
         <HeroScrub
           theme={theme}
           chapters={chapters}
-          video={{ desktopSrc: invite.heroVideoUrl, posterSrc: invite.heroPosterUrl ?? undefined }}
+          video={{
+            desktopSrc: invite.heroVideoUrl,
+            posterSrc: invite.heroPosterUrl ?? undefined,
+            frames: invite.heroFrames ?? undefined,
+          }}
           trackHeightVh={800}
           tailVh={100}
           ariaLabel={`Faire-part — ${coupleNames}`}

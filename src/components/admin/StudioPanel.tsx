@@ -481,7 +481,7 @@ function VideoManager({ project }: { project: Project360 }) {
                   <span className="text-[13px] font-medium text-ink">
                     Glissez un fichier MP4 ou <span className="text-terracotta-500 underline underline-offset-4">parcourez</span>
                   </span>
-                  <span className="text-[11px] text-neutral-500">50 Mo max</span>
+                  <span className="text-[11px] text-neutral-500">500 Mo max — découpée en images à l'envoi</span>
                 </>
               )}
             </button>
@@ -560,6 +560,11 @@ function VideoManager({ project }: { project: Project360 }) {
                 disabled={(url.trim().length === 0 && !file) || addVersion.isPending || isUploading}
                 onClick={async () => {
                   let videoUrl = url.trim();
+                  // Résultat d'upload en mode "frames" (défaut, cf. VideoManager
+                  // plus haut) — reste `null` pour une URL saisie à la main ou
+                  // un upload en mode "video" (repli), auquel cas `videoUrl`
+                  // porte directement l'URL du fichier unique.
+                  let uploadedFrames: { frameCount: number; frameFps: number; frameBaseUrl: string } | null = null;
                   // Si fichier sélectionné → upload d'abord
                   if (file) {
                     setIsUploading(true);
@@ -571,8 +576,15 @@ function VideoManager({ project }: { project: Project360 }) {
                       const formData = new FormData();
                       formData.append("file", file);
                       formData.append("projectId", String(project.id));
-                      // XHR pour le suivi de progression
-                      videoUrl = await new Promise<string>((resolve, reject) => {
+                      // XHR pour le suivi de progression. Réponse à deux formes
+                      // possibles côté serveur (cf. api/boot.ts) : mode "frames"
+                      // (défaut) → { kind: "frames", frameCount, frameFps,
+                      // frameBaseUrl } ; mode "video" (repli, non déclenché
+                      // depuis cette UI pour l'instant) → { kind: "video", url }.
+                      type UploadResponse =
+                        | { kind: "video"; url: string }
+                        | { kind: "frames"; frameCount: number; frameFps: number; frameBaseUrl: string };
+                      const result = await new Promise<UploadResponse>((resolve, reject) => {
                         const xhr = new XMLHttpRequest();
                         xhr.open("POST", "/api/upload/video");
                         xhr.setRequestHeader("Authorization", `Bearer ${token}`);
@@ -581,8 +593,7 @@ function VideoManager({ project }: { project: Project360 }) {
                         };
                         xhr.onload = () => {
                           if (xhr.status >= 200 && xhr.status < 300) {
-                            const res = JSON.parse(xhr.responseText) as { url: string };
-                            resolve(res.url);
+                            resolve(JSON.parse(xhr.responseText) as UploadResponse);
                           } else {
                             const err = JSON.parse(xhr.responseText) as { error?: string };
                             reject(new Error(err.error ?? "Upload échoué"));
@@ -591,6 +602,12 @@ function VideoManager({ project }: { project: Project360 }) {
                         xhr.onerror = () => reject(new Error("Erreur réseau"));
                         xhr.send(formData);
                       });
+                      if (result.kind === "frames") {
+                        uploadedFrames = result;
+                        videoUrl = "";
+                      } else {
+                        videoUrl = result.url;
+                      }
                     } catch (err) {
                       toast.error(err instanceof Error ? err.message : "Upload échoué");
                       setIsUploading(false);
@@ -601,7 +618,7 @@ function VideoManager({ project }: { project: Project360 }) {
                   }
                   addVersion.mutate({
                     projectId: project.id,
-                    url: videoUrl,
+                    ...(uploadedFrames ? uploadedFrames : { url: videoUrl }),
                     watermark: isFinal ? false : watermark,
                     status,
                   });
@@ -980,6 +997,13 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
   const approvedVideo =
     project.videoVersions.find((v) => v.status === "approved" || v.status === "final") ??
     project.videoVersions.at(0);
+  // Mode "frames" (cf. VideoManager plus haut) : pas de fichier vidéo unique
+  // à faire défiler — `approvedVideo.url` n'est que la 1ère image (valeur de
+  // compatibilité côté API), pas lisible par une balise <video>. On repère
+  // les instants via un curseur d'index d'image à la place (cf. rendu plus
+  // bas), converti en secondes via `frameFps`.
+  const isFrameMode = approvedVideo?.kind === "frames";
+  const [frameIdx, setFrameIdx] = useState(0);
 
   const setChapterField = (index: number, key: "fromSec" | "toSec", value: number) =>
     setChapters((prev) => {
@@ -989,7 +1013,7 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
     });
 
   const capture = (index: number, key: "fromSec" | "toSec") => {
-    const t = videoRef.current?.currentTime;
+    const t = isFrameMode ? frameIdx / (approvedVideo?.frameFps ?? 12) : videoRef.current?.currentTime;
     if (t === undefined) return;
     setChapterField(index, key, Math.round(t * 10) / 10);
   };
@@ -1215,7 +1239,26 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
           seuls les instants où ils apparaissent à l'image se règlent ici.
         </p>
 
-        {approvedVideo ? (
+        {approvedVideo && isFrameMode && approvedVideo.frameBaseUrl && approvedVideo.frameCount ? (
+          <div className="mb-4 w-full max-w-md space-y-2">
+            <img
+              src={`${approvedVideo.frameBaseUrl}${String(frameIdx + 1).padStart(5, "0")}.jpg`}
+              alt=""
+              className="w-full rounded-xl bg-black"
+            />
+            <input
+              type="range"
+              min={0}
+              max={approvedVideo.frameCount - 1}
+              value={frameIdx}
+              onChange={(e) => setFrameIdx(Number(e.target.value))}
+              className="w-full"
+            />
+            <p className="text-[11px] tabular text-neutral-500">
+              Image {frameIdx + 1} / {approvedVideo.frameCount} — {(frameIdx / (approvedVideo.frameFps ?? 12)).toFixed(1)} s
+            </p>
+          </div>
+        ) : approvedVideo ? (
           <video ref={videoRef} src={approvedVideo.url} controls className="mb-4 w-full max-w-md rounded-xl bg-black" />
         ) : (
           <p className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 text-[13px] text-neutral-500">

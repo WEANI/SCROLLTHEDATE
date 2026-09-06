@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import type { HeroChapter, HeroTheme, HeroVideoConfig } from './types'
+import { FrameSequence } from './FrameSequence'
 import './hero-scrub.css'
 
 /**
@@ -68,7 +69,10 @@ export default function HeroScrub({
 }: HeroScrubProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const framesRef = useRef<FrameSequence | null>(null)
   const hasLoadedOnceRef = useRef(false)
+  const frames = video.frames
 
   const [reducedMotion, setReducedMotion] = useState(false)
   const [videoFailed, setVideoFailed] = useState(false)
@@ -116,6 +120,22 @@ export default function HeroScrub({
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
+  // Mode "frames" (cf. api/lib/videoFrames.ts) — instancié seulement si
+  // `video.frames` est fourni, détruit au démontage/changement de source.
+  // Recréé si `frames.baseUrl` change (nouvelle version de vidéo livrée) —
+  // pas pour un simple re-render, d'où la dépendance ciblée plutôt que
+  // l'objet `frames` entier (nouvelle référence à chaque rendu du parent).
+  useEffect(() => {
+    if (!frames) return
+    const seq = new FrameSequence(frames.baseUrl, frames.count)
+    framesRef.current = seq
+    return () => {
+      seq.destroy()
+      framesRef.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frames?.baseUrl, frames?.count])
+
   useEffect(() => {
     if (reducedMotion) return
     const track = trackRef.current
@@ -160,6 +180,20 @@ export default function HeroScrub({
       setProgressPct(p * 100)
       setShowCue(p < 0.03)
       setActiveIdx(findActiveChapterIndex(chapters, p))
+
+      // Mode "frames" — dessine directement l'image la plus proche de `p`,
+      // aucune des subtilités de seek/buffering d'un <video> ci-dessous ne
+      // s'applique (cf. doc de FrameSequence.ts).
+      if (frames) {
+        const seq = framesRef.current
+        const canvas = canvasRef.current
+        if (seq && canvas) {
+          const targetIndex = Math.round(p * (frames.count - 1))
+          seq.prioritize(targetIndex)
+          seq.draw(canvas, targetIndex)
+        }
+        return
+      }
 
       const vid = videoRef.current
       if (vid && !videoFailed && Number.isFinite(vid.duration) && vid.duration > 0) {
@@ -209,6 +243,11 @@ export default function HeroScrub({
     let debugFrameCount = 0
     const tick = () => {
       applyProgress(computeProgress())
+      // Préchargement séquentiel de fond (mode "frames") — même esprit que
+      // `preload="auto"` pour une vidéo, indépendant de la position de
+      // scroll courante (cf. `prioritize` dans applyProgress ci-dessus
+      // pour la fenêtre réactive autour du scroll).
+      framesRef.current?.pump()
       if (isDebug) {
         debugFrameCount++
         // ~4x/s (pas à chaque frame, pour ne pas spammer les re-renders).
@@ -241,7 +280,7 @@ export default function HeroScrub({
       window.removeEventListener('scroll', onScroll)
       cancelAnimationFrame(raf)
     }
-  }, [reducedMotion, videoFailed, chapters, fps, isDebug, tailVh])
+  }, [reducedMotion, videoFailed, chapters, fps, isDebug, tailVh, frames])
 
   /* ---------- Fallback prefers-reduced-motion : poster + chapitres empilés, aucun scroll-jacking ---------- */
   if (reducedMotion) {
@@ -283,7 +322,13 @@ export default function HeroScrub({
               ni de l'état de la vidéo — jamais de cadre totalement vide le
               temps que la vidéo (bien plus lourde) arrive sur une connexion
               lente. */}
-          {videoFailed ? (
+          {frames ? (
+            // Mode "frames" — un <canvas> plutôt qu'un <video>, cf. doc de
+            // FrameSequence.ts. `aria-hidden` : purement décoratif, comme
+            // la vidéo qu'il remplace (le vrai contenu de la page reste
+            // dans les chapitres HTML et le <h1> sr-only, cf. plus bas).
+            <canvas ref={canvasRef} className="hs-video" aria-hidden />
+          ) : videoFailed ? (
             !video.posterSrc && <div className="hs-video" style={{ background: theme.frameBg }} />
           ) : (
             <video

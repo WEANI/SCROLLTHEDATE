@@ -320,9 +320,28 @@ export const videoVersions = pgTable(
       .notNull()
       .references(() => projects.id),
     version: integer("version").notNull(),
+    // `url` : fichier vidéo unique (mode historique) — pour une version en
+    // mode `frames`, contient l'URL de la première image (compat des
+    // lecteurs qui lisent `.url` sans distinguer le mode, ex. l'aperçu
+    // admin de StudioPanel), jamais utilisée pour le scrub lui-même dans
+    // ce cas.
     url: text("url").notNull(),
     /** Image d'affiche du hero scrub (poster du <video>) — optionnelle, la version finale livrée au client en a une. */
     posterUrl: text("posterUrl"),
+    // Découpage en séquence d'images plutôt qu'un seul fichier vidéo —
+    // contourne la limite de taille par fichier de Supabase Storage
+    // (chaque image pèse quelques dizaines de Ko) et élimine toute la
+    // classe de bugs de lecture <video> (frame noire iOS au-delà du
+    // buffer, mise en mémoire tampon qui bloque le scroll, position du
+    // moov atom…) rencontrés en conditions réelles le 06/09/2026 — cf.
+    // api/lib/videoFrames.ts et FrameScrubPlayer côté client. `kind`
+    // "video" (défaut) = comportement historique inchangé, aucune
+    // migration des versions déjà livrées.
+    kind: varchar("kind", { length: 20 }).default("video").notNull(),
+    frameCount: integer("frameCount"),
+    frameFps: integer("frameFps"),
+    /** Préfixe commun à toutes les images (le client complète avec `NNNNN.jpg`, 1-indexé) — `null` tant que `kind` = "video". */
+    frameBaseUrl: text("frameBaseUrl"),
     watermark: boolean("watermark").default(true).notNull(),
     status: videoVersionStatusEnum("status").default("draft").notNull(),
     // Commentaire timecodé du client : [{ timecode, comment }]

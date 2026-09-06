@@ -51,26 +51,46 @@ export const videosRouter = createRouter({
     }),
 
   // Upload admin d'une version (filigrane par défaut tant que non approuvée).
+  // `url` (mode "video", historique) OU `frameBaseUrl`+`frameCount`+
+  // `frameFps` (mode "frames", cf. api/lib/videoFrames.ts) — l'un des deux
+  // au moins, jamais ni l'un ni l'autre.
   adminAddVersion: adminQuery
     .input(
-      z.object({
-        projectId: z.number().int().positive(),
-        url: z.string().min(1),
-        posterUrl: z.string().min(1).optional(),
-        watermark: z.boolean().default(true),
-        status: z.enum(["draft", "sent", "final"]).default("sent"),
-      }),
+      z
+        .object({
+          projectId: z.number().int().positive(),
+          url: z.string().min(1).optional(),
+          posterUrl: z.string().min(1).optional(),
+          frameCount: z.number().int().positive().optional(),
+          frameFps: z.number().int().positive().optional(),
+          frameBaseUrl: z.string().min(1).optional(),
+          watermark: z.boolean().default(true),
+          status: z.enum(["draft", "sent", "final"]).default("sent"),
+        })
+        .refine((v) => v.url ?? (v.frameBaseUrl && v.frameCount && v.frameFps), {
+          message: "url, ou frameBaseUrl + frameCount + frameFps, requis",
+        }),
     )
     .mutation(async ({ ctx, input }) => {
       const project = await findProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
       const existing = await findVideosByProject(input.projectId);
       const version = (existing.at(0)?.version ?? 0) + 1;
+      const kind = input.frameBaseUrl ? "frames" : "video";
+      // `url` reste NOT NULL en base même en mode "frames" — la 1ère image
+      // y sert de valeur de compatibilité pour tout lecteur qui lit `.url`
+      // sans distinguer le mode (ex. l'aperçu admin brut de StudioPanel),
+      // jamais utilisée pour le scrub lui-même dans ce cas.
+      const url = input.url ?? `${input.frameBaseUrl}00001.jpg`;
       const videoId = await addVideoVersion({
         projectId: input.projectId,
         version,
-        url: input.url,
-        posterUrl: input.posterUrl,
+        url,
+        posterUrl: input.posterUrl ?? (kind === "frames" ? url : undefined),
+        kind,
+        frameCount: input.frameCount,
+        frameFps: input.frameFps,
+        frameBaseUrl: input.frameBaseUrl,
         watermark: input.watermark,
         status: input.status,
       });
