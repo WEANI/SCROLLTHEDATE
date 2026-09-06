@@ -83,6 +83,19 @@ export type BespokePalette = {
   dressCode1: string
   dressCode2: string
   dressCode3: string
+  /**
+   * Texte overlay du hero (HeroScrub, cf. FairePart.tsx qui fusionne ces
+   * 3 champs avec le HeroTheme par défaut) — chaîne vide = non défini.
+   * `heroTextColor` : couleur des segments/lead/sub des chapitres, sinon
+   * `theme.textPrimary`/`textSecondary`. `heroCardBg` : fond de la carte
+   * floutée (`.hs-card`), sinon transparent (nouveau défaut, cf. échange
+   * du 06/09/2026 — auparavant un fond opaque posé par le thème).
+   * `heroInviteText` : texte sous les prénoms du chapitre d'ouverture,
+   * sinon rien (plus de "vous invite à leur mariage" par défaut).
+   */
+  heroTextColor: string
+  heroCardBg: string
+  heroInviteText: string
 }
 
 export const EW_PALETTE: BespokePalette = {
@@ -108,6 +121,9 @@ export const EW_PALETTE: BespokePalette = {
   dressCode1: '#B9A3CC',
   dressCode2: '#D8B99A',
   dressCode3: '#E8A9BC',
+  heroTextColor: '',
+  heroCardBg: '',
+  heroInviteText: '',
 }
 
 function darken(hex: string, amount: number): string {

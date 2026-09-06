@@ -279,6 +279,9 @@ export const LAO_PALETTE: BespokePalette = {
   dressCode1: '#8B1E28',
   dressCode2: '#1A1512',
   dressCode3: '',
+  heroTextColor: '',
+  heroCardBg: '',
+  heroInviteText: '',
 }
 
 /**

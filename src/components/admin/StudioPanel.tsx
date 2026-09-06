@@ -913,6 +913,9 @@ const BLANK_PALETTE: BespokePaletteInput = {
   dressCode1: "",
   dressCode2: "",
   dressCode3: "",
+  heroTextColor: "",
+  heroCardBg: "",
+  heroInviteText: "",
 };
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
@@ -1233,6 +1236,40 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
             <ColorField label="Teinte 2" value={palette.dressCode2} onChange={(v) => setField("dressCode2", v)} />
             <ColorField label="Teinte 3" value={palette.dressCode3} onChange={(v) => setField("dressCode3", v)} />
           </div>
+        </div>
+        <div>
+          <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+            Texte overlay du hero
+          </h4>
+          <p className="mb-2 text-[11px] text-neutral-500">
+            Le texte affiché par-dessus la vidéo du hero (prénoms, date…). Laisser vide pour retomber sur le thème du
+            hero (Éditorial/Cinéma/Minimal) — fond de carte transparent par défaut.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ColorField
+              label="Couleur du texte"
+              hint="Vide = couleur du thème"
+              value={palette.heroTextColor}
+              onChange={(v) => setField("heroTextColor", v)}
+            />
+            <ColorField
+              label="Fond de la carte"
+              hint="Vide = transparent"
+              value={palette.heroCardBg}
+              onChange={(v) => setField("heroCardBg", v)}
+            />
+          </div>
+          <label className="mt-3 flex flex-col gap-1">
+            <span className="text-[11px] font-semibold text-neutral-500">
+              Texte sous les prénoms (chapitre d'ouverture)
+            </span>
+            <input
+              value={palette.heroInviteText}
+              onChange={(e) => setField("heroInviteText", e.target.value)}
+              placeholder="Vide = aucun texte"
+              className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[12px] outline-none placeholder:text-neutral-500 focus:border-terracotta-500"
+            />
+          </label>
         </div>
       </div>
 

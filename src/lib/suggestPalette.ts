@@ -85,6 +85,13 @@ export function suggestPalette(accentColor: string, mode: "light" | "dark", exac
     dressCode1: "",
     dressCode2: "",
     dressCode3: "",
+    // Texte overlay du hero : jamais suggéré automatiquement (couleur et
+    // contenu à saisir à la main au studio si besoin, cf. doc de
+    // BespokePalette) — laissés vides, HeroScrub retombe alors sur le
+    // thème par défaut (et l'absence de texte pour heroInviteText).
+    heroTextColor: "",
+    heroCardBg: "",
+    heroInviteText: "",
   };
 }
 

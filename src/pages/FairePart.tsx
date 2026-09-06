@@ -85,6 +85,21 @@ export default function FairePart() {
   // Si la palette bespoke définit un fond, il prévaut sur le pageBg du thème
   const effectivePageBg = palette.bg && palette.bg !== EW_PALETTE.bg ? palette.bg : theme.pageBg
 
+  // Texte overlay du hero (Studio → Palette & Hero) : `heroCardBg` prévaut
+  // sur `theme.cardBg`, avec `transparent` en dernier repli — plus de fond
+  // opaque par défaut sur la carte floutée du hero, cf. échange du
+  // 06/09/2026 (auparavant le thème posait toujours un fond visible,
+  // souvent blanc, jamais piloté par la palette du couple). `heroTextColor`
+  // s'applique uniformément au texte principal ET secondaire de la carte
+  // (titre, lead, sub) — un seul champ, pas de nuance fine demandée.
+  const effectiveHeroTheme = {
+    ...theme,
+    cardBg: palette.heroCardBg || 'transparent',
+    ...(palette.heroTextColor
+      ? { textPrimary: palette.heroTextColor, textSecondary: palette.heroTextColor }
+      : null),
+  }
+
   // Timings du hero (Phase 2) sont stockés en SECONDES, pas en ratio
   // [0,1] — il faut la durée réelle de la vidéo livrée pour les
   // convertir (cf. contracts/bespokePalette.ts::heroChapterTimingSchema).
@@ -248,7 +263,10 @@ export default function FairePart() {
             segments,
             segmentLayout: 'stack',
             titleSize: 'lg',
-            sub: 'vous invite à leur mariage',
+            // Vide par défaut (plus de "vous invite à leur mariage" codé en
+            // dur, cf. échange du 06/09/2026) — éditable au studio via
+            // palette.heroInviteText (Palette & Hero → Texte overlay).
+            sub: palette.heroInviteText || undefined,
           },
           {
             id: 1,
@@ -261,14 +279,13 @@ export default function FairePart() {
             subSize: 'md',
             sub: invite.dressCode ?? undefined,
           },
-          {
-            id: 2,
-            kind: 'text',
-            from: studioChapters[2].fromSec / videoDuration,
-            to: studioChapters[2].toSec / videoDuration,
-            lead: 'Nous sommes ravis de partager ce moment avec vous',
-            segments,
-          },
+          // Ancien chapitre de clôture (id 2, "Nous sommes ravis de partager
+          // ce moment avec vous" + prénoms) retiré — cf. échange du
+          // 06/09/2026 : tant que son timing studio n'est pas réglé (encore
+          // {fromSec:0,toSec:0} par défaut), la fenêtre dégénérée [0,0] le
+          // faisait apparaître dès le tout début du scroll (cas particulier
+          // "dernier chapitre" de `findActiveChapterIndex`, qui inclut p=0),
+          // avant même le chapitre d'ouverture ci-dessus.
         ]
       : [
           // Repli générique (pas de timings studio validés) — comportement
@@ -297,7 +314,7 @@ export default function FairePart() {
 
       <div className="relative">
         <HeroScrub
-          theme={theme}
+          theme={effectiveHeroTheme}
           chapters={chapters}
           video={{
             desktopSrc: invite.heroVideoUrl,

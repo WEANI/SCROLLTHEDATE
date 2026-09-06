@@ -38,6 +38,16 @@ export const bespokePaletteSchema = z.object({
   dressCode1: z.string(),
   dressCode2: z.string(),
   dressCode3: z.string(),
+  // Texte overlay du hero (segments/sub des chapitres de HeroScrub, cf.
+  // FairePart.tsx où ces 3 champs fusionnent avec le HeroTheme par défaut
+  // (cinema/minimal/editorial) et le texte codé en dur des chapitres.
+  // Chaîne vide = non défini : `heroTextColor`/`heroCardBg` retombent alors
+  // sur le thème (et, pour la carte, sur transparent — nouveau défaut) ;
+  // `heroInviteText` retombe sur l'absence de texte (plus de "vous invite
+  // à leur mariage" par défaut, cf. échange du 06/09/2026).
+  heroTextColor: z.string(),
+  heroCardBg: z.string(),
+  heroInviteText: z.string(),
 });
 
 export type BespokePaletteInput = z.infer<typeof bespokePaletteSchema>;

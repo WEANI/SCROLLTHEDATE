@@ -260,6 +260,9 @@ export const CA_PALETTE: BespokePalette = {
   dressCode1: '#2A3F66',
   dressCode2: '#F0ECE4',
   dressCode3: '#C9B79C',
+  heroTextColor: '',
+  heroCardBg: '',
+  heroInviteText: '',
 }
 
 /**
