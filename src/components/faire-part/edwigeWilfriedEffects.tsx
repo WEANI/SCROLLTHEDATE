@@ -871,6 +871,10 @@ export function NotreHistoire({
   // pour rythmer la lecture. L'index continue across phrases pour garder
   // des clés uniques, le scroll-ink (par mot) n'en dépend pas.
   const sentences = text.split(/(?<=\.) /).map((s) => s.split(' '))
+  // Texte replié par défaut, déplié au clic sur le titre (cf. échange du
+  // 06/09/2026, même logique que Menu du dîner/FAQ) — la galerie ci-dessous
+  // reste TOUJOURS visible, explicitement exclue de la demande.
+  const [open, setOpen] = useState(false)
 
   return (
     // plein cadre (sort de la colonne étroite max-w-420 héritée de
@@ -882,27 +886,49 @@ export function NotreHistoire({
     // juste après Le Programme (cf. modifications a faire.md — remise à
     // cette position après un premier aller-retour côté client).
     <section className="relative ml-[calc(50%-50vw)] w-screen py-20" style={{ background: 'transparent' }}>
-      <EwLabel>Notre histoire</EwLabel>
-      <div className="mx-auto max-w-[26ch]">
-        <p
-          ref={pRef}
-          className="font-display text-center italic"
-          style={{ fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', lineHeight: 1.6 }}
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="mx-auto mb-7 flex items-center justify-center gap-2 text-[19px] italic"
+        style={{ color: palette.sectionTitle }}
+      >
+        Notre histoire
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 16 16"
+          fill="none"
+          className="shrink-0 transition-transform duration-300"
+          style={{ transform: open ? 'rotate(180deg)' : 'none', opacity: 0.6 }}
         >
-          {sentences.map((sentenceWords, si) => (
-            <span key={si} className="block" style={{ marginBottom: si < sentences.length - 1 ? '1em' : 0 }}>
-              {sentenceWords.map((raw, i) => (
-                <span
-                  key={i}
-                  className="ew-word-ink inline"
-                  style={{ color: keywordSet.has(normalizeWord(raw)) ? palette.bordeaux : palette.ink }}
-                >
-                  {raw}{' '}
+          <path d="M3 6l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <div className="grid transition-[grid-template-rows] duration-300 ease-out" style={{ gridTemplateRows: open ? '1fr' : '0fr' }}>
+        <div className="overflow-hidden">
+          <div className="mx-auto max-w-[26ch]">
+            <p
+              ref={pRef}
+              className="font-display text-center italic"
+              style={{ fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', lineHeight: 1.6 }}
+            >
+              {sentences.map((sentenceWords, si) => (
+                <span key={si} className="block" style={{ marginBottom: si < sentences.length - 1 ? '1em' : 0 }}>
+                  {sentenceWords.map((raw, i) => (
+                    <span
+                      key={i}
+                      className="ew-word-ink inline"
+                      style={{ color: keywordSet.has(normalizeWord(raw)) ? palette.bordeaux : palette.ink }}
+                    >
+                      {raw}{' '}
+                    </span>
+                  ))}
                 </span>
               ))}
-            </span>
-          ))}
-        </p>
+            </p>
+          </div>
+        </div>
       </div>
       {photos.length > 0 && <HorizontalPhotos photos={photos} />}
     </section>
