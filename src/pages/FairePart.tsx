@@ -98,6 +98,17 @@ export default function FairePart() {
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
   useEffect(() => {
     if (!invite || !studioChapters) return
+    // Mode "frames" (cf. api/lib/videoFrames.ts) : `heroVideoUrl` pointe sur
+    // la 1ère image (valeur de compat), pas un fichier vidéo — une sonde
+    // <video> dessus ne charge jamais de métadonnées, `onloadedmetadata` ne
+    // se déclenche jamais, et la page restait bloquée indéfiniment sur le
+    // loader ci-dessous (studioChapters non vide + videoDuration jamais
+    // sorti de `null`). La durée se calcule directement à partir du nombre
+    // d'images et du fps, pas besoin de sonder quoi que ce soit.
+    if (invite.heroFrames) {
+      setVideoDuration(invite.heroFrames.count / invite.heroFrames.fps)
+      return
+    }
     const probe = document.createElement('video')
     probe.preload = 'metadata'
     probe.src = invite.heroVideoUrl
@@ -106,7 +117,7 @@ export default function FairePart() {
       probe.onloadedmetadata = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invite?.heroVideoUrl, !!studioChapters])
+  }, [invite?.heroVideoUrl, invite?.heroFrames, !!studioChapters])
 
   // Aspect ratio réel de la photo d'ouverture — inconnu à l'avance
   // (contrairement aux couples câblés en dur, dont le fichier et son
