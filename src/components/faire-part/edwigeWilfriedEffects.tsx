@@ -1511,65 +1511,28 @@ export function LodgingCascadeCard({
 // 8. Menu du dîner --------------------------------------------------------
 
 /**
- * Une sous-section du menu (Cocktail / Entrée / Plat / Dessert), en
- * accordéon — même mécanique que `FaqItemCard` (Foire aux questions) :
- * carte `p.bg`, chevron qui pivote, contenu qui se déplie via
- * `grid-template-rows`. Chaque ligne saisie par le couple (cf.
- * jourj.menu_cocktail/entree/plat/dessert) est un plat/élément brut, sans
- * préfixe "Option N" (retiré — cf. échange du 06/09/2026, le couple peut
- * avoir plusieurs options par plat sans que ce soit numéroté à l'écran).
- * Absente si `items` est vide, jamais un titre de sous-section sans
- * contenu.
+ * Une sous-section du menu (Cocktail / Entrée / Plat / Dessert) — chaque
+ * ligne saisie par le couple (cf. jourj.menu_cocktail/entree/plat/dessert)
+ * est un plat/élément brut, sans préfixe "Option N" (retiré, cf. échange
+ * du 06/09/2026). Absente si `items` est vide, jamais un titre de
+ * sous-section sans contenu. Pas d'accordéon propre : c'est tout le menu
+ * (cf. `MenuDuDiner` plus bas) qui se déplie en un seul bloc.
  */
-function MenuCourseAccordion({
-  title,
-  items,
-  open,
-  onToggle,
-}: {
-  title: string
-  items: string[]
-  open: boolean
-  onToggle: () => void
-}) {
+function MenuCourse({ title, items }: { title: string; items: string[] }) {
   const p = usePalette()
   if (items.length === 0) return null
   return (
-    <div className="overflow-hidden rounded-2xl shadow-[0_1px_3px_rgba(46,38,32,0.08)]" style={{ background: p.bg }}>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={onToggle}
-        className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
-      >
-        <span className="text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: p.bordeaux }}>
-          {title}
-        </span>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          className="shrink-0 transition-transform duration-300"
-          style={{ transform: open ? 'rotate(180deg)' : 'none', color: p.inkOnCard, opacity: 0.5 }}
-        >
-          <path d="M3 6l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      <div
-        className="grid transition-[grid-template-rows] duration-300 ease-out"
-        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
-      >
-        <div className="overflow-hidden">
-          <ul className="list-none px-6 pb-5 text-center">
-            {items.map((item, i) => (
-              <li key={i} className="py-1 text-[14.5px] leading-[1.6]" style={{ color: `rgba(${p.inkOnCardRgb}, 0.8)` }}>
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+    <div>
+      <p className="mb-3 text-center text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: p.bordeaux }}>
+        {title}
+      </p>
+      <ul className="list-none p-0 text-center">
+        {items.map((item, i) => (
+          <li key={i} className="py-1 text-[14.5px] leading-[1.6]" style={{ color: `rgba(${p.inkRgb}, 0.8)` }}>
+            {item}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
@@ -1580,9 +1543,13 @@ function MenuCourseAccordion({
  * optionnelles, chacune n'apparaît que si le couple l'a renseignée ; toute
  * la section reste absente de la page tant qu'aucune des 4 n'a de contenu
  * — géré par l'appelant (FairePart.tsx), pas ici : ce composant se contente
- * d'omettre les sous-sections vides qu'on lui passe. Chaque sous-section
- * est un accordéon indépendant (pas "un seul ouvert à la fois" comme la
- * FAQ) : voir l'Entrée n'a pas de raison de replier le Plat déjà consulté.
+ * d'omettre les sous-sections vides qu'on lui passe.
+ *
+ * Un seul dropdown pour TOUTE la section (titre "Menu du dîner" = bouton,
+ * cf. échange du 06/09/2026 — pas un accordéon par sous-section comme un
+ * premier essai l'avait fait) : replié par défaut, le clic révèle
+ * Cocktail/Entrée/Plat/Dessert d'un coup. Même mécanique que Notre
+ * histoire (bouton + chevron + `grid-template-rows`).
  */
 export function MenuDuDiner({
   cocktail = [],
@@ -1595,27 +1562,47 @@ export function MenuDuDiner({
   plat?: string[]
   dessert?: string[]
 }) {
+  const p = usePalette()
   const courses = [
     { title: 'Cocktail', items: cocktail },
     { title: 'Entrée', items: entree },
     { title: 'Plat', items: plat },
     { title: 'Dessert', items: dessert },
   ].filter((c) => c.items.length > 0)
-  const [open, setOpen] = useState<Record<string, boolean>>({})
+  const [open, setOpen] = useState(false)
 
   return (
-    <section>
-      <EwLabel>Menu du dîner</EwLabel>
-      <div className="flex flex-col gap-4">
-        {courses.map((course) => (
-          <MenuCourseAccordion
-            key={course.title}
-            title={course.title}
-            items={course.items}
-            open={!!open[course.title]}
-            onToggle={() => setOpen((prev) => ({ ...prev, [course.title]: !prev[course.title] }))}
-          />
-        ))}
+    <section className="text-center">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="mx-auto mb-7 flex items-center justify-center gap-2 text-[19px] italic"
+        style={{ color: p.sectionTitle }}
+      >
+        Menu du dîner
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 16 16"
+          fill="none"
+          className="shrink-0 transition-transform duration-300"
+          style={{ transform: open ? 'rotate(180deg)' : 'none', opacity: 0.6 }}
+        >
+          <path d="M3 6l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <div className="grid transition-[grid-template-rows] duration-300 ease-out" style={{ gridTemplateRows: open ? '1fr' : '0fr' }}>
+        <div className="overflow-hidden">
+          <div className="flex flex-col gap-7">
+            {courses.map((course, i) => (
+              <div key={course.title}>
+                {i > 0 && <div className="mx-auto mb-7 h-px w-14" style={{ background: p.gold }} aria-hidden />}
+                <MenuCourse title={course.title} items={course.items} />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   )
