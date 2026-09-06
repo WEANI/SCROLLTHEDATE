@@ -469,7 +469,16 @@ function RsvpForm({
       initial={{ y: 18, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="relative overflow-hidden rounded-[20px] p-8 sm:p-10"
+      // `max-h-[85vh]` + `overflow-y-auto` (au lieu d'`overflow-hidden`,
+      // qui ne faisait que rogner le contenu sans jamais le rendre
+      // accessible) : la modale RSVP est centrée verticalement par
+      // DialogContent (`top-50% + translate(-50%)`), sans limite de hauteur
+      // — sur un écran bas (mobile) avec un formulaire long, le haut
+      // ("Serez-vous des nôtres ?") se retrouvait poussé au-dessus du haut
+      // de l'écran, hors de portée puisque rien ne scrollait. Défile
+      // maintenant à l'intérieur de la modale elle-même une fois la
+      // hauteur dépassée, le haut reste toujours atteignable en scrollant.
+      className="relative max-h-[85vh] overflow-y-auto rounded-[20px] p-8 sm:p-10"
       style={{ background: t.modalBg, boxShadow: t.shadow }}
     >
       <AnimatePresence mode="wait">
