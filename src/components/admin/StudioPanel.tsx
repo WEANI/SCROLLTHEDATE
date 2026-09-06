@@ -662,6 +662,14 @@ function VideoManager({ project }: { project: Project360 }) {
                 Filigrane
               </span>
             )}
+            {v.kind === "frames" && (
+              <span
+                title={`Séquence d'images — ${v.frameCount ?? "?"} images à ${v.frameFps ?? "?"} im/s`}
+                className="rounded-full bg-terracotta-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-terracotta-500"
+              >
+                Frames · {v.frameCount ?? "?"} images
+              </span>
+            )}
             <span className="tabular ml-auto text-[11px] text-neutral-500">{formatDateTime(v.createdAt)}</span>
           </li>
         ))}
@@ -679,7 +687,18 @@ function VideoManager({ project }: { project: Project360 }) {
             onClick={() =>
               markFinal.mutate({
                 projectId: project.id,
-                url: approved.url,
+                // La version approuvée peut être en mode "frames" — dans ce
+                // cas `approved.url` n'est que la 1ère image (compat), la
+                // reporter telle quelle créerait une version "finale" cassée
+                // (une balise <video> pointée sur un .jpg). Reporter plutôt
+                // les champs frames d'origine, cf. adminAddVersion.
+                ...(approved.kind === "frames" && approved.frameBaseUrl && approved.frameCount && approved.frameFps
+                  ? {
+                      frameBaseUrl: approved.frameBaseUrl,
+                      frameCount: approved.frameCount,
+                      frameFps: approved.frameFps,
+                    }
+                  : { url: approved.url }),
                 watermark: false,
                 status: "final",
               })
