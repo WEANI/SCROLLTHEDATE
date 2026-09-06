@@ -14,6 +14,17 @@ import './hero-scrub.css'
 function findActiveChapterIndex(chapters: HeroChapter[], p: number): number {
   for (let i = 0; i < chapters.length; i++) {
     const ch = chapters[i]
+    // Fenêtre dégénérée (`to <= from`) — timing pas encore réglé au studio
+    // (valeur par défaut {fromSec:0,toSec:0}, cf. BLANK_HERO_CHAPTERS dans
+    // StudioPanel.tsx). Sans ce garde-fou, le cas particulier "dernier
+    // chapitre" juste en dessous (`p <= ch.to`) matchait à p=0 dès que le
+    // DERNIER chapitre du tableau avait ce timing par défaut — le bloc
+    // suivant qu'on retirait migrait alors simplement sur celui-ci
+    // (constaté en conditions réelles le 06/09/2026 : après avoir retiré
+    // le chapitre de clôture, c'est le chapitre "détails pratiques" —
+    // devenu le nouveau dernier — qui s'est mis à apparaître au tout début
+    // à sa place). Un chapitre non configuré ne doit jamais s'activer.
+    if (ch.to <= ch.from) continue
     const isLast = i === chapters.length - 1
     if (p >= ch.from && (p < ch.to || (isLast && p <= ch.to))) return i
   }
