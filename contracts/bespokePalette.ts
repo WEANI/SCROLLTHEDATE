@@ -45,9 +45,19 @@ export const bespokePaletteSchema = z.object({
   // sur le thème (et, pour la carte, sur transparent — nouveau défaut) ;
   // `heroInviteText` retombe sur l'absence de texte (plus de "vous invite
   // à leur mariage" par défaut, cf. échange du 06/09/2026).
-  heroTextColor: z.string(),
-  heroCardBg: z.string(),
-  heroInviteText: z.string(),
+  // `.default("")` (contrairement aux autres champs ci-dessus) : une
+  // palette déjà enregistrée AVANT l'ajout de ces 3 champs (toutes les
+  // palettes existantes en base au 06/09/2026) ne les porte pas du tout —
+  // chargée telle quelle dans le formulaire studio (cast TS, pas de
+  // validation à la lecture), ils y restent `undefined`. tRPC/JSON omet
+  // les clés `undefined` à l'envoi : le payload de sauvegarde en arrivait
+  // à ne plus les porter DU TOUT, rejeté par ce même schéma (`z.string()`
+  // sans défaut refuse une clé manquante) — "Échec de l'enregistrement de
+  // la palette" reproduit en conditions réelles sur une palette existante.
+  // `.default("")` absorbe ce cas (et tout futur bundle client en retard).
+  heroTextColor: z.string().default(""),
+  heroCardBg: z.string().default(""),
+  heroInviteText: z.string().default(""),
 });
 
 export type BespokePaletteInput = z.infer<typeof bespokePaletteSchema>;

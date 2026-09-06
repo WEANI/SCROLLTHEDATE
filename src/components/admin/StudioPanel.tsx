@@ -984,7 +984,14 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
   const existingPalette = project.palette as BespokePaletteInput | null;
   const [mode, setMode] = useState<"light" | "dark">(modeHint);
   const [accentColor, setAccentColor] = useState(existingPalette?.gold ?? FALLBACK_ACCENT);
-  const [palette, setPalette] = useState<BespokePaletteInput>(existingPalette ?? BLANK_PALETTE);
+  // Fusionné avec BLANK_PALETTE (pas juste `existingPalette ?? BLANK_PALETTE`)
+  // : une palette enregistrée avant l'ajout d'un champ (ex. heroTextColor/
+  // heroCardBg/heroInviteText, cf. échange du 06/09/2026) ne le porte pas
+  // du tout — sans fusion, ce champ resterait `undefined` dans le
+  // formulaire (valeur incontrôlée sur l'input) et disparaîtrait carrément
+  // du payload envoyé à l'enregistrement (JSON omet les clés `undefined`),
+  // rejeté côté serveur qui l'exige (cf. bespokePaletteSchema).
+  const [palette, setPalette] = useState<BespokePaletteInput>({ ...BLANK_PALETTE, ...existingPalette });
 
   const setField = (key: keyof BespokePaletteInput, value: string) =>
     setPalette((prev) => ({ ...prev, [key]: value }));
