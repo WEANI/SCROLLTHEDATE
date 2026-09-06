@@ -29,6 +29,7 @@ import {
   PROJECT_STATUS_LABEL,
   TEMPLATE_VIGNETTE,
 } from '@/components/espace/utils'
+import { useSelectedProject } from '@/components/espace/ProjectSelection'
 
 // ---------------------------------------------------------------------------
 // Stepper 6 étapes (fait / actif / à venir)
@@ -123,10 +124,11 @@ export default function TableauDeBord() {
   // ici. Comparer avec authLoading (pas seulement isLoading des requêtes
   // elles-mêmes) plus bas pour garder le skeleton affiché pendant ce court
   // laps de temps plutôt que de basculer sur un état d'erreur.
-  const projectQuery = trpc.projects.myProject.useQuery(undefined, { enabled: isAuthenticated })
-  const mediaQuery = trpc.media.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const { projectId } = useSelectedProject()
+  const projectQuery = trpc.projects.myProject.useQuery({ projectId }, { enabled: isAuthenticated })
+  const mediaQuery = trpc.media.listMine.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
   const ordersQuery = trpc.orders.myOrders.useQuery(undefined, { enabled: isAuthenticated })
-  const threadQuery = trpc.messages.listThread.useQuery({}, { enabled: isAuthenticated, retry: false })
+  const threadQuery = trpc.messages.listThread.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
 
   const project = projectQuery.data ?? null
   const media = useMemo(() => mediaQuery.data ?? [], [mediaQuery.data])

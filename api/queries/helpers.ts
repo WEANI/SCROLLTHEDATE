@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import {
   auditEvents,
   notifications,
@@ -14,6 +14,25 @@ export async function findCurrentProject(userId: number) {
     .from(projects)
     .where(eq(projects.userId, userId))
     .orderBy(desc(projects.createdAt))
+    .limit(1);
+  return rows.at(0);
+}
+
+/**
+ * Un des projets de ce client — celui explicitement choisi (`projectId`,
+ * vérifié appartenir à `userId` : jamais de confiance aveugle dans un id
+ * fourni par le client) via le sélecteur de projet de l'espace client (cf.
+ * ProjectSelectionProvider, src/components/espace/), ou par défaut le plus
+ * récent (`findCurrentProject`, conservé pour compat — historiquement seule
+ * option avant qu'un même compte puisse accumuler plusieurs projets, ex.
+ * plusieurs commandes au fil du temps).
+ */
+export async function findProjectForUser(userId: number, projectId?: number) {
+  if (projectId == null) return findCurrentProject(userId);
+  const rows = await getDb()
+    .select()
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
     .limit(1);
   return rows.at(0);
 }

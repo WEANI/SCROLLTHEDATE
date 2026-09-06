@@ -10,6 +10,7 @@ import {
   findProject360,
   findProjectById,
   findProjectBySlug,
+  findProjectsSummaryByUser,
   updateProjectHeroChapters,
   updateProjectPalette,
   updateProjectStatus,
@@ -127,9 +128,19 @@ export const projectsRouter = createRouter({
   // sans broncher), donc invisible à tout test qui interroge l'API
   // directement. C'est ce qui produisait "Une erreur est survenue" sur
   // Tableau de bord et Projet & scénarios pour tout compte sans commande.
-  myProject: authedQuery.query(async ({ ctx }) => {
-    const project = await findCurrentProjectFull(ctx.user.id);
-    return project ?? null;
+  myProject: authedQuery
+    .input(z.object({ projectId: z.number().int().positive().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const project = await findCurrentProjectFull(ctx.user.id, input?.projectId);
+      return project ?? null;
+    }),
+
+  // Résumé de tous les projets du client connecté — alimente le sélecteur
+  // de projet de l'espace client (masqué si un seul projet, cf.
+  // ProjectSelectionProvider). Liste vide si aucune commande, comme
+  // myProject.
+  myProjects: authedQuery.query(async ({ ctx }) => {
+    return findProjectsSummaryByUser(ctx.user.id);
   }),
 
   // Kanban admin : projets + client + commande + complétion questionnaire.

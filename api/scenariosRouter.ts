@@ -8,7 +8,7 @@ import {
 } from "./queries/domain";
 import {
   actorOf,
-  findCurrentProject,
+  findProjectForUser,
   logAudit,
   notifyAdmins,
   notifyUser,
@@ -23,8 +23,8 @@ import {
 } from "./lib/emailTemplates";
 import { env } from "./lib/env";
 
-async function requireCurrentProject(userId: number) {
-  const project = await findCurrentProject(userId);
+async function requireCurrentProject(userId: number, projectId?: number) {
+  const project = await findProjectForUser(userId, projectId);
   if (!project)
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -32,6 +32,10 @@ async function requireCurrentProject(userId: number) {
     });
   return project;
 }
+
+/** Sélecteur de projet optionnel (cf. ProjectSelectionProvider) — retombe
+ * sur le projet le plus récent si absent, comportement historique. */
+const projectSelector = z.object({ projectId: z.number().int().positive().optional() });
 
 const moodboardSchema = z
   .array(z.object({ url: z.string(), caption: z.string().optional() }))
@@ -42,11 +46,13 @@ export const scenariosRouter = createRouter({
   // signup, avant toute commande) — liste vide, comme projects.myProject.
   // requireCurrentProject (qui lève NOT_FOUND) reste réservé aux mutations
   // ci-dessous, où l'absence de projet est réellement anormale.
-  listMine: authedQuery.query(async ({ ctx }) => {
-    const project = await findCurrentProject(ctx.user.id);
-    if (!project) return [];
-    return findScenariosByProject(project.id);
-  }),
+  listMine: authedQuery
+    .input(projectSelector.optional())
+    .query(async ({ ctx, input }) => {
+      const project = await findProjectForUser(ctx.user.id, input?.projectId);
+      if (!project) return [];
+      return findScenariosByProject(project.id);
+    }),
 
   adminList: adminQuery
     .input(z.object({ projectId: z.number().int().positive() }))
@@ -115,9 +121,9 @@ export const scenariosRouter = createRouter({
 
   // Choix définitif du client → passage en PRODUCTION + notification admin.
   choose: authedQuery
-    .input(z.object({ scenarioId: z.number().int().positive() }))
+    .input(projectSelector.extend({ scenarioId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      const project = await requireCurrentProject(ctx.user.id);
+      const project = await requireCurrentProject(ctx.user.id, input.projectId);
       const scenarios = await findScenariosByProject(project.id);
       const scenario = scenarios.find((s) => s.id === input.scenarioId);
       if (!scenario) throw new TRPCError({ code: "NOT_FOUND" });
@@ -151,13 +157,13 @@ export const scenariosRouter = createRouter({
 
   requestChanges: authedQuery
     .input(
-      z.object({
+      projectSelector.extend({
         scenarioId: z.number().int().positive(),
         comment: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await requireCurrentProject(ctx.user.id);
+      const project = await requireCurrentProject(ctx.user.id, input.projectId);
       const scenarios = await findScenariosByProject(project.id);
       const scenario = scenarios.find((s) => s.id === input.scenarioId);
       if (!scenario) throw new TRPCError({ code: "NOT_FOUND" });

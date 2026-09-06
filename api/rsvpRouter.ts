@@ -13,7 +13,7 @@ import {
   findRsvpStats,
   upsertRsvpConfig,
 } from "./queries/domain";
-import { actorOf, findCurrentProject, logAudit } from "./queries/helpers";
+import { actorOf, findProjectForUser, logAudit } from "./queries/helpers";
 import { findProjectBySlug } from "./queries/projects";
 
 export const rsvpRouter = createRouter({
@@ -94,24 +94,27 @@ export const rsvpRouter = createRouter({
   // Liste des réponses du faire-part du client connecté. Lecture : un client
   // sans projet n'est pas une erreur (ex. juste après signup, avant toute
   // commande) — réponses vides, comme projects.myProject.
-  listMine: authedQuery.query(async ({ ctx }) => {
-    const project = await findCurrentProject(ctx.user.id);
-    if (!project) return { config: null, responses: [] };
-    const responses = await findRsvpResponsesByProject(project.id);
-    const config = await findRsvpConfig(project.id);
-    return { config: config ?? null, responses };
-  }),
+  listMine: authedQuery
+    .input(z.object({ projectId: z.number().int().positive().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const project = await findProjectForUser(ctx.user.id, input?.projectId);
+      if (!project) return { config: null, responses: [] };
+      const responses = await findRsvpResponsesByProject(project.id);
+      const config = await findRsvpConfig(project.id);
+      return { config: config ?? null, responses };
+    }),
 
   // Config RSVP du projet courant (client) — utilisé par le questionnaire étape 3.
   saveConfig: authedQuery
     .input(
       z.object({
+        projectId: z.number().int().positive().optional(),
         enabled: z.boolean(),
         questions: z.record(z.string(), z.unknown()).default({}),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await findCurrentProject(ctx.user.id);
+      const project = await findProjectForUser(ctx.user.id, input.projectId);
       if (!project)
         throw new TRPCError({
           code: "NOT_FOUND",

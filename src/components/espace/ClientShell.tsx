@@ -27,6 +27,11 @@ import {
   notificationHref,
   notificationLabel,
 } from '@/components/espace/utils'
+import {
+  ProjectSelectionProvider,
+  ProjectSwitcher,
+  useSelectedProject,
+} from '@/components/espace/ProjectSelection'
 
 // ---------------------------------------------------------------------------
 // Navigation
@@ -192,6 +197,7 @@ function NotificationsBell() {
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
   const { user, logout, isAuthenticated } = useAuth()
+  const { projectId } = useSelectedProject()
   // `enabled: isAuthenticated` — capital ici : ce composant est monté sur
   // TOUTES les pages /espace/*, et sans cette garde ses requêtes (non
   // désactivées, elles) partagent leur clé de cache react-query avec les
@@ -201,12 +207,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   // requête et — en cas de course sur la session juste après un
   // signup/login — à écrire une erreur dans le cache partagé que la page
   // affiche ensuite, rendant la garde de la page inopérante en pratique.
-  const { data: project } = trpc.projects.myProject.useQuery(undefined, {
-    enabled: isAuthenticated,
-    refetchInterval: 60_000,
-  })
+  const { data: project } = trpc.projects.myProject.useQuery(
+    { projectId },
+    { enabled: isAuthenticated, refetchInterval: 60_000 },
+  )
   const { data: thread } = trpc.messages.listThread.useQuery(
-    {},
+    { projectId },
     { enabled: isAuthenticated, refetchInterval: 30_000, retry: false },
   )
   const unreadMessages = (thread ?? []).filter(
@@ -224,6 +230,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             S.
           </span>
         </Link>
+      </div>
+
+      {/* Sélecteur de projet — masqué si le compte n'en a qu'un */}
+      <div className="pt-3">
+        <ProjectSwitcher />
       </div>
 
       {/* Nav */}
@@ -353,6 +364,7 @@ export default function ClientShell() {
   if (!isAuthenticated) return null // redirection gérée par useAuth
 
   return (
+    <ProjectSelectionProvider>
     <div className="min-h-[100dvh] bg-neutral-100 text-ink">
       {/* Sidebar desktop */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[260px] border-r border-neutral-200 bg-white lg:block">
@@ -444,5 +456,6 @@ export default function ClientShell() {
         </main>
       </div>
     </div>
+    </ProjectSelectionProvider>
   )
 }

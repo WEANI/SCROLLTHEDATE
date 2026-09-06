@@ -30,6 +30,7 @@ import {
 } from '@/components/espace/utils'
 import QrShare from '@/components/espace/QrShare'
 import { EmptyState } from '@/components/espace/shared'
+import { useSelectedProject } from '@/components/espace/ProjectSelection'
 
 // ---------------------------------------------------------------------------
 // Facture (fenêtre d'impression → PDF)
@@ -113,8 +114,9 @@ export default function Commandes() {
   // évite de lancer ces requêtes avant que la session ne soit confirmée
   // (juste après un signup/login), ce qui afficherait une erreur à un
   // client pourtant bien connecté.
+  const { projectId } = useSelectedProject()
   const ordersQuery = trpc.orders.myOrders.useQuery(undefined, { enabled: isAuthenticated })
-  const rsvpQuery = trpc.rsvp.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const rsvpQuery = trpc.rsvp.listMine.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
 
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [rsvpFilter, setRsvpFilter] = useState<'all' | 'yes' | 'no' | 'maybe'>('all')

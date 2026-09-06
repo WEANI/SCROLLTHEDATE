@@ -12,7 +12,7 @@ import {
 } from "./queries/questionnaire";
 import {
   actorOf,
-  findCurrentProject,
+  findProjectForUser,
   logAudit,
   notifyAdmins,
 } from "./queries/helpers";
@@ -98,8 +98,8 @@ async function syncTemplateFromAmbiance(
   });
 }
 
-async function requireCurrentProject(userId: number) {
-  const project = await findCurrentProject(userId);
+async function requireCurrentProject(userId: number, projectId?: number) {
+  const project = await findProjectForUser(userId, projectId);
   if (!project)
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -108,18 +108,24 @@ async function requireCurrentProject(userId: number) {
   return project;
 }
 
+/** Sélecteur de projet optionnel (cf. ProjectSelectionProvider) — retombe
+ * sur le projet le plus récent si absent, comportement historique. */
+const projectSelector = z.object({ projectId: z.number().int().positive().optional() });
+
 export const questionnaireRouter = createRouter({
-  get: authedQuery.query(async ({ ctx }) => {
-    const project = await requireCurrentProject(ctx.user.id);
-    const questionnaire = await findQuestionnaireByProject(project.id);
-    return { project, questionnaire: questionnaire ?? null };
-  }),
+  get: authedQuery
+    .input(projectSelector.optional())
+    .query(async ({ ctx, input }) => {
+      const project = await requireCurrentProject(ctx.user.id, input?.projectId);
+      const questionnaire = await findQuestionnaireByProject(project.id);
+      return { project, questionnaire: questionnaire ?? null };
+    }),
 
   // Autosave partiel : merge des réponses + recalcul du % de complétion.
   save: authedQuery
-    .input(z.object({ answers: answersSchema }))
+    .input(projectSelector.extend({ answers: answersSchema }))
     .mutation(async ({ ctx, input }) => {
-      const project = await requireCurrentProject(ctx.user.id);
+      const project = await requireCurrentProject(ctx.user.id, input.projectId);
       const existing = await findQuestionnaireByProject(project.id);
       const template = await findActiveFormTemplate();
       const previousAnswers =
@@ -165,48 +171,50 @@ export const questionnaireRouter = createRouter({
    * reste modifiable ensuite : le client peut corriger puis revalider, ce
    * qui réémet une alerte.
    */
-  submit: authedQuery.mutation(async ({ ctx }) => {
-    const project = await requireCurrentProject(ctx.user.id);
-    const existing = await findQuestionnaireByProject(project.id);
-    if (!existing) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "Répondez à au moins une question avant de valider.",
+  submit: authedQuery
+    .input(projectSelector.optional())
+    .mutation(async ({ ctx, input }) => {
+      const project = await requireCurrentProject(ctx.user.id, input?.projectId);
+      const existing = await findQuestionnaireByProject(project.id);
+      if (!existing) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Répondez à au moins une question avant de valider.",
+        });
+      }
+
+      const updated = await markQuestionnaireSubmitted(project.id);
+      const completionPct = updated?.completionPct ?? existing.completionPct;
+      const isResubmission = Boolean(existing.submittedAt);
+
+      await logAudit(project.id, actorOf(ctx.user), "questionnaire.submitted", {
+        completionPct,
+        isResubmission,
       });
-    }
+      await notifyAdmins("questionnaire.submitted", {
+        projectId: project.id,
+        slug: project.slug,
+        completionPct,
+      });
 
-    const updated = await markQuestionnaireSubmitted(project.id);
-    const completionPct = updated?.completionPct ?? existing.completionPct;
-    const isResubmission = Boolean(existing.submittedAt);
+      if (env.ownerEmail) {
+        await sendEmail(
+          adminAlertEmail({
+            to: env.ownerEmail,
+            title: isResubmission
+              ? "Questionnaire mis à jour"
+              : "Questionnaire validé — prêt pour la production",
+            detail:
+              completionPct >= 100
+                ? "Toutes les réponses sont là, la vidéo du faire-part peut être lancée."
+                : `Validé par le client à ${completionPct} % de complétion — vérifiez les réponses manquantes avant de lancer la production.`,
+            projectSlug: project.slug,
+          }),
+        );
+      }
 
-    await logAudit(project.id, actorOf(ctx.user), "questionnaire.submitted", {
-      completionPct,
-      isResubmission,
-    });
-    await notifyAdmins("questionnaire.submitted", {
-      projectId: project.id,
-      slug: project.slug,
-      completionPct,
-    });
-
-    if (env.ownerEmail) {
-      await sendEmail(
-        adminAlertEmail({
-          to: env.ownerEmail,
-          title: isResubmission
-            ? "Questionnaire mis à jour"
-            : "Questionnaire validé — prêt pour la production",
-          detail:
-            completionPct >= 100
-              ? "Toutes les réponses sont là, la vidéo du faire-part peut être lancée."
-              : `Validé par le client à ${completionPct} % de complétion — vérifiez les réponses manquantes avant de lancer la production.`,
-          projectSlug: project.slug,
-        }),
-      );
-    }
-
-    return { submittedAt: updated?.submittedAt ?? new Date(), completionPct };
-  }),
+      return { submittedAt: updated?.submittedAt ?? new Date(), completionPct };
+    }),
 
   // `?? null` : findActiveFormTemplate (findFirst) renvoie `undefined` tant
   // qu'aucun template n'est actif — React Query v5 interdit qu'une query se

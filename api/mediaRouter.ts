@@ -10,11 +10,11 @@ import {
   updateMediaStatus,
   updateVoiceNoteStatus,
 } from "./queries/domain";
-import { actorOf, findCurrentProject, logAudit } from "./queries/helpers";
+import { actorOf, findProjectForUser, logAudit } from "./queries/helpers";
 import { findProjectById } from "./queries/projects";
 
-async function requireCurrentProject(userId: number) {
-  const project = await findCurrentProject(userId);
+async function requireCurrentProject(userId: number, projectId?: number) {
+  const project = await findProjectForUser(userId, projectId);
   if (!project)
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -23,18 +23,22 @@ async function requireCurrentProject(userId: number) {
   return project;
 }
 
+/** Sélecteur de projet optionnel (cf. ProjectSelectionProvider) — retombe
+ * sur le projet le plus récent si absent, comportement historique. */
+const projectSelector = z.object({ projectId: z.number().int().positive().optional() });
+
 export const mediaRouter = createRouter({
   // Métadonnées + URL (chemin public/ ou dataURI) — pas de S3 en V1.
   addMedia: authedQuery
     .input(
-      z.object({
+      projectSelector.extend({
         type: z.enum(["photo", "video"]),
         url: z.string().min(1),
         filename: z.string().max(500).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await requireCurrentProject(ctx.user.id);
+      const project = await requireCurrentProject(ctx.user.id, input.projectId);
       const mediaId = await addMedia({
         projectId: project.id,
         type: input.type,
@@ -54,16 +58,18 @@ export const mediaRouter = createRouter({
   // signup, avant toute commande) — liste vide, comme projects.myProject.
   // requireCurrentProject (qui lève NOT_FOUND) reste réservé aux mutations
   // ci-dessus/dessous, où l'absence de projet est réellement anormale.
-  listMine: authedQuery.query(async ({ ctx }) => {
-    const project = await findCurrentProject(ctx.user.id);
-    if (!project) return [];
-    return findMediaByProject(project.id);
-  }),
+  listMine: authedQuery
+    .input(projectSelector.optional())
+    .query(async ({ ctx, input }) => {
+      const project = await findProjectForUser(ctx.user.id, input?.projectId);
+      if (!project) return [];
+      return findMediaByProject(project.id);
+    }),
 
   deleteMine: authedQuery
-    .input(z.object({ mediaId: z.number().int().positive() }))
+    .input(projectSelector.extend({ mediaId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      const project = await requireCurrentProject(ctx.user.id);
+      const project = await requireCurrentProject(ctx.user.id, input.projectId);
       const removed = await deleteMedia(input.mediaId, project.id);
       if (!removed)
         throw new TRPCError({
@@ -93,13 +99,13 @@ export const voiceNotesRouter = createRouter({
   // dataURI audio base64 accepté en V1 (pas de stockage objet).
   save: authedQuery
     .input(
-      z.object({
+      projectSelector.extend({
         url: z.string().min(1),
         durationSec: z.number().int().min(0).default(0),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await requireCurrentProject(ctx.user.id);
+      const project = await requireCurrentProject(ctx.user.id, input.projectId);
       const voiceNoteId = await addVoiceNote({
         projectId: project.id,
         url: input.url,
@@ -113,10 +119,12 @@ export const voiceNotesRouter = createRouter({
       return { voiceNoteId };
     }),
 
-  list: authedQuery.query(async ({ ctx }) => {
-    const project = await requireCurrentProject(ctx.user.id);
-    return findVoiceNotesByProject(project.id);
-  }),
+  list: authedQuery
+    .input(projectSelector.optional())
+    .query(async ({ ctx, input }) => {
+      const project = await requireCurrentProject(ctx.user.id, input?.projectId);
+      return findVoiceNotesByProject(project.id);
+    }),
 
   adminUpdateStatus: adminQuery
     .input(

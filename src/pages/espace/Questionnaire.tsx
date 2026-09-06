@@ -42,6 +42,7 @@ import {
 } from '@/components/espace/utils'
 import VoiceRecorder from '@/components/espace/VoiceRecorder'
 import UploadZone from '@/components/espace/UploadZone'
+import { useSelectedProject } from '@/components/espace/ProjectSelection'
 import type { VoiceNoteResult } from '@/components/espace/VoiceRecorder'
 
 // ---------------------------------------------------------------------------
@@ -337,6 +338,7 @@ function PhotoQuestionField({
   // Retour visuel pendant le survol d'un fichier glissé — pas un état
   // "actif/inactif" binaire au clic, juste `dragover`/`dragleave`.
   const [dragOver, setDragOver] = useState(false)
+  const { projectId } = useSelectedProject()
   const addMediaMutation = trpc.media.addMedia.useMutation()
 
   async function handleFile(file: File) {
@@ -357,7 +359,7 @@ function PhotoQuestionField({
         reader.onerror = () => reject(new Error('read failed'))
         reader.readAsDataURL(file)
       })
-      await addMediaMutation.mutateAsync({ type: 'photo', url: dataUri, filename: file.name })
+      await addMediaMutation.mutateAsync({ projectId, type: 'photo', url: dataUri, filename: file.name })
       onChange(dataUri)
     } catch {
       setError('Échec de l’envoi — réessayez.')
@@ -637,16 +639,17 @@ export default function Questionnaire() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const location = useLocation()
   const utils = trpc.useUtils()
+  const { projectId } = useSelectedProject()
 
   // `enabled: isAuthenticated` — cf. TableauDeBord.tsx pour l'explication :
   // évite de lancer ces requêtes avant que la session ne soit confirmée
   // (juste après un signup/login), ce qui afficherait une erreur à un
   // client pourtant bien connecté.
   const templateQuery = trpc.questionnaire.getActiveTemplate.useQuery(undefined, { enabled: isAuthenticated })
-  const getQuery = trpc.questionnaire.get.useQuery(undefined, { enabled: isAuthenticated, retry: false })
-  const voiceQuery = trpc.voiceNotes.list.useQuery(undefined, { enabled: isAuthenticated, retry: false })
-  const mediaQuery = trpc.media.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
-  const rsvpQuery = trpc.rsvp.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const getQuery = trpc.questionnaire.get.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
+  const voiceQuery = trpc.voiceNotes.list.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
+  const mediaQuery = trpc.media.listMine.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
+  const rsvpQuery = trpc.rsvp.listMine.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
 
   const saveMutation = trpc.questionnaire.save.useMutation({
     onSuccess: async () => {
@@ -694,8 +697,8 @@ export default function Questionnaire() {
     for (const key of dirty) payload[key] = answersRef.current[key]
     dirtyRef.current.clear()
     setSaveState('saving')
-    saveMutation.mutate({ answers: payload })
-  }, [saveMutation])
+    saveMutation.mutate({ projectId, answers: payload })
+  }, [saveMutation, projectId])
 
   const setAnswer = useCallback(
     (id: string, value: unknown) => {
@@ -761,6 +764,7 @@ export default function Questionnaire() {
     if (rsvpDebounce.current) clearTimeout(rsvpDebounce.current)
     rsvpDebounce.current = setTimeout(() => {
       rsvpSave.mutate({
+        projectId,
         enabled: next.enabled,
         questions: {
           deadline: next.deadline || undefined,
@@ -865,8 +869,8 @@ export default function Questionnaire() {
         .join('\n\n')
       if (!window.confirm(details)) return
     }
-    submitMutation.mutate()
-  }, [flushSave, completionPct, missingRequired, submitMutation])
+    submitMutation.mutate({ projectId })
+  }, [flushSave, completionPct, missingRequired, submitMutation, projectId])
 
   // --- Médiathèque ------------------------------------------------------------
   const [mediaFilter, setMediaFilter] = useState<'all' | 'photo' | 'video'>('all')
@@ -894,6 +898,7 @@ export default function Questionnaire() {
         }, 250)
         try {
           await addMediaMutation.mutateAsync({
+            projectId,
             type: files[i]!.type,
             url: files[i]!.dataUri,
             filename: files[i]!.filename,
@@ -910,7 +915,7 @@ export default function Questionnaire() {
         }
       }
     },
-    [addMediaMutation, utils],
+    [addMediaMutation, utils, projectId],
   )
 
   const mediaItems = (mediaQuery.data ?? []).filter(
@@ -920,7 +925,7 @@ export default function Questionnaire() {
   // --- Note vocale -------------------------------------------------------------
   const latestVoiceNote = (voiceQuery.data ?? [])[0] ?? null
   const handleVoiceSend = async (result: VoiceNoteResult) => {
-    await voiceSave.mutateAsync({ url: result.dataUri, durationSec: result.durationSec })
+    await voiceSave.mutateAsync({ projectId, url: result.dataUri, durationSec: result.durationSec })
   }
 
   // --- Rendu -------------------------------------------------------------------
@@ -1373,7 +1378,7 @@ export default function Questionnaire() {
                   disabled={deleteMediaMutation.isPending}
                   onClick={(e) => {
                     e.preventDefault()
-                    if (deleteTarget) deleteMediaMutation.mutate({ mediaId: deleteTarget.id })
+                    if (deleteTarget) deleteMediaMutation.mutate({ projectId, mediaId: deleteTarget.id })
                   }}
                   className="bg-error text-white hover:bg-error/90"
                 >

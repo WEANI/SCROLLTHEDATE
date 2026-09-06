@@ -28,6 +28,7 @@ import {
   formatDateShort,
 } from '@/components/espace/utils'
 import QrShare from '@/components/espace/QrShare'
+import { useSelectedProject } from '@/components/espace/ProjectSelection'
 
 // ---------------------------------------------------------------------------
 // Modal de confirmation générique
@@ -113,13 +114,14 @@ export default function Projet() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { hash } = useLocation()
   const utils = trpc.useUtils()
+  const { projectId } = useSelectedProject()
   // `enabled: isAuthenticated` — cf. TableauDeBord.tsx pour l'explication
   // complète : sans cette garde, ces requêtes partent avant que la session
   // ne soit confirmée (juste après un signup/login) et affichent "Une
   // erreur est survenue" à un client pourtant bien connecté.
-  const projectQuery = trpc.projects.myProject.useQuery(undefined, { enabled: isAuthenticated, retry: false })
-  const scenariosQuery = trpc.scenarios.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
-  const videosQuery = trpc.videos.listMine.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const projectQuery = trpc.projects.myProject.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
+  const scenariosQuery = trpc.scenarios.listMine.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
+  const videosQuery = trpc.videos.listMine.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
 
   const chooseMutation = trpc.scenarios.choose.useMutation({
     onSuccess: async () => {
@@ -433,7 +435,7 @@ export default function Projet() {
                                   disabled={!changesText.trim() || requestChangesMutation.isPending}
                                   onClick={() => {
                                     requestChangesMutation.mutate(
-                                      { scenarioId: s.id, comment: changesText.trim() },
+                                      { projectId, scenarioId: s.id, comment: changesText.trim() },
                                       {
                                         onSuccess: () => {
                                           setChangesFor(null)
@@ -558,6 +560,7 @@ export default function Projet() {
                         onClick={() => {
                           videoChangesMutation.mutate(
                             {
+                              projectId,
                               videoId: currentVideo.id,
                               message: videoMessage.trim() || undefined,
                             },
@@ -642,7 +645,7 @@ export default function Projet() {
                           disabled={saveAnswers.isPending}
                           onClick={() => {
                             saveAnswers.mutate(
-                              { answers: { 'invite.texte_accueil': welcomeText ?? '' } },
+                              { projectId, answers: { 'invite.texte_accueil': welcomeText ?? '' } },
                               {
                                 onSuccess: () => {
                                   setEditingWelcome(false)
@@ -683,7 +686,7 @@ export default function Projet() {
         onConfirm={() => {
           if (confirmScenarioId === null) return
           chooseMutation.mutate(
-            { scenarioId: confirmScenarioId },
+            { projectId, scenarioId: confirmScenarioId },
             {
               onSuccess: () => {
                 setConfirmScenarioId(null)
@@ -703,7 +706,7 @@ export default function Projet() {
         onConfirm={() => {
           if (!currentVideo) return
           approveMutation.mutate(
-            { videoId: currentVideo.id },
+            { projectId, videoId: currentVideo.id },
             {
               onSuccess: () => {
                 setConfirmApprove(false)

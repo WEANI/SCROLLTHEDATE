@@ -20,6 +20,7 @@ import {
   StatusBadge,
 } from '@/components/espace/shared'
 import { formatDate } from '@/components/espace/utils'
+import { useSelectedProject } from '@/components/espace/ProjectSelection'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -78,7 +79,8 @@ function exportCsv(responses: RsvpResponse[]) {
 // ---------------------------------------------------------------------------
 
 export default function Rsvp() {
-  const { data, isLoading, isError, refetch } = trpc.rsvp.listMine.useQuery()
+  const { projectId } = useSelectedProject()
+  const { data, isLoading, isError, refetch } = trpc.rsvp.listMine.useQuery({ projectId })
   const [filter, setFilter] = useState<FilterValue>('all')
   const [expandedId, setExpandedId] = useState<number | null>(null)
 

@@ -9,7 +9,7 @@ import {
 } from "./queries/domain";
 import {
   actorOf,
-  findCurrentProject,
+  findProjectForUser,
   logAudit,
   notifyAdmins,
   notifyUser,
@@ -30,7 +30,12 @@ const attachmentsSchema = z
   )
   .optional();
 
-/** Résout le projet cible : client → son projet courant ; admin → projectId requis. */
+/**
+ * Résout le projet cible : client → un des SIENS (`projectId` explicite via
+ * le sélecteur de projet de l'espace client, vérifié lui appartenir, sinon
+ * le plus récent — cf. findProjectForUser) ; admin → projectId requis (un
+ * admin n'a pas de "projet courant", il doit toujours préciser lequel).
+ */
 async function resolveProject(
   user: { id: number; role: string },
   projectId?: number,
@@ -45,7 +50,7 @@ async function resolveProject(
     if (!project) throw new TRPCError({ code: "NOT_FOUND" });
     return project;
   }
-  const project = await findCurrentProject(user.id);
+  const project = await findProjectForUser(user.id, projectId);
   if (!project)
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -63,7 +68,7 @@ export const messagesRouter = createRouter({
       // projects.myProject. resolveProject (qui lève NOT_FOUND/BAD_REQUEST)
       // reste utilisé pour l'admin, où projectId est requis, et pour send().
       if (ctx.user.role !== "admin") {
-        const project = await findCurrentProject(ctx.user.id);
+        const project = await findProjectForUser(ctx.user.id, input.projectId);
         if (!project) return [];
         return findMessagesByProject(project.id, false);
       }

@@ -8,7 +8,7 @@ import {
 } from "./queries/domain";
 import {
   actorOf,
-  findCurrentProject,
+  findProjectForUser,
   logAudit,
   notifyAdmins,
   notifyUser,
@@ -19,8 +19,8 @@ import { sendEmail } from "./lib/email";
 import { videoDeliveredEmail, adminAlertEmail } from "./lib/emailTemplates";
 import { env } from "./lib/env";
 
-async function requireCurrentProject(userId: number) {
-  const project = await findCurrentProject(userId);
+async function requireCurrentProject(userId: number, projectId?: number) {
+  const project = await findProjectForUser(userId, projectId);
   if (!project)
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -29,6 +29,10 @@ async function requireCurrentProject(userId: number) {
   return project;
 }
 
+/** Sélecteur de projet optionnel (cf. ProjectSelectionProvider) — retombe
+ * sur le projet le plus récent si absent, comportement historique. */
+const projectSelector = z.object({ projectId: z.number().int().positive().optional() });
+
 const timecodedComments = z
   .array(z.object({ timecode: z.string(), comment: z.string() }))
   .optional();
@@ -36,13 +40,15 @@ const timecodedComments = z
 export const videosRouter = createRouter({
   // Lecture : un client sans projet n'est pas une erreur (ex. juste après
   // signup, avant toute commande) — liste vide, comme projects.myProject.
-  listMine: authedQuery.query(async ({ ctx }) => {
-    const project = await findCurrentProject(ctx.user.id);
-    if (!project) return [];
-    // Le client ne voit que les versions envoyées / approuvées / finales
-    const versions = await findVideosByProject(project.id);
-    return versions.filter((v) => v.status !== "draft");
-  }),
+  listMine: authedQuery
+    .input(projectSelector.optional())
+    .query(async ({ ctx, input }) => {
+      const project = await findProjectForUser(ctx.user.id, input?.projectId);
+      if (!project) return [];
+      // Le client ne voit que les versions envoyées / approuvées / finales
+      const versions = await findVideosByProject(project.id);
+      return versions.filter((v) => v.status !== "draft");
+    }),
 
   // Upload admin d'une version (filigrane par défaut tant que non approuvée).
   adminAddVersion: adminQuery
@@ -98,9 +104,9 @@ export const videosRouter = createRouter({
     }),
 
   clientApprove: authedQuery
-    .input(z.object({ videoId: z.number().int().positive() }))
+    .input(projectSelector.extend({ videoId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      const project = await requireCurrentProject(ctx.user.id);
+      const project = await requireCurrentProject(ctx.user.id, input.projectId);
       const videos = await findVideosByProject(project.id);
       const video = videos.find((v) => v.id === input.videoId);
       if (!video) throw new TRPCError({ code: "NOT_FOUND" });
@@ -136,14 +142,14 @@ export const videosRouter = createRouter({
   // Commentaire timecodé optionnel : [{ timecode, comment }]
   clientRequestChanges: authedQuery
     .input(
-      z.object({
+      projectSelector.extend({
         videoId: z.number().int().positive(),
         comments: timecodedComments,
         message: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await requireCurrentProject(ctx.user.id);
+      const project = await requireCurrentProject(ctx.user.id, input.projectId);
       const videos = await findVideosByProject(project.id);
       const video = videos.find((v) => v.id === input.videoId);
       if (!video) throw new TRPCError({ code: "NOT_FOUND" });

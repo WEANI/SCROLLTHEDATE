@@ -13,6 +13,7 @@ import {
 } from '@/components/espace/utils'
 import VoiceRecorder from '@/components/espace/VoiceRecorder'
 import type { VoiceNoteResult } from '@/components/espace/VoiceRecorder'
+import { useSelectedProject } from '@/components/espace/ProjectSelection'
 
 // ---------------------------------------------------------------------------
 // Groupage par jour
@@ -37,15 +38,16 @@ const EMOJIS = ['❤️', '😂', '🥂', '🎉', '😘', '🙏']
 export default function Messages() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const utils = trpc.useUtils()
+  const { projectId } = useSelectedProject()
   // `enabled: isAuthenticated` — cf. TableauDeBord.tsx pour l'explication :
   // évite de lancer ces requêtes avant que la session ne soit confirmée
   // (juste après un signup/login), ce qui afficherait une erreur à un
   // client pourtant bien connecté.
   const threadQuery = trpc.messages.listThread.useQuery(
-    {},
+    { projectId },
     { enabled: isAuthenticated, refetchInterval: 10_000, retry: false },
   )
-  const projectQuery = trpc.projects.myProject.useQuery(undefined, { enabled: isAuthenticated, retry: false })
+  const projectQuery = trpc.projects.myProject.useQuery({ projectId }, { enabled: isAuthenticated, retry: false })
 
   const sendMutation = trpc.messages.send.useMutation({
     onSuccess: () => utils.messages.listThread.invalidate(),
@@ -75,7 +77,7 @@ export default function Messages() {
   // Marque lu les messages admin à l'arrivée de nouveaux messages
   const lastAdminUnread = messages.filter((m) => m.senderRole === 'admin' && !m.readAt).length
   useEffect(() => {
-    if (lastAdminUnread > 0) markRead.mutate({})
+    if (lastAdminUnread > 0) markRead.mutate({ projectId })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastAdminUnread])
 
@@ -98,6 +100,7 @@ export default function Messages() {
     setSending(true)
     try {
       await sendMutation.mutateAsync({
+        projectId,
         body: body || (pendingAttachment ? '📎 Pièce jointe' : ''),
         attachments: pendingAttachment ? [pendingAttachment] : undefined,
       })
@@ -109,8 +112,9 @@ export default function Messages() {
   }
 
   const handleVoiceSend = async (result: VoiceNoteResult) => {
-    await voiceSave.mutateAsync({ url: result.dataUri, durationSec: result.durationSec })
+    await voiceSave.mutateAsync({ projectId, url: result.dataUri, durationSec: result.durationSec })
     await sendMutation.mutateAsync({
+      projectId,
       body: `🎙 Note vocale (${result.durationSec} s)`,
       attachments: [{ url: result.dataUri, filename: 'note-vocale', mimeType: result.mimeType }],
     })

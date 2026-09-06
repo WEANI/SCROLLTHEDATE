@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { projects, voiceNotes, type Project } from "@db/schema";
 import { getDb } from "./connection";
 
@@ -19,10 +19,19 @@ export async function findProjectBySlug(slug: string) {
   });
 }
 
-/** Projet courant du client, avec tout ce qu'il faut pour la timeline. */
-export async function findCurrentProjectFull(userId: number) {
+/**
+ * Projet du client, avec tout ce qu'il faut pour la timeline — celui
+ * explicitement choisi (`projectId`, vérifié appartenir à `userId`) via le
+ * sélecteur de projet de l'espace client, ou par défaut le plus récent
+ * (comportement historique, seule option avant qu'un même compte puisse
+ * accumuler plusieurs projets).
+ */
+export async function findCurrentProjectFull(userId: number, projectId?: number) {
   const rows = await getDb().query.projects.findMany({
-    where: eq(projects.userId, userId),
+    where:
+      projectId != null
+        ? and(eq(projects.userId, userId), eq(projects.id, projectId))
+        : eq(projects.userId, userId),
     orderBy: desc(projects.createdAt),
     limit: 1,
     with: {
@@ -39,6 +48,35 @@ export async function findCurrentProjectFull(userId: number) {
     );
   }
   return project;
+}
+
+/**
+ * Résumé de TOUS les projets d'un client, du plus récent au plus ancien —
+ * pour le sélecteur de projet (espace client), affiché seulement quand un
+ * compte en a plusieurs (ex. plusieurs commandes au fil du temps). Couple/
+ * produit dérivés d'`order`/`questionnaire` (pas de colonne dédiée sur
+ * `projects`), même source que `findAllProjects` (Kanban admin).
+ */
+export async function findProjectsSummaryByUser(userId: number) {
+  const rows = await getDb().query.projects.findMany({
+    where: eq(projects.userId, userId),
+    orderBy: desc(projects.createdAt),
+    with: {
+      order: { columns: { product: true } },
+      questionnaire: { columns: { answers: true } },
+    },
+  });
+  return rows.map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    status: p.status,
+    product: p.order?.product ?? null,
+    coupleNames:
+      (p.questionnaire?.answers as Record<string, unknown> | null)?.[
+        "couple.prenoms"
+      ] as string | undefined ?? null,
+    createdAt: p.createdAt,
+  }));
 }
 
 /** Liste Kanban admin : projets + client + commande + complétion. */
