@@ -20,12 +20,27 @@ warnIfStripeMisconfigured();
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
-app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
-
 // Healthcheck plateforme (Railway) : ne touche pas la DB, doit répondre vite
 // même si Supabase est temporairement indisponible. Sous /api/ pour rester
 // routé vers Hono aussi bien en dev (plugin @hono/vite-dev-server) qu'en prod.
 app.get("/api/health", (c) => c.json({ ok: true }));
+
+// Limite de taille du corps — 50 Mo, mais scopée à /api/trpc/* uniquement
+// (JSON : les photos y transitent encore en dataURI base64, dont le
+// gonflement de +33 % doit rester couvert). Était globale avant ce
+// commentaire, donc appliquée aussi à /api/upload/video ci-dessous — sa
+// toute raison d'être est justement de dépasser cette limite pour un
+// fichier vidéo brut (pas de gonflement base64 ici) : une vidéo de plus de
+// 50 Mo (fréquent, cf. le body de retour Studio admin) coupait la
+// connexion en plein transfert, remontant côté navigateur comme un vague
+// "Erreur réseau" plutôt qu'un message clair sur la taille du fichier.
+app.use(
+  "/api/trpc/*",
+  bodyLimit({
+    maxSize: 50 * 1024 * 1024,
+    onError: (c) => c.json({ error: "Fichier trop volumineux" }, 413),
+  }),
+);
 
 app.use("/api/trpc/*", async (c) => {
   return fetchRequestHandler({
@@ -43,30 +58,40 @@ app.post("/api/webhooks/stripe", handleStripeWebhook);
 
 // Upload vidéo (multipart) — réservé aux admins. Route brute comme le
 // webhook Stripe : tRPC ne gère pas le multipart, et le base64 gonflerait
-// la taille de 33 % (un fichier de 37 Mo franchirait le body limit de 50 Mo).
-app.post("/api/upload/video", async (c) => {
-  // 1. Auth — même logique que context.ts / authenticateRequest
-  const authHeader = c.req.header("authorization") ?? "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  if (!token) return c.json({ error: "Non authentifié" }, 401);
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
-  if (error || !data.user) return c.json({ error: "Token invalide" }, 401);
-  const user = await findUserByAuthId(data.user.id);
-  if (!user || user.role !== "admin") return c.json({ error: "Accès refusé" }, 403);
+// la taille de 33 % (un fichier de 37 Mo franchirait le body limit de 50
+// Mo). Limite propre à cette route (500 Mo) — largement au-dessus d'un
+// montage de 40-60 s même en haute qualité, cf. onError ci-dessus pour le
+// bug que cette même limite, globale, provoquait avant.
+app.post(
+  "/api/upload/video",
+  bodyLimit({
+    maxSize: 500 * 1024 * 1024,
+    onError: (c) => c.json({ error: "Vidéo trop volumineuse (500 Mo max)" }, 413),
+  }),
+  async (c) => {
+    // 1. Auth — même logique que context.ts / authenticateRequest
+    const authHeader = c.req.header("authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (!token) return c.json({ error: "Non authentifié" }, 401);
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !data.user) return c.json({ error: "Token invalide" }, 401);
+    const user = await findUserByAuthId(data.user.id);
+    if (!user || user.role !== "admin") return c.json({ error: "Accès refusé" }, 403);
 
-  // 2. Multipart
-  const formData = await c.req.formData();
-  const file = formData.get("file");
-  const projectId = formData.get("projectId");
-  if (!(file instanceof File)) return c.json({ error: "Fichier manquant" }, 400);
-  if (!projectId) return c.json({ error: "projectId manquant" }, 400);
-  if (!file.type.startsWith("video/")) return c.json({ error: "Le fichier doit être une vidéo" }, 400);
+    // 2. Multipart
+    const formData = await c.req.formData();
+    const file = formData.get("file");
+    const projectId = formData.get("projectId");
+    if (!(file instanceof File)) return c.json({ error: "Fichier manquant" }, 400);
+    if (!projectId) return c.json({ error: "projectId manquant" }, 400);
+    if (!file.type.startsWith("video/")) return c.json({ error: "Le fichier doit être une vidéo" }, 400);
 
-  // 3. Upload vers Supabase Storage
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const url = await uploadVideo(Number(projectId), file.name, buffer, file.type);
-  return c.json({ url });
-});
+    // 3. Upload vers Supabase Storage
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const url = await uploadVideo(Number(projectId), file.name, buffer, file.type);
+    return c.json({ url });
+  },
+);
 
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
