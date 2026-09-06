@@ -61,6 +61,12 @@ const questionSchema = z.object({
   help: z.string().optional(),
   required: z.boolean().default(false),
   showOnInvite: z.boolean().default(false),
+  // Libellés des 2 boutons d'une question `toggle` — "Oui"/"Non" par défaut
+  // côté rendu (cf. QuestionField, Questionnaire.tsx), personnalisables pour
+  // un choix binaire qui n'est pas une question oui/non (ex. "Clair"/
+  // "Sombre" pour la couleur de fond).
+  trueLabel: z.string().optional(),
+  falseLabel: z.string().optional(),
 });
 
 /**

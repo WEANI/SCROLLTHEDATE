@@ -89,6 +89,9 @@ export interface FormQuestion {
   help?: string;
   required?: boolean;
   showOnInvite?: boolean;
+  /** Libellés des 2 boutons d'une question `toggle` — "Oui"/"Non" par défaut, personnalisables (ex. "Clair"/"Sombre"). */
+  trueLabel?: string;
+  falseLabel?: string;
 }
 
 export interface FormTemplate {

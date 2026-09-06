@@ -58,6 +58,9 @@ interface Question {
   help?: string
   required?: boolean
   showOnInvite?: boolean
+  /** Libellés des 2 boutons d'une question `toggle` — "Oui"/"Non" par défaut (cf. QuestionField), personnalisables pour un choix binaire qui n'est pas une question oui/non (ex. "Clair"/"Sombre" pour la couleur de fond). */
+  trueLabel?: string
+  falseLabel?: string
 }
 
 type Answers = Record<string, unknown>
@@ -476,7 +479,7 @@ function QuestionField({
                 : 'border-neutral-200 bg-white text-ink hover:border-terracotta-400',
             )}
           >
-            Oui
+            {question.trueLabel ?? 'Oui'}
           </button>
           <button
             type="button"
@@ -488,7 +491,7 @@ function QuestionField({
                 : 'border-neutral-200 bg-white text-ink hover:border-terracotta-400',
             )}
           >
-            Non
+            {question.falseLabel ?? 'Non'}
           </button>
         </div>
       </FieldShell>
@@ -552,7 +555,7 @@ function QuestionField({
                   next[i] = e.target.value
                   onChange(next)
                 }}
-                placeholder="Nom + distance + lien (ex. Hôtel du Parc — 5 min — hotel.fr)"
+                placeholder={question.placeholder ?? 'Un élément par ligne'}
                 className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-[14px] text-ink outline-none transition-colors placeholder:text-neutral-500 focus:border-terracotta-500"
               />
               <button

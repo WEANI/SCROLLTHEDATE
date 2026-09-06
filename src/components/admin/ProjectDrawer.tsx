@@ -34,7 +34,7 @@ import {
   type Project360,
   type ProjectStatus,
 } from "@/components/admin/shared";
-import { StatusBadge } from "@/components/admin/badges";
+import { PaymentBadge, StatusBadge } from "@/components/admin/badges";
 
 export const TABS = [
   { id: "resume", label: "Résumé" },
@@ -159,8 +159,11 @@ function TabResume({ project }: { project: Project360 }) {
             <dd className="tabular font-semibold">{formatEuro(project.order.amountCents)}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-neutral-500">Payée le</dt>
-            <dd className="tabular">{formatDate(project.order.createdAt)}</dd>
+            <dt className="text-neutral-500">Paiement</dt>
+            <dd className="flex items-center gap-2 tabular">
+              <PaymentBadge status={project.order.paymentStatus} />
+              {project.order.paymentStatus === "paid" && formatDate(project.order.createdAt)}
+            </dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-neutral-500">Template</dt>

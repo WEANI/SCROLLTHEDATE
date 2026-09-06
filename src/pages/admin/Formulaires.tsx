@@ -596,6 +596,29 @@ function TemplateEditor({
                   />
                 </label>
 
+                {q.type === "toggle" && (
+                  <div className="mt-2 grid grid-cols-2 gap-3">
+                    <label className="flex flex-col gap-1 text-[11px] font-medium text-neutral-500">
+                      Libellé du bouton "oui"
+                      <input
+                        value={q.trueLabel ?? ""}
+                        onChange={(e) => update(q.id, { trueLabel: e.target.value })}
+                        placeholder="Oui"
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-medium text-neutral-500">
+                      Libellé du bouton "non"
+                      <input
+                        value={q.falseLabel ?? ""}
+                        onChange={(e) => update(q.id, { falseLabel: e.target.value })}
+                        placeholder="Non"
+                        className={inputClass}
+                      />
+                    </label>
+                  </div>
+                )}
+
                 <div className="mt-3 flex flex-wrap items-center gap-5">
                   <label className="flex items-center gap-2 text-xs text-neutral-500">
                     <AdminSwitch
@@ -792,7 +815,7 @@ function PreviewField({ q }: { q: FormQuestion }) {
     case "toggle":
       return (
         <div className="flex gap-2">
-          {["Oui", "Non"].map((v) => (
+          {[q.trueLabel ?? "Oui", q.falseLabel ?? "Non"].map((v) => (
             <span
               key={v}
               className="rounded-full border border-neutral-200 px-3 py-1 text-xs text-neutral-500"
