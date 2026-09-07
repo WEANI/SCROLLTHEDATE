@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
-import { suggestPalette, hexToRgbString } from "@/lib/suggestPalette";
+import { suggestPalette, suggestPaletteFromColors, hexToRgbString } from "@/lib/suggestPalette";
 import type { BespokePaletteInput, HeroChaptersInput } from "@contracts/bespokePalette";
 import { QUESTIONNAIRE_KEYS } from "@contracts/questionnaireKeys";
 import {
@@ -1013,6 +1013,12 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
     setPalette((prev) => ({ ...prev, [key]: value }));
 
   const generate = () => setPalette(suggestPalette(accentColor, mode, fondHint || undefined));
+  // Composition à partir des vraies couleurs choisies par le couple
+  // (themeColorsHint, cf. plus haut) plutôt que d'une seule couleur saisie
+  // à l'œil — cf. doc de suggestPaletteFromColors pour l'affectation
+  // exacte (1ère couleur = accent principal, 2e = secondaire, 3e/4e =
+  // pastilles dress code).
+  const generateFromTheme = () => setPalette(suggestPaletteFromColors(themeColorsHint, mode, fondHint || undefined));
 
   const savePalette = trpc.projects.adminSetPalette.useMutation({
     onSuccess: () => {
@@ -1190,11 +1196,24 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
             <Wand2 size={14} />
             Générer une proposition
           </button>
+          {themeColorsHint.length > 0 && (
+            <button
+              type="button"
+              onClick={generateFromTheme}
+              title={`À partir de : ${themeColorsHint.join(", ")}`}
+              className="flex items-center gap-2 rounded-full bg-terracotta-500 px-4 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400"
+            >
+              <Wand2 size={14} />
+              Composer depuis les couleurs du client
+            </button>
+          )}
         </div>
         <p className="mt-3 text-[11px] leading-relaxed text-neutral-500">
-          Remplit les champs de fonds/encre/accents/sceau ci-dessous à partir de cette seule couleur — un point de
-          départ à retoucher, jamais le résultat final. Les teintes du dress code (facultatives) ne sont pas
-          générées : à définir à la main si besoin.
+          "Générer une proposition" remplit les champs de fonds/encre/accents/sceau à partir d'une seule couleur
+          saisie à l'œil. "Composer depuis les couleurs du client" (visible si le couple a répondu à "Thème et
+          couleurs du mariage") fait la même chose mais à partir des vraies couleurs choisies par le couple : la 1ère
+          devient l'accent principal, la 2e le secondaire, la 3e/4e alimentent les pastilles dress code. Dans les
+          deux cas : un point de départ à retoucher, jamais le résultat final.
         </p>
       </div>
 

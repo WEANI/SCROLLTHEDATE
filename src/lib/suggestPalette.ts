@@ -21,18 +21,51 @@ import type { BespokePaletteInput } from "@contracts/bespokePalette";
  * fonction ne fait QUE gagner du temps de saisie, jamais le dernier mot.
  */
 export function suggestPalette(accentColor: string, mode: "light" | "dark", exactBg?: string): BespokePaletteInput {
-  const parsed = parseHex(accentColor) ?? parseHex(FALLBACK_ACCENT)!;
+  return suggestPaletteFromColors([accentColor], mode, exactBg);
+}
+
+/**
+ * Même proposition de départ que `suggestPalette` ci-dessus, mais à partir
+ * de PLUSIEURS couleurs (typiquement les 1 à 4 teintes indiquées par le
+ * couple à la question "Thème et couleurs du mariage", cf.
+ * QUESTIONNAIRE_KEYS.paletteTheme et le hint "Copier" dans StudioPanel) au
+ * lieu d'une seule saisie à la main — pour une composition plus fidèle à ce
+ * que le couple a réellement choisi plutôt qu'un dérivé purement algorithmique
+ * (teinte/luminosité) d'un seul accent.
+ *
+ * Ordre = intention du couple, jamais retrié par saturation/luminosité :
+ * `colors[0]` (1ère couleur ajoutée) devient l'accent PRINCIPAL (gold/
+ * sectionTitle/seal), `colors[1]` l'accent SECONDAIRE (bordeaux/
+ * timelineAccent) — s'il n'y en a qu'une, la secondaire reste dérivée par
+ * teinte/luminosité comme avant (`suggestPalette` à une seule couleur passe
+ * par ce même chemin). `colors[2]`/`colors[3]`, s'ils existent, remplissent
+ * dressCode1/dressCode2 (jamais dressCode3, laissé au studio) — un point de
+ * départ, pas une certitude : le dress code n'est pas forcément identique
+ * au thème déco, l'admin retire/ajuste si besoin (cf. doc de dressCode1-3
+ * dans BespokePalette, déjà pensé comme "à ajuster").
+ */
+export function suggestPaletteFromColors(
+  colors: string[],
+  mode: "light" | "dark",
+  exactBg?: string,
+): BespokePaletteInput {
+  const valid = colors.filter((c) => parseHex(c));
+  const primaryInput = valid[0] ?? FALLBACK_ACCENT;
+  const parsed = parseHex(primaryInput)!;
   const { h, s, l } = rgbToHsl(parsed);
 
   const primaryHex = hslToHex(h, s, l);
   const primaryRgb = hexToRgbString(primaryHex);
 
-  // Accent secondaire : même teinte, poussée vers une variante plus douce
-  // — plus sombre/saturée en clair (comme le bordeaux d'Edwige & Wilfried
-  // sur fond clair), plus claire/pâle en sombre (comme le rose pâle de
-  // Léa & Olivier sur fond sombre), pour rester lisible dans les deux cas.
-  const secondaryHex =
-    mode === "light"
+  // Accent secondaire : la 2e couleur du couple si elle existe, sinon même
+  // teinte que la principale poussée vers une variante plus douce — plus
+  // sombre/saturée en clair (comme le bordeaux d'Edwige & Wilfried sur fond
+  // clair), plus claire/pâle en sombre (comme le rose pâle de Léa &
+  // Olivier sur fond sombre), pour rester lisible dans les deux cas.
+  const secondaryHsl = valid[1] ? rgbToHsl(parseHex(valid[1])!) : null;
+  const secondaryHex = secondaryHsl
+    ? hslToHex(secondaryHsl.h, secondaryHsl.s, secondaryHsl.l)
+    : mode === "light"
       ? hslToHex(h, clamp(s + 5, 20, 85), clamp(l - 18, 22, 55))
       : hslToHex(h, clamp(s - 15, 25, 70), clamp(l + 32, 65, 90));
   const secondaryRgb = hexToRgbString(secondaryHex);
@@ -79,11 +112,12 @@ export function suggestPalette(accentColor: string, mode: "light" | "dark", exac
     seal: primaryHex,
     sealLight,
     sealDark,
-    // Teintes du dress code : jamais dérivées de l'accent (un choix de
-    // goût propre au couple, pas déductible d'une seule couleur) —
-    // laissées vides, à saisir à la main au studio si besoin.
-    dressCode1: "",
-    dressCode2: "",
+    // 3e/4e couleur du couple (s'il y en a) → point de départ des pastilles
+    // dress code, jamais dressCode3 (laissé au studio) — cf. doc plus haut.
+    // Avec une seule couleur (ou aucune valide), comportement inchangé :
+    // vides, à saisir à la main.
+    dressCode1: valid[2] ?? "",
+    dressCode2: valid[3] ?? "",
     dressCode3: "",
     // Texte overlay du hero : jamais suggéré automatiquement (couleur et
     // contenu à saisir à la main au studio si besoin, cf. doc de
