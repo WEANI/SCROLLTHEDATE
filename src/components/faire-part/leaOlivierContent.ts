@@ -282,6 +282,7 @@ export const LAO_PALETTE: BespokePalette = {
   heroTextColor: '',
   heroCardBg: '',
   heroInviteText: '',
+  heroClosingEnabled: true,
 }
 
 /**

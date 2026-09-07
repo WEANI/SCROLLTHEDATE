@@ -263,6 +263,7 @@ export const CA_PALETTE: BespokePalette = {
   heroTextColor: '',
   heroCardBg: '',
   heroInviteText: '',
+  heroClosingEnabled: true,
 }
 
 /**

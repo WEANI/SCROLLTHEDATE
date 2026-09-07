@@ -126,6 +126,9 @@ export function suggestPaletteFromColors(
     heroTextColor: "",
     heroCardBg: "",
     heroInviteText: "",
+    // Comportement historique inchangé (chapitre de clôture affiché) —
+    // togglable au studio, cf. doc de BespokePalette.heroClosingEnabled.
+    heroClosingEnabled: true,
   };
 }
 

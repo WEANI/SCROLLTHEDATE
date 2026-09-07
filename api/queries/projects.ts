@@ -149,10 +149,15 @@ export async function updateProjectTemplate(
   await getDb().update(projects).set({ template }).where(eq(projects.id, projectId));
 }
 
-/** Palette bespoke posée à la main par le studio (cf. commentaire sur la colonne, db/schema.ts). */
+/**
+ * Palette bespoke posée à la main par le studio (cf. commentaire sur la
+ * colonne, db/schema.ts). `string | boolean` (pas juste `string`) depuis
+ * l'ajout de `heroClosingEnabled` — seul champ non-couleur de
+ * BespokePaletteInput.
+ */
 export async function updateProjectPalette(
   projectId: number,
-  palette: Record<string, string>,
+  palette: Record<string, string | boolean>,
 ) {
   await getDb().update(projects).set({ palette }).where(eq(projects.id, projectId));
 }

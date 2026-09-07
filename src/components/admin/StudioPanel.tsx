@@ -916,6 +916,7 @@ const BLANK_PALETTE: BespokePaletteInput = {
   heroTextColor: "",
   heroCardBg: "",
   heroInviteText: "",
+  heroClosingEnabled: true,
 };
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
@@ -1011,6 +1012,10 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
 
   const setField = (key: keyof BespokePaletteInput, value: string) =>
     setPalette((prev) => ({ ...prev, [key]: value }));
+  // Seul champ booléen de BespokePaletteInput (les 21 autres sont des
+  // chaînes) — setter dédié plutôt que d'élargir `setField` à `string |
+  // boolean` pour tous les appelants existants.
+  const setHeroClosingEnabled = (value: boolean) => setPalette((prev) => ({ ...prev, heroClosingEnabled: value }));
 
   const generate = () => setPalette(suggestPalette(accentColor, mode, fondHint || undefined));
   // Composition à partir des vraies couleurs choisies par le couple
@@ -1341,6 +1346,21 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
               className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[12px] outline-none placeholder:text-neutral-500 focus:border-terracotta-500"
             />
           </label>
+          <label className="mt-3 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={palette.heroClosingEnabled}
+              onChange={(e) => setHeroClosingEnabled(e.target.checked)}
+              className="h-4 w-4 accent-terracotta-500"
+            />
+            <span className="text-[12px] font-medium">
+              Afficher le texte de clôture en fin de vidéo (prénoms + date)
+            </span>
+          </label>
+          <p className="mt-1 text-[11px] text-neutral-500">
+            Uniquement pour un projet sans timings studio réglés (onglet Vidéo → Timings du hero) — sinon le chapitre
+            "Détails pratiques" prend le relais, piloté par son propre timing.
+          </p>
         </div>
       </div>
 

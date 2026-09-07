@@ -96,6 +96,14 @@ export type BespokePalette = {
   heroTextColor: string
   heroCardBg: string
   heroInviteText: string
+  /**
+   * Chapitre de clôture du hero — repli générique de FairePart.tsx (prénoms
+   * + date, affiché de p=0.9 à p=1) quand le projet n'a pas de
+   * `heroChapters` studio validés. `true` par défaut (comportement
+   * historique inchangé) ; togglable au studio (cf. échange du 07/09/2026,
+   * Yasmine & Adam — ce chapitre n'a pas de sens pour tous les montages).
+   */
+  heroClosingEnabled: boolean
 }
 
 export const EW_PALETTE: BespokePalette = {
@@ -124,6 +132,7 @@ export const EW_PALETTE: BespokePalette = {
   heroTextColor: '',
   heroCardBg: '',
   heroInviteText: '',
+  heroClosingEnabled: true,
 }
 
 function darken(hex: string, amount: number): string {

@@ -287,20 +287,34 @@ export default function FairePart() {
           // "dernier chapitre" de `findActiveChapterIndex`, qui inclut p=0),
           // avant même le chapitre d'ouverture ci-dessus.
         ]
-      : [
-          // Repli générique (pas de timings studio validés) — comportement
-          // historique inchangé de cette page : un seul chapitre de clôture.
-          {
-            id: 0,
-            kind: 'text',
-            from: 0.9,
-            to: 1,
-            eyebrow: eyebrowInitials,
-            segments,
-            rule: true,
-            sub: weddingDateShort,
-          },
-        ]
+      : // `!== false` (pas juste la valeur) : une palette déjà enregistrée
+        // avant l'ajout de ce champ (cf. `palette` casté directement depuis
+        // le JSONB stocké, sans passer par le schéma zod qui n'aurait
+        // appliqué son défaut qu'à l'enregistrement) n'a `heroClosingEnabled`
+        // ni à `true` ni à `false` : `undefined`. Un simple `if
+        // (palette.heroClosingEnabled)` aurait alors désactivé le chapitre
+        // de clôture sur TOUS les projets existants, pas seulement ceux où
+        // le studio le décoche explicitement.
+        palette.heroClosingEnabled !== false
+        ? [
+            // Repli générique (pas de timings studio validés) — comportement
+            // historique inchangé de cette page : un seul chapitre de
+            // clôture. Optionnel (palette.heroClosingEnabled, Studio →
+            // Palette & Hero) depuis l'échange du 07/09/2026 : n'a pas de
+            // sens pour tous les montages (ex. Yasmine & Adam, dont la
+            // vidéo se termine déjà sur un plan de clôture explicite).
+            {
+              id: 0,
+              kind: 'text',
+              from: 0.9,
+              to: 1,
+              eyebrow: eyebrowInitials,
+              segments,
+              rule: true,
+              sub: weddingDateShort,
+            },
+          ]
+        : []
 
   return (
     <BespokePaletteProvider palette={palette}>

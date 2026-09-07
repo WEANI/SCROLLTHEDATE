@@ -58,6 +58,17 @@ export const bespokePaletteSchema = z.object({
   heroTextColor: z.string().default(""),
   heroCardBg: z.string().default(""),
   heroInviteText: z.string().default(""),
+  // Chapitre de clôture du hero (repli générique de FairePart.tsx, affiché
+  // de p=0.9 à p=1 quand le projet n'a pas de `heroChapters` studio validés
+  // — prénoms + date, cf. FairePart.tsx) — `true` par défaut pour ne rien
+  // changer sur les projets existants (dont Yasmine & Adam avant ce
+  // champ), togglable au studio (cf. échange du 07/09/2026 : ce chapitre
+  // n'a pas de sens pour tous les montages, ex. une vidéo qui se termine
+  // déjà sur un plan de clôture explicite). Ne concerne QUE ce repli — le
+  // chapitre "détails pratiques" du chemin studioChapters reste piloté par
+  // son propre timing, déjà optionnel via ce mécanisme (fenêtre dégénérée
+  // = jamais actif, cf. commit du fix générique HeroScrub.tsx).
+  heroClosingEnabled: z.boolean().default(true),
 });
 
 export type BespokePaletteInput = z.infer<typeof bespokePaletteSchema>;
