@@ -37,6 +37,17 @@ export interface HeroChapter {
   rule?: boolean
   items?: string[]
   card?: { mono: string; title: string; sub: string }
+  /**
+   * Couleur de texte / fond de carte propres à CE chapitre — prévalent sur
+   * `HeroTheme.textPrimary`/`textSecondary`/`cardBg` pour ce chapitre
+   * seulement (les autres chapitres du même hero gardent le thème
+   * commun), via une redéfinition locale des variables CSS (`--hs-*`,
+   * cascade naturelle, cf. ChapterContent). Pour les 2 blocs distincts du
+   * save the date ("Save the date" / prénoms+date), qui ont chacun besoin
+   * de leur propre couleur — cf. échange du 08/09/2026.
+   */
+  textColorOverride?: string
+  cardBgOverride?: string
 }
 
 /**

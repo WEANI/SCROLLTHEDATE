@@ -264,6 +264,10 @@ export const CA_PALETTE: BespokePalette = {
   heroCardBg: '',
   heroInviteText: '',
   heroClosingEnabled: true,
+  stdSaveTheDateTextColor: '',
+  stdSaveTheDateCardBg: '',
+  stdNamesDateTextColor: '',
+  stdNamesDateCardBg: '',
 }
 
 /**

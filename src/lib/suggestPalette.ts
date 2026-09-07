@@ -129,6 +129,12 @@ export function suggestPaletteFromColors(
     // Comportement historique inchangé (chapitre de clôture affiché) —
     // togglable au studio, cf. doc de BespokePalette.heroClosingEnabled.
     heroClosingEnabled: true,
+    // Save the date : jamais suggéré (couleurs distinctes par bloc à
+    // saisir à la main au studio si besoin, cf. doc de BespokePalette).
+    stdSaveTheDateTextColor: "",
+    stdSaveTheDateCardBg: "",
+    stdNamesDateTextColor: "",
+    stdNamesDateCardBg: "",
   };
 }
 

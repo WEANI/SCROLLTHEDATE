@@ -921,6 +921,10 @@ const BLANK_PALETTE: BespokePaletteInput = {
   heroCardBg: "",
   heroInviteText: "",
   heroClosingEnabled: true,
+  stdSaveTheDateTextColor: "",
+  stdSaveTheDateCardBg: "",
+  stdNamesDateTextColor: "",
+  stdNamesDateCardBg: "",
 };
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
@@ -1549,6 +1553,40 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
     onError: () => toast.error("Échec de l'enregistrement des timings"),
   });
 
+  // Couleurs propres à chacun des 2 blocs de texte overlay — cf. doc de
+  // BespokePalette.stdSaveTheDateTextColor et co. Fusionnées avec le reste
+  // de la palette existante à l'enregistrement (les 18 autres champs,
+  // gérés dans l'onglet "Palette & Hero", ne doivent pas être écrasés) —
+  // même recalcul des *Rgb que PaletteHeroEditor.submitPalette, ces champs
+  // pouvant avoir changé entre-temps dans cet autre onglet.
+  const existingPalette = { ...BLANK_PALETTE, ...(project.palette as BespokePaletteInput | null) };
+  const [stdColors, setStdColors] = useState({
+    stdSaveTheDateTextColor: existingPalette.stdSaveTheDateTextColor,
+    stdSaveTheDateCardBg: existingPalette.stdSaveTheDateCardBg,
+    stdNamesDateTextColor: existingPalette.stdNamesDateTextColor,
+    stdNamesDateCardBg: existingPalette.stdNamesDateCardBg,
+  });
+  const setStdColor = (key: keyof typeof stdColors, value: string) =>
+    setStdColors((prev) => ({ ...prev, [key]: value }));
+  const saveStdColors = trpc.projects.adminSetPalette.useMutation({
+    onSuccess: () => {
+      utils.projects.adminGet.invalidate({ projectId: project.id });
+      toast.success("Couleurs enregistrées");
+    },
+    onError: () => toast.error("Échec de l'enregistrement des couleurs"),
+  });
+  const submitStdColors = () => {
+    const complete: BespokePaletteInput = {
+      ...existingPalette,
+      ...stdColors,
+      inkRgb: hexToRgbString(existingPalette.ink),
+      inkOnCardRgb: hexToRgbString(existingPalette.inkOnCard),
+      bordeauxRgb: hexToRgbString(existingPalette.bordeaux),
+      goldRgb: hexToRgbString(existingPalette.gold),
+    };
+    saveStdColors.mutate({ projectId: project.id, palette: complete });
+  };
+
   return (
     <section className="space-y-6">
       <div>
@@ -1634,6 +1672,63 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
           >
             {saveChapters.isPending && <Loader2 size={14} className="animate-spin" />}
             Enregistrer les timings
+          </button>
+        </div>
+      </div>
+
+      <div className="border-t border-neutral-200 pt-6">
+        <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+          Couleurs des 2 blocs
+        </h3>
+        <p className="mb-4 text-[12px] text-neutral-500">
+          Couleur du texte et fond de carte propres à chaque bloc — vide = retombe sur "Texte overlay du hero"
+          (onglet Palette & Hero), lui-même retombant sur le thème choisi.
+        </p>
+        <div className="space-y-4">
+          <div>
+            <p className="mb-2 text-[12px] font-semibold">Bloc 1 — "Save the date"</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <ColorField
+                label="Couleur du texte"
+                hint="Vide = couleur commune"
+                value={stdColors.stdSaveTheDateTextColor}
+                onChange={(v) => setStdColor("stdSaveTheDateTextColor", v)}
+              />
+              <ColorField
+                label="Fond de la carte"
+                hint="Vide = fond commun"
+                value={stdColors.stdSaveTheDateCardBg}
+                onChange={(v) => setStdColor("stdSaveTheDateCardBg", v)}
+              />
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-[12px] font-semibold">Bloc 2 — Prénoms & date</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <ColorField
+                label="Couleur du texte"
+                hint="Vide = couleur commune"
+                value={stdColors.stdNamesDateTextColor}
+                onChange={(v) => setStdColor("stdNamesDateTextColor", v)}
+              />
+              <ColorField
+                label="Fond de la carte"
+                hint="Vide = fond commun"
+                value={stdColors.stdNamesDateCardBg}
+                onChange={(v) => setStdColor("stdNamesDateCardBg", v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            disabled={saveStdColors.isPending}
+            onClick={submitStdColors}
+            className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
+          >
+            {saveStdColors.isPending && <Loader2 size={14} className="animate-spin" />}
+            Enregistrer les couleurs
           </button>
         </div>
       </div>

@@ -543,8 +543,19 @@ function FitOneLineText({ children, className, style }: { children: ReactNode; c
 }
 
 function ChapterContent({ chapter, className }: { chapter: HeroChapter; className?: string }) {
+  // Redéfinition locale des variables CSS du thème — ne s'applique qu'à CE
+  // chapitre (cascade normale), cf. doc de `textColorOverride`/
+  // `cardBgOverride`. `undefined` (pas de override) laisse `style` vide
+  // pour cette clé : React n'écrit alors rien, la valeur héritée du
+  // parent (`themeVars`, thème commun) continue de s'appliquer.
+  const overrideVars = {
+    ...(chapter.textColorOverride
+      ? { '--hs-text-primary': chapter.textColorOverride, '--hs-text-secondary': chapter.textColorOverride }
+      : null),
+    ...(chapter.cardBgOverride ? { '--hs-card-bg': chapter.cardBgOverride } : null),
+  } as CSSProperties
   return (
-    <div className={className}>
+    <div className={className} style={overrideVars}>
       {/* Encadré flouté : le texte se lit sur n'importe quelle image de la
           vidéo derrière, sans jamais figer le fond en plein cadre. */}
       <div className={cn('hs-card text-center', chapter.kind === 'list' && 'text-left')}>

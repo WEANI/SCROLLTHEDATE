@@ -283,6 +283,10 @@ export const LAO_PALETTE: BespokePalette = {
   heroCardBg: '',
   heroInviteText: '',
   heroClosingEnabled: true,
+  stdSaveTheDateTextColor: '',
+  stdSaveTheDateCardBg: '',
+  stdNamesDateTextColor: '',
+  stdNamesDateCardBg: '',
 }
 
 /**

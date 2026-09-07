@@ -104,6 +104,17 @@ export type BespokePalette = {
    * Yasmine & Adam — ce chapitre n'a pas de sens pour tous les montages).
    */
   heroClosingEnabled: boolean
+  /**
+   * Save the date UNIQUEMENT — couleur de texte / fond de carte propres à
+   * chacun des 2 blocs ("Save the date" / prénoms+date), édités dans
+   * l'onglet dédié de StudioPanel plutôt que "Palette & Hero". Chaîne
+   * vide = non défini, retombe sur heroTextColor/heroCardBg ci-dessus (cf.
+   * échange du 08/09/2026).
+   */
+  stdSaveTheDateTextColor: string
+  stdSaveTheDateCardBg: string
+  stdNamesDateTextColor: string
+  stdNamesDateCardBg: string
 }
 
 export const EW_PALETTE: BespokePalette = {
@@ -133,6 +144,10 @@ export const EW_PALETTE: BespokePalette = {
   heroCardBg: '',
   heroInviteText: '',
   heroClosingEnabled: true,
+  stdSaveTheDateTextColor: '',
+  stdSaveTheDateCardBg: '',
+  stdNamesDateTextColor: '',
+  stdNamesDateCardBg: '',
 }
 
 function darken(hex: string, amount: number): string {

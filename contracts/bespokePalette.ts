@@ -69,6 +69,18 @@ export const bespokePaletteSchema = z.object({
   // son propre timing, déjà optionnel via ce mécanisme (fenêtre dégénérée
   // = jamais actif, cf. commit du fix générique HeroScrub.tsx).
   heroClosingEnabled: z.boolean().default(true),
+  // Save the date UNIQUEMENT — couleur de texte / fond de carte propres à
+  // chacun des 2 blocs (cf. FairePart.tsx, HeroChapter.textColorOverride/
+  // cardBgOverride) plutôt que la seule paire heroTextColor/heroCardBg
+  // partagée, qui s'applique aux DEUX blocs à la fois — demande explicite
+  // pour pouvoir les distinguer (cf. échange du 08/09/2026). Chaîne vide =
+  // non défini, retombe sur heroTextColor/heroCardBg (eux-mêmes retombant
+  // sur le thème/transparent) — mêmes champs édités dans l'onglet "Save
+  // the Date" de StudioPanel, pas dans "Palette & Hero".
+  stdSaveTheDateTextColor: z.string().default(""),
+  stdSaveTheDateCardBg: z.string().default(""),
+  stdNamesDateTextColor: z.string().default(""),
+  stdNamesDateCardBg: z.string().default(""),
 });
 
 export type BespokePaletteInput = z.infer<typeof bespokePaletteSchema>;

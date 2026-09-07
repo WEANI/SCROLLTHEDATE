@@ -341,6 +341,11 @@ export default function FairePart() {
             to: studioChapters[0].toSec / videoDuration,
             segments: [{ text: 'Save the date' }],
             titleSize: 'lg',
+            // Couleur/fond propres à ce bloc (Studio → Save the Date),
+            // vide = retombe sur le texte overlay commun (Palette & Hero),
+            // cf. échange du 08/09/2026.
+            textColorOverride: palette.stdSaveTheDateTextColor || undefined,
+            cardBgOverride: palette.stdSaveTheDateCardBg || undefined,
           },
           {
             id: 1,
@@ -359,6 +364,8 @@ export default function FairePart() {
             rule: true,
             subLines: weddingDateShort ? [weddingDateShort] : undefined,
             subSize: 'md',
+            textColorOverride: palette.stdNamesDateTextColor || undefined,
+            cardBgOverride: palette.stdNamesDateCardBg || undefined,
           },
         ]
       : [
@@ -369,6 +376,11 @@ export default function FairePart() {
             to: 0.9,
             segments: [{ text: 'Save the date' }],
             titleSize: 'lg',
+            // Couleur/fond propres à ce bloc (Studio → Save the Date),
+            // vide = retombe sur le texte overlay commun (Palette & Hero),
+            // cf. échange du 08/09/2026.
+            textColorOverride: palette.stdSaveTheDateTextColor || undefined,
+            cardBgOverride: palette.stdSaveTheDateCardBg || undefined,
           },
           {
             id: 1,
@@ -387,6 +399,8 @@ export default function FairePart() {
             rule: true,
             subLines: weddingDateShort ? [weddingDateShort] : undefined,
             subSize: 'md',
+            textColorOverride: palette.stdNamesDateTextColor || undefined,
+            cardBgOverride: palette.stdNamesDateCardBg || undefined,
           },
         ]
     : studioChapters && videoDuration
