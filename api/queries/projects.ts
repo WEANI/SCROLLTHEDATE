@@ -8,6 +8,27 @@ export async function findProjectById(projectId: number) {
   });
 }
 
+/**
+ * Produit commandé (FAIRE_PART / SAVE_THE_DATE) pour un projet — sert à
+ * valider côté serveur que le nombre de chapitres du hero envoyé
+ * correspond bien à ce que ce projet attend (cf. adminSetHeroChapters,
+ * projectsRouter.ts) avant d'écrire en base, plutôt que d'accepter
+ * n'importe quel tableau de 2 ou 3 chapitres valide pour l'UN OU L'AUTRE
+ * produit sans le recouper avec le produit RÉEL du projet — bug reproduit
+ * en conditions réelles le 08/09/2026 (commande 25, Yasmine & Adam :
+ * un tableau à 3 éléments, resté d'avant l'ajout de l'onglet Save the
+ * Date, avait fini réenregistré tel quel malgré un projet à 2 chapitres
+ * attendus, faisant retomber le hero sur son repli générique).
+ */
+export async function findProjectProduct(projectId: number) {
+  const row = await getDb().query.projects.findFirst({
+    where: eq(projects.id, projectId),
+    columns: { id: true },
+    with: { order: { columns: { product: true } } },
+  });
+  return row?.order?.product ?? null;
+}
+
 export async function findProjectBySlug(slug: string) {
   return getDb().query.projects.findFirst({
     where: eq(projects.slug, slug),

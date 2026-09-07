@@ -1063,7 +1063,23 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
   // date a son propre onglet dédié, cf. SaveTheDateEditor plus bas (2
   // chapitres, page hero + footer sans corps).
   const isStd = project.order?.product === "SAVE_THE_DATE";
-  const existingChapters = project.heroChapters as HeroChaptersFairePartInput | null;
+  // Vérifie la longueur RÉELLE avant de faire confiance au cast TS
+  // (`project.heroChapters` n'est qu'un JSONB, aucune validation à la
+  // lecture) — un projet dont les timings ont été réglés avant l'ajout de
+  // l'onglet Save the Date (donc encore au format 3 chapitres faire-part)
+  // se retrouvait sinon avec un tableau à 3 éléments réutilisé tel quel :
+  // seuls les 2 premiers étaient éditables ici, le 3e restait invisible
+  // mais repartait au prochain enregistrement, gardant un tableau à 3
+  // éléments pour un projet qui en attend 3 ici — sans incidence propre à
+  // cet éditeur, mais le même bug côté SaveTheDateEditor (2 attendus)
+  // envoyait un tableau à 3 éléments accepté par le schéma (union 2 ou 3)
+  // sans jamais recouper avec le produit réel — reproduit en conditions
+  // réelles le 08/09/2026 (commande 25, Yasmine & Adam : timings ignorés,
+  // tout retombait sur le repli générique en toute fin de scroll).
+  const existingChapters =
+    Array.isArray(project.heroChapters) && project.heroChapters.length === 3
+      ? (project.heroChapters as HeroChaptersFairePartInput)
+      : null;
   const [chapters, setChapters] = useState<HeroChaptersFairePartInput>(existingChapters ?? BLANK_HERO_CHAPTERS);
   const videoRef = useRef<HTMLVideoElement>(null);
   const approvedVideo =
@@ -1497,7 +1513,13 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
  */
 function SaveTheDateEditor({ project }: { project: Project360 }) {
   const utils = trpc.useUtils();
-  const existingChapters = project.heroChapters as HeroChaptersSaveTheDateInput | null;
+  // Vérifie la longueur RÉELLE avant de faire confiance au cast TS — cf.
+  // le même garde-fou dans PaletteHeroEditor pour l'explication complète
+  // du bug reproduit en conditions réelles (commande 25).
+  const existingChapters =
+    Array.isArray(project.heroChapters) && project.heroChapters.length === 2
+      ? (project.heroChapters as HeroChaptersSaveTheDateInput)
+      : null;
   const [chapters, setChapters] = useState<HeroChaptersSaveTheDateInput>(existingChapters ?? BLANK_HERO_CHAPTERS_STD);
   const videoRef = useRef<HTMLVideoElement>(null);
   const approvedVideo =

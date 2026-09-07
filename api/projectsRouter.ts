@@ -10,6 +10,7 @@ import {
   findProject360,
   findProjectById,
   findProjectBySlug,
+  findProjectProduct,
   findProjectsSummaryByUser,
   updateProjectHeroChapters,
   updateProjectPalette,
@@ -249,9 +250,9 @@ export const projectsRouter = createRouter({
       return { success: true };
     }),
 
-  // Timings des 3 chapitres du hero vidéo, repérés à l'image par le
-  // studio sur le montage livré — cf. commentaire sur la colonne,
-  // db/schema.ts.
+  // Timings des chapitres du hero vidéo, repérés à l'image par le studio
+  // sur le montage livré — 3 pour un faire-part, 2 pour un save the date
+  // (cf. commentaire sur la colonne, db/schema.ts).
   adminSetHeroChapters: adminQuery
     .input(
       z.object({
@@ -262,6 +263,21 @@ export const projectsRouter = createRouter({
     .mutation(async ({ ctx, input }) => {
       const project = await findProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+      // Recoupe la longueur envoyée avec le produit RÉEL du projet plutôt
+      // que de faire confiance au client — le schéma d'entrée accepte 2 OU
+      // 3 chapitres (l'un ou l'autre produit), sans savoir lequel ce
+      // PROJET attend précisément. Sans ce garde-fou, un tableau au
+      // mauvais format (resté d'avant un changement de produit, ou d'un
+      // bug client) s'enregistre tel quel — cf. bug reproduit le
+      // 08/09/2026 (commande 25).
+      const product = await findProjectProduct(input.projectId);
+      const expectedCount = product === "SAVE_THE_DATE" ? 2 : 3;
+      if (input.heroChapters.length !== expectedCount) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Ce projet attend ${expectedCount} chapitres, reçu ${input.heroChapters.length}.`,
+        });
+      }
       await updateProjectHeroChapters(input.projectId, input.heroChapters);
       await logAudit(input.projectId, actorOf(ctx.user), "project.hero_chapters_changed", {});
       return { success: true };
