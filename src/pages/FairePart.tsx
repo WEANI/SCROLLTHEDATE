@@ -212,6 +212,20 @@ export default function FairePart() {
   const weddingDateShort = invite.weddingDate
     ? new Date(invite.weddingDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : undefined
+  // Jour/mois/année séparés — chapitre "Détails pratiques" du hero (cf.
+  // échange du 07/09/2026 : uniquement la date, une ligne par partie,
+  // plus d'heure/lieu/dress code dans ce chapitre). `weddingDateShort`
+  // ci-dessus reste utilisé tel quel ailleurs (sceau RSVP, repli clôture).
+  const weddingDateParts = invite.weddingDate
+    ? (() => {
+        const d = new Date(invite.weddingDate)
+        return {
+          day: d.toLocaleDateString('fr-FR', { day: 'numeric' }),
+          month: d.toLocaleDateString('fr-FR', { month: 'long' }),
+          year: d.toLocaleDateString('fr-FR', { year: 'numeric' }),
+        }
+      })()
+    : null
   // DetailsSombre/ScatterDateCard exigent une date+heure ISO (pour le
   // compte à rebours) — `ceremonyTime` est un texte libre ("17h00", "à
   // 15h30"…), pas une heure structurée : on tente une extraction simple,
@@ -273,11 +287,12 @@ export default function FairePart() {
             kind: 'text',
             from: studioChapters[1].fromSec / videoDuration,
             to: studioChapters[1].toSec / videoDuration,
-            segments: weddingDateShort ? [{ text: weddingDateShort }] : [],
-            rule: true,
-            subLines: [invite.ceremonyTime, invite.venueName].filter((x): x is string => !!x),
-            subSize: 'md',
-            sub: invite.dressCode ?? undefined,
+            // Uniquement la date — jour/mois/année, une ligne chacun (cf.
+            // échange du 07/09/2026). Plus d'heure/lieu/dress code ici.
+            segments: weddingDateParts
+              ? [{ text: weddingDateParts.day }, { text: weddingDateParts.month }, { text: weddingDateParts.year }]
+              : [],
+            segmentLayout: 'stack',
           },
           // Ancien chapitre de clôture (id 2, "Nous sommes ravis de partager
           // ce moment avec vous" + prénoms) retiré — cf. échange du
