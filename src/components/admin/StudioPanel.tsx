@@ -980,6 +980,22 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
     /^#[0-9a-fA-F]{6}$/.test(answers[QUESTIONNAIRE_KEYS.paletteFond] as string)
       ? (answers[QUESTIONNAIRE_KEYS.paletteFond] as string).toLowerCase()
       : "";
+  // "Thème et couleurs du mariage" — question `color` (maxColors 4, cf.
+  // QUESTIONNAIRE_KEYS.paletteTheme), jusqu'à 4 teintes indicatives EN PLUS
+  // de `fondHint` ci-dessus. Pas de champ de palette dédié où les reporter
+  // automatiquement (contrairement à `fondHint` → `palette.bg`) : affichées
+  // en repère avec un bouton "Copier" chacune, à coller à la main dans le
+  // ou les champs de palette pertinents. Une réponse saisie avant le
+  // passage de cette question en `color` (07/09/2026) était une chaîne
+  // libre, jamais un hex valide — filtrée silencieusement ici, comme dans
+  // MultiColorQuestionField côté questionnaire.
+  const themeColorsHint = (() => {
+    const v = answers[QUESTIONNAIRE_KEYS.paletteTheme];
+    const raw = Array.isArray(v) ? v : typeof v === "string" ? [v] : [];
+    return raw
+      .filter((x): x is string => typeof x === "string" && /^#[0-9a-fA-F]{6}$/.test(x))
+      .map((x) => x.toLowerCase());
+  })();
 
   const existingPalette = project.palette as BespokePaletteInput | null;
   const [mode, setMode] = useState<"light" | "dark">(modeHint);
@@ -1096,6 +1112,35 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
             <p className="text-[11px] font-semibold text-neutral-500">Couleur à éviter</p>
             <p className="text-[13px] font-medium">{avoidHint || "—"}</p>
           </div>
+        </div>
+        <div className="mt-4 border-t border-neutral-100 pt-4">
+          <p className="mb-2 text-[11px] font-semibold text-neutral-500">
+            Thème et couleurs du mariage <span className="font-normal">(jusqu'à 4, en plus du fond ci-dessus)</span>
+          </p>
+          {themeColorsHint.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {themeColorsHint.map((hex) => (
+                <div key={hex} className="flex items-center gap-2 rounded-lg border border-neutral-200 px-2.5 py-1.5">
+                  <span className="h-4 w-4 shrink-0 rounded-full border border-neutral-200" style={{ backgroundColor: hex }} />
+                  <span className="font-mono text-[12px] font-medium">{hex}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard
+                        .writeText(hex)
+                        .then(() => toast.success(`${hex} copié`))
+                        .catch(() => toast.error("Impossible de copier"));
+                    }}
+                    className="text-[11px] text-terracotta-500 underline-offset-2 hover:underline"
+                  >
+                    Copier
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] font-medium">—</p>
+          )}
         </div>
       </div>
 

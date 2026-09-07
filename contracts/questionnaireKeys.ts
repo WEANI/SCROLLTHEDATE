@@ -30,4 +30,16 @@ export const QUESTIONNAIRE_KEYS = {
   paletteFond: "q_mtafcolorbg_13",
   palettePreference: "q_mtafoyxr_11",
   paletteAEviter: "q_mtafp82d_12",
+  /**
+   * "Thème et couleurs du mariage" — question du template d'origine (clé à
+   * point stable, pas un ID généré `q_...`), passée de `text` à `color`
+   * (maxColors 4) le 07/09/2026 pour que le studio puisse récupérer de
+   * vraies teintes plutôt qu'une description en mots (ex. "Bohème chic —
+   * terracotta, sauge, lin") — cf. StudioPanel.tsx, hint "Thème et
+   * couleurs" à côté de "Couleur de fond exacte". Une réponse saisie AVANT
+   * ce changement reste une chaîne libre (pas un hex) : `MultiColorQuestionField`
+   * et ce hint l'ignorent silencieusement plutôt que de planter (aucune
+   * couleur affichée tant que le couple n'a pas re-répondu).
+   */
+  paletteTheme: "style.theme_couleurs",
 } as const;

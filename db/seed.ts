@@ -152,7 +152,7 @@ async function seed() {
     { id: "jourj.liste_mariage_message", step: 3, type: "textarea", label: "Message pour vos invités (liste de mariage)", help: "Facultatif — sinon un message par défaut sera utilisé", showOnInvite: true },
     { id: "jourj.infos_pratiques", step: 3, type: "textarea", label: "Infos pratiques (navette, parking, enfants…)", showOnInvite: true },
     { id: "style.ambiance", step: 4, type: "choice", label: "Ambiance souhaitée (Éditorial / Cinéma / Minimal)", required: true },
-    { id: "style.theme_couleurs", step: 4, type: "text", label: "Thème et couleurs du mariage", placeholder: "Bohème chic — terracotta, sauge, lin", help: "La palette qui inspire le montage et le faire-part", showOnInvite: true },
+    { id: "style.theme_couleurs", step: 4, type: "color", maxColors: 4, label: "Thème et couleurs du mariage", help: "Jusqu'à 4 couleurs qui représentent le thème de votre mariage, en plus de la couleur de fond ci-dessus.", showOnInvite: true },
     { id: "style.a_eviter", step: 4, type: "textarea", label: "Ce que vous ne voulez surtout pas" },
   ];
   const existingTemplate = await db.query.formTemplates.findFirst({
