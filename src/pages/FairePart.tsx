@@ -341,11 +341,14 @@ export default function FairePart() {
             to: studioChapters[0].toSec / videoDuration,
             segments: [{ text: 'Save the date' }],
             titleSize: 'lg',
-            // Couleur/fond propres à ce bloc (Studio → Save the Date),
-            // vide = retombe sur le texte overlay commun (Palette & Hero),
-            // cf. échange du 08/09/2026.
+            // Couleur propre à ce bloc (Studio → Save the Date), vide =
+            // retombe sur le texte overlay commun (Palette & Hero). Fond
+            // de carte INDÉPENDANT du réglage commun (contrairement à la
+            // couleur) : vide = transparent, point — cf. échange du
+            // 08/09/2026, ce champ ne doit jamais hériter silencieusement
+            // d'un fond pensé pour le faire-part.
             textColorOverride: palette.stdSaveTheDateTextColor || undefined,
-            cardBgOverride: palette.stdSaveTheDateCardBg || undefined,
+            cardBgOverride: palette.stdSaveTheDateCardBg || 'transparent',
           },
           {
             id: 1,
@@ -365,7 +368,7 @@ export default function FairePart() {
             subLines: weddingDateShort ? [weddingDateShort] : undefined,
             subSize: 'md',
             textColorOverride: palette.stdNamesDateTextColor || undefined,
-            cardBgOverride: palette.stdNamesDateCardBg || undefined,
+            cardBgOverride: palette.stdNamesDateCardBg || 'transparent',
           },
         ]
       : [
@@ -376,11 +379,14 @@ export default function FairePart() {
             to: 0.9,
             segments: [{ text: 'Save the date' }],
             titleSize: 'lg',
-            // Couleur/fond propres à ce bloc (Studio → Save the Date),
-            // vide = retombe sur le texte overlay commun (Palette & Hero),
-            // cf. échange du 08/09/2026.
+            // Couleur propre à ce bloc (Studio → Save the Date), vide =
+            // retombe sur le texte overlay commun (Palette & Hero). Fond
+            // de carte INDÉPENDANT du réglage commun (contrairement à la
+            // couleur) : vide = transparent, point — cf. échange du
+            // 08/09/2026, ce champ ne doit jamais hériter silencieusement
+            // d'un fond pensé pour le faire-part.
             textColorOverride: palette.stdSaveTheDateTextColor || undefined,
-            cardBgOverride: palette.stdSaveTheDateCardBg || undefined,
+            cardBgOverride: palette.stdSaveTheDateCardBg || 'transparent',
           },
           {
             id: 1,
@@ -400,7 +406,7 @@ export default function FairePart() {
             subLines: weddingDateShort ? [weddingDateShort] : undefined,
             subSize: 'md',
             textColorOverride: palette.stdNamesDateTextColor || undefined,
-            cardBgOverride: palette.stdNamesDateCardBg || undefined,
+            cardBgOverride: palette.stdNamesDateCardBg || 'transparent',
           },
         ]
     : studioChapters && videoDuration

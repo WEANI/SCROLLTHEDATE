@@ -1681,8 +1681,9 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
           Couleurs des 2 blocs
         </h3>
         <p className="mb-4 text-[12px] text-neutral-500">
-          Couleur du texte et fond de carte propres à chaque bloc — vide = retombe sur "Texte overlay du hero"
-          (onglet Palette & Hero), lui-même retombant sur le thème choisi.
+          Couleur du texte et fond de carte propres à chaque bloc. Couleur du texte vide = retombe sur "Texte overlay
+          du hero" (onglet Palette & Hero), lui-même retombant sur le thème choisi. Fond de carte vide = transparent,
+          toujours (indépendant du réglage de l'onglet Palette & Hero).
         </p>
         <div className="space-y-4">
           <div>
@@ -1696,7 +1697,7 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
               />
               <ColorField
                 label="Fond de la carte"
-                hint="Vide = fond commun"
+                hint="Vide = transparent"
                 value={stdColors.stdSaveTheDateCardBg}
                 onChange={(v) => setStdColor("stdSaveTheDateCardBg", v)}
               />
@@ -1713,7 +1714,7 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
               />
               <ColorField
                 label="Fond de la carte"
-                hint="Vide = fond commun"
+                hint="Vide = transparent"
                 value={stdColors.stdNamesDateCardBg}
                 onChange={(v) => setStdColor("stdNamesDateCardBg", v)}
               />
