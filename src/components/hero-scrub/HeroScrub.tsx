@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import type { HeroChapter, HeroTheme, HeroVideoConfig } from './types'
 import { FrameSequence } from './FrameSequence'
@@ -497,6 +497,51 @@ export default function HeroScrub({
   )
 }
 
+/**
+ * Force `children` sur une seule ligne en réduisant sa taille de police si
+ * elle déborde de l'espace disponible — cf. doc de `HeroChapter.fitOneLine`
+ * (prénoms du save the date, dont la longueur varie par couple et ne doit
+ * jamais se scinder sur 2 lignes). Mesure la largeur réelle du texte
+ * (`scrollWidth`) une fois rendu à sa taille CSS naturelle (`clamp(...)`,
+ * posée par l'appelant) contre la largeur du conteneur parent
+ * (`clientWidth`) ; réduit `fontSize` en proportion si besoin, jamais
+ * l'inverse (un texte court garde sa taille normale, pas agrandie).
+ * Remesure au redimensionnement (ResizeObserver sur le conteneur, pas la
+ * fenêtre — la largeur pertinente est celle de `.hs-stage`, cf. `cqw` dans
+ * ChapterContent) et à chaque changement de contenu (nouveau chapitre actif).
+ */
+function FitOneLineText({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
+  const outerRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLParagraphElement>(null)
+
+  useLayoutEffect(() => {
+    const outer = outerRef.current
+    const inner = innerRef.current
+    if (!outer || !inner) return
+    const measure = () => {
+      inner.style.fontSize = ''
+      const available = outer.clientWidth
+      const natural = inner.scrollWidth
+      if (available > 0 && natural > available) {
+        const naturalPx = parseFloat(getComputedStyle(inner).fontSize)
+        inner.style.fontSize = `${(naturalPx * available) / natural}px`
+      }
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(outer)
+    return () => ro.disconnect()
+  })
+
+  return (
+    <div ref={outerRef} className="w-full overflow-hidden">
+      <p ref={innerRef} className={cn(className, 'inline-block whitespace-nowrap')} style={style}>
+        {children}
+      </p>
+    </div>
+  )
+}
+
 function ChapterContent({ chapter, className }: { chapter: HeroChapter; className?: string }) {
   return (
     <div className={className}>
@@ -541,6 +586,15 @@ function ChapterContent({ chapter, className }: { chapter: HeroChapter; classNam
                   </span>
                 ))}
               </p>
+            ) : chapter.fitOneLine ? (
+              <FitOneLineText>
+                {chapter.segments.map((seg, i) => (
+                  <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                    {seg.text}
+                    {i < chapter.segments!.length - 1 ? ' ' : ''}
+                  </span>
+                ))}
+              </FitOneLineText>
             ) : (
               <p>
                 {chapter.segments.map((seg, i) => (

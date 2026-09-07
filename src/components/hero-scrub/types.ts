@@ -17,6 +17,16 @@ export interface HeroChapter {
   segments?: { text: string; accent?: boolean }[]
   /** 'inline' (défaut) : les segments s'enchaînent et ne retombent à la ligne que si la largeur l'impose. 'stack' : chaque segment sur sa propre ligne, garanti (ex. "&" seul entre deux prénoms, quelle que soit la largeur du cadre). */
   segmentLayout?: 'inline' | 'stack'
+  /**
+   * `segmentLayout: 'inline'` uniquement — force les segments sur UNE
+   * seule ligne en réduisant leur taille de police si besoin (mesure la
+   * largeur réelle du texte vs. l'espace disponible, cf. FitOneLineText
+   * dans HeroScrub.tsx), plutôt que de laisser le texte retomber à la
+   * ligne. Pour un texte dont le nombre de caractères varie par projet et
+   * qui NE DOIT PAS se scinder (ex. prénoms du save the date, "Yasmine &
+   * Adam" — cf. échange du 08/09/2026).
+   */
+  fitOneLine?: boolean
   /** 'md' (défaut, clamp jusqu'à 46px) ou 'lg' (clamp jusqu'à 56px) — vérifier l'absence de débordement à l'écran avant de choisir 'lg' sur un mot long. */
   titleSize?: 'md' | 'lg'
   sub?: string

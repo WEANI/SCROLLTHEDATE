@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router'
 import { Loader2 } from 'lucide-react'
 import { trpc } from '@/providers/trpc'
 import PayloadSection from '@/components/faire-part/PayloadSection'
-import Footer from '@/components/Footer'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import PhotoSplitCinematique from '@/components/faire-part/PhotoSplitCinematique'
@@ -87,6 +86,25 @@ function PreviewWatermark() {
         ))}
       </div>
     </>
+  )
+}
+
+/**
+ * Pied de page du save the date — pas le Footer marketing complet (nav,
+ * offres, réassurance…), qui n'a pas sa place sur une page destinée aux
+ * invités : juste le nom du site en lien vers l'accueil, cf. échange du
+ * 08/09/2026.
+ */
+function SaveTheDateFooter() {
+  return (
+    <footer className="bg-anthracite-950 px-6 py-10 text-center">
+      <Link
+        to="/"
+        className="text-[13px] font-semibold uppercase tracking-[0.2em] text-white/80 transition-colors hover:text-white"
+      >
+        Scroll The Date
+      </Link>
+    </footer>
   )
 }
 
@@ -329,8 +347,18 @@ export default function FairePart() {
             kind: 'text',
             from: studioChapters[1].fromSec / videoDuration,
             to: studioChapters[1].toSec / videoDuration,
+            // Prénoms sur une seule ligne, quitte à réduire leur taille de
+            // police si besoin (`fitOneLine`, cf. HeroScrub.tsx) — jamais
+            // scindés sur 2 lignes, contrairement au faire-part. `rule` +
+            // `subLines`/`subSize: 'md'` (18px, au lieu du `sub` figé à
+            // 14px) : la date reste plus discrète que les prénoms
+            // (28-56px) tout en étant nettement plus lisible que 14px, cf.
+            // échange du 08/09/2026.
             segments,
-            sub: weddingDateShort,
+            fitOneLine: true,
+            rule: true,
+            subLines: weddingDateShort ? [weddingDateShort] : undefined,
+            subSize: 'md',
           },
         ]
       : [
@@ -347,8 +375,18 @@ export default function FairePart() {
             kind: 'text',
             from: 0.9,
             to: 1,
+            // Prénoms sur une seule ligne, quitte à réduire leur taille de
+            // police si besoin (`fitOneLine`, cf. HeroScrub.tsx) — jamais
+            // scindés sur 2 lignes, contrairement au faire-part. `rule` +
+            // `subLines`/`subSize: 'md'` (18px, au lieu du `sub` figé à
+            // 14px) : la date reste plus discrète que les prénoms
+            // (28-56px) tout en étant nettement plus lisible que 14px, cf.
+            // échange du 08/09/2026.
             segments,
-            sub: weddingDateShort,
+            fitOneLine: true,
+            rule: true,
+            subLines: weddingDateShort ? [weddingDateShort] : undefined,
+            subSize: 'md',
           },
         ]
     : studioChapters && videoDuration
@@ -447,7 +485,7 @@ export default function FairePart() {
             {invite.status !== 'DELIVERED' && <PreviewWatermark />}
           </div>
 
-          <Footer />
+          <SaveTheDateFooter />
         </div>
       </BespokePaletteProvider>
     )
