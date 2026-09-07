@@ -279,52 +279,98 @@ function MultiColorQuestionField({
     else add(hex)
   }
 
+  // Saisie du code hex au clavier (ex. "#e8a33d"), en plus de la roue de
+  // couleur native — même principe que ColorQuestionField (`saisie` toléré
+  // pendant la frappe, remonté seulement une fois complet). `typed[i]`
+  // couvre aussi bien une pastille existante (i < colors.length, remplace)
+  // que l'emplacement "+" suivant (i === colors.length, ajoute).
+  const [typed, setTyped] = useState<string[]>(colors)
+  useEffect(() => {
+    setTyped(colors)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colors.join(',')])
+  const typeAt = (i: number, raw: string) => {
+    const hex = raw.startsWith('#') ? raw : `#${raw}`
+    setTyped((prev) => {
+      const next = [...prev]
+      next[i] = hex
+      return next
+    })
+    if (!HEX_VALIDE.test(hex)) return
+    if (i < colors.length) replaceAt(i, hex)
+    else add(hex)
+  }
+
   return (
     <FieldShell question={question}>
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-end gap-4">
         {colors.map((hex, i) => (
-          <div key={i} className="relative">
-            <label
-              className="relative block h-11 w-11 cursor-pointer overflow-hidden rounded-full border border-neutral-200 shadow-inner"
-              style={{ backgroundColor: hex }}
-              title="Changer cette couleur"
-            >
-              <input
-                type="color"
-                value={hex}
-                onChange={(e) => replaceAt(i, e.target.value)}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                aria-label={`${question.label} — couleur ${i + 1}`}
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => removeAt(i)}
-              aria-label="Retirer cette couleur"
-              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-neutral-500 shadow-sm ring-1 ring-neutral-200 transition-colors hover:text-error"
-            >
-              <X size={11} />
-            </button>
+          <div key={i} className="flex flex-col items-center gap-1.5">
+            <div className="relative">
+              <label
+                className="relative block h-11 w-11 cursor-pointer overflow-hidden rounded-full border border-neutral-200 shadow-inner"
+                style={{ backgroundColor: hex }}
+                title="Changer cette couleur"
+              >
+                <input
+                  type="color"
+                  value={hex}
+                  onChange={(e) => replaceAt(i, e.target.value)}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  aria-label={`${question.label} — couleur ${i + 1}`}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => removeAt(i)}
+                aria-label="Retirer cette couleur"
+                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-neutral-500 shadow-sm ring-1 ring-neutral-200 transition-colors hover:text-error"
+              >
+                <X size={11} />
+              </button>
+            </div>
+            {/* Code hex au clavier, en plus de la roue de couleur ci-dessus
+                — même principe que ColorQuestionField (repli.tsx). */}
+            <input
+              type="text"
+              value={typed[i] ?? hex}
+              onChange={(e) => typeAt(i, e.target.value)}
+              placeholder="#e8a33d"
+              spellCheck={false}
+              aria-label={`${question.label} — code de la couleur ${i + 1}`}
+              className="h-8 w-24 rounded-lg border border-neutral-200 bg-white px-2 text-center font-mono text-[12px] text-ink outline-none transition-colors placeholder:text-neutral-500 focus:border-terracotta-500"
+            />
           </div>
         ))}
 
         {colors.length < maxColors && (
-          <label
-            className="relative flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-neutral-300 text-[16px] text-neutral-500 transition-colors hover:border-terracotta-400 hover:text-terracotta-500"
-            title="Ajouter une couleur"
-          >
-            +
+          <div className="flex flex-col items-center gap-1.5">
+            <label
+              className="relative flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-neutral-300 text-[16px] text-neutral-500 transition-colors hover:border-terracotta-400 hover:text-terracotta-500"
+              title="Ajouter une couleur"
+            >
+              +
+              <input
+                type="color"
+                value="#ffffff"
+                onChange={(e) => add(e.target.value)}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                aria-label="Ajouter une couleur"
+              />
+            </label>
             <input
-              type="color"
-              value="#ffffff"
-              onChange={(e) => add(e.target.value)}
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              aria-label="Ajouter une couleur"
+              type="text"
+              value={typed[colors.length] ?? ''}
+              onChange={(e) => typeAt(colors.length, e.target.value)}
+              placeholder="#e8a33d"
+              spellCheck={false}
+              aria-label="Ajouter une couleur par son code"
+              className="h-8 w-24 rounded-lg border border-neutral-200 bg-white px-2 text-center font-mono text-[12px] text-ink outline-none transition-colors placeholder:text-neutral-500 focus:border-terracotta-500"
             />
-          </label>
+          </div>
         )}
 
-        <span className="text-[12px] text-neutral-500">
+        <span className="pb-2 text-[12px] text-neutral-500">
           {colors.length}/{maxColors} couleur{maxColors > 1 ? 's' : ''}
         </span>
       </div>
