@@ -15,6 +15,11 @@ export async function findProjectBySlug(slug: string) {
       user: true,
       questionnaire: true,
       rsvpConfig: true,
+      // `order` : sert à distinguer FAIRE_PART / SAVE_THE_DATE côté page
+      // publique (cf. projectsRouter.getPublicInvite → champ `product`,
+      // FairePart.tsx qui rend une page très différente pour un save the
+      // date — hero + footer, sans les sections du corps).
+      order: { columns: { product: true } },
     },
   });
 }

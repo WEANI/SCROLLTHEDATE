@@ -6,7 +6,11 @@ import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
 import { suggestPalette, suggestPaletteFromColors, hexToRgbString } from "@/lib/suggestPalette";
-import type { BespokePaletteInput, HeroChaptersInput } from "@contracts/bespokePalette";
+import type {
+  BespokePaletteInput,
+  HeroChaptersFairePartInput,
+  HeroChaptersSaveTheDateInput,
+} from "@contracts/bespokePalette";
 import { QUESTIONNAIRE_KEYS } from "@contracts/questionnaireKeys";
 import {
   coupleNamesFromSlug,
@@ -920,8 +924,17 @@ const BLANK_PALETTE: BespokePaletteInput = {
 };
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
-const BLANK_HERO_CHAPTERS: HeroChaptersInput = [
+const BLANK_HERO_CHAPTERS: HeroChaptersFairePartInput = [
   { fromSec: 0, toSec: 0 },
+  { fromSec: 0, toSec: 0 },
+  { fromSec: 0, toSec: 0 },
+];
+
+// Save the date — cf. SaveTheDateEditor plus bas : 2 chapitres seulement
+// ("Save the date" / prénoms+date), pas de "détails pratiques" ni de
+// "clôture" (page dédiée bien plus courte, hero + footer uniquement).
+const HERO_CHAPTER_LABELS_STD = ["Save the date", "Prénoms & date"] as const;
+const BLANK_HERO_CHAPTERS_STD: HeroChaptersSaveTheDateInput = [
   { fromSec: 0, toSec: 0 },
   { fromSec: 0, toSec: 0 },
 ];
@@ -1046,9 +1059,12 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
     savePalette.mutate({ projectId: project.id, palette: complete });
   };
 
-  // Timings du hero
-  const existingChapters = project.heroChapters as HeroChaptersInput | null;
-  const [chapters, setChapters] = useState<HeroChaptersInput>(existingChapters ?? BLANK_HERO_CHAPTERS);
+  // Timings du hero — faire-part uniquement (3 chapitres) ; un save the
+  // date a son propre onglet dédié, cf. SaveTheDateEditor plus bas (2
+  // chapitres, page hero + footer sans corps).
+  const isStd = project.order?.product === "SAVE_THE_DATE";
+  const existingChapters = project.heroChapters as HeroChaptersFairePartInput | null;
+  const [chapters, setChapters] = useState<HeroChaptersFairePartInput>(existingChapters ?? BLANK_HERO_CHAPTERS);
   const videoRef = useRef<HTMLVideoElement>(null);
   const approvedVideo =
     project.videoVersions.find((v) => v.status === "approved" || v.status === "final") ??
@@ -1063,7 +1079,7 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
 
   const setChapterField = (index: number, key: "fromSec" | "toSec", value: number) =>
     setChapters((prev) => {
-      const next = [...prev] as HeroChaptersInput;
+      const next = [...prev] as HeroChaptersFairePartInput;
       next[index] = { ...next[index], [key]: value };
       return next;
     });
@@ -1376,7 +1392,10 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
         </button>
       </div>
 
-      {/* Timings du hero */}
+      {/* Timings du hero — faire-part uniquement (3 chapitres fixes), cf.
+          isStd plus haut. Un save the date règle ses 2 timings dans son
+          propre onglet dédié (SaveTheDateEditor). */}
+      {!isStd && (
       <div className="border-t border-neutral-200 pt-6">
         <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
           Timings du hero vidéo
@@ -1459,6 +1478,143 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
           </button>
         </div>
       </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Onglet "Save the Date" — remplace l'onglet "Faire-part" pour un projet
+ * SAVE_THE_DATE (cf. isStd dans PaletteHeroEditor, StudioPanel plus bas) :
+ * la page publique n'a pas de corps à activer/thématiser (hero + footer
+ * uniquement, cf. échange du 07/09/2026), seuls les 2 timings du hero
+ * restent à régler ("Save the date" / prénoms+date). Même mécanique de
+ * repérage (aperçu vidéo/frames + capture de l'instant courant) que
+ * "Timings du hero vidéo" dans PaletteHeroEditor, dupliquée plutôt que
+ * factorisée : les 2 structures divergent (2 chapitres fixes vs 3) et la
+ * logique reste courte, pas de gain clair à l'abstraire pour un seul autre
+ * appelant.
+ */
+function SaveTheDateEditor({ project }: { project: Project360 }) {
+  const utils = trpc.useUtils();
+  const existingChapters = project.heroChapters as HeroChaptersSaveTheDateInput | null;
+  const [chapters, setChapters] = useState<HeroChaptersSaveTheDateInput>(existingChapters ?? BLANK_HERO_CHAPTERS_STD);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const approvedVideo =
+    project.videoVersions.find((v) => v.status === "approved" || v.status === "final") ??
+    project.videoVersions.at(0);
+  const isFrameMode = approvedVideo?.kind === "frames";
+  const [frameIdx, setFrameIdx] = useState(0);
+
+  const setChapterField = (index: number, key: "fromSec" | "toSec", value: number) =>
+    setChapters((prev) => {
+      const next = [...prev] as HeroChaptersSaveTheDateInput;
+      next[index] = { ...next[index], [key]: value };
+      return next;
+    });
+
+  const capture = (index: number, key: "fromSec" | "toSec") => {
+    const t = isFrameMode ? frameIdx / (approvedVideo?.frameFps ?? 12) : videoRef.current?.currentTime;
+    if (t === undefined) return;
+    setChapterField(index, key, Math.round(t * 10) / 10);
+  };
+
+  const saveChapters = trpc.projects.adminSetHeroChapters.useMutation({
+    onSuccess: () => {
+      utils.projects.adminGet.invalidate({ projectId: project.id });
+      toast.success("Timings du hero enregistrés");
+    },
+    onError: () => toast.error("Échec de l'enregistrement des timings"),
+  });
+
+  return (
+    <section className="space-y-6">
+      <div>
+        <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+          Timings du hero — Save the Date
+        </h3>
+        <p className="mb-4 text-[12px] text-neutral-500">
+          2 chapitres fixes : "Save the date", puis les prénoms (sur une ligne, séparés par "&") et la date juste en
+          dessous. Seuls les instants où ils apparaissent à l'image se règlent ici. La page publique n'affiche que le
+          hero et le pied de page — pas de corps de faire-part (programme, lieu, RSVP…).
+        </p>
+
+        {approvedVideo && isFrameMode && approvedVideo.frameBaseUrl && approvedVideo.frameCount ? (
+          <div className="mb-4 w-full max-w-md space-y-2">
+            <img
+              src={`${approvedVideo.frameBaseUrl}${String(frameIdx + 1).padStart(5, "0")}.jpg`}
+              alt=""
+              className="w-full rounded-xl bg-black"
+            />
+            <input
+              type="range"
+              min={0}
+              max={approvedVideo.frameCount - 1}
+              value={frameIdx}
+              onChange={(e) => setFrameIdx(Number(e.target.value))}
+              className="w-full"
+            />
+            <p className="text-[11px] tabular text-neutral-500">
+              Image {frameIdx + 1} / {approvedVideo.frameCount} — {(frameIdx / (approvedVideo.frameFps ?? 12)).toFixed(1)} s
+            </p>
+          </div>
+        ) : approvedVideo ? (
+          <video ref={videoRef} src={approvedVideo.url} controls className="mb-4 w-full max-w-md rounded-xl bg-black" />
+        ) : (
+          <p className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 text-[13px] text-neutral-500">
+            Aucune vidéo disponible pour repérer les instants — ajoutez d'abord une version dans l'onglet Vidéo.
+          </p>
+        )}
+
+        <div className="space-y-3">
+          {HERO_CHAPTER_LABELS_STD.map((label, i) => (
+            <div
+              key={label}
+              className="grid items-end gap-3 rounded-xl border border-neutral-200 bg-white p-3 sm:grid-cols-[140px_1fr_1fr]"
+            >
+              <span className="text-[13px] font-semibold">{label}</span>
+              {(["fromSec", "toSec"] as const).map((key) => (
+                <label key={key} className="flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">
+                    {key === "fromSec" ? "Début (s)" : "Fin (s)"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step={0.1}
+                      min={0}
+                      value={chapters[i][key]}
+                      onChange={(e) => setChapterField(i, key, Number(e.target.value))}
+                      className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={!approvedVideo}
+                      title="Capturer l'instant courant de la vidéo"
+                      onClick={() => capture(i, key)}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-200 text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Camera size={14} />
+                    </button>
+                  </div>
+                </label>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            disabled={saveChapters.isPending}
+            onClick={() => saveChapters.mutate({ projectId: project.id, heroChapters: chapters })}
+            className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
+          >
+            {saveChapters.isPending && <Loader2 size={14} className="animate-spin" />}
+            Enregistrer les timings
+          </button>
+        </div>
+      </div>
     </section>
   );
 }
@@ -1468,14 +1624,21 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
 // ---------------------------------------------------------------------------
 export default function StudioPanel({ project }: { project: Project360 }) {
   const videoCount = project.videoVersions.length;
+  // Un save the date n'a pas de corps de page à activer/thématiser (hero +
+  // footer uniquement, cf. échange du 07/09/2026) — l'onglet "Faire-part"
+  // (template + activation) n'a pas de sens ici, remplacé par "Save the
+  // Date" (2 timings de hero, cf. SaveTheDateEditor). "Palette & Hero"
+  // reste commun aux deux : les couleurs de fond/accent du hero
+  // s'appliquent également à un save the date.
+  const isStd = project.order?.product === "SAVE_THE_DATE";
   const sections = useMemo(
     () => [
       { id: "scenarios", label: "Scénarios" },
       { id: "video", label: `Vidéo${videoCount > 0 ? ` (v${project.videoVersions.at(0)?.version})` : ""}` },
-      { id: "fairepart", label: "Faire-part" },
+      isStd ? { id: "savethedate", label: "Save the Date" } : { id: "fairepart", label: "Faire-part" },
       { id: "palette", label: "Palette & Hero" },
     ],
-    [project.videoVersions, videoCount],
+    [project.videoVersions, videoCount, isStd],
   );
   const [section, setSection] = useState("scenarios");
 
@@ -1507,6 +1670,7 @@ export default function StudioPanel({ project }: { project: Project360 }) {
           {section === "scenarios" && <ScenarioEditor project={project} />}
           {section === "video" && <VideoManager project={project} />}
           {section === "fairepart" && <FairePartActivation project={project} />}
+          {section === "savethedate" && <SaveTheDateEditor project={project} />}
           {section === "palette" && <PaletteHeroEditor project={project} />}
         </motion.div>
       </AnimatePresence>

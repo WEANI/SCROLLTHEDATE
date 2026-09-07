@@ -80,17 +80,28 @@ export const heroChapterTimingSchema = z.object({
 });
 
 /**
- * Exactement 3 chapitres — structure fixe du hero bespoke (ouverture /
- * détails pratiques / clôture, cf. `HERO_CHAPTERS` dans
- * leaOlivierContent.ts). Le contenu textuel de chaque chapitre reste
- * généré depuis les réponses du questionnaire (Phase 3, prénoms, date,
- * lieu…) — seuls les timings sont saisis ici par le studio, faute de
- * pouvoir les déduire automatiquement d'un montage vidéo livré.
+ * 3 chapitres pour un faire-part (ouverture / détails pratiques / clôture,
+ * cf. `HERO_CHAPTERS` dans leaOlivierContent.ts), 2 pour un save the date
+ * ("Save the date" / prénoms+date, cf. échange du 07/09/2026 —
+ * FairePart.tsx rend une page dédiée bien plus courte pour ce produit). Le
+ * contenu textuel de chaque chapitre reste généré depuis les réponses du
+ * questionnaire (Phase 3, prénoms, date, lieu…) ou fixe ("Save the date")
+ * — seuls les timings sont saisis ici par le studio, faute de pouvoir les
+ * déduire automatiquement d'un montage vidéo livré. Un projet est
+ * TOUJOURS l'un ou l'autre (jamais les deux), déterminé par
+ * `orders.product` — pas de risque de confondre les deux formes une fois
+ * stockées.
  */
-export const heroChaptersSchema = z.tuple([
+const heroChaptersFairePartSchema = z.tuple([
   heroChapterTimingSchema,
   heroChapterTimingSchema,
   heroChapterTimingSchema,
 ]);
+const heroChaptersSaveTheDateSchema = z.tuple([heroChapterTimingSchema, heroChapterTimingSchema]);
+export const heroChaptersSchema = z.union([heroChaptersFairePartSchema, heroChaptersSaveTheDateSchema]);
 
 export type HeroChaptersInput = z.infer<typeof heroChaptersSchema>;
+/** Variante à 3 éléments — typage précis pour l'éditeur de timings faire-part (StudioPanel), qui indexe jusqu'à `[2]`. */
+export type HeroChaptersFairePartInput = z.infer<typeof heroChaptersFairePartSchema>;
+/** Variante à 2 éléments — typage précis pour l'éditeur de timings save the date (StudioPanel). */
+export type HeroChaptersSaveTheDateInput = z.infer<typeof heroChaptersSaveTheDateSchema>;

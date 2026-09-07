@@ -82,6 +82,10 @@ export const projectsRouter = createRouter({
         slug: project.slug,
         status: project.status,
         template: project.template,
+        // Distingue FAIRE_PART / SAVE_THE_DATE — cf. FairePart.tsx, qui
+        // rend une page très différente pour un save the date (hero +
+        // footer uniquement, cf. échange du 07/09/2026).
+        product: project.order?.product ?? null,
         weddingDate: project.weddingDate,
         heroVideoUrl: heroVideo.url,
         heroPosterUrl: heroVideo.posterUrl,

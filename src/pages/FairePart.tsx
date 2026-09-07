@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { Loader2 } from 'lucide-react'
 import { trpc } from '@/providers/trpc'
 import PayloadSection from '@/components/faire-part/PayloadSection'
+import Footer from '@/components/Footer'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import PhotoSplitCinematique from '@/components/faire-part/PhotoSplitCinematique'
@@ -58,6 +59,37 @@ import {
  * DetailsSombre pour programme/dressCode/lodging, ici pour histoire/FAQ/
  * photo d'ouverture) — jamais de contenu inventé.
  */
+/**
+ * Bandeau "SCROLL THE DATE — APERÇU" tant qu'un projet (faire-part ou save
+ * the date) n'est pas DELIVERED — extrait pour être partagé entre les deux
+ * pages (`FairePart` ci-dessous, rendu très différent selon `isStd`, cf.
+ * doc de son `return`).
+ */
+function PreviewWatermark() {
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-[2] opacity-[0.12]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(-35deg, transparent 0 90px, rgba(255,255,255,0) 90px 92px), repeating-linear-gradient(-35deg, transparent 0 180px, rgba(255,255,255,0.9) 180px 181px)",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-[2] flex rotate-[-18deg] flex-wrap content-center justify-center gap-x-16 gap-y-10 opacity-[0.14]"
+      >
+        {Array.from({ length: 12 }).map((_, i) => (
+          <span key={i} className="whitespace-nowrap text-lg font-bold tracking-[0.2em] text-white">
+            SCROLL THE DATE — APERÇU
+          </span>
+        ))}
+      </div>
+    </>
+  )
+}
+
 export default function FairePart() {
   const { slug } = useParams<{ slug: string }>()
   const query = trpc.projects.getPublicInvite.useQuery(
@@ -67,6 +99,12 @@ export default function FairePart() {
 
   const invite = query.data
   const palette = (invite?.palette as BespokePalette | null) ?? EW_PALETTE
+  // Save the date : page dédiée bien plus courte — hero + footer
+  // uniquement, pas de corps (programme/lieu/RSVP/menu/FAQ…), cf. échange
+  // du 07/09/2026. `product` vient de orders.product (getPublicInvite),
+  // pas d'une colonne dédiée sur `projects` : un projet est toujours l'un
+  // ou l'autre, jamais les deux.
+  const isStd = invite?.product === 'SAVE_THE_DATE'
 
   // Détecte si la palette bespoke définit un fond sombre : luminance < 40 %
   // → bascule sur le thème "cinema" (sombre) au lieu du thème stocké en base,
@@ -106,8 +144,12 @@ export default function FairePart() {
   // Sondée uniquement si des timings existent : les projets sans palette/
   // timings validés (repli generique ci-dessous) n'ont pas besoin
   // d'attendre cette étape.
+  // 2 chapitres pour un save the date ("Save the date" / prénoms+date), 3
+  // pour un faire-part (ouverture / détails pratiques / clôture) — cf.
+  // contracts/bespokePalette.ts::heroChaptersSchema.
+  const expectedChapterCount = isStd ? 2 : 3
   const studioChapters =
-    invite?.heroChapters && Array.isArray(invite.heroChapters) && invite.heroChapters.length === 3
+    invite?.heroChapters && Array.isArray(invite.heroChapters) && invite.heroChapters.length === expectedChapterCount
       ? (invite.heroChapters as { fromSec: number; toSec: number }[])
       : null
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
@@ -266,8 +308,50 @@ export default function FairePart() {
     invite.menuPlat.length > 0 ||
     invite.menuDessert.length > 0
 
-  const chapters: HeroChapter[] =
-    studioChapters && videoDuration
+  const chapters: HeroChapter[] = isStd
+    ? // Save the date — 2 chapitres fixes (cf. échange du 07/09/2026) :
+      // "Save the date" seul, puis les prénoms (une ligne, "&") + la date
+      // juste en dessous. Pas de repli à 1 chapitre unique quand les
+      // timings studio ne sont pas encore réglés : les deux textes restent
+      // distincts, juste tous deux positionnés en toute fin de scroll.
+      studioChapters && videoDuration
+      ? [
+          {
+            id: 0,
+            kind: 'text',
+            from: studioChapters[0].fromSec / videoDuration,
+            to: studioChapters[0].toSec / videoDuration,
+            segments: [{ text: 'Save the date' }],
+            titleSize: 'lg',
+          },
+          {
+            id: 1,
+            kind: 'text',
+            from: studioChapters[1].fromSec / videoDuration,
+            to: studioChapters[1].toSec / videoDuration,
+            segments,
+            sub: weddingDateShort,
+          },
+        ]
+      : [
+          {
+            id: 0,
+            kind: 'text',
+            from: 0.8,
+            to: 0.9,
+            segments: [{ text: 'Save the date' }],
+            titleSize: 'lg',
+          },
+          {
+            id: 1,
+            kind: 'text',
+            from: 0.9,
+            to: 1,
+            segments,
+            sub: weddingDateShort,
+          },
+        ]
+    : studioChapters && videoDuration
       ? [
           {
             id: 0,
@@ -331,6 +415,44 @@ export default function FairePart() {
           ]
         : []
 
+  // Save the date : page dédiée — hero + footer uniquement, aucune des
+  // sections de corps ci-dessous (PayloadSection/DetailsSombre/Photos/
+  // Closing) — cf. échange du 07/09/2026. `return` séparé plutôt qu'un
+  // enchevêtrement de conditions dans le JSX du faire-part : les deux
+  // pages divergent presque entièrement au-delà du hero lui-même.
+  if (isStd) {
+    return (
+      <BespokePaletteProvider palette={palette}>
+        <div style={{ background: effectivePageBg }}>
+          <EwEffectsStyles />
+          <header className="absolute inset-x-0 top-0 z-40 flex items-center justify-center px-6 py-5">
+            <Link to="/" aria-label="Scroll The Date — accueil" className="rounded-full bg-black/25 px-4 py-2 backdrop-blur-sm">
+              <img src="/logo.svg" alt="Scroll The Date" className="h-6 w-auto brightness-0 invert" />
+            </Link>
+          </header>
+
+          <div className="relative">
+            <HeroScrub
+              theme={effectiveHeroTheme}
+              chapters={chapters}
+              video={{
+                desktopSrc: invite.heroVideoUrl,
+                posterSrc: invite.heroPosterUrl ?? undefined,
+                frames: invite.heroFrames ?? undefined,
+              }}
+              trackHeightVh={800}
+              tailVh={100}
+              ariaLabel={`Save the date — ${coupleNames}`}
+            />
+            {invite.status !== 'DELIVERED' && <PreviewWatermark />}
+          </div>
+
+          <Footer />
+        </div>
+      </BespokePaletteProvider>
+    )
+  }
+
   return (
     <BespokePaletteProvider palette={palette}>
     <div style={{ background: effectivePageBg }}>
@@ -354,28 +476,7 @@ export default function FairePart() {
           tailVh={100}
           ariaLabel={`Faire-part — ${coupleNames}`}
         />
-        {invite.status !== 'DELIVERED' && (
-          <>
-            <div
-              aria-hidden="true"
-              className="pointer-events-none fixed inset-0 z-[2] opacity-[0.12]"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(-35deg, transparent 0 90px, rgba(255,255,255,0) 90px 92px), repeating-linear-gradient(-35deg, transparent 0 180px, rgba(255,255,255,0.9) 180px 181px)",
-              }}
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none fixed inset-0 z-[2] flex rotate-[-18deg] flex-wrap content-center justify-center gap-x-16 gap-y-10 opacity-[0.14]"
-            >
-              {Array.from({ length: 12 }).map((_, i) => (
-                <span key={i} className="whitespace-nowrap text-lg font-bold tracking-[0.2em] text-white">
-                  SCROLL THE DATE — APERÇU
-                </span>
-              ))}
-            </div>
-          </>
-        )}
+        {invite.status !== 'DELIVERED' && <PreviewWatermark />}
       </div>
 
       {/* Le corps de page recouvre le plan final au lieu de s'enchaîner en

@@ -180,10 +180,11 @@ export const projects = pgTable(
     // src/components/faire-part/edwigeWilfriedEffects.tsx), validés par
     // contracts/bespokePalette.ts::bespokePaletteSchema.
     palette: jsonb("palette"),
-    // heroChapters : exactement 3 { fromSec, toSec } (cf.
-    // contracts/bespokePalette.ts::heroChaptersSchema) — timings du hero
-    // vidéo repérés à l'image sur le montage livré, le contenu textuel de
-    // chaque chapitre étant lui généré depuis le questionnaire (Phase 3).
+    // heroChapters : 3 { fromSec, toSec } pour un faire-part, 2 pour un
+    // save the date (cf. orders.product, contracts/bespokePalette.ts::
+    // heroChaptersSchema) — timings du hero vidéo repérés à l'image sur le
+    // montage livré, le contenu textuel de chaque chapitre étant lui
+    // généré depuis le questionnaire (Phase 3) ou fixe ("Save the date").
     heroChapters: jsonb("heroChapters"),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
