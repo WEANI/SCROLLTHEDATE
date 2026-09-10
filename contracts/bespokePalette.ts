@@ -91,11 +91,22 @@ export const bespokePaletteSchema = z.object({
 
 export type BespokePaletteInput = z.infer<typeof bespokePaletteSchema>;
 
+/** Position verticale d'un bloc de texte overlay dans le cadre du hero — cf. HeroChapter.verticalAlign (hero-scrub/types.ts). 'middle' = comportement historique inchangé. */
+export const heroVerticalAlignSchema = z.enum(["top", "middle", "bottom"]);
+export type HeroVerticalAlign = z.infer<typeof heroVerticalAlignSchema>;
+
 /** Un timing de chapitre du hero, en secondes dans la vidéo livrée (pas un ratio [0,1] — la conversion se fait au rendu, une fois la durée réelle de la vidéo connue côté lecteur, cf. Phase 4 du plan). */
 export const heroChapterTimingSchema = z.object({
   fromSec: z.number().min(0),
   toSec: z.number().min(0),
+  // Ajouté le 11/09/2026 — `.default("middle")` : un timing déjà enregistré
+  // avant ce champ (toutes les commandes en base à cette date) ne le porte
+  // pas du tout, absorbé ici comme pour heroClosingEnabled/heroTextColor
+  // plus haut (même piège déjà rencontré : un cast TS sans validation à la
+  // lecture, cf. FairePart.tsx, ne fournit jamais cette valeur par défaut).
+  position: heroVerticalAlignSchema.default("middle"),
 });
+export type HeroChapterTiming = z.infer<typeof heroChapterTimingSchema>;
 
 /**
  * 3 chapitres pour un faire-part (ouverture / détails pratiques / clôture,
@@ -139,6 +150,8 @@ export const heroCustomCardSchema = z.object({
   fromSec: z.number().min(0),
   toSec: z.number().min(0),
   text: z.string().min(1).max(280),
+  // `.default("middle")` — cf. même remarque que heroChapterTimingSchema.position.
+  position: heroVerticalAlignSchema.default("middle"),
 });
 /** Plafonné à 10 : au-delà, plus un outil de personnalisation qu'un risque réel côté produit — évite un payload sans limite. */
 export const heroCustomCardsSchema = z.array(heroCustomCardSchema).max(10);

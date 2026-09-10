@@ -11,6 +11,7 @@ import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { HERO_THEMES } from '@/components/hero-scrub/themes'
 import type { HeroChapter } from '@/components/hero-scrub/types'
 import { getHeroFont, useGoogleFont } from '@/components/hero-scrub/heroDecor'
+import type { HeroChapterTiming } from '@contracts/bespokePalette'
 import {
   BespokePaletteProvider,
   DressCodeCard,
@@ -175,7 +176,7 @@ export default function FairePart() {
   const expectedChapterCount = isStd ? 2 : 3
   const studioChapters =
     invite?.heroChapters && Array.isArray(invite.heroChapters) && invite.heroChapters.length === expectedChapterCount
-      ? (invite.heroChapters as { fromSec: number; toSec: number }[])
+      ? (invite.heroChapters as HeroChapterTiming[])
       : null
   // Cartes de texte overlay libres (Studio → Palette & Hero) — leurs
   // timings sont eux aussi en secondes (mêmes raisons que studioChapters
@@ -350,6 +351,7 @@ export default function FairePart() {
             kind: 'text',
             from: studioChapters[0].fromSec / videoDuration,
             to: studioChapters[0].toSec / videoDuration,
+            verticalAlign: studioChapters[0].position,
             segments: [{ text: 'Save the date' }],
             titleSize: 'lg',
             // Couleur propre à ce bloc (Studio → Save the Date), vide =
@@ -366,6 +368,7 @@ export default function FairePart() {
             kind: 'text',
             from: studioChapters[1].fromSec / videoDuration,
             to: studioChapters[1].toSec / videoDuration,
+            verticalAlign: studioChapters[1].position,
             // Prénoms sur une seule ligne, quitte à réduire leur taille de
             // police si besoin (`fitOneLine`, cf. HeroScrub.tsx) — jamais
             // scindés sur 2 lignes, contrairement au faire-part. `rule` +
@@ -427,6 +430,7 @@ export default function FairePart() {
             kind: 'text',
             from: studioChapters[0].fromSec / videoDuration,
             to: studioChapters[0].toSec / videoDuration,
+            verticalAlign: studioChapters[0].position,
             segments,
             segmentLayout: 'stack',
             titleSize: 'lg',
@@ -440,6 +444,7 @@ export default function FairePart() {
             kind: 'text',
             from: studioChapters[1].fromSec / videoDuration,
             to: studioChapters[1].toSec / videoDuration,
+            verticalAlign: studioChapters[1].position,
             // Uniquement la date — jour/mois/année, une ligne chacun (cf.
             // échange du 07/09/2026). Plus d'heure/lieu/dress code ici.
             segments: weddingDateParts
@@ -499,6 +504,7 @@ export default function FairePart() {
         from: card.fromSec / videoDuration,
         to: card.toSec / videoDuration,
         lead: card.text,
+        verticalAlign: card.position,
       }))
     : []
   const chapters: HeroChapter[] = [...baseChapters, ...customChapters]

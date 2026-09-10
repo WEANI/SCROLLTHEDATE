@@ -933,9 +933,9 @@ const BLANK_PALETTE: BespokePaletteInput = {
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
 const BLANK_HERO_CHAPTERS: HeroChaptersFairePartInput = [
-  { fromSec: 0, toSec: 0 },
-  { fromSec: 0, toSec: 0 },
-  { fromSec: 0, toSec: 0 },
+  { fromSec: 0, toSec: 0, position: "middle" },
+  { fromSec: 0, toSec: 0, position: "middle" },
+  { fromSec: 0, toSec: 0, position: "middle" },
 ];
 
 // Save the date — cf. SaveTheDateEditor plus bas : 2 chapitres seulement
@@ -943,9 +943,16 @@ const BLANK_HERO_CHAPTERS: HeroChaptersFairePartInput = [
 // "clôture" (page dédiée bien plus courte, hero + footer uniquement).
 const HERO_CHAPTER_LABELS_STD = ["Save the date", "Prénoms & date"] as const;
 const BLANK_HERO_CHAPTERS_STD: HeroChaptersSaveTheDateInput = [
-  { fromSec: 0, toSec: 0 },
-  { fromSec: 0, toSec: 0 },
+  { fromSec: 0, toSec: 0, position: "middle" },
+  { fromSec: 0, toSec: 0, position: "middle" },
 ];
+
+/** Options du menu "Position verticale" — communes aux timings fixes et aux cartes personnalisées. */
+const VERTICAL_ALIGN_OPTIONS = [
+  { value: "top", label: "Haut" },
+  { value: "middle", label: "Milieu" },
+  { value: "bottom", label: "Bas" },
+] as const;
 
 /** Un champ couleur = swatch + saisie texte (certains champs comme `bg`/`bgDate` peuvent contenir "transparent" ou une rgba(), pas seulement du hex — le swatch retombe alors sur noir plutôt que de planter). */
 function ColorField({
@@ -1001,7 +1008,7 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
   const addCard = () =>
     setCards((prev) => [
       ...prev,
-      { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "" },
+      { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle" },
     ]);
   const removeCard = (id: string) => setCards((prev) => prev.filter((c) => c.id !== id));
   const updateCard = (id: string, patch: Partial<HeroCustomCard>) =>
@@ -1054,7 +1061,7 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
                   <X size={16} />
                 </button>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-3">
+              <div className="mt-2 grid grid-cols-3 gap-3">
                 <label className="flex flex-col gap-1">
                   <span className="text-[11px] font-semibold text-neutral-500">Début (s)</span>
                   <input
@@ -1076,6 +1083,20 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
                     onChange={(e) => updateCard(card.id, { toSec: Number(e.target.value) })}
                     className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
                   />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">Position</span>
+                  <select
+                    value={card.position}
+                    onChange={(e) => updateCard(card.id, { position: e.target.value as "top" | "middle" | "bottom" })}
+                    className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
+                  >
+                    {VERTICAL_ALIGN_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
             </div>
@@ -1234,6 +1255,12 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
     setChapters((prev) => {
       const next = [...prev] as HeroChaptersFairePartInput;
       next[index] = { ...next[index], [key]: value };
+      return next;
+    });
+  const setChapterPosition = (index: number, position: "top" | "middle" | "bottom") =>
+    setChapters((prev) => {
+      const next = [...prev] as HeroChaptersFairePartInput;
+      next[index] = { ...next[index], position };
       return next;
     });
 
@@ -1642,7 +1669,7 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
 
         <div className="space-y-3">
           {HERO_CHAPTER_LABELS.map((label, i) => (
-            <div key={label} className="grid items-end gap-3 rounded-xl border border-neutral-200 bg-white p-3 sm:grid-cols-[120px_1fr_1fr]">
+            <div key={label} className="grid items-end gap-3 rounded-xl border border-neutral-200 bg-white p-3 sm:grid-cols-[120px_1fr_1fr_110px]">
               <span className="text-[13px] font-semibold">{label}</span>
               {(["fromSec", "toSec"] as const).map((key) => (
                 <label key={key} className="flex flex-col gap-1">
@@ -1670,6 +1697,20 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
                   </div>
                 </label>
               ))}
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold text-neutral-500">Position</span>
+                <select
+                  value={chapters[i].position}
+                  onChange={(e) => setChapterPosition(i, e.target.value as "top" | "middle" | "bottom")}
+                  className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
+                >
+                  {VERTICAL_ALIGN_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           ))}
         </div>
@@ -1730,6 +1771,12 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
     setChapters((prev) => {
       const next = [...prev] as HeroChaptersSaveTheDateInput;
       next[index] = { ...next[index], [key]: value };
+      return next;
+    });
+  const setChapterPosition = (index: number, position: "top" | "middle" | "bottom") =>
+    setChapters((prev) => {
+      const next = [...prev] as HeroChaptersSaveTheDateInput;
+      next[index] = { ...next[index], position };
       return next;
     });
 
@@ -1824,7 +1871,7 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
           {HERO_CHAPTER_LABELS_STD.map((label, i) => (
             <div
               key={label}
-              className="grid items-end gap-3 rounded-xl border border-neutral-200 bg-white p-3 sm:grid-cols-[140px_1fr_1fr]"
+              className="grid items-end gap-3 rounded-xl border border-neutral-200 bg-white p-3 sm:grid-cols-[140px_1fr_1fr_110px]"
             >
               <span className="text-[13px] font-semibold">{label}</span>
               {(["fromSec", "toSec"] as const).map((key) => (
@@ -1853,6 +1900,20 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                   </div>
                 </label>
               ))}
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold text-neutral-500">Position</span>
+                <select
+                  value={chapters[i].position}
+                  onChange={(e) => setChapterPosition(i, e.target.value as "top" | "middle" | "bottom")}
+                  className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
+                >
+                  {VERTICAL_ALIGN_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           ))}
         </div>

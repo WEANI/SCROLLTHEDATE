@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { projects, voiceNotes, type Project } from "@db/schema";
 import { getDb } from "./connection";
+import type { HeroChapterTiming, HeroCustomCard } from "../../contracts/bespokePalette";
 
 export async function findProjectById(projectId: number) {
   return getDb().query.projects.findFirst({
@@ -191,7 +192,7 @@ export async function updateProjectPalette(
 /** Timings des 3 chapitres du hero, en secondes — cf. commentaire sur la colonne, db/schema.ts. */
 export async function updateProjectHeroChapters(
   projectId: number,
-  heroChapters: { fromSec: number; toSec: number }[],
+  heroChapters: HeroChapterTiming[],
 ) {
   await getDb().update(projects).set({ heroChapters }).where(eq(projects.id, projectId));
 }
@@ -199,7 +200,7 @@ export async function updateProjectHeroChapters(
 /** Cartes de texte overlay libres, en plus des chapitres fixes — cf. commentaire sur la colonne, db/schema.ts. */
 export async function updateProjectHeroCustomCards(
   projectId: number,
-  heroCustomCards: { id: string; fromSec: number; toSec: number; text: string }[],
+  heroCustomCards: HeroCustomCard[],
 ) {
   await getDb().update(projects).set({ heroCustomCards }).where(eq(projects.id, projectId));
 }

@@ -83,6 +83,20 @@
     transform 0.7s ease;
 }
 
+/* Position verticale de la carte — cf. HeroChapter.verticalAlign. `center`
+   (défaut, sans classe modificatrice) inchangé. `justify-content` (pas
+   `align-items`) : `.hs-overlay` est en colonne, l'axe vertical est l'axe
+   principal du flex. Un peu de marge (padding) pour ne jamais coller au
+   bord du cadre ni aux points de repère/indice de scroll déjà présents. */
+.hs-overlay.hs-valign-top {
+  justify-content: flex-start;
+  padding-top: 72px;
+}
+.hs-overlay.hs-valign-bottom {
+  justify-content: flex-end;
+  padding-bottom: 72px;
+}
+
 /* Encadré flouté derrière le texte des overlays — lisible sur n'importe
    quelle image de la vidéo, sans jamais figer le fond en plein cadre : seul
    le texte est encadré, la vidéo reste visible autour. */

@@ -2,7 +2,12 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { adminQuery, authedQuery, createRouter, publicQuery } from "./middleware";
 import { projectStatusEnum, templateEnum } from "./ordersRouter";
-import { bespokePaletteSchema, heroChaptersSchema, heroCustomCardsSchema } from "../contracts/bespokePalette";
+import {
+  bespokePaletteSchema,
+  heroChaptersSchema,
+  heroCustomCardsSchema,
+  type HeroCustomCard,
+} from "../contracts/bespokePalette";
 import { QUESTIONNAIRE_KEYS } from "../contracts/questionnaireKeys";
 import {
   findAllProjects,
@@ -143,7 +148,7 @@ export const projectsRouter = createRouter({
         // en plus des chapitres fixes ci-dessus — cf. commentaire sur la
         // colonne, db/schema.ts. `[]` par défaut (jamais `null` renvoyé,
         // pour que FairePart.tsx puisse toujours faire `.map()` sans test).
-        heroCustomCards: (project.heroCustomCards as { id: string; fromSec: number; toSec: number; text: string }[] | null) ?? [],
+        heroCustomCards: (project.heroCustomCards as HeroCustomCard[] | null) ?? [],
       };
     }),
 

@@ -48,6 +48,14 @@ export interface HeroChapter {
    */
   textColorOverride?: string
   cardBgOverride?: string
+  /**
+   * Position verticale de la carte dans le cadre du hero — 'middle' (défaut,
+   * comportement inchangé) centre comme avant ; 'top'/'bottom' déplacent le
+   * bloc de texte en haut/bas du cadre (cf. `.hs-overlay.hs-valign-*` dans
+   * hero-scrub.css). Réglable au studio par bloc/carte — cf. échange du
+   * 11/09/2026.
+   */
+  verticalAlign?: 'top' | 'middle' | 'bottom'
 }
 
 /**

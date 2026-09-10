@@ -457,7 +457,16 @@ export default function HeroScrub({
           <HeroOverlayGraphic id={overlayGraphic} />
 
           {chapters.map((ch, i) => (
-            <ChapterContent key={ch.id} chapter={ch} className={cn('hs-overlay', i === activeIdx && 'show')} />
+            <ChapterContent
+              key={ch.id}
+              chapter={ch}
+              className={cn(
+                'hs-overlay',
+                i === activeIdx && 'show',
+                ch.verticalAlign === 'top' && 'hs-valign-top',
+                ch.verticalAlign === 'bottom' && 'hs-valign-bottom',
+              )}
+            />
           ))}
         </div>
 
