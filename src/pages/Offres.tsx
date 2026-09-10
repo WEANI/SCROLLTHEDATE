@@ -214,7 +214,7 @@ export default function Offres() {
   useSeo({
     title: 'Nos offres — Save the Date & Faire-part digital · Scroll The Date',
     description:
-      'Save the Date digital (149 €) et Faire-part digital (349 €) : vidéo cinématique personnalisée, page complète, RSVP intégré. Prix unique, quel que soit le nombre d\'invités.',
+      'Save the Date digital (149 €) et Faire-part digital (299 €) : vidéo cinématique personnalisée, page complète, RSVP intégré. Prix unique, quel que soit le nombre d\'invités.',
     path: '/offres',
   })
 

@@ -29,7 +29,7 @@ export interface SiteTexts {
 }
 
 export const FALLBACK_PRODUCTS: ProductSetting[] = [
-  { id: 'FAIRE_PART', name: 'Faire-part digital', priceCents: 34900 },
+  { id: 'FAIRE_PART', name: 'Faire-part digital', priceCents: 29900 },
   { id: 'SAVE_THE_DATE', name: 'Save the Date digital', priceCents: 14900 },
 ]
 

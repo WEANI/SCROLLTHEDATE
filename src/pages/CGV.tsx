@@ -58,7 +58,7 @@ export default function CGV() {
             d'annonce avec date et lieu, lien illimité, QR code.
           </li>
           <li>
-            <strong>Faire-part digital — 349 €</strong> : vidéo cinématique complète (60–90 s),
+            <strong>Faire-part digital — 299 €</strong> : vidéo cinématique complète (60–90 s),
             programme, lieu, hébergements et dress code, RSVP intégré, lien illimité, QR code.
           </li>
         </ul>

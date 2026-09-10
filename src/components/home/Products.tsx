@@ -25,7 +25,7 @@ const PRODUCTS = [
   },
   {
     name: 'Faire-part digital',
-    price: '349 €',
+    price: '299 €',
     tagline: 'Pour inviter, pour de vrai.',
     cta: '/commander?produit=faire-part',
     recommended: true,

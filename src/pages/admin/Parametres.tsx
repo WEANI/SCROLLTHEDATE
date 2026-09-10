@@ -46,7 +46,7 @@ const FALLBACK_PRODUCTS: ProductSetting[] = [
   {
     id: "FAIRE_PART",
     name: "Faire-part digital",
-    priceCents: 34900,
+    priceCents: 29900,
     description: "Vidéo cinématique + faire-part en ligne avec RSVP.",
     durationMin: 2,
     revisionsIncluded: 2,
