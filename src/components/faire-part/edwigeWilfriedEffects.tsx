@@ -137,6 +137,13 @@ export type BespokePalette = {
    */
   heroOverlayGraphic: string
   heroFontId: string
+  /**
+   * Animation d'apparition du texte + filtre visuel vidéo, cf. heroDecor.ts
+   * ::HERO_TEXT_ANIMATIONS / HERO_FILTERS. Chaîne vide = fondu par défaut /
+   * aucun filtre.
+   */
+  heroTextAnimation: string
+  heroFilter: string
 }
 
 export const EW_PALETTE: BespokePalette = {
@@ -179,6 +186,8 @@ export const EW_PALETTE: BespokePalette = {
   stdNamesDateCardBg: '',
   heroOverlayGraphic: '',
   heroFontId: '',
+  heroTextAnimation: '',
+  heroFilter: '',
 }
 
 function darken(hex: string, amount: number): string {

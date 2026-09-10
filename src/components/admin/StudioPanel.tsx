@@ -6,7 +6,14 @@ import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
 import { suggestPalette, suggestPaletteFromColors, hexToRgbString } from "@/lib/suggestPalette";
-import { HERO_OVERLAY_GRAPHICS, HERO_FONTS, getHeroFont, useGoogleFont } from "@/components/hero-scrub/heroDecor";
+import {
+  HERO_OVERLAY_GRAPHICS,
+  HERO_FONTS,
+  HERO_TEXT_ANIMATIONS,
+  HERO_FILTERS,
+  getHeroFont,
+  useGoogleFont,
+} from "@/components/hero-scrub/heroDecor";
 import type {
   BespokePaletteInput,
   HeroChaptersFairePartInput,
@@ -936,6 +943,8 @@ const BLANK_PALETTE: BespokePaletteInput = {
   stdNamesDateCardBg: "",
   heroOverlayGraphic: "",
   heroFontId: "",
+  heroTextAnimation: "",
+  heroFilter: "",
 };
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
@@ -1612,6 +1621,38 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
                       </option>
                     ))}
                   </optgroup>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] font-semibold text-neutral-500">Animation du texte</span>
+              <select
+                value={palette.heroTextAnimation}
+                onChange={(e) => setField("heroTextAnimation", e.target.value)}
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[12px] outline-none focus:border-terracotta-500"
+              >
+                <option value="">Fondu (défaut)</option>
+                {HERO_TEXT_ANIMATIONS.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] font-semibold text-neutral-500">Filtre vidéo</span>
+              <select
+                value={palette.heroFilter}
+                onChange={(e) => setField("heroFilter", e.target.value)}
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[12px] outline-none focus:border-terracotta-500"
+              >
+                <option value="">Aucun</option>
+                {HERO_FILTERS.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.label}
+                  </option>
                 ))}
               </select>
             </label>

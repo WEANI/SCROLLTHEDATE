@@ -105,6 +105,13 @@ export const bespokePaletteSchema = z.object({
   // du hero (segments), pas l'eyebrow/lead/sub — cf. doc de heroDecor.ts.
   heroOverlayGraphic: z.string().default(""),
   heroFontId: z.string().default(""),
+  // Animation d'apparition du texte + filtre visuel vidéo — bibliothèque
+  // "mariage" ajoutée le 11/09/2026, cf. src/components/hero-scrub/
+  // heroDecor.ts::HERO_TEXT_ANIMATIONS / HERO_FILTERS. Chaîne vide = fondu
+  // par défaut / aucun filtre, comportement inchangé. Réglages uniques pour
+  // tout le hero (pas par chapitre), comme heroOverlayGraphic/heroFontId.
+  heroTextAnimation: z.string().default(""),
+  heroFilter: z.string().default(""),
 });
 
 export type BespokePaletteInput = z.infer<typeof bespokePaletteSchema>;

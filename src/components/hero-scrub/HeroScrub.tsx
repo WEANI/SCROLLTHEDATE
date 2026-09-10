@@ -65,6 +65,18 @@ export interface HeroScrubProps {
    * comportement inchangé). Ne change QUE le titre, pas l'eyebrow/lead/sub.
    */
   fontFamily?: string
+  /**
+   * Animation d'apparition des blocs de texte, cf. heroDecor.ts::
+   * HERO_TEXT_ANIMATIONS — `undefined`/id inconnu = fondu par défaut
+   * (comportement inchangé, `.hs-overlay.show` seul). UNE pour tout le
+   * hero (pas par chapitre) — cf. doc du catalogue.
+   */
+  textAnimation?: string
+  /**
+   * Filtre visuel de la vidéo/des frames, cf. heroDecor.ts::HERO_FILTERS —
+   * `undefined`/id inconnu = aucun filtre (comportement inchangé).
+   */
+  filter?: string
 }
 
 /**
@@ -87,6 +99,8 @@ export default function HeroScrub({
   tailVh = 0,
   overlayGraphic,
   fontFamily,
+  textAnimation,
+  filter: heroFilter,
 }: HeroScrubProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -334,7 +348,7 @@ export default function HeroScrub({
 
       <div className="hs-frame" style={themeVars}>
         <div
-          className="hs-stage"
+          className={cn('hs-stage', heroFilter && `hs-filter-${heroFilter}`)}
           style={
             video.posterSrc
               ? { backgroundImage: `url(${video.posterSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
@@ -451,6 +465,10 @@ export default function HeroScrub({
             </video>
           )}
 
+          {/* Calque de filtre (grain/vignette/halo — cf. doc de HeroFilterLayer
+              plus bas) — juste après la vidéo, avant le décor et le texte. */}
+          <HeroFilterLayer id={heroFilter} />
+
           {/* Décor graphique (cf. heroDecor.ts) — après la vidéo, avant les
               cartes de texte dans le DOM : visuellement au-dessus de la
               vidéo, derrière le texte. */}
@@ -460,11 +478,13 @@ export default function HeroScrub({
             <ChapterContent
               key={ch.id}
               chapter={ch}
+              textAnimation={textAnimation}
               className={cn(
                 'hs-overlay',
                 i === activeIdx && 'show',
                 ch.verticalAlign === 'top' && 'hs-valign-top',
                 ch.verticalAlign === 'bottom' && 'hs-valign-bottom',
+                textAnimation && `hs-anim-${textAnimation}`,
               )}
             />
           ))}
@@ -602,6 +622,181 @@ function HeroOverlayGraphic({ id }: { id?: string }) {
           <span>✦</span>
         </div>
       )
+    // Ajoutés le 11/09/2026 — bibliothèque "mariage".
+    case 'heart-line':
+      return (
+        <svg className="hs-ov-heart-line" viewBox="0 0 64 64" aria-hidden>
+          <path d="M32 54 C10 38 4 24 14 15 C21 9 30 12 32 20 C34 12 43 9 50 15 C60 24 54 38 32 54 Z" />
+        </svg>
+      )
+    case 'rings':
+      return (
+        <svg className="hs-ov-rings" viewBox="0 0 64 40" aria-hidden>
+          <circle cx="24" cy="20" r="14" />
+          <circle cx="40" cy="20" r="14" />
+        </svg>
+      )
+    case 'dove':
+      return (
+        <svg className="hs-ov-dove" viewBox="0 0 60 60" aria-hidden>
+          <path d="M8 34 C16 24 26 22 32 28 C36 20 46 16 54 20 C46 22 42 28 40 32 C44 34 50 34 54 30 C48 42 34 42 26 36 C20 40 12 40 8 34 Z" />
+        </svg>
+      )
+    case 'floral-corner':
+      return (
+        <div className="hs-ov-floral-corner" aria-hidden>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <svg key={i} viewBox="0 0 46 46">
+              <path d="M2 2 C2 20 10 30 30 30" />
+              <circle cx="6" cy="6" r="2.5" />
+              <circle cx="13" cy="4" r="1.6" />
+            </svg>
+          ))}
+        </div>
+      )
+    case 'petals-fall':
+      return (
+        <div className="hs-ov-petals-fall" aria-hidden>
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+        </div>
+      )
+    case 'confetti-fall':
+      return (
+        <div className="hs-ov-confetti-fall" aria-hidden>
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+        </div>
+      )
+    case 'ribbon':
+      return (
+        <svg className="hs-ov-ribbon" viewBox="0 0 56 56" aria-hidden>
+          <path d="M28 28 C18 14 4 16 4 26 C4 34 16 32 28 28 C40 32 52 34 52 26 C52 16 38 14 28 28 Z" />
+          <circle cx="28" cy="28" r="4" />
+        </svg>
+      )
+    case 'monogram-frame':
+      return <div className="hs-ov-monogram-frame" aria-hidden />
+    case 'heart-pulse':
+      return (
+        <svg className="hs-ov-heart-pulse" viewBox="0 0 46 46" aria-hidden>
+          <path d="M23 40 C6 28 2 16 10 9 C15 5 21 7 23 13 C25 7 31 5 36 9 C44 16 40 28 23 40 Z" />
+        </svg>
+      )
+    case 'calligraphy-swash':
+      return (
+        <svg className="hs-ov-calligraphy-swash" viewBox="0 0 120 50" aria-hidden>
+          <path d="M6 34 C 26 8, 52 8, 60 26 S 96 47, 114 16" />
+        </svg>
+      )
+    case 'shooting-stars':
+      return (
+        <div className="hs-ov-shooting-stars" aria-hidden>
+          <i />
+          <i />
+          <i />
+        </div>
+      )
+    case 'laurel':
+      return (
+        <svg className="hs-ov-laurel" viewBox="0 0 130 60" aria-hidden>
+          <path d="M65 10 L65 50 M65 50 C 50 45, 40 35, 38 20 M65 50 C 40 46, 28 34, 28 18 M65 50 C 80 45, 90 35, 92 20 M65 50 C 90 46, 102 34, 102 18" />
+        </svg>
+      )
+    case 'infinity':
+      return (
+        <svg className="hs-ov-infinity" viewBox="0 0 74 40" aria-hidden>
+          <path d="M18 20 C18 10 30 10 37 20 C44 30 56 30 56 20 C56 10 44 10 37 20 C30 30 18 30 18 20 Z" />
+        </svg>
+      )
+    case 'candles':
+      return (
+        <div className="hs-ov-candles" aria-hidden>
+          <i />
+          <i />
+          <i />
+        </div>
+      )
+    case 'bouquet':
+      return (
+        <svg className="hs-ov-bouquet" viewBox="0 0 60 60" aria-hidden>
+          <path d="M30 58 L30 34" />
+          <circle cx="22" cy="24" r="8" />
+          <circle cx="34" cy="18" r="7" />
+          <circle cx="40" cy="30" r="7" />
+          <circle cx="26" cy="34" r="6" />
+        </svg>
+      )
+    case 'birds-pair':
+      return (
+        <svg className="hs-ov-birds-pair" viewBox="0 0 76 38" aria-hidden>
+          <path d="M8 24 C14 16 22 16 26 22 C30 16 38 16 42 24" />
+          <path d="M34 24 C38 16 46 16 50 22 C54 16 62 16 68 24" />
+        </svg>
+      )
+    case 'lace-border':
+      return (
+        <div className="hs-ov-lace-border" aria-hidden>
+          <svg viewBox="0 0 200 14" preserveAspectRatio="none">
+            <path d="M0 2 Q 8 12 16 2 T 32 2 T 48 2 T 64 2 T 80 2 T 96 2 T 112 2 T 128 2 T 144 2 T 160 2 T 176 2 T 192 2" />
+          </svg>
+          <svg viewBox="0 0 200 14" preserveAspectRatio="none">
+            <path d="M0 2 Q 8 12 16 2 T 32 2 T 48 2 T 64 2 T 80 2 T 96 2 T 112 2 T 128 2 T 144 2 T 160 2 T 176 2 T 192 2" />
+          </svg>
+        </div>
+      )
+    case 'butterfly':
+      return (
+        <svg className="hs-ov-butterfly" viewBox="0 0 52 44" aria-hidden>
+          <path d="M26 22 C18 4 2 6 4 18 C6 28 18 26 26 22 C34 26 46 28 48 18 C50 6 34 4 26 22 Z" />
+        </svg>
+      )
+    case 'wreath':
+      return (
+        <div className="hs-ov-wreath" aria-hidden>
+          <i />
+          <i />
+          <i />
+          <i />
+        </div>
+      )
+    case 'moon-stars':
+      return (
+        <svg className="hs-ov-moon-stars" viewBox="0 0 52 52" aria-hidden>
+          <path className="hs-moon" d="M30 6 A20 20 0 1 0 30 46 A16 16 0 0 1 30 6 Z" />
+          <path className="hs-star" d="M40 10 l1.4 3.4 3.4 1.4 -3.4 1.4 -1.4 3.4 -1.4 -3.4 -3.4 -1.4 3.4 -1.4 Z" />
+        </svg>
+      )
+    default:
+      return null
+  }
+}
+
+/**
+ * Calque de filtre visuel (grain/vignette chaude/halo), cf. heroDecor.ts::
+ * HERO_FILTERS et doc de `.hs-filter-layer` dans hero-scrub.css — pourquoi
+ * un vrai <div> plutôt qu'un `::after` CSS (les pseudo-éléments n'existent
+ * pas sur les éléments remplacés <video>/<canvas>). Les filtres qui ne
+ * sont qu'un `filter:` CSS simple (sépia, noir & blanc…) n'ont besoin
+ * d'aucun DOM supplémentaire — gérés uniquement via la classe posée sur
+ * `.hs-stage`, cf. HeroScrub — donc `null` ici pour eux.
+ */
+function HeroFilterLayer({ id }: { id?: string }) {
+  switch (id) {
+    case 'grain-cinema':
+      return <div className="hs-filter-layer hs-filter-layer-grain" aria-hidden />
+    case 'vignette-chaude':
+      return <div className="hs-filter-layer hs-filter-layer-vignette" aria-hidden />
+    case 'dreamy-glow':
+      return <div className="hs-filter-layer hs-filter-layer-glow" aria-hidden />
     default:
       return null
   }
@@ -639,7 +834,22 @@ function FitOneLineText({ children, className, style }: { children: ReactNode; c
   )
 }
 
-function ChapterContent({ chapter, className }: { chapter: HeroChapter; className?: string }) {
+// Animations dont le titre a besoin d'un wrapper `.hs-anim-target` dédié
+// (largeur/clip/dégradé animés), cf. hero-scrub.css. Les autres (ink-reveal,
+// soft-zoom, bloom, handwrite, et le fondu par défaut) animent directement
+// `.hs-overlay.show` — aucun balisage supplémentaire nécessaire. letter-drop
+// et petals-in ont chacun leur propre rendu spécial, gérés à part ci-dessous.
+const HERO_ANIM_NEEDS_TARGET = new Set(['typewriter', 'curtain', 'underline-draw', 'shimmer', 'unfold'])
+
+function ChapterContent({
+  chapter,
+  className,
+  textAnimation,
+}: {
+  chapter: HeroChapter
+  className?: string
+  textAnimation?: string
+}) {
   // Redéfinition locale des variables CSS du thème — ne s'applique qu'à CE
   // chapitre (cascade normale), cf. doc de `textColorOverride`/
   // `cardBgOverride`. `undefined` (pas de override) laisse `style` vide
@@ -687,35 +897,60 @@ function ChapterContent({ chapter, className }: { chapter: HeroChapter; classNam
             // n'est choisie (cf. `--hs-font-family` dans themeVars).
             style={{ color: 'var(--hs-text-primary)', fontFamily: 'var(--hs-font-family)' }}
           >
-            {chapter.segmentLayout === 'stack' ? (
+            {textAnimation === 'letter-drop' ? (
+              // Rendu spécial : chaque caractère dans son propre
+              // `.hs-anim-letter` (cf. hero-scrub.css), indépendamment de
+              // segmentLayout/fitOneLine — la retombée lettre par lettre
+              // prime sur le layout en pile/une-ligne pour cette animation.
               <p>
-                {chapter.segments.map((seg, i) => (
-                  <span key={i}>
-                    <span className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
-                      {seg.text}
+                {chapter.segments.map((seg, i) => {
+                  let letterIdx = 0
+                  for (let k = 0; k < i; k++) letterIdx += chapter.segments![k].text.length + 1
+                  return (
+                    <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                      {seg.text.split('').map((c, j) => (
+                        <span key={j} className="hs-anim-letter" style={{ animationDelay: `${(letterIdx + j) * 0.03}s` }}>
+                          {c === ' ' ? ' ' : c}
+                        </span>
+                      ))}
+                      {i < chapter.segments!.length - 1 ? ' ' : ''}
                     </span>
-                    {i < chapter.segments!.length - 1 && <br />}
-                  </span>
-                ))}
+                  )
+                })}
               </p>
-            ) : chapter.fitOneLine ? (
-              <FitOneLineText>
-                {chapter.segments.map((seg, i) => (
-                  <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
-                    {seg.text}
-                    {i < chapter.segments!.length - 1 ? ' ' : ''}
-                  </span>
-                ))}
-              </FitOneLineText>
             ) : (
-              <p>
-                {chapter.segments.map((seg, i) => (
-                  <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
-                    {seg.text}
-                    {i < chapter.segments!.length - 1 ? ' ' : ''}
-                  </span>
-                ))}
-              </p>
+              <MaybeAnimTarget active={HERO_ANIM_NEEDS_TARGET.has(textAnimation ?? '')}>
+                {chapter.segmentLayout === 'stack' ? (
+                  <p>
+                    {chapter.segments.map((seg, i) => (
+                      <span key={i}>
+                        <span className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                          {seg.text}
+                        </span>
+                        {i < chapter.segments!.length - 1 && <br />}
+                      </span>
+                    ))}
+                  </p>
+                ) : chapter.fitOneLine ? (
+                  <FitOneLineText>
+                    {chapter.segments.map((seg, i) => (
+                      <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                        {seg.text}
+                        {i < chapter.segments!.length - 1 ? ' ' : ''}
+                      </span>
+                    ))}
+                  </FitOneLineText>
+                ) : (
+                  <p>
+                    {chapter.segments.map((seg, i) => (
+                      <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                        {seg.text}
+                        {i < chapter.segments!.length - 1 ? ' ' : ''}
+                      </span>
+                    ))}
+                  </p>
+                )}
+              </MaybeAnimTarget>
             )}
           </div>
         )}
@@ -779,7 +1014,29 @@ function ChapterContent({ chapter, className }: { chapter: HeroChapter; classNam
             </p>
           </>
         )}
+
+        {/* Pétales décoratifs de l'animation "petals-in" (cf. heroDecor.ts::
+            HERO_TEXT_ANIMATIONS) — positionnés par rapport à `.hs-card`
+            (position: relative, cf. sa règle de base), jamais visibles hors
+            de cette animation (opacity: 0 par défaut dans le CSS). */}
+        {textAnimation === 'petals-in' && (
+          <>
+            <i className="hs-anim-petal hs-anim-petal-1" aria-hidden />
+            <i className="hs-anim-petal hs-anim-petal-2" aria-hidden />
+            <i className="hs-anim-petal hs-anim-petal-3" aria-hidden />
+          </>
+        )}
       </div>
     </div>
   )
+}
+
+/**
+ * Enveloppe conditionnelle `.hs-anim-target` (cf. HERO_ANIM_NEEDS_TARGET
+ * ci-dessus) — évite d'alourdir le DOM d'un span inutile pour les
+ * animations qui n'en ont pas besoin (ink-reveal, soft-zoom, bloom,
+ * handwrite, fondu par défaut).
+ */
+function MaybeAnimTarget({ active, children }: { active: boolean; children: ReactNode }) {
+  return active ? <span className="hs-anim-target">{children}</span> : <>{children}</>
 }

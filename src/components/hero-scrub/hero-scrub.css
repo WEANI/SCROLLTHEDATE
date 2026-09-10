@@ -101,6 +101,10 @@
    quelle image de la vidéo, sans jamais figer le fond en plein cadre : seul
    le texte est encadré, la vidéo reste visible autour. */
 .hs-card {
+  /* `relative` (sans effet sur la mise en page — aucun décalage posé) :
+     sert uniquement de contexte de positionnement aux pétales de l'animation
+     "petals-in" (cf. plus bas, .hs-anim-petal), ajouté le 11/09/2026. */
+  position: relative;
   max-width: 88%;
   background: var(--hs-card-bg);
   backdrop-filter: blur(18px) saturate(140%);
@@ -423,4 +427,862 @@
     opacity: 1;
     transform: scale(1.15);
   }
+}
+
+/**
+ * Décors "mariage" ajoutés le 11/09/2026 — cf. artifact proposé le même
+ * jour (bibliotheque-mariage.html) et heroDecor.ts::HERO_OVERLAY_GRAPHICS
+ * pour la liste éditable au studio. Même convention que les décors
+ * ci-dessus : couleurs sur les variables CSS du thème courant (jamais
+ * figées), `pointer-events: none`, un seul décor actif à la fois.
+ */
+.hs-ov-heart-line {
+  position: absolute;
+  top: 10%;
+  right: 12%;
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+}
+.hs-ov-heart-line path {
+  fill: none;
+  stroke: var(--hs-accent);
+  stroke-width: 1.4;
+  stroke-dasharray: 210;
+  animation: hs-ov-dash 5s ease-in-out infinite;
+}
+@keyframes hs-ov-dash {
+  0% {
+    stroke-dashoffset: 210;
+  }
+  45%,
+  65% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -210;
+  }
+}
+
+.hs-ov-rings {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 40px;
+  pointer-events: none;
+}
+.hs-ov-rings circle {
+  fill: none;
+  stroke: var(--hs-accent);
+  stroke-width: 1.5;
+  opacity: 0.85;
+}
+
+.hs-ov-dove {
+  position: absolute;
+  top: 12%;
+  right: 14%;
+  width: 48px;
+  height: 48px;
+  pointer-events: none;
+  animation: hs-ov-dove-float 3.4s ease-in-out infinite;
+}
+.hs-ov-dove path {
+  fill: var(--hs-text-primary);
+  opacity: 0.85;
+}
+@keyframes hs-ov-dove-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-8px) rotate(-4deg);
+  }
+}
+
+.hs-ov-floral-corner {
+  position: absolute;
+  inset: 20px;
+  pointer-events: none;
+}
+.hs-ov-floral-corner svg {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+}
+.hs-ov-floral-corner svg:nth-child(1) {
+  top: 0;
+  left: 0;
+}
+.hs-ov-floral-corner svg:nth-child(2) {
+  top: 0;
+  right: 0;
+  transform: scaleX(-1);
+}
+.hs-ov-floral-corner svg:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  transform: scaleY(-1);
+}
+.hs-ov-floral-corner svg:nth-child(4) {
+  bottom: 0;
+  right: 0;
+  transform: scale(-1, -1);
+}
+.hs-ov-floral-corner path {
+  fill: none;
+  stroke: var(--hs-accent);
+  stroke-width: 1.2;
+  opacity: 0.8;
+}
+.hs-ov-floral-corner circle {
+  fill: var(--hs-text-secondary);
+  opacity: 0.8;
+}
+
+.hs-ov-petals-fall {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hs-ov-petals-fall i {
+  position: absolute;
+  top: -6%;
+  width: 8px;
+  height: 12px;
+  background: var(--hs-text-secondary);
+  opacity: 0.8;
+  border-radius: 60% 0 60% 0;
+  animation: hs-ov-petal-fall 6s linear infinite;
+}
+.hs-ov-petals-fall i:nth-child(1) {
+  left: 12%;
+  animation-delay: 0s;
+}
+.hs-ov-petals-fall i:nth-child(2) {
+  left: 34%;
+  animation-delay: 1.4s;
+  background: var(--hs-accent);
+}
+.hs-ov-petals-fall i:nth-child(3) {
+  left: 58%;
+  animation-delay: 2.8s;
+}
+.hs-ov-petals-fall i:nth-child(4) {
+  left: 76%;
+  animation-delay: 0.8s;
+  background: var(--hs-accent);
+}
+.hs-ov-petals-fall i:nth-child(5) {
+  left: 90%;
+  animation-delay: 3.6s;
+}
+@keyframes hs-ov-petal-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(105vh) rotate(300deg);
+    opacity: 0;
+  }
+}
+
+.hs-ov-confetti-fall {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hs-ov-confetti-fall i {
+  position: absolute;
+  top: -4%;
+  width: 6px;
+  height: 6px;
+  animation: hs-ov-confetti-fall 4.6s linear infinite;
+}
+.hs-ov-confetti-fall i:nth-child(odd) {
+  background: var(--hs-accent);
+}
+.hs-ov-confetti-fall i:nth-child(even) {
+  background: var(--hs-text-secondary);
+  border-radius: 50%;
+}
+.hs-ov-confetti-fall i:nth-child(1) {
+  left: 8%;
+  animation-delay: 0s;
+}
+.hs-ov-confetti-fall i:nth-child(2) {
+  left: 22%;
+  animation-delay: 0.7s;
+}
+.hs-ov-confetti-fall i:nth-child(3) {
+  left: 38%;
+  animation-delay: 1.6s;
+}
+.hs-ov-confetti-fall i:nth-child(4) {
+  left: 52%;
+  animation-delay: 0.3s;
+}
+.hs-ov-confetti-fall i:nth-child(5) {
+  left: 66%;
+  animation-delay: 2.3s;
+}
+.hs-ov-confetti-fall i:nth-child(6) {
+  left: 80%;
+  animation-delay: 1.1s;
+}
+.hs-ov-confetti-fall i:nth-child(7) {
+  left: 92%;
+  animation-delay: 2.9s;
+}
+@keyframes hs-ov-confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(105vh) rotate(420deg);
+    opacity: 0;
+  }
+}
+
+.hs-ov-ribbon {
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  width: 52px;
+  height: 52px;
+  pointer-events: none;
+}
+.hs-ov-ribbon path {
+  fill: none;
+  stroke: var(--hs-accent);
+  stroke-width: 1.5;
+}
+.hs-ov-ribbon circle {
+  fill: var(--hs-accent);
+}
+
+.hs-ov-monogram-frame {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 96px;
+  border: 1.5px solid var(--hs-accent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.hs-ov-monogram-frame::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px dashed var(--hs-accent);
+  opacity: 0.5;
+  border-radius: 50%;
+}
+
+.hs-ov-heart-pulse {
+  position: absolute;
+  top: 10%;
+  right: 14%;
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+  animation: hs-ov-heart-pulse 1.8s ease-in-out infinite;
+}
+.hs-ov-heart-pulse path {
+  fill: var(--hs-text-secondary);
+}
+@keyframes hs-ov-heart-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.16);
+  }
+}
+
+.hs-ov-calligraphy-swash {
+  position: absolute;
+  bottom: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 50px;
+  pointer-events: none;
+}
+.hs-ov-calligraphy-swash path {
+  fill: none;
+  stroke: var(--hs-accent);
+  stroke-width: 1.4;
+  stroke-dasharray: 180;
+  animation: hs-ov-dash 5.5s ease-in-out infinite;
+}
+
+.hs-ov-shooting-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hs-ov-shooting-stars i {
+  position: absolute;
+  width: 56px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--hs-text-primary), transparent);
+  transform: rotate(-30deg);
+  animation: hs-ov-shoot 4.2s ease-in infinite;
+}
+.hs-ov-shooting-stars i:nth-child(1) {
+  top: 18%;
+  left: -20%;
+  animation-delay: 0s;
+}
+.hs-ov-shooting-stars i:nth-child(2) {
+  top: 40%;
+  left: -20%;
+  animation-delay: 1.6s;
+}
+.hs-ov-shooting-stars i:nth-child(3) {
+  top: 60%;
+  left: -20%;
+  animation-delay: 3s;
+}
+@keyframes hs-ov-shoot {
+  0% {
+    transform: translate(0, 0) rotate(-30deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  30% {
+    transform: translate(260px, 140px) rotate(-30deg);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.hs-ov-laurel {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 60px;
+  pointer-events: none;
+}
+.hs-ov-laurel path {
+  fill: none;
+  stroke: var(--hs-accent);
+  stroke-width: 1.3;
+  opacity: 0.85;
+}
+
+.hs-ov-infinity {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 74px;
+  height: 40px;
+  pointer-events: none;
+}
+.hs-ov-infinity path {
+  fill: none;
+  stroke: var(--hs-accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 170;
+  animation: hs-ov-dash 5s ease-in-out infinite;
+}
+
+.hs-ov-candles {
+  position: absolute;
+  bottom: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+.hs-ov-candles i {
+  display: block;
+  width: 5px;
+  height: 30px;
+  background: var(--hs-text-secondary);
+  opacity: 0.6;
+  border-radius: 2px;
+  position: relative;
+}
+.hs-ov-candles i:nth-child(2) {
+  height: 40px;
+}
+.hs-ov-candles i::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 6px;
+  height: 9px;
+  margin-left: -3px;
+  background: var(--hs-accent);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  animation: hs-ov-flicker 1.6s ease-in-out infinite;
+}
+.hs-ov-candles i:nth-child(2)::after {
+  animation-delay: 0.4s;
+}
+.hs-ov-candles i:nth-child(3)::after {
+  animation-delay: 0.8s;
+}
+@keyframes hs-ov-flicker {
+  0%,
+  100% {
+    transform: scaleY(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scaleY(1.15) rotate(-3deg);
+    opacity: 0.85;
+  }
+}
+
+.hs-ov-bouquet {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+}
+.hs-ov-bouquet circle {
+  fill: var(--hs-text-secondary);
+  opacity: 0.85;
+}
+.hs-ov-bouquet path {
+  fill: none;
+  stroke: var(--hs-accent);
+  stroke-width: 1.3;
+}
+
+.hs-ov-birds-pair {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 76px;
+  height: 38px;
+  pointer-events: none;
+}
+.hs-ov-birds-pair path {
+  fill: none;
+  stroke: var(--hs-text-primary);
+  stroke-width: 1.5;
+  opacity: 0.85;
+}
+
+.hs-ov-lace-border {
+  position: absolute;
+  inset: 18px;
+  pointer-events: none;
+}
+.hs-ov-lace-border svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 14px;
+}
+.hs-ov-lace-border svg:last-child {
+  top: auto;
+  bottom: 0;
+  transform: scaleY(-1);
+}
+.hs-ov-lace-border path {
+  fill: none;
+  stroke: var(--hs-accent);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
+.hs-ov-butterfly {
+  position: absolute;
+  top: 14%;
+  right: 16%;
+  width: 46px;
+  height: 40px;
+  pointer-events: none;
+  animation: hs-ov-flutter 2.2s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+.hs-ov-butterfly path {
+  fill: var(--hs-text-secondary);
+  opacity: 0.85;
+}
+@keyframes hs-ov-flutter {
+  0%,
+  100% {
+    transform: scaleX(1) translateY(0);
+  }
+  50% {
+    transform: scaleX(0.72) translateY(-4px);
+  }
+}
+
+.hs-ov-wreath {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 76px;
+  height: 76px;
+  border: 1.5px solid var(--hs-accent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.hs-ov-wreath i {
+  position: absolute;
+  width: 7px;
+  height: 11px;
+  background: var(--hs-text-secondary);
+  border-radius: 60% 0 60% 0;
+  opacity: 0.85;
+}
+.hs-ov-wreath i:nth-child(1) {
+  top: -4px;
+  left: 34px;
+}
+.hs-ov-wreath i:nth-child(2) {
+  top: 32px;
+  right: -4px;
+  transform: rotate(90deg);
+}
+.hs-ov-wreath i:nth-child(3) {
+  bottom: -4px;
+  left: 34px;
+  transform: rotate(180deg);
+}
+.hs-ov-wreath i:nth-child(4) {
+  top: 32px;
+  left: -4px;
+  transform: rotate(-90deg);
+}
+
+.hs-ov-moon-stars {
+  position: absolute;
+  top: 10%;
+  right: 12%;
+  width: 46px;
+  height: 46px;
+  pointer-events: none;
+}
+.hs-ov-moon-stars .hs-moon {
+  fill: var(--hs-accent);
+}
+.hs-ov-moon-stars .hs-star {
+  fill: var(--hs-text-primary);
+}
+
+/**
+ * Animations de texte ajoutées le 11/09/2026 — cf. heroDecor.ts::
+ * HERO_TEXT_ANIMATIONS. Modificateurs de `.hs-overlay`/`.hs-overlay.show`
+ * (cf. plus haut) : `fade` reste le comportement par défaut (aucune classe
+ * ajoutée), une seule de ces classes est posée à la fois sur le conteneur.
+ */
+.hs-overlay.hs-anim-typewriter.show .hs-anim-target {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid var(--hs-accent);
+  animation:
+    hs-anim-type-w 1.4s steps(22) forwards,
+    hs-anim-type-c 0.7s step-end infinite;
+}
+@keyframes hs-anim-type-w {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+@keyframes hs-anim-type-c {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.hs-overlay.hs-anim-ink-reveal.show {
+  animation: hs-anim-ink 0.9s ease-out;
+}
+@keyframes hs-anim-ink {
+  from {
+    filter: blur(10px);
+  }
+  to {
+    filter: blur(0);
+  }
+}
+
+.hs-overlay.hs-anim-curtain .hs-anim-target {
+  display: inline-block;
+  clip-path: inset(0 100% 0 0);
+}
+.hs-overlay.hs-anim-curtain.show .hs-anim-target {
+  animation: hs-anim-curtain-clip 0.9s ease-out forwards;
+}
+@keyframes hs-anim-curtain-clip {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.hs-overlay.hs-anim-soft-zoom.show {
+  animation: hs-anim-zoom 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes hs-anim-zoom {
+  from {
+    transform: scale(1.1);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.hs-overlay.hs-anim-letter-drop .hs-anim-letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(-14px);
+}
+.hs-overlay.hs-anim-letter-drop.show .hs-anim-letter {
+  animation: hs-anim-drop 0.5s ease forwards;
+}
+@keyframes hs-anim-drop {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hs-overlay.hs-anim-underline-draw .hs-anim-target {
+  position: relative;
+  display: inline-block;
+}
+.hs-overlay.hs-anim-underline-draw .hs-anim-target::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 1px;
+  width: 100%;
+  background: var(--hs-accent);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.hs-overlay.hs-anim-underline-draw.show .hs-anim-target::after {
+  animation: hs-anim-uline 0.7s ease-out 0.2s forwards;
+}
+@keyframes hs-anim-uline {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.hs-overlay.hs-anim-bloom.show {
+  animation: hs-anim-bloom 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes hs-anim-bloom {
+  from {
+    opacity: 0;
+    transform: scale(0.7) rotate(-4deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+.hs-overlay.hs-anim-shimmer.show .hs-anim-target {
+  display: inline-block;
+  background: linear-gradient(100deg, var(--hs-text-primary) 40%, var(--hs-accent) 50%, var(--hs-text-primary) 60%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: hs-anim-shimmer 1.6s ease-in-out 0.3s;
+}
+@keyframes hs-anim-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -40% 0;
+  }
+}
+
+.hs-anim-petal {
+  /* Enfants de `.hs-card` (jamais de `.hs-overlay`, qui doit rester
+     `position: absolute` pour sa propre mise en page — cf. sa règle de
+     base plus haut) : `.hs-card` porte déjà `position: relative` pour ça. */
+  position: absolute;
+  width: 7px;
+  height: 10px;
+  background: var(--hs-text-secondary);
+  border-radius: 60% 0 60% 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.hs-anim-petal-1 {
+  top: 40%;
+  left: 18%;
+}
+.hs-anim-petal-2 {
+  top: 30%;
+  right: 20%;
+  background: var(--hs-accent);
+}
+.hs-anim-petal-3 {
+  bottom: 34%;
+  right: 26%;
+}
+.hs-overlay.hs-anim-petals-in.show .hs-anim-petal {
+  animation: hs-anim-petal-burst 1.1s ease-out forwards;
+}
+@keyframes hs-anim-petal-burst {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(16px, -18px) rotate(80deg);
+  }
+}
+
+.hs-overlay.hs-anim-unfold .hs-anim-target {
+  display: inline-block;
+  transform-origin: 50% 0%;
+  transform: scaleY(0.15);
+  opacity: 0;
+}
+.hs-overlay.hs-anim-unfold.show .hs-anim-target {
+  animation: hs-anim-unfold 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes hs-anim-unfold {
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.hs-overlay.hs-anim-handwrite.show {
+  animation: hs-anim-handwrite 0.7s ease-out;
+}
+@keyframes hs-anim-handwrite {
+  0% {
+    opacity: 0;
+    transform: translateX(-6px) rotate(-1.5deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translateX(2px) rotate(1deg);
+  }
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+}
+
+/**
+ * Filtres visuels du hero ajoutés le 11/09/2026 — cf. heroDecor.ts::
+ * HERO_FILTERS. Appliqués sur `.hs-video` (aussi bien la balise <video> que
+ * le <canvas> du mode frames, cf. HeroScrub.tsx) via une classe posée sur
+ * `.hs-stage` (le filtre doit rester SOUS le décor/le texte, jamais leur
+ * être appliqué). Un seul filtre actif à la fois.
+ */
+.hs-filter-sepia .hs-video {
+  filter: sepia(0.65) saturate(1.3) contrast(1.05) brightness(0.95);
+}
+.hs-filter-noir-blanc .hs-video {
+  filter: grayscale(1) contrast(1.15) brightness(1.02);
+}
+.hs-filter-grain-cinema .hs-video {
+  filter: contrast(1.05);
+}
+.hs-filter-vignette-chaude .hs-video {
+  filter: brightness(1.05);
+}
+.hs-filter-flou-bordure .hs-video {
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 55%, transparent 96%);
+  mask-image: radial-gradient(ellipse at center, #000 55%, transparent 96%);
+}
+.hs-filter-pastel-wash .hs-video {
+  filter: saturate(0.55) brightness(1.12) contrast(0.92);
+}
+.hs-filter-heure-doree .hs-video {
+  filter: sepia(0.25) saturate(1.5) hue-rotate(-8deg) brightness(1.05);
+}
+.hs-filter-froid-romantique .hs-video {
+  filter: saturate(0.75) hue-rotate(160deg) brightness(0.92) contrast(1.08);
+}
+.hs-filter-dreamy-glow .hs-video {
+  filter: brightness(1.08) saturate(1.15);
+}
+.hs-filter-polaroid .hs-video {
+  filter: saturate(0.8) contrast(1.02) sepia(0.08);
+}
+.hs-filter-moody-dark .hs-video {
+  filter: brightness(0.72) contrast(1.25) saturate(0.85);
+}
+.hs-filter-champagne-tone .hs-video {
+  filter: sepia(0.12) saturate(1.1) brightness(1.03);
+}
+
+/**
+ * Calque supplémentaire pour les 3 filtres qui ne se réduisent pas à un
+ * simple `filter:` CSS sur `.hs-video` (grain, vignette chaude, halo) — un
+ * vrai <div> (cf. HeroFilterLayer, HeroScrub.tsx), PAS un `::after` sur
+ * `.hs-video` : les pseudo-éléments n'existent pas sur les éléments
+ * remplacés (<video>/<canvas>), ils n'auraient eu aucun effet. Rendu juste
+ * après la vidéo dans le DOM (avant le décor/le texte), `z-index: auto`
+ * comme le reste de cette pile — jamais de z-index explicite ici, qui
+ * ferait sinon passer ce calque AU-DESSUS du texte quel que soit l'ordre
+ * DOM (piège déjà identifié en écrivant cette règle).
+ */
+.hs-filter-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hs-filter-layer.hs-filter-layer-grain {
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.hs-filter-layer.hs-filter-layer-vignette {
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(30, 15, 5, 0.6) 100%);
+}
+.hs-filter-layer.hs-filter-layer-glow {
+  box-shadow: inset 0 0 80px 12px var(--hs-accent);
+  opacity: 0.35;
 }

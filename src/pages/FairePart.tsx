@@ -539,6 +539,8 @@ export default function FairePart() {
               ariaLabel={`Save the date — ${coupleNames}`}
               overlayGraphic={palette.heroOverlayGraphic || undefined}
               fontFamily={heroFont?.fontFamily}
+              textAnimation={palette.heroTextAnimation || undefined}
+              filter={palette.heroFilter || undefined}
             />
             {invite.status !== 'DELIVERED' && <PreviewWatermark />}
           </div>
@@ -573,6 +575,8 @@ export default function FairePart() {
           ariaLabel={`Faire-part — ${coupleNames}`}
           overlayGraphic={palette.heroOverlayGraphic || undefined}
           fontFamily={heroFont?.fontFamily}
+          textAnimation={palette.heroTextAnimation || undefined}
+          filter={palette.heroFilter || undefined}
         />
         {invite.status !== 'DELIVERED' && <PreviewWatermark />}
       </div>

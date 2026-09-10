@@ -277,6 +277,8 @@ export const CA_PALETTE: BespokePalette = {
   stdNamesDateCardBg: '',
   heroOverlayGraphic: '',
   heroFontId: '',
+  heroTextAnimation: '',
+  heroFilter: '',
 }
 
 /**

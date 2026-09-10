@@ -149,6 +149,9 @@ export function suggestPaletteFromColors(
     // BespokePalette.heroOverlayGraphic/heroFontId.
     heroOverlayGraphic: "",
     heroFontId: "",
+    // Idem : animation de texte / filtre vidéo, jamais suggérés.
+    heroTextAnimation: "",
+    heroFilter: "",
   };
 }
 

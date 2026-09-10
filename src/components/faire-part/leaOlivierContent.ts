@@ -296,6 +296,8 @@ export const LAO_PALETTE: BespokePalette = {
   stdNamesDateCardBg: '',
   heroOverlayGraphic: '',
   heroFontId: '',
+  heroTextAnimation: '',
+  heroFilter: '',
 }
 
 /**
