@@ -37,6 +37,21 @@ export type BespokePalette = {
   /** Fond de la case Date — transparent pour les deux couples (se fond dans le fond de la page). */
   bgDate: string
   bgProgramme: string
+  /**
+   * Fond par section, réglable indépendamment de `bg` ci-dessus — chaîne
+   * vide = repli sur le comportement historique de CE composant (pas
+   * uniforme : cf. usage exact dans LieuMagnifier/DressCodeCard/
+   * MenuDuDiner/NotreHistoire/FaqItemCard/LodgingCascadeCard/
+   * ListeDeMariage). Ajoutés le 11/09/2026 pour compléter bgDate/
+   * bgProgramme ci-dessus, jusque-là les 2 seules sections personnalisables.
+   */
+  bgLieu: string
+  bgDressCode: string
+  bgMenu: string
+  bgHistoire: string
+  bgFaq: string
+  bgHebergements: string
+  bgListeMariage: string
   /** Crème du sceau RSVP (reste sombre/bordeaux pour les deux couples, jamais reconverti en clair) — texte des initiales. */
   cream: string
   /** Texte posé directement sur le fond de la page du couple (pas sur une carte) — varie par couple. */
@@ -128,6 +143,13 @@ export const EW_PALETTE: BespokePalette = {
   bg: '#f3ead9',
   bgDate: 'transparent',
   bgProgramme: '#f3ead9',
+  bgLieu: '',
+  bgDressCode: '',
+  bgMenu: '',
+  bgHistoire: '',
+  bgFaq: '',
+  bgHebergements: '',
+  bgListeMariage: '',
   cream: '#f3ead9',
   ink: '#2E2620',
   inkRgb: '46, 38, 32',
@@ -774,7 +796,7 @@ export function LieuMagnifier({
       <div
         ref={containerRef}
         className="relative aspect-[6/5] w-full overflow-hidden rounded-2xl [cursor:none]"
-        style={{ background: p.bg, ['--mx' as string]: '50%', ['--my' as string]: '46%' } as CSSProperties}
+        style={{ background: p.bgLieu || p.bg, ['--mx' as string]: '50%', ['--my' as string]: '46%' } as CSSProperties}
       >
         <StyledMapSvg blurred />
         <div
@@ -918,7 +940,7 @@ export function NotreHistoire({
     // sombre. Positionnée via le slot `renderBeforeRsvp` de DetailsSombre,
     // juste après Le Programme (cf. modifications a faire.md — remise à
     // cette position après un premier aller-retour côté client).
-    <section className="relative ml-[calc(50%-50vw)] w-screen py-20" style={{ background: 'transparent' }}>
+    <section className="relative ml-[calc(50%-50vw)] w-screen py-20" style={{ background: palette.bgHistoire || 'transparent' }}>
       <button
         type="button"
         aria-expanded={open}
@@ -1316,7 +1338,7 @@ const EW_FAQ_ITEMS: { q: string; a: string }[] = [
 function FaqItemCard({ item, open, onToggle }: { item: { q: string; a: string }; open: boolean; onToggle: () => void }) {
   const p = usePalette()
   return (
-    <div className="overflow-hidden rounded-2xl shadow-[0_1px_3px_rgba(46,38,32,0.08)]" style={{ background: p.bg }}>
+    <div className="overflow-hidden rounded-2xl shadow-[0_1px_3px_rgba(46,38,32,0.08)]" style={{ background: p.bgFaq || p.bg }}>
       <button
         type="button"
         aria-expanded={open}
@@ -1462,7 +1484,7 @@ export function DressCodeCard({
 }) {
   const p = usePalette()
   return (
-    <section className="text-center">
+    <section className="rounded-2xl px-6 py-8 text-center" style={{ background: p.bgDressCode || 'transparent' }}>
       <EwLabel>Dress Code</EwLabel>
       <p className="text-[15px] leading-[1.6]" style={{ color: `rgba(${p.inkRgb}, 0.75)` }}>
         {dressCode}
@@ -1516,7 +1538,7 @@ export function LodgingCascadeCard({
               key={item}
               className="rounded-2xl px-6 py-4 text-left"
               style={{
-                background: p.bg,
+                background: p.bgHebergements || p.bg,
                 opacity: reducedMotion || revealed ? 1 : 0,
                 transform: reducedMotion || revealed ? 'translateY(0)' : 'translateY(18px)',
                 transition: reducedMotion
@@ -1605,7 +1627,7 @@ export function MenuDuDiner({
   const [open, setOpen] = useState(false)
 
   return (
-    <section className="text-center">
+    <section className="rounded-2xl px-6 py-8 text-center" style={{ background: p.bgMenu || 'transparent' }}>
       <button
         type="button"
         aria-expanded={open}
@@ -1673,7 +1695,7 @@ export function ListeDeMariage({
           target="_blank"
           rel="noopener noreferrer"
           className="max-w-full truncate rounded-xl border px-6 py-3.5 text-[13.5px] font-semibold"
-          style={{ borderColor: p.gold, color: p.bordeaux, background: p.bg }}
+          style={{ borderColor: p.gold, color: p.bordeaux, background: p.bgListeMariage || p.bg }}
         >
           {link}
         </a>

@@ -15,6 +15,24 @@ export const bespokePaletteSchema = z.object({
   bg: z.string(),
   bgDate: z.string(),
   bgProgramme: z.string(),
+  // Fond par section — cf. échange du 11/09/2026 ("couleur de fond des
+  // sections partout"). `.default("")` (comme les champs hero plus bas) :
+  // une palette déjà enregistrée avant l'ajout de ces 7 champs ne les
+  // porte pas du tout, absorbé ici plutôt que de faire échouer
+  // l'enregistrement suivant (même piège déjà rencontré plusieurs fois
+  // cette session). Vide = comportement inchangé, PAS le même repli pour
+  // toutes : Lieu/FAQ/Hébergements/Liste de mariage retombent sur `bg`
+  // (déjà leur fond de carte partagé aujourd'hui), Dress code/Menu/Notre
+  // histoire retombent sur transparent (déjà leur fond aujourd'hui — pas
+  // de carte, texte à même le fond de page) — cf. edwigeWilfriedEffects.tsx
+  // pour le détail exact par composant.
+  bgLieu: z.string().default(""),
+  bgDressCode: z.string().default(""),
+  bgMenu: z.string().default(""),
+  bgHistoire: z.string().default(""),
+  bgFaq: z.string().default(""),
+  bgHebergements: z.string().default(""),
+  bgListeMariage: z.string().default(""),
   cream: z.string(),
   ink: z.string(),
   inkRgb: z.string(),

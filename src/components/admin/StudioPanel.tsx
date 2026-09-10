@@ -900,6 +900,13 @@ const BLANK_PALETTE: BespokePaletteInput = {
   bg: "",
   bgDate: "transparent",
   bgProgramme: "",
+  bgLieu: "",
+  bgDressCode: "",
+  bgMenu: "",
+  bgHistoire: "",
+  bgFaq: "",
+  bgHebergements: "",
+  bgListeMariage: "",
   cream: "#F3EAD9",
   ink: "",
   inkRgb: "",
@@ -1431,6 +1438,16 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
               onChange={(v) => setField("bgProgramme", v)}
             />
             <ColorField label="Crème du sceau" value={palette.cream} onChange={(v) => setField("cream", v)} />
+          </div>
+          <p className="mb-2 mt-4 text-[11px] text-neutral-500">Par section — vide = fond de carte ci-dessus (Lieu, FAQ, Hébergements, Liste de mariage) ou transparent (Dress code, Menu, Notre histoire).</p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <ColorField label="Fond Lieu" hint="Vide = fond des cartes" value={palette.bgLieu} onChange={(v) => setField("bgLieu", v)} />
+            <ColorField label="Fond Dress code" hint="Vide = transparent" value={palette.bgDressCode} onChange={(v) => setField("bgDressCode", v)} />
+            <ColorField label="Fond Menu du dîner" hint="Vide = transparent" value={palette.bgMenu} onChange={(v) => setField("bgMenu", v)} />
+            <ColorField label="Fond Notre histoire" hint="Vide = transparent" value={palette.bgHistoire} onChange={(v) => setField("bgHistoire", v)} />
+            <ColorField label="Fond FAQ" hint="Vide = fond des cartes" value={palette.bgFaq} onChange={(v) => setField("bgFaq", v)} />
+            <ColorField label="Fond Hébergements" hint="Vide = fond des cartes" value={palette.bgHebergements} onChange={(v) => setField("bgHebergements", v)} />
+            <ColorField label="Fond Liste de mariage" hint="Vide = fond des cartes" value={palette.bgListeMariage} onChange={(v) => setField("bgListeMariage", v)} />
           </div>
         </div>
         <div>

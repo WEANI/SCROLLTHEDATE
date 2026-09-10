@@ -88,6 +88,16 @@ export function suggestPaletteFromColors(
     bg,
     bgDate: "transparent",
     bgProgramme: bg,
+    // Fonds par section : jamais suggérés automatiquement (repli déjà
+    // cohérent par défaut — bg pour les sections à carte, transparent pour
+    // les autres, cf. doc de BespokePalette) — laissés vides.
+    bgLieu: "",
+    bgDressCode: "",
+    bgMenu: "",
+    bgHistoire: "",
+    bgFaq: "",
+    bgHebergements: "",
+    bgListeMariage: "",
     cream,
     ink,
     inkRgb,
