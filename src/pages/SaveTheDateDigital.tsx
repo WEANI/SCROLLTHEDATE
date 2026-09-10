@@ -5,6 +5,9 @@ import { useSeo } from '@/hooks/useSeo'
 import { FadeUp, WordReveal } from '@/components/commerce/Reveal'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
 import { formatEuros, getProduct, productSlug, usePricing } from '@/components/commerce/pricing'
+import { PRODUCTS } from '@/components/home/productsCatalog'
+
+const HERO_FEATURES = PRODUCTS.find((p) => p.id === 'SAVE_THE_DATE')!.features
 
 /**
  * Page produit dédiée au Save the Date digital — cf. doc de FairePartDigital.tsx
@@ -76,21 +79,49 @@ export default function SaveTheDateDigital() {
               Une courte vidéo personnalisée et une page d'annonce élégante, des mois avant le jour J. De quoi faire
               patienter vos invités avec style.
             </motion.p>
+
+            <motion.ul
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.48, ease: EASE_EDITORIAL }}
+              className="mt-8 flex flex-col gap-3"
+            >
+              {HERO_FEATURES.map((f) => (
+                <li key={f.label} className="flex items-center gap-3 text-[14px] text-white/75">
+                  <f.icon size={17} strokeWidth={1.75} className="shrink-0 text-terracotta-500" aria-hidden />
+                  {f.label}
+                </li>
+              ))}
+              <li className="flex items-center gap-3 text-[14px] text-white/75">
+                <Check size={17} strokeWidth={1.75} className="shrink-0 text-terracotta-500" aria-hidden />
+                Prix unique — quel que soit le nombre d'invités
+              </li>
+            </motion.ul>
+
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.55, ease: EASE_EDITORIAL }}
-              className="mt-9 flex items-center gap-6"
+              className="mt-9 flex flex-wrap items-center gap-6"
             >
               <span className="font-display tabular text-[2rem] font-light text-terracotta-300">
                 {formatEuros(saveTheDate.priceCents)}
               </span>
-              <Link
-                to={checkoutHref}
-                className="inline-flex items-center rounded-full bg-terracotta-500 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
-              >
-                Commander mon Save the Date
-              </Link>
+              <div className="flex flex-wrap items-center gap-5">
+                <Link
+                  to={checkoutHref}
+                  className="inline-flex items-center rounded-full bg-terracotta-500 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
+                >
+                  Commander mon Save the Date
+                </Link>
+                <Link
+                  to="/demofairepart"
+                  className="group/link relative text-[13px] font-semibold uppercase tracking-[0.1em] text-white/80 transition-colors hover:text-white"
+                >
+                  Voir la démo
+                  <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-terracotta-500 transition-transform duration-300 group-hover/link:scale-x-100" />
+                </Link>
+              </div>
             </motion.div>
           </div>
 

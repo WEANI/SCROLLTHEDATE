@@ -91,7 +91,7 @@ async function seed() {
     {
       id: "FAIRE_PART",
       name: "Faire-part digital",
-      priceCents: 34900,
+      priceCents: 29900,
       description:
         "Vidéo 60–90 s racontant votre histoire, page complète (programme, lieu, hébergements), RSVP en ligne, 3 propositions de scénario.",
       features: [

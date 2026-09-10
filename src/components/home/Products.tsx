@@ -3,41 +3,11 @@ import { Link } from 'react-router'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
-import { CalendarHeart, Check, Clapperboard, Infinity as InfinityIcon, MapPin, QrCode, Rss } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PRODUCTS } from '@/components/home/productsCatalog'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
-
-const PRODUCTS = [
-  {
-    name: 'Save the Date digital',
-    price: '149 €',
-    tagline: 'Pour annoncer, des mois avant.',
-    cta: '/commander?produit=save-the-date',
-    recommended: false,
-    features: [
-      { icon: Clapperboard, label: 'Vidéo courte personnalisée (40 s)' },
-      { icon: CalendarHeart, label: 'Votre page personnalisée' },
-      { icon: CalendarHeart, label: "Page d'annonce avec date & lieu" },
-      { icon: InfinityIcon, label: 'Lien illimité, partageable partout' },
-      { icon: QrCode, label: 'QR code pour vos supports papier' },
-    ],
-  },
-  {
-    name: 'Faire-part digital',
-    price: '299 €',
-    tagline: 'Pour inviter, pour de vrai.',
-    cta: '/commander?produit=faire-part',
-    recommended: true,
-    features: [
-      { icon: Clapperboard, label: 'Vidéo cinématique complète (60 s)' },
-      { icon: CalendarHeart, label: 'Votre page personnalisée + tableau de bord' },
-      { icon: MapPin, label: 'Programme, lieu & hébergements, dress code' },
-      { icon: Rss, label: 'RSVP intégré, réponses en temps réel' },
-      { icon: InfinityIcon, label: 'Lien illimité + QR code' },
-    ],
-  },
-]
 
 /** Les deux produits — cards calmes sur fond anthracite-900. */
 export default function Products() {
