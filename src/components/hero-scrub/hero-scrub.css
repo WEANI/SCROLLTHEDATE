@@ -112,3 +112,301 @@
     opacity: 1;
   }
 }
+
+/**
+ * Décors graphiques du hero — cf. heroDecor.ts (HERO_OVERLAY_GRAPHICS) pour
+ * la liste éditable au studio. Portés de overlays-graphiques.html (doc
+ * fournie le 10/09/2026), classes renommées `hs-ov-*` pour rester dans le
+ * préfixe du fichier. Couleur d'accent = `--hs-accent` du thème courant
+ * (jamais une couleur figée) pour rester cohérents avec la palette du
+ * projet ; un seul décor actif à la fois (posé par HeroScrub.tsx sur
+ * `.hs-stage`, absolute inset:0, avant les cartes de texte dans le DOM —
+ * donc visuellement derrière elles, devant la vidéo).
+ */
+.hs-ov-corners {
+  position: absolute;
+  inset: 22px;
+  pointer-events: none;
+}
+.hs-ov-corners i {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--hs-accent);
+}
+.hs-ov-corners i:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-right: 0;
+  border-bottom: 0;
+}
+.hs-ov-corners i:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-left: 0;
+  border-bottom: 0;
+}
+.hs-ov-corners i:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-right: 0;
+  border-top: 0;
+}
+.hs-ov-corners i:nth-child(4) {
+  bottom: 0;
+  right: 0;
+  border-left: 0;
+  border-top: 0;
+}
+
+.hs-ov-dots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 40%, transparent 75%);
+  mask-image: radial-gradient(ellipse at center, #000 40%, transparent 75%);
+}
+
+.hs-ov-cross {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hs-ov-cross span {
+  position: absolute;
+  color: var(--hs-accent);
+  line-height: 1;
+  opacity: 0.8;
+}
+.hs-ov-cross span:nth-child(1) {
+  top: 16%;
+  left: 12%;
+  font-size: 22px;
+}
+.hs-ov-cross span:nth-child(2) {
+  top: 60%;
+  right: 16%;
+  font-size: 15px;
+}
+.hs-ov-cross span:nth-child(3) {
+  bottom: 22%;
+  left: 45%;
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.hs-ov-ring {
+  position: absolute;
+  top: 40%;
+  right: 12%;
+  width: 110px;
+  height: 110px;
+  transform: translateY(-50%);
+  border: 1.5px dashed rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  animation: hs-ov-spin 22s linear infinite;
+  pointer-events: none;
+}
+.hs-ov-ring::after {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border: 1px solid var(--hs-accent);
+  opacity: 0.6;
+  border-radius: 50%;
+}
+@keyframes hs-ov-spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+.hs-ov-pulse {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.hs-ov-pulse::before,
+.hs-ov-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--hs-accent);
+  border-radius: 50%;
+  animation: hs-ov-sonar 2.6s ease-out infinite;
+}
+.hs-ov-pulse::after {
+  animation-delay: 1.3s;
+}
+@keyframes hs-ov-sonar {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(9);
+    opacity: 0;
+  }
+}
+
+.hs-ov-orb {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hs-ov-orb i {
+  position: absolute;
+  width: 55%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.35;
+  background: var(--hs-accent);
+}
+.hs-ov-orb i:nth-child(1) {
+  top: -15%;
+  left: -12%;
+}
+.hs-ov-orb i:nth-child(2) {
+  bottom: -20%;
+  right: -12%;
+  background: var(--hs-text-secondary);
+}
+
+.hs-ov-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.hs-ov-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.hs-ov-shapes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hs-ov-shapes i {
+  position: absolute;
+  animation: hs-ov-float 5s ease-in-out infinite;
+}
+.hs-ov-shapes i:nth-child(1) {
+  top: 18%;
+  left: 14%;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--hs-accent);
+  border-radius: 50%;
+}
+.hs-ov-shapes i:nth-child(2) {
+  top: 55%;
+  right: 18%;
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 20px solid rgba(255, 255, 255, 0.3);
+  animation-delay: 1.2s;
+}
+.hs-ov-shapes i:nth-child(3) {
+  bottom: 22%;
+  left: 38%;
+  width: 16px;
+  height: 16px;
+  background: var(--hs-accent);
+  opacity: 0.5;
+  transform: rotate(45deg);
+  animation-delay: 2.4s;
+}
+@keyframes hs-ov-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-12px) rotate(8deg);
+  }
+}
+
+.hs-ov-diagonal {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.25;
+  background: repeating-linear-gradient(45deg, transparent 0 18px, rgba(255, 255, 255, 0.18) 18px 19px);
+  -webkit-mask-image: linear-gradient(to top, #000, transparent 55%);
+  mask-image: linear-gradient(to top, #000, transparent 55%);
+}
+
+.hs-ov-arc {
+  position: absolute;
+  bottom: -18%;
+  left: -18%;
+  width: 55%;
+  aspect-ratio: 1;
+  pointer-events: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+}
+.hs-ov-arc::after {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border: 1px dashed var(--hs-accent);
+  opacity: 0.6;
+  border-radius: 50%;
+}
+
+.hs-ov-sparkle {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #fff;
+}
+.hs-ov-sparkle span {
+  position: absolute;
+  animation: hs-ov-twinkle 2.2s ease-in-out infinite;
+}
+.hs-ov-sparkle span:nth-child(1) {
+  top: 20%;
+  left: 55%;
+  font-size: 18px;
+}
+.hs-ov-sparkle span:nth-child(2) {
+  top: 62%;
+  left: 22%;
+  font-size: 12px;
+  animation-delay: 0.8s;
+  color: var(--hs-accent);
+}
+.hs-ov-sparkle span:nth-child(3) {
+  top: 30%;
+  right: 22%;
+  font-size: 14px;
+  animation-delay: 1.5s;
+}
+@keyframes hs-ov-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}

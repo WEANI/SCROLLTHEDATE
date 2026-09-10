@@ -57,6 +57,14 @@ export interface HeroScrubProps {
    * avant même que le message de clôture ait fini d'apparaître.
    */
   tailVh?: number
+  /** Décor graphique posé sur le hero, cf. heroDecor.ts::HERO_OVERLAY_GRAPHICS — `undefined`/id inconnu = aucun (comportement inchangé). */
+  overlayGraphic?: string
+  /**
+   * Police du TITRE du hero (segments — prénoms, "Save the date"…), cf.
+   * heroDecor.ts::HERO_FONTS — `undefined` = police du site (Fraunces,
+   * comportement inchangé). Ne change QUE le titre, pas l'eyebrow/lead/sub.
+   */
+  fontFamily?: string
 }
 
 /**
@@ -77,6 +85,8 @@ export default function HeroScrub({
   fps = 24,
   showWatermark = false,
   tailVh = 0,
+  overlayGraphic,
+  fontFamily,
 }: HeroScrubProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -121,6 +131,10 @@ export default function HeroScrub({
     '--hs-card-bg': theme.cardBg,
     '--hs-card-border': theme.cardBorder,
     '--hs-card-shadow': theme.cardShadow,
+    // Police du TITRE du hero (segments) — cf. doc de HeroScrubProps.fontFamily
+    // et heroDecor.ts::HERO_FONTS. Défaut = police du site (Fraunces),
+    // comportement inchangé tant qu'aucune n'est choisie au studio.
+    '--hs-font-family': fontFamily || "'Fraunces', Georgia, serif",
   } as CSSProperties
 
   useEffect(() => {
@@ -437,6 +451,11 @@ export default function HeroScrub({
             </video>
           )}
 
+          {/* Décor graphique (cf. heroDecor.ts) — après la vidéo, avant les
+              cartes de texte dans le DOM : visuellement au-dessus de la
+              vidéo, derrière le texte. */}
+          <HeroOverlayGraphic id={overlayGraphic} />
+
           {chapters.map((ch, i) => (
             <ChapterContent key={ch.id} chapter={ch} className={cn('hs-overlay', i === activeIdx && 'show')} />
           ))}
@@ -510,6 +529,75 @@ export default function HeroScrub({
  * fenêtre — la largeur pertinente est celle de `.hs-stage`, cf. `cqw` dans
  * ChapterContent) et à chaque changement de contenu (nouveau chapitre actif).
  */
+/**
+ * Décor graphique du hero, cf. heroDecor.ts::HERO_OVERLAY_GRAPHICS pour la
+ * liste éditable au studio et hero-scrub.css pour les classes `.hs-ov-*`
+ * portées de overlays-graphiques.html (doc fournie le 10/09/2026). `id`
+ * inconnu/absent = rien (comportement inchangé) — pas de liste blanche
+ * stricte ici, un id qui ne matche aucun `case` retombe simplement sur
+ * `null`, jamais une erreur.
+ */
+function HeroOverlayGraphic({ id }: { id?: string }) {
+  switch (id) {
+    case 'corners':
+      return (
+        <div className="hs-ov-corners" aria-hidden>
+          <i />
+          <i />
+          <i />
+          <i />
+        </div>
+      )
+    case 'dots':
+      return <div className="hs-ov-dots" aria-hidden />
+    case 'cross':
+      return (
+        <div className="hs-ov-cross" aria-hidden>
+          <span>+</span>
+          <span>+</span>
+          <span>+</span>
+        </div>
+      )
+    case 'ring':
+      return <div className="hs-ov-ring" aria-hidden />
+    case 'pulse':
+      return <div className="hs-ov-pulse" aria-hidden />
+    case 'orb':
+      return (
+        <div className="hs-ov-orb" aria-hidden>
+          <i />
+          <i />
+        </div>
+      )
+    case 'noise':
+      return <div className="hs-ov-noise" aria-hidden />
+    case 'vignette':
+      return <div className="hs-ov-vignette" aria-hidden />
+    case 'shapes':
+      return (
+        <div className="hs-ov-shapes" aria-hidden>
+          <i />
+          <i />
+          <i />
+        </div>
+      )
+    case 'diagonal':
+      return <div className="hs-ov-diagonal" aria-hidden />
+    case 'arc':
+      return <div className="hs-ov-arc" aria-hidden />
+    case 'sparkle':
+      return (
+        <div className="hs-ov-sparkle" aria-hidden>
+          <span>✦</span>
+          <span>✦</span>
+          <span>✦</span>
+        </div>
+      )
+    default:
+      return null
+  }
+}
+
 function FitOneLineText({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
   const outerRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLParagraphElement>(null)
@@ -577,14 +665,18 @@ function ChapterContent({ chapter, className }: { chapter: HeroChapter; classNam
         {chapter.segments && (
           <div
             className={cn(
-              'font-display mb-2 font-normal leading-[1.12]',
+              'mb-2 font-normal leading-[1.12]',
               // cqw (largeur de .hs-stage, cf. container-type dans
               // hero-scrub.css) — jamais vw (largeur viewport), qui a déjà
               // fait déborder "décembre" puis "Couleurs" sur desktop, où le
               // viewport est bien plus large que la colonne 9:16 réelle.
               chapter.titleSize === 'lg' ? 'text-[clamp(32px,19cqw,56px)]' : 'text-[clamp(28px,18cqw,46px)]',
             )}
-            style={{ color: 'var(--hs-text-primary)' }}
+            // `font-display` (classe Tailwind, Fraunces figée) retirée au
+            // profit de la variable CSS ci-dessous — pilotable au studio
+            // (heroFontId, cf. heroDecor.ts), Fraunces par défaut si aucune
+            // n'est choisie (cf. `--hs-font-family` dans themeVars).
+            style={{ color: 'var(--hs-text-primary)', fontFamily: 'var(--hs-font-family)' }}
           >
             {chapter.segmentLayout === 'stack' ? (
               <p>

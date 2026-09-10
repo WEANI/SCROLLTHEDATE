@@ -268,6 +268,8 @@ export const CA_PALETTE: BespokePalette = {
   stdSaveTheDateCardBg: '',
   stdNamesDateTextColor: '',
   stdNamesDateCardBg: '',
+  heroOverlayGraphic: '',
+  heroFontId: '',
 }
 
 /**

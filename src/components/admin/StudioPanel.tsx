@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
 import { suggestPalette, suggestPaletteFromColors, hexToRgbString } from "@/lib/suggestPalette";
+import { HERO_OVERLAY_GRAPHICS, HERO_FONTS, getHeroFont, useGoogleFont } from "@/components/hero-scrub/heroDecor";
 import type {
   BespokePaletteInput,
   HeroChaptersFairePartInput,
@@ -926,6 +927,8 @@ const BLANK_PALETTE: BespokePaletteInput = {
   stdSaveTheDateCardBg: "",
   stdNamesDateTextColor: "",
   stdNamesDateCardBg: "",
+  heroOverlayGraphic: "",
+  heroFontId: "",
 };
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
@@ -1152,6 +1155,10 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
   // du payload envoyé à l'enregistrement (JSON omet les clés `undefined`),
   // rejeté côté serveur qui l'exige (cf. bespokePaletteSchema).
   const [palette, setPalette] = useState<BespokePaletteInput>({ ...BLANK_PALETTE, ...existingPalette });
+  // Charge la police choisie pour l'aperçu ci-dessous — même chargement
+  // que la page publique (cf. doc de useGoogleFont), rien de spécifique à
+  // l'aperçu studio.
+  useGoogleFont(palette.heroFontId);
 
   const setField = (key: keyof BespokePaletteInput, value: string) =>
     setPalette((prev) => ({ ...prev, [key]: value }));
@@ -1523,6 +1530,61 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
             Uniquement pour un projet sans timings studio réglés (onglet Vidéo → Timings du hero) — sinon le chapitre
             "Détails pratiques" prend le relais, piloté par son propre timing.
           </p>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] font-semibold text-neutral-500">Décor graphique</span>
+              <select
+                value={palette.heroOverlayGraphic}
+                onChange={(e) => setField("heroOverlayGraphic", e.target.value)}
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[12px] outline-none focus:border-terracotta-500"
+              >
+                <option value="">Aucun</option>
+                {HERO_OVERLAY_GRAPHICS.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] font-semibold text-neutral-500">Police du titre</span>
+              <select
+                value={palette.heroFontId}
+                onChange={(e) => setField("heroFontId", e.target.value)}
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[12px] outline-none focus:border-terracotta-500"
+              >
+                <option value="">Police du site (Fraunces)</option>
+                {Object.entries(
+                  HERO_FONTS.reduce<Record<string, typeof HERO_FONTS>>((acc, f) => {
+                    (acc[f.category] ??= []).push(f);
+                    return acc;
+                  }, {}),
+                ).map(([category, fonts]) => (
+                  <optgroup key={category} label={category}>
+                    {fonts.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          </div>
+          {palette.heroFontId && getHeroFont(palette.heroFontId) && (
+            <p
+              className="mt-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-[13px] text-neutral-500"
+              style={{
+                fontFamily: getHeroFont(palette.heroFontId)!.fontFamily,
+                fontStyle: getHeroFont(palette.heroFontId)!.italic ? "italic" : "normal",
+                fontSize: "22px",
+                color: "#232326",
+              }}
+            >
+              Aperçu — {(answers["couple.prenoms"] as string | undefined) || "Prénom & Prénom"}
+            </p>
+          )}
         </div>
       </div>
 

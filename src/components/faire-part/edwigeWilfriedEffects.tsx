@@ -115,6 +115,13 @@ export type BespokePalette = {
   stdSaveTheDateCardBg: string
   stdNamesDateTextColor: string
   stdNamesDateCardBg: string
+  /**
+   * Décor du hero — cf. src/components/hero-scrub/heroDecor.ts. Chaîne
+   * vide = aucun décor / police du site (Fraunces). `heroFontId` ne
+   * change QUE le titre du hero (segments), pas l'eyebrow/lead/sub.
+   */
+  heroOverlayGraphic: string
+  heroFontId: string
 }
 
 export const EW_PALETTE: BespokePalette = {
@@ -148,6 +155,8 @@ export const EW_PALETTE: BespokePalette = {
   stdSaveTheDateCardBg: '',
   stdNamesDateTextColor: '',
   stdNamesDateCardBg: '',
+  heroOverlayGraphic: '',
+  heroFontId: '',
 }
 
 function darken(hex: string, amount: number): string {

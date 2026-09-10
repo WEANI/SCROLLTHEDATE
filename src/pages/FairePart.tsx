@@ -10,6 +10,7 @@ import DetailsSombre, { parseFaqItem, parseProgrammeItem } from '@/components/fa
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { HERO_THEMES } from '@/components/hero-scrub/themes'
 import type { HeroChapter } from '@/components/hero-scrub/types'
+import { getHeroFont, useGoogleFont } from '@/components/hero-scrub/heroDecor'
 import {
   BespokePaletteProvider,
   DressCodeCard,
@@ -117,6 +118,12 @@ export default function FairePart() {
 
   const invite = query.data
   const palette = (invite?.palette as BespokePalette | null) ?? EW_PALETTE
+  // Police du titre du hero (Studio → Palette & Hero → "Police du titre",
+  // cf. heroDecor.ts) — charge UNIQUEMENT celle choisie par ce projet.
+  // `undefined` (rien choisi) : useGoogleFont ne fait rien, HeroScrub
+  // retombe sur la police du site (Fraunces).
+  const heroFont = getHeroFont(palette.heroFontId)
+  useGoogleFont(palette.heroFontId)
   // Save the date : page dédiée bien plus courte — hero + footer
   // uniquement, pas de corps (programme/lieu/RSVP/menu/FAQ…), cf. échange
   // du 07/09/2026. `product` vient de orders.product (getPublicInvite),
@@ -524,6 +531,8 @@ export default function FairePart() {
               trackHeightVh={800}
               tailVh={100}
               ariaLabel={`Save the date — ${coupleNames}`}
+              overlayGraphic={palette.heroOverlayGraphic || undefined}
+              fontFamily={heroFont?.fontFamily}
             />
             {invite.status !== 'DELIVERED' && <PreviewWatermark />}
           </div>
@@ -556,6 +565,8 @@ export default function FairePart() {
           trackHeightVh={800}
           tailVh={100}
           ariaLabel={`Faire-part — ${coupleNames}`}
+          overlayGraphic={palette.heroOverlayGraphic || undefined}
+          fontFamily={heroFont?.fontFamily}
         />
         {invite.status !== 'DELIVERED' && <PreviewWatermark />}
       </div>

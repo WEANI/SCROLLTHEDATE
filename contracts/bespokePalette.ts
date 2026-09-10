@@ -81,6 +81,12 @@ export const bespokePaletteSchema = z.object({
   stdSaveTheDateCardBg: z.string().default(""),
   stdNamesDateTextColor: z.string().default(""),
   stdNamesDateCardBg: z.string().default(""),
+  // Décor du hero — cf. src/components/hero-scrub/heroDecor.ts (bibliothèque
+  // ajoutée le 10/09/2026). Chaîne vide = aucun décor / police du site
+  // (Fraunces), comportement inchangé. `heroFontId` ne change QUE le titre
+  // du hero (segments), pas l'eyebrow/lead/sub — cf. doc de heroDecor.ts.
+  heroOverlayGraphic: z.string().default(""),
+  heroFontId: z.string().default(""),
 });
 
 export type BespokePaletteInput = z.infer<typeof bespokePaletteSchema>;
