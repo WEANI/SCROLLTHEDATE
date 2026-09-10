@@ -6,6 +6,8 @@ import Login from '@/pages/Login'
 import DefinirMotDePasse from '@/pages/DefinirMotDePasse'
 import NotFound from '@/pages/NotFound'
 import Offres from '@/pages/Offres'
+import FairePartDigital from '@/pages/FairePartDigital'
+import SaveTheDateDigital from '@/pages/SaveTheDateDigital'
 import Commander from '@/pages/Commander'
 import Merci from '@/pages/Merci'
 import MentionsLegales from '@/pages/MentionsLegales'
@@ -79,6 +81,8 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="offres" element={<Offres />} />
+          <Route path="faire-part-digital" element={<FairePartDigital />} />
+          <Route path="save-the-date-digital" element={<SaveTheDateDigital />} />
           <Route path="commander" element={<Commander />} />
           <Route path="merci" element={<Merci />} />
           <Route path="demo" element={<Demo />} />
