@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { adminQuery, authedQuery, createRouter, publicQuery } from "./middleware";
 import { projectStatusEnum, templateEnum } from "./ordersRouter";
-import { bespokePaletteSchema, heroChaptersSchema } from "../contracts/bespokePalette";
+import { bespokePaletteSchema, heroChaptersSchema, heroCustomCardsSchema } from "../contracts/bespokePalette";
 import { QUESTIONNAIRE_KEYS } from "../contracts/questionnaireKeys";
 import {
   findAllProjects,
@@ -13,6 +13,7 @@ import {
   findProjectProduct,
   findProjectsSummaryByUser,
   updateProjectHeroChapters,
+  updateProjectHeroCustomCards,
   updateProjectPalette,
   updateProjectStatus,
   updateProjectTemplate,
@@ -138,6 +139,11 @@ export const projectsRouter = createRouter({
         // (Phase 4) doit alors retomber sur une palette par défaut sobre.
         palette: project.palette,
         heroChapters: project.heroChapters,
+        // Cartes de texte overlay libres, ajoutées à la main par le studio
+        // en plus des chapitres fixes ci-dessus — cf. commentaire sur la
+        // colonne, db/schema.ts. `[]` par défaut (jamais `null` renvoyé,
+        // pour que FairePart.tsx puisse toujours faire `.map()` sans test).
+        heroCustomCards: (project.heroCustomCards as { id: string; fromSec: number; toSec: number; text: string }[] | null) ?? [],
       };
     }),
 
@@ -280,6 +286,25 @@ export const projectsRouter = createRouter({
       }
       await updateProjectHeroChapters(input.projectId, input.heroChapters);
       await logAudit(input.projectId, actorOf(ctx.user), "project.hero_chapters_changed", {});
+      return { success: true };
+    }),
+
+  // Cartes de texte overlay LIBRES, en plus des chapitres fixes ci-dessus —
+  // cf. commentaire sur la colonne, db/schema.ts. Aucune contrainte de
+  // longueur liée au produit (contrairement à adminSetHeroChapters) : un
+  // faire-part comme un save the date peuvent en avoir 0 à 10.
+  adminSetHeroCustomCards: adminQuery
+    .input(
+      z.object({
+        projectId: z.number().int().positive(),
+        heroCustomCards: heroCustomCardsSchema,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const project = await findProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+      await updateProjectHeroCustomCards(input.projectId, input.heroCustomCards);
+      await logAudit(input.projectId, actorOf(ctx.user), "project.hero_custom_cards_changed", {});
       return { success: true };
     }),
 });

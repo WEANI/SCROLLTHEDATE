@@ -117,3 +117,25 @@ export type HeroChaptersInput = z.infer<typeof heroChaptersSchema>;
 export type HeroChaptersFairePartInput = z.infer<typeof heroChaptersFairePartSchema>;
 /** Variante à 2 éléments — typage précis pour l'éditeur de timings save the date (StudioPanel). */
 export type HeroChaptersSaveTheDateInput = z.infer<typeof heroChaptersSaveTheDateSchema>;
+
+/**
+ * Carte de texte overlay LIBRE — en plus des chapitres fixes ci-dessus
+ * (ouverture/détails/clôture ou "Save the date"/prénoms+date), ajoutée à la
+ * main par le studio pour personnaliser un projet au-delà de cette
+ * structure figée (cf. échange du 10/09/2026). `text` : contenu libre,
+ * jamais dérivé du questionnaire — contrairement aux chapitres fixes.
+ * `id` : chaîne stable côté client (généré à l'ajout, cf. StudioPanel),
+ * sert de clé React et distingue chaque carte dans le tableau, y compris
+ * après réordonnancement/suppression.
+ */
+export const heroCustomCardSchema = z.object({
+  id: z.string().min(1),
+  fromSec: z.number().min(0),
+  toSec: z.number().min(0),
+  text: z.string().min(1).max(280),
+});
+/** Plafonné à 10 : au-delà, plus un outil de personnalisation qu'un risque réel côté produit — évite un payload sans limite. */
+export const heroCustomCardsSchema = z.array(heroCustomCardSchema).max(10);
+
+export type HeroCustomCard = z.infer<typeof heroCustomCardSchema>;
+export type HeroCustomCardsInput = z.infer<typeof heroCustomCardsSchema>;

@@ -196,4 +196,12 @@ export async function updateProjectHeroChapters(
   await getDb().update(projects).set({ heroChapters }).where(eq(projects.id, projectId));
 }
 
+/** Cartes de texte overlay libres, en plus des chapitres fixes — cf. commentaire sur la colonne, db/schema.ts. */
+export async function updateProjectHeroCustomCards(
+  projectId: number,
+  heroCustomCards: { id: string; fromSec: number; toSec: number; text: string }[],
+) {
+  await getDb().update(projects).set({ heroCustomCards }).where(eq(projects.id, projectId));
+}
+
 export type ProjectStatus = Project["status"];

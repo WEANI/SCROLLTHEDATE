@@ -170,9 +170,13 @@ export default function FairePart() {
     invite?.heroChapters && Array.isArray(invite.heroChapters) && invite.heroChapters.length === expectedChapterCount
       ? (invite.heroChapters as { fromSec: number; toSec: number }[])
       : null
+  // Cartes de texte overlay libres (Studio → Palette & Hero) — leurs
+  // timings sont eux aussi en secondes (mêmes raisons que studioChapters
+  // ci-dessus), donc elles ont besoin de `videoDuration` au même titre.
+  const hasCustomCards = !!invite?.heroCustomCards && invite.heroCustomCards.length > 0
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
   useEffect(() => {
-    if (!invite || !studioChapters) return
+    if (!invite || !(studioChapters || hasCustomCards)) return
     // Mode "frames" (cf. api/lib/videoFrames.ts) : `heroVideoUrl` pointe sur
     // la 1ère image (valeur de compat), pas un fichier vidéo — une sonde
     // <video> dessus ne charge jamais de métadonnées, `onloadedmetadata` ne
@@ -192,7 +196,7 @@ export default function FairePart() {
       probe.onloadedmetadata = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invite?.heroVideoUrl, invite?.heroFrames, !!studioChapters])
+  }, [invite?.heroVideoUrl, invite?.heroFrames, !!studioChapters, hasCustomCards])
 
   // Aspect ratio réel de la photo d'ouverture — inconnu à l'avance
   // (contrairement aux couples câblés en dur, dont le fichier et son
@@ -227,7 +231,7 @@ export default function FairePart() {
     }
   }, [invite, theme.colorScheme])
 
-  if (query.isLoading || (studioChapters && videoDuration === null)) {
+  if (query.isLoading || ((studioChapters || hasCustomCards) && videoDuration === null)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-anthracite-950">
         <Loader2 className="animate-spin text-terracotta-500" size={28} />
@@ -326,7 +330,7 @@ export default function FairePart() {
     invite.menuPlat.length > 0 ||
     invite.menuDessert.length > 0
 
-  const chapters: HeroChapter[] = isStd
+  const baseChapters: HeroChapter[] = isStd
     ? // Save the date — 2 chapitres fixes (cf. échange du 07/09/2026) :
       // "Save the date" seul, puis les prénoms (une ligne, "&") + la date
       // juste en dessous. Pas de repli à 1 chapitre unique quand les
@@ -472,6 +476,25 @@ export default function FairePart() {
             },
           ]
         : []
+
+  // Cartes de texte overlay libres (Studio → Palette & Hero), en plus des
+  // chapitres fixes ci-dessus — texte tel quel (`lead`, un paragraphe
+  // libre sans mise en forme de titre imposée), converties en ratio [0,1]
+  // comme les chapitres fixes. `id` décalé à 1000+ : ne doit jamais
+  // entrer en collision avec les id 0/1/2 des chapitres fixes ci-dessus
+  // (utilisés comme clé React, cf. HeroScrub.tsx). Ignorées tant que
+  // `videoDuration` n'est pas connu (cf. hasCustomCards plus haut, qui
+  // bloque déjà le chargement de la page dans ce cas).
+  const customChapters: HeroChapter[] = videoDuration
+    ? (invite.heroCustomCards ?? []).map((card, i) => ({
+        id: 1000 + i,
+        kind: 'text' as const,
+        from: card.fromSec / videoDuration,
+        to: card.toSec / videoDuration,
+        lead: card.text,
+      }))
+    : []
+  const chapters: HeroChapter[] = [...baseChapters, ...customChapters]
 
   // Save the date : page dédiée — hero + footer uniquement, aucune des
   // sections de corps ci-dessous (PayloadSection/DetailsSombre/Photos/

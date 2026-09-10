@@ -10,6 +10,7 @@ import type {
   BespokePaletteInput,
   HeroChaptersFairePartInput,
   HeroChaptersSaveTheDateInput,
+  HeroCustomCard,
 } from "@contracts/bespokePalette";
 import { QUESTIONNAIRE_KEYS } from "@contracts/questionnaireKeys";
 import {
@@ -978,6 +979,131 @@ function ColorField({
   );
 }
 
+/**
+ * Cartes de texte overlay LIBRES, en plus des chapitres fixes du hero —
+ * commune aux 2 produits (rendue dans PaletteHeroEditor pour un faire-part,
+ * SaveTheDateEditor pour un save the date), cf. doc de
+ * contracts/bespokePalette.ts::heroCustomCardsSchema. Pas de capture
+ * depuis une vidéo/frame ici (contrairement aux timings des chapitres
+ * fixes, juste au-dessus dans les deux onglets) : l'admin lit l'instant
+ * sur l'aperçu déjà affiché plus haut dans le même onglet et le saisit ici
+ * au clavier — évite de tripler la logique d'aperçu vidéo/frames pour un
+ * réglage secondaire.
+ */
+function CustomCardsEditor({ project }: { project: Project360 }) {
+  const utils = trpc.useUtils();
+  const existing = (project.heroCustomCards as HeroCustomCard[] | null) ?? [];
+  const [cards, setCards] = useState<HeroCustomCard[]>(existing);
+
+  const addCard = () =>
+    setCards((prev) => [
+      ...prev,
+      { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "" },
+    ]);
+  const removeCard = (id: string) => setCards((prev) => prev.filter((c) => c.id !== id));
+  const updateCard = (id: string, patch: Partial<HeroCustomCard>) =>
+    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+
+  const save = trpc.projects.adminSetHeroCustomCards.useMutation({
+    onSuccess: () => {
+      utils.projects.adminGet.invalidate({ projectId: project.id });
+      toast.success("Cartes de texte enregistrées");
+    },
+    onError: () => toast.error("Échec de l'enregistrement des cartes"),
+  });
+  const submit = () => {
+    if (cards.some((c) => !c.text.trim())) {
+      toast.error("Chaque carte doit avoir un texte.");
+      return;
+    }
+    save.mutate({ projectId: project.id, heroCustomCards: cards });
+  };
+
+  return (
+    <div className="border-t border-neutral-200 pt-6">
+      <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+        Cartes de texte personnalisées
+      </h3>
+      <p className="mb-4 text-[12px] text-neutral-500">
+        En plus des chapitres fixes ci-dessus — un texte libre de votre choix, positionné à l'instant que vous
+        voulez. Repérez l'instant sur l'aperçu vidéo plus haut, puis saisissez-le ici.
+      </p>
+
+      {cards.length > 0 && (
+        <div className="space-y-3">
+          {cards.map((card) => (
+            <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+              <div className="flex items-start gap-3">
+                <textarea
+                  value={card.text}
+                  onChange={(e) => updateCard(card.id, { text: e.target.value })}
+                  placeholder="Votre texte…"
+                  rows={2}
+                  maxLength={280}
+                  className="flex-1 resize-y rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[13px] outline-none focus:border-terracotta-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCard(card.id)}
+                  aria-label="Retirer cette carte"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">Début (s)</span>
+                  <input
+                    type="number"
+                    step={0.1}
+                    min={0}
+                    value={card.fromSec}
+                    onChange={(e) => updateCard(card.id, { fromSec: Number(e.target.value) })}
+                    className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">Fin (s)</span>
+                  <input
+                    type="number"
+                    step={0.1}
+                    min={0}
+                    value={card.toSec}
+                    onChange={(e) => updateCard(card.id, { toSec: Number(e.target.value) })}
+                    className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
+                  />
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 flex items-center justify-between">
+        <button
+          type="button"
+          disabled={cards.length >= 10}
+          onClick={addCard}
+          className="flex items-center gap-2 rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12px] font-semibold text-neutral-500 transition-colors hover:border-terracotta-400 hover:text-terracotta-500 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Plus size={14} />
+          Ajouter une carte
+        </button>
+        <button
+          type="button"
+          disabled={save.isPending}
+          onClick={submit}
+          className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
+        >
+          {save.isPending && <Loader2 size={14} className="animate-spin" />}
+          Enregistrer les cartes
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PaletteHeroEditor({ project }: { project: Project360 }) {
   const utils = trpc.useUtils();
   const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
@@ -1499,6 +1625,12 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
         </div>
       </div>
       )}
+
+      {/* Communes aux 2 produits — cf. doc de CustomCardsEditor. Rendu ici
+          (Palette & Hero, seul onglet commun à faire-part et save the
+          date) plutôt que dupliqué aussi dans l'onglet Save the Date, pour
+          n'avoir qu'un seul endroit où les gérer. */}
+      <CustomCardsEditor project={project} />
     </section>
   );
 }

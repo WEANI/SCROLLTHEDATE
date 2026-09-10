@@ -186,6 +186,14 @@ export const projects = pgTable(
     // montage livré, le contenu textuel de chaque chapitre étant lui
     // généré depuis le questionnaire (Phase 3) ou fixe ("Save the date").
     heroChapters: jsonb("heroChapters"),
+    // heroCustomCards : cartes de texte overlay LIBRES, ajoutées à la main
+    // par le studio (cf. contracts/bespokePalette.ts::heroCustomCardsSchema)
+    // — en plus des chapitres fixes ci-dessus (ouverture/détails/clôture ou
+    // "Save the date"/prénoms+date), pour personnaliser un projet au-delà
+    // de cette structure figée (cf. échange du 10/09/2026). `[]`/`null` =
+    // aucune, comportement inchangé. Texte libre, pas dérivé du
+    // questionnaire — contrairement aux chapitres fixes.
+    heroCustomCards: jsonb("heroCustomCards"),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),
