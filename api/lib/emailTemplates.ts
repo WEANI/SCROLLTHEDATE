@@ -69,28 +69,39 @@ export function orderConfirmationEmail(params: {
    * alors simplement le lien vers l'espace.
    */
   setPasswordUrl?: string | null;
+  /**
+   * Commande "sur un modèle" (cf. contracts/saveTheDateTemplates.ts) livrée
+   * instantanément par le webhook Stripe, plutôt qu'un projet "sur mesure"
+   * qui démarre par le questionnaire — présent seulement dans ce cas.
+   * Change le corps du message ("votre page est prête", pas "prochaine
+   * étape : le questionnaire") et ajoute un bouton direct vers la page,
+   * en plus de l'activation d'espace habituelle.
+   */
+  publicUrl?: string;
 }): EmailMessage {
   const amount = (params.amountCents / 100).toLocaleString("fr-FR", {
     style: "currency",
     currency: "EUR",
   });
   const isGuest = Boolean(params.setPasswordUrl);
+  const isTemplate = Boolean(params.publicUrl);
   const ctaUrl = params.setPasswordUrl ?? espaceUrl();
   const ctaLabel = isGuest ? "Activer mon espace" : "Accéder à mon espace";
-  const subject = `Commande confirmée — ${params.orderRef}`;
+  const subject = isTemplate ? `Votre page est prête — ${params.orderRef}` : `Commande confirmée — ${params.orderRef}`;
+  const bodyCopy = isTemplate
+    ? "Votre page Save the Date est déjà prête, avec vos prénoms et votre date — plus rien à faire de votre côté."
+    : isGuest
+      ? "Votre place est réservée dans notre planning de production. Dernière étape pour activer votre espace : choisissez votre mot de passe. Vous pourrez ensuite remplir le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J."
+      : "Votre place est réservée dans notre planning de production. Prochaine étape : le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J.";
   const html = wrap({
     preheader: `Votre commande ${params.orderRef} est confirmée (${amount}).`,
     bodyHtml: `
-      <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.accent};">Commande confirmée</p>
+      <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.accent};">${isTemplate ? "Page prête" : "Commande confirmée"}</p>
       <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:400;font-size:26px;line-height:1.2;color:${BRAND.ink};">Merci${params.coupleNames ? `, ${params.coupleNames}` : ""} !</h1>
       <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:${BRAND.inkSoft};">Référence : <strong style="color:${BRAND.ink};">${params.orderRef}</strong> — ${amount}</p>
-      <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:${BRAND.inkSoft};">
-        ${
-          isGuest
-            ? "Votre place est réservée dans notre planning de production. Dernière étape pour activer votre espace : choisissez votre mot de passe. Vous pourrez ensuite remplir le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J."
-            : "Votre place est réservée dans notre planning de production. Prochaine étape : le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J."
-        }
-      </p>
+      <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:${BRAND.inkSoft};">${bodyCopy}</p>
+      ${params.publicUrl ? button("Voir ma page", params.publicUrl) : ""}
+      ${isTemplate ? `<div style="height:12px;"></div>` : ""}
       ${button(ctaLabel, ctaUrl)}
       ${
         isGuest
@@ -101,14 +112,10 @@ export function orderConfirmationEmail(params: {
   });
   const text = `Merci${params.coupleNames ? `, ${params.coupleNames}` : ""} !
 
-Commande confirmée — ${params.orderRef} (${amount}).
+${isTemplate ? "Page prête" : "Commande confirmée"} — ${params.orderRef} (${amount}).
 
-${
-  isGuest
-    ? "Votre place est réservée dans notre planning de production. Dernière étape pour activer votre espace : choisissez votre mot de passe. Vous pourrez ensuite remplir le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J."
-    : "Votre place est réservée dans notre planning de production. Prochaine étape : le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J."
-}
-
+${bodyCopy}
+${params.publicUrl ? `\nVoir ma page : ${params.publicUrl}\n` : ""}
 ${ctaLabel} : ${ctaUrl}
 ${isGuest ? "\nCe lien est personnel et à usage unique. S'il a expiré, utilisez « Mot de passe oublié » depuis la page de connexion avec cette même adresse email.\n" : ""}
 — Scroll The Date`;

@@ -186,46 +186,38 @@ export default function SaveTheDateDigital() {
               </Link>
             </FadeUp>
 
-            {/* Formule template — 99 €, bibliothèque consultable depuis le
-                11/09/2026 (premier modèle : Red Door), commande directe pas
-                encore câblée — cf. doc de src/data/saveTheDateTemplates.ts.
-                D'où le badge "Bientôt en commande" (pas "Bientôt
-                disponible" : les modèles, eux, sont déjà consultables) et
-                le lien vers la bibliothèque à la place du bouton
-                Commander. */}
-            <FadeUp delay={0.1} className="relative rounded-2xl border border-anthracite-700/60 bg-anthracite-800/20 p-8 opacity-80 lg:p-10">
-              <span className="absolute -top-3.5 left-8 rounded-full bg-anthracite-700 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80">
-                Bientôt en commande
-              </span>
-              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/50">Sur un modèle</p>
-              <p className="font-display tabular mt-3 text-[2.2rem] font-light text-white/70">
+            {/* Formule template — 99 €, commande directe câblée le
+                12/09/2026 (choix du modèle dans la bibliothèque, paiement
+                dans /commander?modele=…) — cf. doc de
+                contracts/saveTheDateTemplates.ts. Plus de badge "bientôt" :
+                le parcours est live, au même titre que "Sur mesure". */}
+            <FadeUp delay={0.1} className="relative rounded-2xl border border-anthracite-700/60 bg-anthracite-800/40 p-8 lg:p-10">
+              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">Sur un modèle</p>
+              <p className="font-display tabular mt-3 text-[2.2rem] font-light text-terracotta-300">
                 {formatEuros(9900)}
               </p>
-              <p className="font-display mt-2 text-lg font-normal italic text-white/60">
+              <p className="font-display mt-2 text-lg font-normal italic text-white/85">
                 Un modèle qui vous plaît, prêt en quelques minutes.
               </p>
               <ul className="mt-7 flex flex-col gap-3.5">
                 {[
                   { icon: Layout, text: 'Vous choisissez parmi une sélection de modèles déjà montés' },
-                  { icon: PenLine, text: 'Vous renseignez vos prénoms, la date et une courte phrase' },
-                  { icon: Sparkles, text: 'Votre Save the Date est généré immédiatement, sans questionnaire' },
+                  { icon: PenLine, text: 'Vous renseignez vos prénoms et votre date' },
+                  { icon: Sparkles, text: 'Votre page est en ligne dès le paiement confirmé, sans questionnaire' },
                 ].map((f) => (
-                  <li key={f.text} className="flex items-start gap-3 text-[14px] leading-[1.55] text-white/50">
-                    <f.icon size={17} className="mt-0.5 shrink-0 text-white/40" aria-hidden />
+                  <li key={f.text} className="flex items-start gap-3 text-[14px] leading-[1.55] text-white/75">
+                    <f.icon size={17} className="mt-0.5 shrink-0 text-terracotta-500" aria-hidden />
                     {f.text}
                   </li>
                 ))}
               </ul>
               <Link
                 to="/save-the-date-modeles"
-                className="mt-9 inline-flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.1em] text-white/80 transition-colors hover:text-white"
+                className="mt-9 inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-7 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
               >
                 Voir les modèles
                 <span aria-hidden>→</span>
               </Link>
-              <p className="mt-3 text-[12px] text-white/40">
-                La commande directe depuis un modèle arrive bientôt — écrivez-nous si vous voulez être prévenu·e.
-              </p>
             </FadeUp>
           </div>
         </div>

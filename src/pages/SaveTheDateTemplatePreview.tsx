@@ -6,7 +6,11 @@ import { trpc } from '@/providers/trpc'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { getHeroFont, useGoogleFont } from '@/components/hero-scrub/heroDecor'
 import { useSeo } from '@/hooks/useSeo'
-import { parseTemplateOverrides, resolveSaveTheDateTemplate } from '@/data/saveTheDateTemplates'
+import { formatEuros } from '@/components/commerce/pricing'
+import { parseTemplateOverrides, resolveSaveTheDateTemplate } from '@contracts/saveTheDateTemplates'
+
+/** Prix fixe "sur un modèle", cf. TEMPLATE_PRICE_CENTS (api/ordersRouter.ts) — dupliqué à dessein, ce fichier reste pur frontend et ne peut pas importer de code serveur. */
+const TEMPLATE_PRICE_CENTS = 9900
 
 /**
  * Invite à défiler — sans elle, un visiteur qui arrive sur un aperçu de
@@ -46,7 +50,7 @@ function ScrollHint() {
 
 /**
  * Aperçu plein écran d'UN modèle Save the Date — cf. doc de
- * src/data/saveTheDateTemplates.ts. Structure calquée sur la page save the
+ * contracts/saveTheDateTemplates.ts. Structure calquée sur la page save the
  * date dédiée d'un vrai projet (cf. FairePart.tsx, branche `isStd` : hero
  * HeroScrub + footer léger, aucun corps de page) puisque c'est exactement
  * l'expérience que ce modèle donnera une fois un vrai projet créé à partir
@@ -59,7 +63,7 @@ function ScrollHint() {
 export default function SaveTheDateTemplatePreview() {
   const { slug } = useParams<{ slug: string }>()
   // Textes/timings pilotables depuis Réglages → Modèles Save the Date, cf.
-  // doc de src/data/saveTheDateTemplates.ts.
+  // doc de contracts/saveTheDateTemplates.ts.
   const overridesQ = trpc.settings.get.useQuery({ key: 'saveTheDateTemplates' })
   const template = resolveSaveTheDateTemplate(slug, parseTemplateOverrides(overridesQ.data?.value))
   // Police du titre du hero (bibliothèque "mariage", cf. heroDecor.ts) —
@@ -123,26 +127,32 @@ export default function SaveTheDateTemplatePreview() {
         <p className="font-display text-[26px] italic text-white sm:text-[32px]">{template.name}</p>
         <p className="mx-auto mt-3 max-w-md text-[14px] leading-[1.6] text-white/55">{template.description}</p>
         <p className="mx-auto mt-6 max-w-md text-[13px] leading-[1.6] text-white/40">
-          Ce modèle vous plaît ? La commande directe depuis ce modèle arrive bientôt — écrivez-nous en attendant,
-          on vous prévient dès que c'est ouvert.
+          Prix unique, quel que soit le nombre d'invités. Vos prénoms et votre date remplacent ceux de l'exemple —
+          votre page est prête en quelques minutes.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <Link
+            to={`/commander?produit=save-the-date&modele=${template.slug}`}
+            className="inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
+          >
+            Commander ce modèle — {formatEuros(TEMPLATE_PRICE_CENTS)}
+          </Link>
           <a
             href="https://wa.me/33600000000"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
+            className="inline-flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.1em] text-white/70 transition-colors hover:text-white"
           >
-            <MessageCircle size={16} />
-            Être prévenu·e
+            <MessageCircle size={15} />
+            Une question ?
           </a>
-          <Link
-            to="/save-the-date-modeles"
-            className="text-[13px] font-semibold uppercase tracking-[0.1em] text-white/70 transition-colors hover:text-white"
-          >
-            Voir les autres modèles
-          </Link>
         </div>
+        <Link
+          to="/save-the-date-modeles"
+          className="mt-6 inline-block text-[12px] font-medium text-white/40 transition-colors hover:text-white/70"
+        >
+          Voir les autres modèles
+        </Link>
       </footer>
     </div>
   )

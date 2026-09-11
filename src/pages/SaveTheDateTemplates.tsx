@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { Play } from 'lucide-react'
 import { trpc } from '@/providers/trpc'
 import { useSeo } from '@/hooks/useSeo'
-import { parseTemplateOverrides, resolveSaveTheDateTemplates } from '@/data/saveTheDateTemplates'
+import { parseTemplateOverrides, resolveSaveTheDateTemplates } from '@contracts/saveTheDateTemplates'
 
 /**
  * Durée de l'aperçu en boucle sur la carte — volontairement court (cf.
@@ -17,7 +17,7 @@ const CARD_PREVIEW_SECONDS = 5
 /**
  * Bibliothèque de modèles Save the Date « sur un modèle » (99 €, cf.
  * SaveTheDateDigital.tsx) — index public des montages déjà prêts, cf. doc
- * de src/data/saveTheDateTemplates.ts pour le contexte complet. Reste dans
+ * de contracts/saveTheDateTemplates.ts pour le contexte complet. Reste dans
  * le Layout public (Navbar/Footer), même principe que DemoFairePart.tsx :
  * un sommaire qui renvoie vers l'aperçu plein écran de chaque modèle
  * (SaveTheDateTemplatePreview.tsx), pas un modèle en lui-même.
@@ -35,7 +35,7 @@ export default function SaveTheDateTemplates() {
   })
 
   // Textes/timings pilotables depuis Réglages → Modèles Save the Date (cf.
-  // doc de src/data/saveTheDateTemplates.ts) — repli silencieux sur les
+  // doc de contracts/saveTheDateTemplates.ts) — repli silencieux sur les
   // défauts codés en dur tant que la requête n'a pas répondu ou si aucune
   // surcharge n'a jamais été enregistrée.
   const overridesQ = trpc.settings.get.useQuery({ key: 'saveTheDateTemplates' })

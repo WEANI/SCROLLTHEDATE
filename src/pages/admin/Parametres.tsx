@@ -46,7 +46,7 @@ import {
   parseTemplateOverrides,
   templateDurationSec,
   type SaveTheDateTemplateOverride,
-} from "@/data/saveTheDateTemplates";
+} from "@contracts/saveTheDateTemplates";
 import {
   HERO_OVERLAY_GRAPHICS,
   HERO_FONTS,
@@ -639,7 +639,7 @@ function ColorField({
  * la bibliothèque ajoutée récemment" — décor/police/animation/filtre de
  * src/components/hero-scrub/heroDecor.ts, jusque-là jamais branchés sur
  * les modèles). Vidéo, séquence d'images et thème de base (fond/accent du
- * cadre) restent codés en dur dans src/data/saveTheDateTemplates.ts — pas
+ * cadre) restent codés en dur dans contracts/saveTheDateTemplates.ts — pas
  * encore d'upload de nouveau modèle depuis l'admin, seulement l'édition de
  * ceux déjà livrés. Même mécanisme de stockage que Produits & prix
  * ci-dessus (clé `site_settings` dédiée, "saveTheDateTemplates").

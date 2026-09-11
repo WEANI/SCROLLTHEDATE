@@ -5,12 +5,21 @@ import { env } from "../lib/env";
 import {
   findOrderByStripeRef,
   findUserById,
+  getSiteSetting,
   updateOrderPaymentStatus,
 } from "../queries/orders";
+import { updateProjectStatus, updateProjectPalette, updateProjectHeroChapters } from "../queries/projects";
+import { addVideoVersion } from "../queries/domain";
+import { upsertQuestionnaire, markQuestionnaireSubmitted } from "../queries/questionnaire";
 import { logAudit, notifyUser } from "../queries/helpers";
 import { sendEmail } from "../lib/email";
 import { orderConfirmationEmail } from "../lib/emailTemplates";
 import { provisionAccountForGuest } from "../lib/guestAccount";
+import {
+  getSaveTheDateTemplate,
+  buildFulfillmentData,
+  parseTemplateOverrides,
+} from "../../contracts/saveTheDateTemplates";
 
 /** Même format que formatOrderNumber côté client (src/components/commerce/pricing.ts) — dupliqué à dessein, ce fichier reste pur frontend. */
 function formatOrderNumber(orderId: number, date: Date): string {
@@ -73,6 +82,46 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
         });
       }
 
+      // Commande "sur un modèle" (cf. contracts/saveTheDateTemplates.ts) :
+      // livraison instantanée ICI, au paiement confirmé — jamais avant
+      // (cf. échange du 12/09/2026, pour ne jamais exposer une page
+      // "prête" pour un paiement abandonné). Une commande "sur mesure"
+      // (`templateSlug` absent) n'entre jamais dans ce bloc, comportement
+      // inchangé.
+      let publicUrl: string | undefined;
+      const templateSlug = pi.metadata?.templateSlug;
+      if (project && templateSlug) {
+        const template = getSaveTheDateTemplate(templateSlug);
+        if (template) {
+          const overrides = parseTemplateOverrides(await getSiteSetting<unknown>("saveTheDateTemplates"));
+          const { palette, heroChapters, video } = buildFulfillmentData(template, overrides[template.slug]);
+          await updateProjectPalette(project.id, palette as Record<string, string | boolean>);
+          await updateProjectHeroChapters(project.id, heroChapters);
+          await upsertQuestionnaire(project.id, { "couple.prenoms": pi.metadata?.names ?? "" }, 100);
+          await markQuestionnaireSubmitted(project.id);
+          await addVideoVersion({
+            projectId: project.id,
+            version: 1,
+            url: video.url,
+            posterUrl: video.posterUrl,
+            kind: "frames",
+            frameBaseUrl: video.frameBaseUrl,
+            frameCount: video.frameCount,
+            frameFps: video.frameFps,
+            watermark: false,
+            status: "final",
+          });
+          // Statut en dernier : une fois palette/chapitres/vidéo/questionnaire
+          // posés, pour qu'un visiteur qui rafraîchirait la page pendant ces
+          // quelques requêtes ne tombe jamais sur un "DELIVERED" incomplet.
+          await updateProjectStatus(project.id, "DELIVERED");
+          await logAudit(project.id, "system", "template.delivered", { templateSlug });
+          publicUrl = `${env.appUrl}/faire-part/${project.slug}`;
+        } else {
+          console.warn(`[stripe webhook] templateSlug "${templateSlug}" inconnu (commande ${order.id}) — projet non livré automatiquement`);
+        }
+      }
+
       const user = await findUserById(order.userId);
       if (user?.email) {
         // Checkout invité : le compte n'est créé qu'ici, une fois le paiement
@@ -86,6 +135,7 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
             orderRef: formatOrderNumber(order.id, order.createdAt),
             amountCents: order.amountCents,
             setPasswordUrl,
+            publicUrl,
           }),
         );
       }

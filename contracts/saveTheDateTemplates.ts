@@ -1,32 +1,82 @@
-import type { HeroChapter, HeroTheme } from '@/components/hero-scrub/types'
+import type { BespokePaletteInput, HeroChapterTiming, HeroVerticalAlign } from './bespokePalette'
 
 /**
  * Bibliothèque de modèles Save the Date « sur un modèle » (99 €, cf.
  * SaveTheDateDigital.tsx) — le client choisit un montage déjà prêt plutôt
  * que de répondre à un questionnaire, ne renseigne que ses prénoms/sa date.
  * Chantier débloqué le 11/09/2026 par l'arrivée du premier vrai montage
- * (« Red Door »), jusque-là bloqué faute de modèles réels à afficher.
+ * (« Red Door »).
  *
- * Étape volontairement limitée à la bibliothèque de consultation (cf.
- * échange du 11/09/2026) : pas encore de bouton de commande fonctionnel
- * pour cette formule — viendra une fois plusieurs modèles réunis et le
- * parcours de commande (choix du modèle dans /commander) défini.
+ * Déplacé de src/data/ vers contracts/ le 12/09/2026 : ce catalogue doit
+ * être importable À LA FOIS côté client (bibliothèque, aperçu, admin) ET
+ * côté serveur (webhook Stripe, ordersRouter — cf. `buildFulfillmentData`
+ * plus bas, qui transforme un modèle en contenu de projet réel une fois
+ * une commande payée). `contracts/` est déjà la frontière partagée du
+ * projet (cf. bespokePalette.ts, importé des deux côtés) ; `src/` est
+ * exclu de la compilation serveur (tsconfig.server.json::include). D'où
+ * `HeroTheme`/les chapitres redéfinis localement ci-dessous plutôt
+ * qu'importés de src/components/hero-scrub/types.ts — mêmes formes,
+ * structurellement compatibles avec les props de HeroScrub côté client.
  *
  * Le thème de chaque modèle est un objet `HeroTheme` autonome, PAS ajouté
  * au catalogue partagé de src/components/hero-scrub/themes.ts : ce
  * catalogue-là nourrit aussi le sélecteur d'ambiance du questionnaire pour
- * les vrais projets sur mesure, sans rapport avec ces modèles figés.
+ * les vrais projets sur mesure, sans rapport avec ces modèles figés. Une
+ * vraie commande passée sur un modèle n'a d'ailleurs pas besoin de ce
+ * thème complet : FairePart.tsx bascule déjà tout seul sur le thème
+ * partagé "cinema" (sombre) dès que `palette.bg` est un hex sombre (cf.
+ * `hasDarkBespokeBg`) — `buildFulfillmentData` ne pose que `palette.bg` +
+ * les couleurs par chapitre, jamais tout `HeroTheme`.
  *
- * Pilotage admin (ajouté le 12/09/2026, cf. échange "dis-moi où piloter
- * les textes overlay") : les textes/timings/position ci-dessous sont des
- * DÉFAUTS, remplaçables depuis Réglages → Modèles Save the Date sans
- * toucher au code. Stockés dans `site_settings` (clé "saveTheDateTemplates",
- * même mécanisme que products/options, cf. api/miscRouters.ts::
- * settingsRouter) sous la forme d'un tableau de `SaveTheDateTemplateOverride`
- * — un par `slug`. `resolveSaveTheDateTemplate(s)` fusionne cette
- * surcharge avec les défauts ci-dessous ; vidéo/frames/thème restent
- * toujours codés en dur (pas encore d'upload de modèle depuis l'admin).
+ * Pilotage admin (ajouté le 12/09/2026, cf. échanges "dis-moi où piloter
+ * les textes overlay" puis "gérer les couleurs... avec la bibliothèque") :
+ * les textes/timings/position/couleurs/décor ci-dessous sont des DÉFAUTS,
+ * remplaçables depuis Réglages → Modèles Save the Date sans toucher au
+ * code. Stockés dans `site_settings` (clé "saveTheDateTemplates", même
+ * mécanisme que products/options, cf. api/miscRouters.ts::settingsRouter)
+ * sous la forme d'un tableau de `SaveTheDateTemplateOverride` — un par
+ * `slug`. Vidéo/frames/thème restent toujours codés en dur (pas encore
+ * d'upload de modèle depuis l'admin).
  */
+
+export interface HeroTheme {
+  id: string
+  label: string
+  colorScheme: 'light' | 'dark'
+  frameBg: string
+  pageBg: string
+  vignette: string
+  accent: string
+  textPrimary: string
+  textSecondary: string
+  cardBg: string
+  cardBorder: string
+  cardShadow: string
+  dotInactive: string
+}
+
+/**
+ * Sous-ensemble de HeroChapter (src/components/hero-scrub/types.ts) —
+ * seuls les champs dont un modèle a besoin, structurellement compatible
+ * avec le vrai type (aucun champ en trop, aucun type de champ différent),
+ * donc assignable tel quel à `HeroScrub`'s `chapters` prop côté client
+ * sans jamais importer ce fichier `src/`.
+ */
+export interface TemplateHeroChapter {
+  id: number
+  kind: 'text' | 'list' | 'card'
+  from: number
+  to: number
+  segments?: { text: string; accent?: boolean }[]
+  titleSize?: 'md' | 'lg'
+  fitOneLine?: boolean
+  rule?: boolean
+  subLines?: string[]
+  subSize?: 'sm' | 'md'
+  textColorOverride?: string
+  cardBgOverride?: string
+  verticalAlign?: HeroVerticalAlign
+}
 
 const RED_DOOR_THEME: HeroTheme = {
   id: 'red-door',
@@ -55,15 +105,14 @@ export interface SaveTheDateTemplate {
   /** Vidéo source complète — repli historique requis par HeroScrub même en présence de `frames` (cf. types.ts). */
   desktopSrc: string
   posterSrc: string
-  chapters: HeroChapter[]
+  chapters: TemplateHeroChapter[]
   /**
    * Décor/police/animation/filtre — bibliothèque "mariage" ajoutée le
    * 11/09/2026 (cf. src/components/hero-scrub/heroDecor.ts), pilotable
-   * depuis le même onglet admin que les textes ci-dessus (échange du
-   * 12/09/2026). `undefined`/id inconnu = comportement par défaut de
-   * HeroScrub (aucun décor, police du site, fondu, aucun filtre) — jamais
-   * réglés dans le catalogue codé en dur ci-dessous, uniquement via la
-   * surcharge admin.
+   * depuis le même onglet admin que les textes ci-dessus. `undefined`/id
+   * inconnu = comportement par défaut de HeroScrub (aucun décor, police
+   * du site, fondu, aucun filtre) — jamais réglés dans le catalogue codé
+   * en dur ci-dessous, uniquement via la surcharge admin.
    */
   overlayGraphic?: string
   fontId?: string
@@ -82,12 +131,12 @@ export interface SaveTheDateTemplateOverride {
   name: string
   tagline: string
   description: string
-  /** 1er texte affiché ("Save the date" par défaut). */
+  /** 1er texte affiché ("Save the date" par défaut) — n'affecte QUE la page d'aperçu générique, pas une vraie commande (cf. doc de buildFulfillmentData). */
   chapter1Text: string
   chapter1FromSec: number
   chapter1ToSec: number
-  chapter1Position: 'top' | 'middle' | 'bottom'
-  /** Vide = couleur/fond par défaut du thème du modèle (jamais un héritage silencieux — cf. doc de cardBgOverride dans types.ts, même règle que pour un vrai projet). */
+  chapter1Position: HeroVerticalAlign
+  /** Vide = couleur/fond par défaut du thème du modèle (jamais un héritage silencieux — même règle que pour un vrai projet). */
   chapter1TextColor: string
   chapter1CardBg: string
   /** Prénoms d'exemple affichés dans la bibliothèque — jamais un vrai client (cf. doc de EXAMPLE_NAMES). */
@@ -95,7 +144,7 @@ export interface SaveTheDateTemplateOverride {
   exampleDate: string
   chapter2FromSec: number
   chapter2ToSec: number
-  chapter2Position: 'top' | 'middle' | 'bottom'
+  chapter2Position: HeroVerticalAlign
   chapter2TextColor: string
   chapter2CardBg: string
   /** cf. doc de SaveTheDateTemplate.overlayGraphic — vide = comportement par défaut. */
@@ -195,7 +244,7 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
   }
 }
 
-/** Fusionne le modèle codé en dur avec sa surcharge admin (si présente) — vidéo/frames/thème ne viennent jamais de la surcharge. */
+/** Fusionne le modèle codé en dur avec sa surcharge admin (si présente) — vidéo/frames/thème ne viennent jamais de la surcharge. Pour la page d'aperçu générique (couple d'exemple), PAS pour une vraie commande (cf. buildFulfillmentData). */
 export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDateTemplateOverride | undefined): SaveTheDateTemplate {
   if (!override) return template
   const duration = templateDurationSec(template)
@@ -205,10 +254,6 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
     name: override.name || template.name,
     tagline: override.tagline || template.tagline,
     description: override.description || template.description,
-    // Vide = aucun décor/police/animation/filtre (comportement par défaut
-    // de HeroScrub), jamais un héritage — même règle que pour un vrai
-    // projet (cf. doc de heroOverlayGraphic/heroFontId dans
-    // contracts/bespokePalette.ts).
     overlayGraphic: override.overlayGraphic || undefined,
     fontId: override.fontId || undefined,
     textAnimation: override.textAnimation || undefined,
@@ -222,8 +267,6 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         segments: [{ text: override.chapter1Text || 'Save the date' }],
         titleSize: 'lg',
         verticalAlign: override.chapter1Position,
-        // Vide = couleur/fond par défaut du thème — jamais un héritage
-        // silencieux (cf. doc du champ dans SaveTheDateTemplateOverride).
         textColorOverride: override.chapter1TextColor || undefined,
         cardBgOverride: override.chapter1CardBg || undefined,
       },
@@ -257,7 +300,7 @@ export function parseTemplateOverrides(raw: unknown): Record<string, SaveTheDate
   return out
 }
 
-/** Modèle unique, surcharge admin appliquée si présente pour ce slug. */
+/** Modèle unique, surcharge admin appliquée si présente pour ce slug — page d'aperçu générique. */
 export function resolveSaveTheDateTemplate(
   slug: string | undefined,
   overrides: Record<string, SaveTheDateTemplateOverride>,
@@ -270,4 +313,53 @@ export function resolveSaveTheDateTemplate(
 /** Tous les modèles, surcharges admin appliquées — pour la bibliothèque. */
 export function resolveSaveTheDateTemplates(overrides: Record<string, SaveTheDateTemplateOverride>): SaveTheDateTemplate[] {
   return SAVE_THE_DATE_TEMPLATES.map((t) => applyOverride(t, overrides[t.slug]))
+}
+
+/**
+ * Modèle + surcharge admin → contenu d'un VRAI projet (cf. doc en tête de
+ * fichier) — appelée UNIQUEMENT côté serveur (webhook Stripe), une fois
+ * une commande "sur un modèle" payée. Volontairement distincte
+ * d'`applyOverride` : ne construit ni texte d'exemple ni HeroTheme complet
+ * — seulement ce que project.palette/project.heroChapters attendent
+ * réellement (cf. FairePart.tsx, `hasDarkBespokeBg`/`effectiveHeroTheme`).
+ * Les vrais prénoms/la vraie date du client n'entrent PAS ici : ils vont
+ * dans `questionnaires.answers["couple.prenoms"]`/`projects.weddingDate`,
+ * lus par FairePart.tsx exactement comme pour un projet sur mesure.
+ */
+export function buildFulfillmentData(
+  template: SaveTheDateTemplate,
+  override: SaveTheDateTemplateOverride | undefined,
+): {
+  palette: Partial<BespokePaletteInput>
+  heroChapters: [HeroChapterTiming, HeroChapterTiming]
+  video: { url: string; posterUrl: string; frameBaseUrl: string; frameCount: number; frameFps: number }
+} {
+  const o = override ?? defaultOverrideFor(template)
+  return {
+    palette: {
+      // Déclenche `hasDarkBespokeBg` dans FairePart.tsx → bascule
+      // automatique sur le thème partagé "cinema" (sombre) + fond de page
+      // — sans jamais toucher au catalogue de thèmes partagé.
+      bg: template.theme.frameBg,
+      stdSaveTheDateTextColor: o.chapter1TextColor || '',
+      stdSaveTheDateCardBg: o.chapter1CardBg || '',
+      stdNamesDateTextColor: o.chapter2TextColor || '',
+      stdNamesDateCardBg: o.chapter2CardBg || '',
+      heroOverlayGraphic: o.overlayGraphic || '',
+      heroFontId: o.fontId || '',
+      heroTextAnimation: o.textAnimation || '',
+      heroFilter: o.filter || '',
+    },
+    heroChapters: [
+      { fromSec: o.chapter1FromSec, toSec: o.chapter1ToSec, position: o.chapter1Position },
+      { fromSec: o.chapter2FromSec, toSec: o.chapter2ToSec, position: o.chapter2Position },
+    ],
+    video: {
+      url: template.desktopSrc,
+      posterUrl: template.posterSrc,
+      frameBaseUrl: template.frames.baseUrl,
+      frameCount: template.frames.count,
+      frameFps: template.frames.fps,
+    },
+  }
 }

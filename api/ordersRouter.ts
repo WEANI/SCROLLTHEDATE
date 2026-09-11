@@ -15,8 +15,17 @@ import { actorOf, logAudit } from "./queries/helpers";
 import { createGuestUser, findUserByEmail } from "./queries/users";
 import { stripe, isStripeConfigured } from "./lib/stripe";
 import { allowRequest, clientIp } from "./lib/rateLimit";
+import { getSaveTheDateTemplate } from "../contracts/saveTheDateTemplates";
 
 export const productEnum = z.enum(["FAIRE_PART", "SAVE_THE_DATE"]);
+/**
+ * Commande "sur un modèle" (Red Door…) — prix fixe, aucune option add-on
+ * (révisions/sous-titres n'ont pas de sens sur un montage déjà figé livré
+ * instantanément), cf. échange du 12/09/2026. Volontairement indépendant
+ * de `site_settings.products` (149 € "sur mesure") : formule distincte,
+ * pas une variante du même produit.
+ */
+export const TEMPLATE_PRICE_CENTS = 9900;
 export const projectStatusEnum = z.enum([
   "ONBOARDING",
   "QUESTIONNAIRE",
@@ -58,6 +67,11 @@ export const ordersRouter = createRouter({
         // c'est l'adresse à laquelle le compte sera créé après paiement.
         // Ignoré si l'appelant est déjà authentifié — son compte fait foi.
         email: z.string().email().max(320).optional(),
+        // Commande "sur un modèle" (cf. contracts/saveTheDateTemplates.ts)
+        // plutôt que "sur mesure" — le webhook Stripe s'en sert pour livrer
+        // le projet instantanément une fois le paiement confirmé (cf.
+        // api/webhooks/stripe.ts).
+        templateSlug: z.string().min(1).max(100).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -67,6 +81,12 @@ export const ordersRouter = createRouter({
           message:
             "Le paiement en ligne n'est pas encore configuré. Contactez-nous pour finaliser votre commande.",
         });
+      }
+
+      if (input.templateSlug) {
+        if (input.product !== "SAVE_THE_DATE" || !getSaveTheDateTemplate(input.templateSlug)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Ce modèle n'existe pas." });
+        }
       }
 
       // Procédure publique depuis le passage au checkout invité : sans compte
@@ -108,10 +128,12 @@ export const ordersRouter = createRouter({
         createdGuest = !existing;
       }
 
-      const { amountCents, options } = await computeAmount(
-        input.product,
-        input.optionIds,
-      );
+      // "Sur un modèle" : prix fixe, aucune option — cf. doc de
+      // TEMPLATE_PRICE_CENTS. Sinon, prix/options habituels pilotés depuis
+      // Réglages → Produits & prix.
+      const { amountCents, options } = input.templateSlug
+        ? { amountCents: TEMPLATE_PRICE_CENTS, options: [] }
+        : await computeAmount(input.product, input.optionIds);
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amountCents,
@@ -128,6 +150,9 @@ export const ordersRouter = createRouter({
           userId: String(user.id),
           product: input.product,
           names: input.names ?? "",
+          // Lu par le webhook (payment_intent.succeeded) pour savoir s'il
+          // doit livrer le projet instantanément — cf. api/webhooks/stripe.ts.
+          templateSlug: input.templateSlug ?? "",
         },
       });
 

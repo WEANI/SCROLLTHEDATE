@@ -37,6 +37,10 @@ import {
   usePricing,
   type ProductId,
 } from '@/components/commerce/pricing'
+import { parseTemplateOverrides, resolveSaveTheDateTemplate } from '@contracts/saveTheDateTemplates'
+
+/** Prix fixe "sur un modèle", cf. TEMPLATE_PRICE_CENTS (api/ordersRouter.ts) — dupliqué à dessein, ce fichier reste pur frontend et ne peut pas importer de code serveur. */
+const TEMPLATE_PRICE_CENTS = 9900
 
 /* -------------------------------------------------------------------------- */
 /* Brouillon de commande (conservé si redirection vers la connexion)          */
@@ -90,8 +94,22 @@ export default function Commander() {
 
   const [draft] = useState<CheckoutDraft | null>(() => loadDraft())
 
+  // Commande "sur un modèle" (?modele=red-door, cf. SaveTheDateTemplatePreview.tsx
+  // → doc de contracts/saveTheDateTemplates.ts) — un slug absent ou inconnu est
+  // silencieusement ignoré, comportement actuel inchangé (jamais d'erreur pour
+  // une URL malformée).
+  const templateSlug = searchParams.get('modele')
+  const templateOverridesQ = trpc.settings.get.useQuery(
+    { key: 'saveTheDateTemplates' },
+    { enabled: !!templateSlug },
+  )
+  const template = templateSlug
+    ? resolveSaveTheDateTemplate(templateSlug, parseTemplateOverrides(templateOverridesQ.data?.value))
+    : undefined
+
   const [productId, setProductId] = useState<ProductId>(
     () =>
+      (template ? 'SAVE_THE_DATE' : undefined) ??
       productIdFromSlug(searchParams.get('produit')) ??
       draft?.productId ??
       'FAIRE_PART',
@@ -128,8 +146,11 @@ export default function Commander() {
   } | null>(null)
 
   const product = getProduct(products, productId)
-  const selectedOptions = options.filter((o) => optionIds.includes(o.id))
-  const totalCents = product.priceCents + selectedOptions.reduce((sum, o) => sum + o.priceCents, 0)
+  // "Sur un modèle" : prix fixe, aucune option — cf. doc de TEMPLATE_PRICE_CENTS.
+  const selectedOptions = template ? [] : options.filter((o) => optionIds.includes(o.id))
+  const totalCents = template
+    ? TEMPLATE_PRICE_CENTS
+    : product.priceCents + selectedOptions.reduce((sum, o) => sum + o.priceCents, 0)
 
   const checkout = trpc.orders.createCheckout.useMutation()
 
@@ -201,11 +222,12 @@ export default function Commander() {
     try {
       const result = await checkout.mutateAsync({
         product: productId,
-        optionIds,
+        optionIds: template ? [] : optionIds,
         names: `${prenom1.trim()} & ${prenom2.trim()}`,
         weddingDate: weddingDate ? new Date(`${weddingDate}T12:00:00`) : undefined,
         venue: venue.trim() || undefined,
         email: email.trim(),
+        templateSlug: template?.slug,
       })
       window.sessionStorage.removeItem(DRAFT_KEY)
       if (!result.clientSecret) {
@@ -230,7 +252,9 @@ export default function Commander() {
     }
   }
 
-  const summaryThumb = productId === 'FAIRE_PART' ? '/template-editorial.jpg' : '/template-minimal.jpg'
+  const summaryThumb = template ? template.posterSrc : productId === 'FAIRE_PART' ? '/template-editorial.jpg' : '/template-minimal.jpg'
+  const displayProductName = template ? `Save the Date — ${template.name}` : product.name
+  const displayProductPriceCents = template ? TEMPLATE_PRICE_CENTS : product.priceCents
 
   const elementsOptions: StripeElementsOptions | undefined = checkoutResult
     ? {
@@ -331,8 +355,8 @@ export default function Commander() {
                 <div className="mt-2">
                   <SummaryCard
                     thumb={summaryThumb}
-                    productName={product.name}
-                    productPriceCents={product.priceCents}
+                    productName={displayProductName}
+                    productPriceCents={displayProductPriceCents}
                     selectedOptions={selectedOptions}
                     totalCents={totalCents}
                   />
@@ -347,75 +371,105 @@ export default function Commander() {
           {/* Formulaire                                                  */}
           {/* ---------------------------------------------------------- */}
           <form onSubmit={handlePrepare} noValidate className="flex flex-col gap-12">
-            {/* Bloc 1 — Formule */}
+            {/* Bloc 1 — Formule : encart fixe (non éditable) pour une commande
+                "sur un modèle" (?modele=…) — changer de produit reviendrait à
+                quitter ce modèle, cf. lien "Changer de modèle" plus bas.
+                Sinon, le choix habituel entre les 2 formules. */}
             <section aria-labelledby="bloc-formule">
               <BlockTitle id="bloc-formule" index="01" title="Votre formule" />
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                {(['SAVE_THE_DATE', 'FAIRE_PART'] as ProductId[]).map((id) => {
-                  const p = getProduct(products, id)
-                  const active = productId === id
-                  return (
-                    <motion.button
-                      key={id}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      onClick={() => setProductId(id)}
-                      whileTap={{ scale: 0.97 }}
-                      className={cn(
-                        'rounded-2xl border-2 bg-white p-6 text-left transition-colors duration-300',
-                        active
-                          ? 'border-terracotta-500 shadow-[0_8px_32px_rgba(27,27,30,.08)]'
-                          : 'border-neutral-200 hover:border-neutral-500/50',
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-[15px] font-semibold text-ink">{p.name}</p>
-                          <p className="mt-1 text-[13px] leading-[1.5] text-neutral-500">
-                            {id === 'FAIRE_PART'
-                              ? 'Vidéo 60 s, page complète + RSVP, scénarios personnalisés.'
-                              : "Vidéo 40 s, page d'annonce, lien illimité."}
-                          </p>
+              {template ? (
+                <div className="mt-5 flex items-center gap-4 rounded-2xl border-2 border-terracotta-500 bg-white p-6 shadow-[0_8px_32px_rgba(27,27,30,.08)]">
+                  <img
+                    src={template.posterSrc}
+                    alt=""
+                    className="h-16 w-12 shrink-0 rounded-lg border border-neutral-200 object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-terracotta-500">
+                      Save the Date · Sur un modèle
+                    </p>
+                    <p className="mt-1 text-[15px] font-semibold text-ink">{template.name}</p>
+                    <p className="mt-0.5 text-[13px] leading-[1.4] text-neutral-500">{template.tagline}</p>
+                  </div>
+                  <Link
+                    to="/save-the-date-modeles"
+                    className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.1em] text-neutral-500 underline-offset-4 hover:text-terracotta-500 hover:underline"
+                  >
+                    Changer
+                  </Link>
+                </div>
+              ) : (
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  {(['SAVE_THE_DATE', 'FAIRE_PART'] as ProductId[]).map((id) => {
+                    const p = getProduct(products, id)
+                    const active = productId === id
+                    return (
+                      <motion.button
+                        key={id}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setProductId(id)}
+                        whileTap={{ scale: 0.97 }}
+                        className={cn(
+                          'rounded-2xl border-2 bg-white p-6 text-left transition-colors duration-300',
+                          active
+                            ? 'border-terracotta-500 shadow-[0_8px_32px_rgba(27,27,30,.08)]'
+                            : 'border-neutral-200 hover:border-neutral-500/50',
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-[15px] font-semibold text-ink">{p.name}</p>
+                            <p className="mt-1 text-[13px] leading-[1.5] text-neutral-500">
+                              {id === 'FAIRE_PART'
+                                ? 'Vidéo 60 s, page complète + RSVP, scénarios personnalisés.'
+                                : "Vidéo 40 s, page d'annonce, lien illimité."}
+                            </p>
+                          </div>
+                          <span
+                            aria-hidden
+                            className={cn(
+                              'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-300',
+                              active ? 'border-terracotta-500 bg-terracotta-500 text-white' : 'border-neutral-200 text-transparent',
+                            )}
+                          >
+                            <CheckDraw checked={active} className="h-3.5 w-3.5" />
+                          </span>
                         </div>
-                        <span
-                          aria-hidden
-                          className={cn(
-                            'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-300',
-                            active ? 'border-terracotta-500 bg-terracotta-500 text-white' : 'border-neutral-200 text-transparent',
-                          )}
-                        >
-                          <CheckDraw checked={active} className="h-3.5 w-3.5" />
-                        </span>
-                      </div>
-                      <p className="font-display tabular mt-4 text-2xl font-light text-terracotta-500">
-                        {formatEuros(p.priceCents)}
-                      </p>
-                    </motion.button>
-                  )
-                })}
-              </div>
+                        <p className="font-display tabular mt-4 text-2xl font-light text-terracotta-500">
+                          {formatEuros(p.priceCents)}
+                        </p>
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              )}
             </section>
 
-            {/* Bloc 2 — Options */}
-            <section aria-labelledby="bloc-options">
-              <BlockTitle id="bloc-options" index="02" title="Options" />
-              <div className="mt-5 flex flex-col gap-3">
-                {options.map((option) => (
-                  <OptionToggle
-                    key={option.id}
-                    option={option}
-                    tone="light"
-                    checked={optionIds.includes(option.id)}
-                    onToggle={() => toggleOption(option.id)}
-                  />
-                ))}
-              </div>
-            </section>
+            {/* Bloc 2 — Options : masqué pour "sur un modèle" (cf. doc de
+                TEMPLATE_PRICE_CENTS — révisions/sous-titres n'ont pas de sens
+                sur un montage déjà figé livré instantanément). */}
+            {!template && (
+              <section aria-labelledby="bloc-options">
+                <BlockTitle id="bloc-options" index="02" title="Options" />
+                <div className="mt-5 flex flex-col gap-3">
+                  {options.map((option) => (
+                    <OptionToggle
+                      key={option.id}
+                      option={option}
+                      tone="light"
+                      checked={optionIds.includes(option.id)}
+                      onToggle={() => toggleOption(option.id)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Bloc 3 — Informations */}
             <section aria-labelledby="bloc-infos">
-              <BlockTitle id="bloc-infos" index="03" title="Vos informations" />
+              <BlockTitle id="bloc-infos" index={template ? '02' : '03'} title="Vos informations" />
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <FloatingField
                   label="Prénom du marié / de la mariée"
@@ -486,7 +540,7 @@ export default function Commander() {
 
             {/* Bloc 4 — Paiement */}
             <section aria-labelledby="bloc-paiement">
-              <BlockTitle id="bloc-paiement" index="04" title="Paiement" />
+              <BlockTitle id="bloc-paiement" index={template ? '03' : '04'} title="Paiement" />
 
               {!checkoutResult ? (
                 <>
@@ -591,8 +645,8 @@ export default function Commander() {
             <div className="sticky top-28">
               <SummaryCard
                 thumb={summaryThumb}
-                productName={product.name}
-                productPriceCents={product.priceCents}
+                productName={displayProductName}
+                productPriceCents={displayProductPriceCents}
                 selectedOptions={selectedOptions}
                 totalCents={totalCents}
               />
