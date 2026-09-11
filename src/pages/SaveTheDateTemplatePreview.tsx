@@ -1,0 +1,95 @@
+import { Link, useParams } from 'react-router'
+import { ArrowLeft, MessageCircle } from 'lucide-react'
+import HeroScrub from '@/components/hero-scrub/HeroScrub'
+import { useSeo } from '@/hooks/useSeo'
+import { getSaveTheDateTemplate } from '@/data/saveTheDateTemplates'
+
+/**
+ * Aperçu plein écran d'UN modèle Save the Date — cf. doc de
+ * src/data/saveTheDateTemplates.ts. Structure calquée sur la page save the
+ * date dédiée d'un vrai projet (cf. FairePart.tsx, branche `isStd` : hero
+ * HeroScrub + footer léger, aucun corps de page) puisque c'est exactement
+ * l'expérience que ce modèle donnera une fois un vrai projet créé à partir
+ * de lui — seuls les prénoms/la date changeront alors.
+ *
+ * Paramétrée par `:slug` plutôt qu'un fichier par modèle : ajouter un
+ * modèle n'exige de toucher que le catalogue de données, jamais ce
+ * composant.
+ */
+export default function SaveTheDateTemplatePreview() {
+  const { slug } = useParams<{ slug: string }>()
+  const template = getSaveTheDateTemplate(slug)
+
+  useSeo({
+    title: template ? `Modèle ${template.name} — Save the Date · Scroll The Date` : 'Modèle introuvable · Scroll The Date',
+    description: template?.description ?? '',
+    path: `/save-the-date-modeles/${slug ?? ''}`,
+  })
+
+  if (!template) {
+    return (
+      <section className="mx-auto max-w-lg px-6 py-32 text-center">
+        <p className="font-display text-[26px] italic">Ce modèle n'existe pas (plus).</p>
+        <Link
+          to="/save-the-date-modeles"
+          className="mt-6 inline-flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-terracotta-500 hover:text-terracotta-400"
+        >
+          <ArrowLeft size={14} />
+          Retour aux modèles
+        </Link>
+      </section>
+    )
+  }
+
+  return (
+    <div style={{ background: template.theme.pageBg }}>
+      <header className="absolute inset-x-0 top-0 z-40 flex items-center justify-between px-6 py-5">
+        <Link
+          to="/save-the-date-modeles"
+          className="inline-flex items-center gap-2 rounded-full bg-black/25 px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm transition-colors hover:bg-black/40"
+        >
+          <ArrowLeft size={13} />
+          Modèles
+        </Link>
+        <Link to="/" aria-label="Scroll The Date — accueil" className="rounded-full bg-black/25 px-4 py-2 backdrop-blur-sm">
+          <img src="/logo.svg" alt="Scroll The Date" className="h-6 w-auto brightness-0 invert" />
+        </Link>
+      </header>
+
+      <HeroScrub
+        theme={template.theme}
+        chapters={template.chapters}
+        video={{ desktopSrc: template.desktopSrc, posterSrc: template.posterSrc, frames: template.frames }}
+        trackHeightVh={800}
+        tailVh={100}
+        ariaLabel={`Modèle Save the Date — ${template.name}`}
+      />
+
+      <footer className="bg-anthracite-950 px-6 py-16 text-center">
+        <p className="font-display text-[26px] italic text-white sm:text-[32px]">{template.name}</p>
+        <p className="mx-auto mt-3 max-w-md text-[14px] leading-[1.6] text-white/55">{template.description}</p>
+        <p className="mx-auto mt-6 max-w-md text-[13px] leading-[1.6] text-white/40">
+          Ce modèle vous plaît ? La commande directe depuis ce modèle arrive bientôt — écrivez-nous en attendant,
+          on vous prévient dès que c'est ouvert.
+        </p>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <a
+            href="https://wa.me/33600000000"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
+          >
+            <MessageCircle size={16} />
+            Être prévenu·e
+          </a>
+          <Link
+            to="/save-the-date-modeles"
+            className="text-[13px] font-semibold uppercase tracking-[0.1em] text-white/70 transition-colors hover:text-white"
+          >
+            Voir les autres modèles
+          </Link>
+        </div>
+      </footer>
+    </div>
+  )
+}

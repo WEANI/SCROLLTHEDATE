@@ -8,6 +8,8 @@ import NotFound from '@/pages/NotFound'
 import Offres from '@/pages/Offres'
 import FairePartDigital from '@/pages/FairePartDigital'
 import SaveTheDateDigital from '@/pages/SaveTheDateDigital'
+import SaveTheDateTemplates from '@/pages/SaveTheDateTemplates'
+import SaveTheDateTemplatePreview from '@/pages/SaveTheDateTemplatePreview'
 import Commander from '@/pages/Commander'
 import Merci from '@/pages/Merci'
 import MentionsLegales from '@/pages/MentionsLegales'
@@ -83,6 +85,8 @@ export default function App() {
           <Route path="offres" element={<Offres />} />
           <Route path="faire-part-digital" element={<FairePartDigital />} />
           <Route path="save-the-date-digital" element={<SaveTheDateDigital />} />
+          <Route path="save-the-date-modeles" element={<SaveTheDateTemplates />} />
+          <Route path="save-the-date-modeles/:slug" element={<SaveTheDateTemplatePreview />} />
           <Route path="commander" element={<Commander />} />
           <Route path="merci" element={<Merci />} />
           <Route path="demo" element={<Demo />} />

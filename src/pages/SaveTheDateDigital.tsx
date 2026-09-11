@@ -186,10 +186,16 @@ export default function SaveTheDateDigital() {
               </Link>
             </FadeUp>
 
-            {/* Formule template — 99 €, bientôt */}
+            {/* Formule template — 99 €, bibliothèque consultable depuis le
+                11/09/2026 (premier modèle : Red Door), commande directe pas
+                encore câblée — cf. doc de src/data/saveTheDateTemplates.ts.
+                D'où le badge "Bientôt en commande" (pas "Bientôt
+                disponible" : les modèles, eux, sont déjà consultables) et
+                le lien vers la bibliothèque à la place du bouton
+                Commander. */}
             <FadeUp delay={0.1} className="relative rounded-2xl border border-anthracite-700/60 bg-anthracite-800/20 p-8 opacity-80 lg:p-10">
               <span className="absolute -top-3.5 left-8 rounded-full bg-anthracite-700 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80">
-                Bientôt disponible
+                Bientôt en commande
               </span>
               <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/50">Sur un modèle</p>
               <p className="font-display tabular mt-3 text-[2.2rem] font-light text-white/70">
@@ -210,8 +216,15 @@ export default function SaveTheDateDigital() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-9 text-[12px] text-white/40">
-                Les modèles sont en préparation — écrivez-nous si vous voulez être prévenu·e dès leur sortie.
+              <Link
+                to="/save-the-date-modeles"
+                className="mt-9 inline-flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.1em] text-white/80 transition-colors hover:text-white"
+              >
+                Voir les modèles
+                <span aria-hidden>→</span>
+              </Link>
+              <p className="mt-3 text-[12px] text-white/40">
+                La commande directe depuis un modèle arrive bientôt — écrivez-nous si vous voulez être prévenu·e.
               </p>
             </FadeUp>
           </div>
