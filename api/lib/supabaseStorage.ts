@@ -36,7 +36,16 @@ export async function uploadVideo(
   const path = `${projectId}/${Date.now()}-${filename}`;
   const { error } = await supabaseAdmin.storage
     .from(BUCKET)
-    .upload(path, fileBuffer, { contentType, upsert: false });
+    // `cacheControl` : sans lui, Supabase applique son défaut (1h) — beaucoup
+    // trop court pour un fichier qui ne change jamais une fois livré (le
+    // chemin inclut déjà `Date.now()`, une nouvelle version = un nouveau
+    // chemin, jamais une réécriture). Un cache de 1h fait retélécharger
+    // l'intégralité de la vidéo/des frames à chaque invité qui rouvre un
+    // faire-part plus d'une heure après sa dernière visite — cause
+    // probable du dépassement du quota "egress" Supabase constaté le
+    // 13/09/2026 (17 Go transférés pour 40 Mo réellement stockés). 1 an,
+    // comme pour tout asset immuable.
+    .upload(path, fileBuffer, { contentType, upsert: false, cacheControl: "31536000" });
   if (error) throw new Error(`Upload échoué : ${error.message}`);
   const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
@@ -67,7 +76,14 @@ export async function uploadVideoFrames(
       const name = `${String(frame.index + 1).padStart(5, "0")}.jpg`;
       const { error } = await supabaseAdmin.storage
         .from(BUCKET)
-        .upload(`${prefix}/${name}`, frame.buffer, { contentType: "image/jpeg", upsert: true });
+        // cf. doc de `cacheControl` sur `uploadVideo` ci-dessus — même
+        // raisonnement, encore plus sensible ici (jusqu'à ~500 requêtes
+        // par visionnage au lieu d'une seule pour un fichier vidéo unique).
+        .upload(`${prefix}/${name}`, frame.buffer, {
+          contentType: "image/jpeg",
+          upsert: true,
+          cacheControl: "31536000",
+        });
       if (error) throw new Error(`Upload de l'image ${name} échoué : ${error.message}`);
     }
   }
