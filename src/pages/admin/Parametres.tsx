@@ -32,6 +32,7 @@ import {
   fmtDate,
   fmtTime,
   inputClass,
+  selectClass,
   textareaClass,
   useToasts,
 } from "@/components/admin-suite/ui";
@@ -39,6 +40,13 @@ import type {
   OptionSetting,
   ProductSetting,
 } from "@/components/admin-suite/types";
+import {
+  SAVE_THE_DATE_TEMPLATES,
+  defaultOverrideFor,
+  parseTemplateOverrides,
+  templateDurationSec,
+  type SaveTheDateTemplateOverride,
+} from "@/data/saveTheDateTemplates";
 
 // ------------------------------------------------------------- défauts ----
 
@@ -162,6 +170,7 @@ const DEFAULT_QUICK_REPLIES = [
 const TABS = [
   { id: "profil", label: "Profil" },
   { id: "produits", label: "Produits & prix" },
+  { id: "modeles-std", label: "Modèles Save the Date" },
   { id: "emails", label: "Emails" },
   { id: "notifications", label: "Notifications" },
   { id: "integrations", label: "Intégrations" },
@@ -216,6 +225,7 @@ export default function Parametres() {
           >
             {tab === "profil" ? <TabProfil push={push} /> : null}
             {tab === "produits" ? <TabProduits push={push} /> : null}
+            {tab === "modeles-std" ? <TabModelesStd push={push} /> : null}
             {tab === "emails" ? <TabEmails push={push} /> : null}
             {tab === "notifications" ? <TabNotifications push={push} /> : null}
             {tab === "integrations" ? <TabIntegrations push={push} /> : null}
@@ -573,6 +583,223 @@ function TabProduits({ push }: { push: Push }) {
       <AdminButton className="self-start" disabled={save.isPending} onClick={persist}>
         {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
         Enregistrer produits & prix
+      </AdminButton>
+    </div>
+  );
+}
+
+// ----------------------------------------------------- modèles STD ----
+
+/**
+ * Textes/minutage/position des modèles Save the Date "sur un modèle" (cf.
+ * échange du 12/09/2026 : "dis-moi où piloter les textes overlay des
+ * modèles"). Vidéo, séquence d'images et couleurs de thème restent codées
+ * en dur dans src/data/saveTheDateTemplates.ts — pas encore d'upload de
+ * nouveau modèle depuis l'admin, seulement l'édition de ceux déjà livrés.
+ * Même mécanisme de stockage que Produits & prix ci-dessus (clé
+ * `site_settings` dédiée, "saveTheDateTemplates").
+ */
+function TabModelesStd({ push }: { push: Push }) {
+  const q = trpc.settings.get.useQuery({ key: "saveTheDateTemplates" });
+  const save = useSaveSetting(push);
+
+  const [overrides, setOverrides] = useState<Record<string, SaveTheDateTemplateOverride>>({});
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (loaded) return;
+    const saved = parseTemplateOverrides(q.data?.value);
+    setOverrides(
+      Object.fromEntries(SAVE_THE_DATE_TEMPLATES.map((t) => [t.slug, saved[t.slug] ?? defaultOverrideFor(t)])),
+    );
+    setLoaded(true);
+  }, [q.data, loaded]);
+
+  const update = (slug: string, patch: Partial<SaveTheDateTemplateOverride>) =>
+    setOverrides((prev) => ({ ...prev, [slug]: { ...prev[slug], ...patch } }));
+
+  const persist = () => {
+    save.mutate({ key: "saveTheDateTemplates", value: Object.values(overrides) });
+  };
+
+  if (!loaded) return null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Panel className="border-pending/40 bg-pending/5 p-4">
+        <p className="flex items-center gap-2 text-sm text-ink">
+          <AlertTriangle className="h-4 w-4 text-pending" />
+          Vidéo, séquence d'images et couleurs restent définies dans le code — seuls les textes, le minutage et la
+          position sont pilotables ici.
+        </p>
+      </Panel>
+
+      {SAVE_THE_DATE_TEMPLATES.map((t) => {
+        const o = overrides[t.slug];
+        if (!o) return null;
+        const duration = templateDurationSec(t);
+        return (
+          <Panel key={t.slug}>
+            <PanelTitle
+              title={o.name || t.name}
+              hint={`${duration.toFixed(1)} s de montage`}
+              action={
+                <a
+                  href={`/save-the-date-modeles/${t.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
+                >
+                  Voir la page publique →
+                </a>
+              }
+            />
+            <div className="grid gap-4 p-6 md:grid-cols-2">
+              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                Nom du modèle
+                <input value={o.name} onChange={(e) => update(t.slug, { name: e.target.value })} className={inputClass} />
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                Accroche (carte bibliothèque)
+                <input value={o.tagline} onChange={(e) => update(t.slug, { tagline: e.target.value })} className={inputClass} />
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 md:col-span-2">
+                Description
+                <textarea
+                  rows={2}
+                  value={o.description}
+                  onChange={(e) => update(t.slug, { description: e.target.value })}
+                  className={textareaClass}
+                />
+              </label>
+            </div>
+
+            <div className="border-t border-neutral-200 p-6">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                1er texte affiché (ex. « Save the date »)
+              </p>
+              <div className="grid gap-3 md:grid-cols-4">
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 md:col-span-2">
+                  Texte
+                  <input
+                    value={o.chapter1Text}
+                    onChange={(e) => update(t.slug, { chapter1Text: e.target.value })}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Apparaît à (s)
+                  <input
+                    type="number"
+                    min={0}
+                    max={duration}
+                    step={0.1}
+                    value={o.chapter1FromSec}
+                    onChange={(e) => update(t.slug, { chapter1FromSec: Number(e.target.value) })}
+                    className={cn(inputClass, "tabular")}
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Disparaît à (s)
+                  <input
+                    type="number"
+                    min={0}
+                    max={duration}
+                    step={0.1}
+                    value={o.chapter1ToSec}
+                    onChange={(e) => update(t.slug, { chapter1ToSec: Number(e.target.value) })}
+                    className={cn(inputClass, "tabular")}
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Position verticale
+                  <select
+                    value={o.chapter1Position}
+                    onChange={(e) =>
+                      update(t.slug, {
+                        chapter1Position: e.target.value as SaveTheDateTemplateOverride["chapter1Position"],
+                      })
+                    }
+                    className={selectClass}
+                  >
+                    <option value="top">Haut</option>
+                    <option value="middle">Milieu</option>
+                    <option value="bottom">Bas</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div className="border-t border-neutral-200 p-6">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                2e texte — prénoms &amp; date d'exemple (un vrai client verra les siens à la place)
+              </p>
+              <div className="grid gap-3 md:grid-cols-4">
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Prénoms d'exemple
+                  <input
+                    value={o.exampleNames}
+                    onChange={(e) => update(t.slug, { exampleNames: e.target.value })}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Date d'exemple
+                  <input
+                    value={o.exampleDate}
+                    onChange={(e) => update(t.slug, { exampleDate: e.target.value })}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Apparaît à (s)
+                  <input
+                    type="number"
+                    min={0}
+                    max={duration}
+                    step={0.1}
+                    value={o.chapter2FromSec}
+                    onChange={(e) => update(t.slug, { chapter2FromSec: Number(e.target.value) })}
+                    className={cn(inputClass, "tabular")}
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Disparaît à (s)
+                  <input
+                    type="number"
+                    min={0}
+                    max={duration}
+                    step={0.1}
+                    value={o.chapter2ToSec}
+                    onChange={(e) => update(t.slug, { chapter2ToSec: Number(e.target.value) })}
+                    className={cn(inputClass, "tabular")}
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Position verticale
+                  <select
+                    value={o.chapter2Position}
+                    onChange={(e) =>
+                      update(t.slug, {
+                        chapter2Position: e.target.value as SaveTheDateTemplateOverride["chapter2Position"],
+                      })
+                    }
+                    className={selectClass}
+                  >
+                    <option value="top">Haut</option>
+                    <option value="middle">Milieu</option>
+                    <option value="bottom">Bas</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </Panel>
+        );
+      })}
+
+      <AdminButton className="self-start" disabled={save.isPending} onClick={persist}>
+        {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+        Enregistrer les modèles
       </AdminButton>
     </div>
   );

@@ -2,8 +2,9 @@ import { useRef, useState } from 'react'
 import type { SyntheticEvent } from 'react'
 import { Link } from 'react-router'
 import { Play } from 'lucide-react'
+import { trpc } from '@/providers/trpc'
 import { useSeo } from '@/hooks/useSeo'
-import { SAVE_THE_DATE_TEMPLATES } from '@/data/saveTheDateTemplates'
+import { parseTemplateOverrides, resolveSaveTheDateTemplates } from '@/data/saveTheDateTemplates'
 
 /**
  * Durée de l'aperçu en boucle sur la carte — volontairement court (cf.
@@ -33,6 +34,13 @@ export default function SaveTheDateTemplates() {
     path: '/save-the-date-modeles',
   })
 
+  // Textes/timings pilotables depuis Réglages → Modèles Save the Date (cf.
+  // doc de src/data/saveTheDateTemplates.ts) — repli silencieux sur les
+  // défauts codés en dur tant que la requête n'a pas répondu ou si aucune
+  // surcharge n'a jamais été enregistrée.
+  const overridesQ = trpc.settings.get.useQuery({ key: 'saveTheDateTemplates' })
+  const templates = resolveSaveTheDateTemplates(parseTemplateOverrides(overridesQ.data?.value))
+
   return (
     <section className="mx-auto max-w-[1100px] px-6 pb-32 pt-16 sm:pt-20">
       <p className="text-center text-[12px] uppercase tracking-[0.18em] text-terracotta-300">Sur un modèle</p>
@@ -45,7 +53,7 @@ export default function SaveTheDateTemplates() {
       </p>
 
       <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {SAVE_THE_DATE_TEMPLATES.map((tpl) => (
+        {templates.map((tpl) => (
           <TemplateCard key={tpl.slug} slug={tpl.slug} name={tpl.name} tagline={tpl.tagline} accent={tpl.theme.accent} posterSrc={tpl.posterSrc} videoSrc={tpl.desktopSrc} />
         ))}
 

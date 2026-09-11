@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { trpc } from '@/providers/trpc'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { useSeo } from '@/hooks/useSeo'
-import { getSaveTheDateTemplate } from '@/data/saveTheDateTemplates'
+import { parseTemplateOverrides, resolveSaveTheDateTemplate } from '@/data/saveTheDateTemplates'
 
 /**
  * Invite à défiler — sans elle, un visiteur qui arrive sur un aperçu de
@@ -56,7 +57,10 @@ function ScrollHint() {
  */
 export default function SaveTheDateTemplatePreview() {
   const { slug } = useParams<{ slug: string }>()
-  const template = getSaveTheDateTemplate(slug)
+  // Textes/timings pilotables depuis Réglages → Modèles Save the Date, cf.
+  // doc de src/data/saveTheDateTemplates.ts.
+  const overridesQ = trpc.settings.get.useQuery({ key: 'saveTheDateTemplates' })
+  const template = resolveSaveTheDateTemplate(slug, parseTemplateOverrides(overridesQ.data?.value))
 
   useSeo({
     title: template ? `Modèle ${template.name} — Save the Date · Scroll The Date` : 'Modèle introuvable · Scroll The Date',
