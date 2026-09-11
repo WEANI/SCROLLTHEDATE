@@ -56,6 +56,19 @@ export interface SaveTheDateTemplate {
   desktopSrc: string
   posterSrc: string
   chapters: HeroChapter[]
+  /**
+   * Décor/police/animation/filtre — bibliothèque "mariage" ajoutée le
+   * 11/09/2026 (cf. src/components/hero-scrub/heroDecor.ts), pilotable
+   * depuis le même onglet admin que les textes ci-dessus (échange du
+   * 12/09/2026). `undefined`/id inconnu = comportement par défaut de
+   * HeroScrub (aucun décor, police du site, fondu, aucun filtre) — jamais
+   * réglés dans le catalogue codé en dur ci-dessous, uniquement via la
+   * surcharge admin.
+   */
+  overlayGraphic?: string
+  fontId?: string
+  textAnimation?: string
+  filter?: string
 }
 
 /**
@@ -74,12 +87,22 @@ export interface SaveTheDateTemplateOverride {
   chapter1FromSec: number
   chapter1ToSec: number
   chapter1Position: 'top' | 'middle' | 'bottom'
+  /** Vide = couleur/fond par défaut du thème du modèle (jamais un héritage silencieux — cf. doc de cardBgOverride dans types.ts, même règle que pour un vrai projet). */
+  chapter1TextColor: string
+  chapter1CardBg: string
   /** Prénoms d'exemple affichés dans la bibliothèque — jamais un vrai client (cf. doc de EXAMPLE_NAMES). */
   exampleNames: string
   exampleDate: string
   chapter2FromSec: number
   chapter2ToSec: number
   chapter2Position: 'top' | 'middle' | 'bottom'
+  chapter2TextColor: string
+  chapter2CardBg: string
+  /** cf. doc de SaveTheDateTemplate.overlayGraphic — vide = comportement par défaut. */
+  overlayGraphic: string
+  fontId: string
+  textAnimation: string
+  filter: string
 }
 
 // Couple d'exemple repris à l'identique du reste du site (récap /commander,
@@ -156,11 +179,19 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     chapter1FromSec: Math.round((ch1?.from ?? 0.8) * duration * 10) / 10,
     chapter1ToSec: Math.round((ch1?.to ?? 0.9) * duration * 10) / 10,
     chapter1Position: ch1?.verticalAlign ?? 'bottom',
+    chapter1TextColor: ch1?.textColorOverride ?? '',
+    chapter1CardBg: ch1?.cardBgOverride ?? '',
     exampleNames: EXAMPLE_NAMES,
     exampleDate: EXAMPLE_DATE,
     chapter2FromSec: Math.round((ch2?.from ?? 0.9) * duration * 10) / 10,
     chapter2ToSec: Math.round((ch2?.to ?? 1) * duration * 10) / 10,
     chapter2Position: ch2?.verticalAlign ?? 'bottom',
+    chapter2TextColor: ch2?.textColorOverride ?? '',
+    chapter2CardBg: ch2?.cardBgOverride ?? '',
+    overlayGraphic: template.overlayGraphic ?? '',
+    fontId: template.fontId ?? '',
+    textAnimation: template.textAnimation ?? '',
+    filter: template.filter ?? '',
   }
 }
 
@@ -174,6 +205,14 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
     name: override.name || template.name,
     tagline: override.tagline || template.tagline,
     description: override.description || template.description,
+    // Vide = aucun décor/police/animation/filtre (comportement par défaut
+    // de HeroScrub), jamais un héritage — même règle que pour un vrai
+    // projet (cf. doc de heroOverlayGraphic/heroFontId dans
+    // contracts/bespokePalette.ts).
+    overlayGraphic: override.overlayGraphic || undefined,
+    fontId: override.fontId || undefined,
+    textAnimation: override.textAnimation || undefined,
+    filter: override.filter || undefined,
     chapters: [
       {
         id: 0,
@@ -183,6 +222,10 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         segments: [{ text: override.chapter1Text || 'Save the date' }],
         titleSize: 'lg',
         verticalAlign: override.chapter1Position,
+        // Vide = couleur/fond par défaut du thème — jamais un héritage
+        // silencieux (cf. doc du champ dans SaveTheDateTemplateOverride).
+        textColorOverride: override.chapter1TextColor || undefined,
+        cardBgOverride: override.chapter1CardBg || undefined,
       },
       {
         id: 1,
@@ -195,6 +238,8 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         subLines: [override.exampleDate || EXAMPLE_DATE],
         subSize: 'md',
         verticalAlign: override.chapter2Position,
+        textColorOverride: override.chapter2TextColor || undefined,
+        cardBgOverride: override.chapter2CardBg || undefined,
       },
     ],
   }

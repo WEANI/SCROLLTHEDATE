@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/providers/trpc'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
+import { getHeroFont, useGoogleFont } from '@/components/hero-scrub/heroDecor'
 import { useSeo } from '@/hooks/useSeo'
 import { parseTemplateOverrides, resolveSaveTheDateTemplate } from '@/data/saveTheDateTemplates'
 
@@ -61,6 +62,11 @@ export default function SaveTheDateTemplatePreview() {
   // doc de src/data/saveTheDateTemplates.ts.
   const overridesQ = trpc.settings.get.useQuery({ key: 'saveTheDateTemplates' })
   const template = resolveSaveTheDateTemplate(slug, parseTemplateOverrides(overridesQ.data?.value))
+  // Police du titre du hero (bibliothèque "mariage", cf. heroDecor.ts) —
+  // appelé inconditionnellement (règle des hooks), no-op si `fontId` est
+  // vide/absent.
+  const heroFont = getHeroFont(template?.fontId)
+  useGoogleFont(template?.fontId)
 
   useSeo({
     title: template ? `Modèle ${template.name} — Save the Date · Scroll The Date` : 'Modèle introuvable · Scroll The Date',
@@ -107,6 +113,10 @@ export default function SaveTheDateTemplatePreview() {
         trackHeightVh={800}
         tailVh={100}
         ariaLabel={`Modèle Save the Date — ${template.name}`}
+        overlayGraphic={template.overlayGraphic}
+        fontFamily={heroFont?.fontFamily}
+        textAnimation={template.textAnimation}
+        filter={template.filter}
       />
 
       <footer className="bg-anthracite-950 px-6 py-16 text-center">

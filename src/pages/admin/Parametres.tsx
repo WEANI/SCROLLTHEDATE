@@ -47,6 +47,12 @@ import {
   templateDurationSec,
   type SaveTheDateTemplateOverride,
 } from "@/data/saveTheDateTemplates";
+import {
+  HERO_OVERLAY_GRAPHICS,
+  HERO_FONTS,
+  HERO_TEXT_ANIMATIONS,
+  HERO_FILTERS,
+} from "@/components/hero-scrub/heroDecor";
 
 // ------------------------------------------------------------- défauts ----
 
@@ -590,14 +596,53 @@ function TabProduits({ push }: { push: Push }) {
 
 // ----------------------------------------------------- modèles STD ----
 
+/** Sélecteur couleur + champ hex, même paire que StudioPanel.tsx::ColorField mais au style visuel de cet onglet (rounded-[10px], cf. inputClass). */
+function ColorField({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const isHex = /^#[0-9a-fA-F]{6}$/.test(value);
+  return (
+    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+      {label}
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={isHex ? value : "#000000"}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-9 shrink-0 cursor-pointer rounded-[10px] border border-neutral-200 bg-transparent p-0"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Vide = défaut"
+          className={cn(inputClass, "font-mono")}
+        />
+      </div>
+      {hint && <span className="text-[10px] font-normal normal-case text-neutral-400">{hint}</span>}
+    </label>
+  );
+}
+
 /**
- * Textes/minutage/position des modèles Save the Date "sur un modèle" (cf.
- * échange du 12/09/2026 : "dis-moi où piloter les textes overlay des
- * modèles"). Vidéo, séquence d'images et couleurs de thème restent codées
- * en dur dans src/data/saveTheDateTemplates.ts — pas encore d'upload de
- * nouveau modèle depuis l'admin, seulement l'édition de ceux déjà livrés.
- * Même mécanisme de stockage que Produits & prix ci-dessus (clé
- * `site_settings` dédiée, "saveTheDateTemplates").
+ * Textes/minutage/position/couleurs/décor des modèles Save the Date "sur
+ * un modèle" (cf. échange du 12/09/2026 : "dis-moi où piloter les textes
+ * overlay des modèles", puis "je dois pouvoir gérer les couleurs... avec
+ * la bibliothèque ajoutée récemment" — décor/police/animation/filtre de
+ * src/components/hero-scrub/heroDecor.ts, jusque-là jamais branchés sur
+ * les modèles). Vidéo, séquence d'images et thème de base (fond/accent du
+ * cadre) restent codés en dur dans src/data/saveTheDateTemplates.ts — pas
+ * encore d'upload de nouveau modèle depuis l'admin, seulement l'édition de
+ * ceux déjà livrés. Même mécanisme de stockage que Produits & prix
+ * ci-dessus (clé `site_settings` dédiée, "saveTheDateTemplates").
  */
 function TabModelesStd({ push }: { push: Push }) {
   const q = trpc.settings.get.useQuery({ key: "saveTheDateTemplates" });
@@ -789,6 +834,107 @@ function TabModelesStd({ push }: { push: Push }) {
                     <option value="top">Haut</option>
                     <option value="middle">Milieu</option>
                     <option value="bottom">Bas</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div className="border-t border-neutral-200 p-6">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                Couleurs des 2 textes
+              </p>
+              <div className="grid gap-4 md:grid-cols-4">
+                <ColorField
+                  label="Texte — 1er bloc"
+                  hint="Vide = couleur du thème"
+                  value={o.chapter1TextColor}
+                  onChange={(v) => update(t.slug, { chapter1TextColor: v })}
+                />
+                <ColorField
+                  label="Fond de carte — 1er bloc"
+                  hint="Vide = fond du thème"
+                  value={o.chapter1CardBg}
+                  onChange={(v) => update(t.slug, { chapter1CardBg: v })}
+                />
+                <ColorField
+                  label="Texte — 2e bloc"
+                  hint="Vide = couleur du thème"
+                  value={o.chapter2TextColor}
+                  onChange={(v) => update(t.slug, { chapter2TextColor: v })}
+                />
+                <ColorField
+                  label="Fond de carte — 2e bloc"
+                  hint="Vide = fond du thème"
+                  value={o.chapter2CardBg}
+                  onChange={(v) => update(t.slug, { chapter2CardBg: v })}
+                />
+              </div>
+            </div>
+
+            <div className="border-t border-neutral-200 p-6">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                Décor & style (bibliothèque)
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Décor graphique
+                  <select
+                    value={o.overlayGraphic}
+                    onChange={(e) => update(t.slug, { overlayGraphic: e.target.value })}
+                    className={selectClass}
+                  >
+                    <option value="">Aucun</option>
+                    {HERO_OVERLAY_GRAPHICS.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Police du titre
+                  <select value={o.fontId} onChange={(e) => update(t.slug, { fontId: e.target.value })} className={selectClass}>
+                    <option value="">Police du site (Fraunces)</option>
+                    {Object.entries(
+                      HERO_FONTS.reduce<Record<string, typeof HERO_FONTS>>((acc, f) => {
+                        (acc[f.category] ??= []).push(f);
+                        return acc;
+                      }, {}),
+                    ).map(([category, fonts]) => (
+                      <optgroup key={category} label={category}>
+                        {fonts.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Animation du texte
+                  <select
+                    value={o.textAnimation}
+                    onChange={(e) => update(t.slug, { textAnimation: e.target.value })}
+                    className={selectClass}
+                  >
+                    <option value="">Fondu (défaut)</option>
+                    {HERO_TEXT_ANIMATIONS.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Filtre vidéo
+                  <select value={o.filter} onChange={(e) => update(t.slug, { filter: e.target.value })} className={selectClass}>
+                    <option value="">Aucun</option>
+                    {HERO_FILTERS.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.label}
+                      </option>
+                    ))}
                   </select>
                 </label>
               </div>
