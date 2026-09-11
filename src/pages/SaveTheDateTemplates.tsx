@@ -1,7 +1,17 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import type { SyntheticEvent } from 'react'
 import { Link } from 'react-router'
+import { Play } from 'lucide-react'
 import { useSeo } from '@/hooks/useSeo'
 import { SAVE_THE_DATE_TEMPLATES } from '@/data/saveTheDateTemplates'
+
+/**
+ * Durée de l'aperçu en boucle sur la carte — volontairement court (cf.
+ * échange du 12/09/2026) : donne juste un avant-goût plutôt que la vidéo
+ * complète (40-60 s, se rebouclerait de toute façon), et incite à cliquer
+ * "Voir le modèle" pour découvrir la suite en plein écran.
+ */
+const CARD_PREVIEW_SECONDS = 5
 
 /**
  * Bibliothèque de modèles Save the Date « sur un modèle » (99 €, cf.
@@ -65,6 +75,18 @@ function TemplateCard({
   videoSrc: string
 }) {
   const [failed, setFailed] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Reboucle sur les CARD_PREVIEW_SECONDS premières secondes seulement —
+  // cf. doc de la constante plus haut. `timeupdate` plutôt que `loop`
+  // natif (qui rejouerait la vidéo entière) : on ne veut jamais montrer la
+  // fin du montage ici, seulement un avant-goût.
+  function handleTimeUpdate(e: SyntheticEvent<HTMLVideoElement>) {
+    if (e.currentTarget.currentTime >= CARD_PREVIEW_SECONDS) {
+      e.currentTarget.currentTime = 0
+      void e.currentTarget.play()
+    }
+  }
 
   return (
     <Link
@@ -76,13 +98,14 @@ function TemplateCard({
       <div className="relative aspect-[9/16] w-full overflow-hidden bg-anthracite-950">
         {!failed ? (
           <video
+            ref={videoRef}
             className="h-full w-full object-cover"
             src={videoSrc}
             poster={posterSrc}
             autoPlay
             muted
-            loop
             playsInline
+            onTimeUpdate={handleTimeUpdate}
             onError={() => setFailed(true)}
           />
         ) : (
@@ -93,6 +116,21 @@ function TemplateCard({
           style={{ background: accent }}
           aria-hidden
         />
+
+        {/* Voile + bouton "aperçu" — toujours visible (pas seulement au
+            survol, absent sur tactile) : signale d'emblée que ce n'est
+            qu'un avant-goût et qu'il y a plus à voir en cliquant. */}
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-end bg-gradient-to-t from-black/70 via-black/0 to-black/0 pb-5 opacity-90 transition-opacity duration-300 group-hover:opacity-100">
+          <span
+            className="flex h-11 w-11 items-center justify-center rounded-full backdrop-blur-sm transition-transform duration-300 group-hover:scale-110"
+            style={{ background: `${accent}E6` }}
+          >
+            <Play size={16} className="ml-0.5 text-white" fill="currentColor" />
+          </span>
+          <span className="mt-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/90">
+            Voir le modèle en entier
+          </span>
+        </div>
       </div>
       <div className="p-6">
         <p className="font-display text-[22px] italic leading-[1.15]">{name}</p>

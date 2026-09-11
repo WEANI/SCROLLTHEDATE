@@ -1,8 +1,46 @@
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, MessageCircle } from 'lucide-react'
+import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { useSeo } from '@/hooks/useSeo'
 import { getSaveTheDateTemplate } from '@/data/saveTheDateTemplates'
+
+/**
+ * Invite à défiler — sans elle, un visiteur qui arrive sur un aperçu de
+ * modèle peut rester face à la première image sans comprendre que le
+ * scroll fait avancer la vidéo (cf. échange du 12/09/2026). `position:
+ * fixed` (pas `absolute`) : reste ancrée en bas de l'écran pendant que le
+ * cadre du hero défile sous elle (lui-même `position: sticky`). Disparaît
+ * dès le premier vrai scroll, une fois pour toutes — jamais de fondu qui
+ * revient perturber la lecture plus bas dans la vidéo.
+ */
+function ScrollHint() {
+  const [visible, setVisible] = useState(true)
+
+  useEffect(() => {
+    function onScroll() {
+      if (window.scrollY > 50) setVisible(false)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <div
+      className={cn(
+        'pointer-events-none fixed inset-x-0 bottom-7 z-40 flex flex-col items-center gap-2 transition-opacity duration-500',
+        visible ? 'opacity-100' : 'opacity-0',
+      )}
+      aria-hidden
+    >
+      <span className="rounded-full bg-black/30 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-sm">
+        Scrollez pour découvrir
+      </span>
+      <ChevronDown size={20} className="motion-safe:animate-bounce text-white/80" />
+    </div>
+  )
+}
 
 /**
  * Aperçu plein écran d'UN modèle Save the Date — cf. doc de
@@ -55,6 +93,8 @@ export default function SaveTheDateTemplatePreview() {
           <img src="/logo.svg" alt="Scroll The Date" className="h-6 w-auto brightness-0 invert" />
         </Link>
       </header>
+
+      <ScrollHint />
 
       <HeroScrub
         theme={template.theme}
