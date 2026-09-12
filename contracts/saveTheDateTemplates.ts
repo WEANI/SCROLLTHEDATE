@@ -94,6 +94,40 @@ const RED_DOOR_THEME: HeroTheme = {
   dotInactive: 'rgba(247, 239, 224, 0.12)',
 }
 
+/** Parchemin ivoire, sceau cœur doré, satin blanc — ambiance claire, contrairement à Red Door (cf. échange du 13/09/2026). */
+const PARCHEMIN_BLANC_THEME: HeroTheme = {
+  id: 'parchemin-blanc',
+  label: 'Parchemin Blanc',
+  colorScheme: 'light',
+  frameBg: '#F5EEDE',
+  pageBg: '#FAF6EC',
+  vignette: 'linear-gradient(180deg, rgba(58,46,31,0.10) 0%, rgba(58,46,31,0.02) 40%, rgba(58,46,31,0.55) 100%)',
+  accent: '#B8934A',
+  textPrimary: '#3A2E1F',
+  textSecondary: '#7A6A50',
+  cardBg: 'rgba(250, 246, 236, 0.78)',
+  cardBorder: 'rgba(184, 147, 74, 0.28)',
+  cardShadow: '0 24px 60px rgba(58, 46, 31, 0.18)',
+  dotInactive: 'rgba(58, 46, 31, 0.14)',
+}
+
+/** Parchemin sur satin rose poudré, sceau couronne dorée — même famille que Parchemin Blanc, accent rosé plutôt que doré pur. */
+const PARCHEMIN_ROSE_THEME: HeroTheme = {
+  id: 'parchemin-rose',
+  label: 'Parchemin Rose',
+  colorScheme: 'light',
+  frameBg: '#F7E4DC',
+  pageBg: '#FBEFE9',
+  vignette: 'linear-gradient(180deg, rgba(74,46,40,0.10) 0%, rgba(74,46,40,0.02) 40%, rgba(74,46,40,0.55) 100%)',
+  accent: '#C08769',
+  textPrimary: '#4A2E28',
+  textSecondary: '#8A6459',
+  cardBg: 'rgba(251, 239, 233, 0.78)',
+  cardBorder: 'rgba(192, 135, 105, 0.28)',
+  cardShadow: '0 24px 60px rgba(74, 46, 40, 0.18)',
+  dotInactive: 'rgba(74, 46, 40, 0.14)',
+}
+
 export interface SaveTheDateTemplate {
   slug: string
   name: string
@@ -167,9 +201,83 @@ export const SAVE_THE_DATE_TEMPLATES: SaveTheDateTemplate[] = [
     description:
       "Une porte sculptée s'ouvre sur un salon de réception habillé de roses rouges et de lumières chaudes — un montage opulent, pensé pour une annonce qui marque les esprits.",
     theme: RED_DOOR_THEME,
-    frames: { baseUrl: '/red-door-frames/', count: 335, fps: 12 },
+    // Remplacée le 13/09/2026 par un montage V2 (24,53 s, plus court que
+    // l'original 27,9 s) — mêmes fractions [0.8,0.9]/[0.9,1] pour les
+    // chapitres (indépendantes de la durée, cf. doc de ces champs) :
+    // structure du montage inchangée (porte → miroir "Save the Date" à
+    // mi-parcours → salon de réception jusqu'à la fin), donc pas de
+    // recalage nécessaire.
+    frames: { baseUrl: '/red-door-frames/', count: 294, fps: 12 },
     desktopSrc: '/red-door.mp4',
     posterSrc: '/red-door-frames/00001.jpg',
+    chapters: [
+      {
+        id: 0,
+        kind: 'text',
+        from: 0.8,
+        to: 0.9,
+        segments: [{ text: 'Save the date' }],
+        titleSize: 'lg',
+        verticalAlign: 'bottom',
+      },
+      {
+        id: 1,
+        kind: 'text',
+        from: 0.9,
+        to: 1,
+        segments: nameSegments(EXAMPLE_NAMES),
+        fitOneLine: true,
+        rule: true,
+        subLines: [EXAMPLE_DATE],
+        subSize: 'md',
+        verticalAlign: 'bottom',
+      },
+    ],
+  },
+  {
+    slug: 'parchemin-blanc',
+    name: 'Parchemin Blanc',
+    tagline: 'Un rouleau scellé, satin blanc et dorures.',
+    description:
+      "Un parchemin scellé d'un sceau cœur doré se déroule sur satin blanc pour révéler l'annonce, avant de se refermer sur deux alliances parmi les pétales — un montage clair et délicat, tout en dorures.",
+    theme: PARCHEMIN_BLANC_THEME,
+    frames: { baseUrl: '/parchemin-blanc-frames/', count: 376, fps: 12 },
+    desktopSrc: '/parchemin-blanc.mp4',
+    posterSrc: '/parchemin-blanc-frames/00001.jpg',
+    chapters: [
+      {
+        id: 0,
+        kind: 'text',
+        from: 0.8,
+        to: 0.9,
+        segments: [{ text: 'Save the date' }],
+        titleSize: 'lg',
+        verticalAlign: 'bottom',
+      },
+      {
+        id: 1,
+        kind: 'text',
+        from: 0.9,
+        to: 1,
+        segments: nameSegments(EXAMPLE_NAMES),
+        fitOneLine: true,
+        rule: true,
+        subLines: [EXAMPLE_DATE],
+        subSize: 'md',
+        verticalAlign: 'bottom',
+      },
+    ],
+  },
+  {
+    slug: 'parchemin-rose',
+    name: 'Parchemin Rose',
+    tagline: 'Un rouleau scellé, satin rose poudré et dorures.',
+    description:
+      "Un parchemin scellé d'un sceau couronne doré se déroule sur satin rose poudré pour révéler l'annonce, avant de se refermer sur des roses crème et deux alliances — même mise en scène que Parchemin Blanc, dans une teinte plus romantique.",
+    theme: PARCHEMIN_ROSE_THEME,
+    frames: { baseUrl: '/parchemin-rose-frames/', count: 353, fps: 12 },
+    desktopSrc: '/parchemin-rose.mp4',
+    posterSrc: '/parchemin-rose-frames/00001.jpg',
     chapters: [
       {
         id: 0,
