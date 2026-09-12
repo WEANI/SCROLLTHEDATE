@@ -339,7 +339,10 @@ export default function Offres() {
               'Livraison en ~72 h',
             ]}
             ctaLabel="Commander le faire-part"
-            ctaHref={checkoutHref('FAIRE_PART')}
+            // Vers la page produit dédiée plutôt que directement
+            // /commander — même correction que la carte Save the Date
+            // ci-dessus (cf. échange du 13/09/2026).
+            ctaHref="/faire-part-digital"
             visual={
               <div className="group relative mx-auto h-[420px] max-w-md sm:h-[480px]">
                 <img

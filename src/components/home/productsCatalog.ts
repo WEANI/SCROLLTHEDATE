@@ -39,7 +39,10 @@ export const PRODUCTS = [
     name: 'Faire-part digital',
     price: '299 €',
     tagline: 'Pour inviter, pour de vrai.',
-    cta: '/commander?produit=faire-part',
+    // Vers la page produit dédiée plutôt que directement /commander —
+    // même correction que Save the Date ci-dessus (cf. échange du
+    // 13/09/2026).
+    cta: '/faire-part-digital',
     recommended: true,
     features: [
       { icon: Clapperboard, label: 'Vidéo cinématique complète (60 s)' },
