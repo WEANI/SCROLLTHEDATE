@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation, useNavigationType } from 'react-router'
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import Layout from '@/components/Layout'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
@@ -48,6 +48,17 @@ import AdminParametres from '@/pages/admin/Parametres'
  * formulaire de commande, donc au milieu de la page de remerciement (signalé
  * le 31/08/2026).
  *
+ * `useLayoutEffect` plutôt que `useEffect` (correctif du 12/09/2026, bug
+ * signalé : clic sur « Offres » depuis une page longue → atterrissage en bas
+ * de /offres). Cause : `useEffect` s'exécute APRÈS que le navigateur a peint
+ * la nouvelle page — s'il on vient d'une page plus longue que la nouvelle, le
+ * navigateur clampe immédiatement le scroll existant (ex. 4800px) à la
+ * hauteur max de la page d'arrivée dès le premier paint, donc tout en bas,
+ * et seul un correctif exécuté AVANT ce paint évite l'effet visible.
+ * `useLayoutEffect` s'exécute de façon synchrone juste après le commit DOM,
+ * avant que le navigateur ne peigne — plus de fenêtre où un mauvais scroll
+ * est visible, même brièvement.
+ *
  * Deux cas volontairement épargnés :
  *  - une ancre (#concept, #faq…) : la cible est gérée par la page elle-même
  *    (Home.tsx) et par la Navbar ;
@@ -59,7 +70,7 @@ function ScrollToTop() {
   const { pathname, hash } = useLocation()
   const navigationType = useNavigationType()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (hash) return
     if (navigationType === 'POP') return
     window.scrollTo(0, 0)
