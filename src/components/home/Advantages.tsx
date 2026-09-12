@@ -130,15 +130,17 @@ export default function Advantages() {
           { y: 0, opacity: 1, duration: 0.4, ease: 'power3.out' },
           revealStart + 0.15,
         )
-        // Contre-parallaxe interne de l'image — sur toute la fenêtre où le
-        // panneau est à l'écran (son éventuelle transition d'entrée, son
-        // hold, son éventuelle transition de sortie).
+        // Parallaxe interne de l'image — sur toute la fenêtre où le panneau
+        // est à l'écran (son éventuelle transition d'entrée, son hold, son
+        // éventuelle transition de sortie). Même sens pour les 3 panneaux
+        // (cf. échange du 13/09/2026 — alterner gauche/droite d'un panneau à
+        // l'autre donnait une impression décousue).
         const enterStart = i === 0 ? 0 : holdStart(i) - TRANSITION
         const exitEnd = i === PANELS.length - 1 ? holdStart(i) + HOLD : holdStart(i) + HOLD + TRANSITION
         tl.fromTo(
           `.panel-${i} .adv-img`,
-          { x: i % 2 === 0 ? -40 : 40 },
-          { x: i % 2 === 0 ? 40 : -40, ease: 'none', duration: exitEnd - enterStart },
+          { x: -40 },
+          { x: 40, ease: 'none', duration: exitEnd - enterStart },
           enterStart,
         )
       })
