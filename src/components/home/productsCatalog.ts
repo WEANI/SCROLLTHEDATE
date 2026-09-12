@@ -19,7 +19,12 @@ export const PRODUCTS = [
     name: 'Save the Date digital',
     price: '149 €',
     tagline: 'Pour annoncer, des mois avant.',
-    cta: '/commander?produit=save-the-date',
+    // Vers la page produit dédiée plutôt que directement /commander — cf.
+    // échange du 13/09/2026 (même correction que la carte de comparaison
+    // d'Offres.tsx) : cette carte n'a pas de quoi commander à elle seule
+    // (pas de choix de formule ni de vidéo démo), SaveTheDateDigital.tsx
+    // s'en charge avec son propre bouton de commande.
+    cta: '/save-the-date-digital',
     recommended: false,
     features: [
       { icon: Clapperboard, label: 'Vidéo courte personnalisée (40 s)' },
