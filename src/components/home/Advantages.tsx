@@ -139,8 +139,8 @@ export default function Advantages() {
         const exitEnd = i === PANELS.length - 1 ? holdStart(i) + HOLD : holdStart(i) + HOLD + TRANSITION
         tl.fromTo(
           `.panel-${i} .adv-img`,
-          { x: -40 },
-          { x: 40, ease: 'none', duration: exitEnd - enterStart },
+          { x: 40 },
+          { x: -40, ease: 'none', duration: exitEnd - enterStart },
           enterStart,
         )
       })
