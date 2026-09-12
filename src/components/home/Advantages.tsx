@@ -73,11 +73,33 @@ export default function Advantages() {
       const track = trackRef.current
       if (!track) return
 
+      // Palier immobile (HOLD) par panneau + glissement horizontal
+      // (TRANSITION) entre deux — cf. échange du 13/09/2026 : avant ce
+      // correctif, le track glissait en continu sur toute la durée du
+      // timeline (un seul tween linéaire de bout en bout), donc le texte
+      // n'avait jamais de moment où l'image restait immobile pour le lire :
+      // il commençait à apparaître alors que le panneau suivant était déjà
+      // en train d'arriver. Ici, aucun tween n'anime `x` pendant la fenêtre
+      // de hold d'un panneau (GSAP conserve simplement la valeur courante) —
+      // le texte apparaît entièrement PENDANT ce palier, avant que la
+      // transition vers le panneau suivant ne démarre.
+      const HOLD = 1
+      const TRANSITION = 0.5
+      const holdStart = (i: number) => i * (HOLD + TRANSITION)
+      const totalDuration = (PANELS.length - 1) * (HOLD + TRANSITION) + HOLD
+      // Réglage d'origine : 250 % de scroll pour une durée totale de
+      // `PANELS.length` (3) unités de timeline — conservé en ratio pour que
+      // le nouveau total (paliers inclus, donc plus long) reçoive
+      // proportionnellement plus de distance de scroll. Sans ça, le même
+      // geste de scroll ferait défiler les paliers aussi vite qu'avant,
+      // annulant le bénéfice du correctif.
+      const PERCENT_PER_UNIT = 250 / PANELS.length
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: rootRef.current,
           start: 'top top',
-          end: '+=250%',
+          end: `+=${Math.round(totalDuration * PERCENT_PER_UNIT)}%`,
           pin: true,
           scrub: 1,
           // Cf. ScrubHero : force le recalcul des sections épinglées de haut
@@ -86,29 +108,38 @@ export default function Advantages() {
         },
       })
 
-      // Défilement horizontal : -200vw
-      tl.to(track, { x: () => -window.innerWidth * (PANELS.length - 1), ease: 'none', duration: PANELS.length }, 0)
+      for (let i = 0; i < PANELS.length - 1; i++) {
+        tl.to(track, { x: () => -(i + 1) * window.innerWidth, ease: 'none', duration: TRANSITION }, holdStart(i) + HOLD)
+      }
 
       PANELS.forEach((_, i) => {
-        // Reveal caractères quand le panneau atteint ~50 % du viewport
+        // Reveal du texte au début du palier — jamais pendant une
+        // transition — avec de la marge avant la fin du hold pour laisser
+        // le texte pleinement lisible un instant avant que le panneau ne
+        // reparte.
+        const revealStart = holdStart(i) + 0.1
         tl.fromTo(
           `.panel-${i} .adv-char`,
           { y: 40, opacity: 0 },
-          { y: 0, opacity: 1, stagger: 0.03, duration: 0.5, ease: 'power3.out' },
-          i === 0 ? 0 : i + 0.35,
+          { y: 0, opacity: 1, stagger: 0.03, duration: 0.45, ease: 'power3.out' },
+          revealStart,
         )
         tl.fromTo(
           `.panel-${i} .adv-tagline`,
           { y: 24, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' },
-          i === 0 ? 0.15 : i + 0.5,
+          { y: 0, opacity: 1, duration: 0.4, ease: 'power3.out' },
+          revealStart + 0.15,
         )
-        // Contre-parallaxe interne de l'image
+        // Contre-parallaxe interne de l'image — sur toute la fenêtre où le
+        // panneau est à l'écran (son éventuelle transition d'entrée, son
+        // hold, son éventuelle transition de sortie).
+        const enterStart = i === 0 ? 0 : holdStart(i) - TRANSITION
+        const exitEnd = i === PANELS.length - 1 ? holdStart(i) + HOLD : holdStart(i) + HOLD + TRANSITION
         tl.fromTo(
           `.panel-${i} .adv-img`,
           { x: i % 2 === 0 ? -40 : 40 },
-          { x: i % 2 === 0 ? 40 : -40, ease: 'none', duration: 1.4 },
-          Math.max(0, i - 0.4),
+          { x: i % 2 === 0 ? 40 : -40, ease: 'none', duration: exitEnd - enterStart },
+          enterStart,
         )
       })
     },
