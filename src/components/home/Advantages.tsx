@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useSyncExternalStore } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -6,21 +6,39 @@ import { cn } from '@/lib/utils'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
-const PANELS = [
+/**
+ * `mobileImage` optionnel — recadrage portrait (1080×1920, 9:16) dédié pour
+ * chaque panneau, cf. échange du 12/09/2026 : les visuels desktop (2048×1152,
+ * 16:9) sont affichés en `object-cover` plein écran (cf. JSX plus bas), donc
+ * en portrait mobile l'essentiel de la largeur de la photo d'origine est
+ * rogné. Tant qu'aucun visuel mobile n'est fourni pour un panneau, on
+ * retombe simplement sur `image` (comportement identique à avant ce
+ * changement — aucune régression tant que `mobileImage` n'est pas renseigné).
+ */
+const PANELS: {
+  image: string
+  mobileImage?: string
+  title: string[]
+  accentLast: boolean
+  tagline: string
+}[] = [
   {
     image: '/gallery-1.jpg',
+    mobileImage: '/gallery-1-mobile.jpg',
     title: ['La', 'surprise'],
     accentLast: false,
     tagline: "Vos invités s'attendent à du papier. Ils reçoivent un film.",
   },
   {
     image: '/gallery-3.jpg',
+    mobileImage: '/gallery-3-mobile.jpg',
     title: ["L'originalité"],
     accentLast: false,
     tagline: 'Votre histoire, votre ton, vos images. Rien de générique.',
   },
   {
     image: '/gallery-4.jpg',
+    mobileImage: '/gallery-4-mobile.jpg',
     title: ["L'unique"],
     accentLast: true,
     tagline: 'Chaque faire-part est créé à la main, pour un seul couple : vous.',
@@ -28,9 +46,27 @@ const PANELS = [
 ]
 
 /** Avantages — 3 panneaux horizontaux pleine hauteur, section épinglée 250vh. */
+// Même seuil que le reste du site (ScrubHero.tsx) — choisit `mobileImage`
+// plutôt que `image` en dessous de 768px, quand un visuel dédié existe.
+// `useSyncExternalStore` plutôt que useState+useEffect (pattern de
+// ScrubHero.tsx) : la règle `react-hooks/set-state-in-effect` (nouvelle
+// depuis la mise à jour vers eslint-plugin-react-hooks 7, dérivée du React
+// Compiler) refuse le setState synchrone dans un effet — c'est justement
+// l'outil prévu pour se synchroniser à une API navigateur externe.
+function subscribeToMobileBreakpoint(onChange: () => void) {
+  const mq = window.matchMedia('(max-width: 767px)')
+  mq.addEventListener('change', onChange)
+  return () => mq.removeEventListener('change', onChange)
+}
+
+function getIsMobileSnapshot() {
+  return window.matchMedia('(max-width: 767px)').matches
+}
+
 export default function Advantages() {
   const rootRef = useRef<HTMLElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  const isMobile = useSyncExternalStore(subscribeToMobileBreakpoint, getIsMobileSnapshot, () => false)
 
   useGSAP(
     () => {
@@ -86,7 +122,7 @@ export default function Advantages() {
           {PANELS.map((panel, i) => (
             <article key={panel.tagline} className={cn(`panel-${i} relative h-full w-screen shrink-0 overflow-hidden`)}>
               <img
-                src={panel.image}
+                src={isMobile && panel.mobileImage ? panel.mobileImage : panel.image}
                 alt=""
                 loading="lazy"
                 className="adv-img absolute inset-0 h-full w-full scale-110 object-cover will-change-transform"
