@@ -132,6 +132,14 @@ export default function Home() {
           videoSrc="/home-hero-desktop.mp4"
           mobileSrc="/home-hero-mobile.mp4"
           posterSrc="/home-hero-poster.jpg"
+          // Séquence d'images plutôt que lecture vidéo directe — cf. doc de
+          // ScrubHeroProps.frames (échange du 13/09/2026). Extraites avec le
+          // même pipeline ffmpeg que les modèles Save the Date
+          // (fps=12, scale=-2:1080) : 162 images pour le montage desktop
+          // (13,5 s), 146 pour le montage mobile (12,13 s), tous deux
+          // servis statiquement depuis public/.
+          frames={{ baseUrl: '/home-hero-desktop-frames/', count: 162, fps: 12 }}
+          mobileFrames={{ baseUrl: '/home-hero-mobile-frames/', count: 146, fps: 12 }}
           heading="Votre histoire, racontée en images — le faire-part de mariage digital que vos invités n'oublieront pas"
           beats={HERO_BEATS}
           mobileBeats={HERO_BEATS_MOBILE}

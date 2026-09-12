@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { cn } from '@/lib/utils'
+import { FrameSequence } from './hero-scrub/FrameSequence'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -41,6 +42,21 @@ export interface ScrubHeroProps {
    */
   mobileSrc?: string
   posterSrc: string
+  /**
+   * Séquence d'images plutôt que `videoSrc` — même mécanisme que
+   * `hero-scrub/HeroScrub.tsx` (cf. FrameSequence.ts) : un `<canvas>` qui
+   * affiche l'image chargée la plus proche, sans les subtilités de seek/
+   * buffering d'un `<video>` (frame noire iOS au-delà du buffer, seek qui
+   * bloque le téléchargement réseau…) déjà contournées ici À LA MAIN pour
+   * la vidéo (throttle de seek, clamp sur `buffered`, unlock iOS) — cf.
+   * échange du 13/09/2026. `videoSrc`/`mobileSrc` restent toujours fournis
+   * par l'appelant même quand `frames`/`mobileFrames` sont utilisées (repli
+   * historique, même convention que `HeroVideoConfig.frames`) : si absentes,
+   * le composant retombe sur son chemin `<video>` existant, inchangé.
+   */
+  frames?: { baseUrl: string; count: number; fps: number }
+  /** Séquence "frames" propre au montage mobile (`mobileSrc`) — montage différent, pas juste une résolution différente du même film, cf. doc de `mobileSrc`. */
+  mobileFrames?: { baseUrl: string; count: number; fps: number }
   beats: ScrubHeroBeat[]
   /**
    * Beats spécifiques à `mobileSrc`, sélectionnés au même seuil (max-width:
@@ -173,11 +189,15 @@ export default function ScrubHero({
   persistentFrom = 0.55,
   durationVh = 350,
   snapWindows = EMPTY_SNAP_WINDOWS,
+  frames,
+  mobileFrames,
   className,
 }: ScrubHeroProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const framesRef = useRef<FrameSequence | null>(null)
   const fillRef = useRef<HTMLDivElement>(null)
   const indicatorRef = useRef<HTMLDivElement>(null)
   const persistentRef = useRef<HTMLDivElement>(null)
@@ -214,6 +234,28 @@ export default function ScrubHero({
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
+  // Mode "frames" (cf. doc de `frames`/`mobileFrames` ci-dessus) — montage
+  // desktop ou mobile selon `isMobile`, même sélection que `effectiveBeats`
+  // ci-dessous. `undefined` si ni l'un ni l'autre n'est fourni : le
+  // composant retombe alors sur son chemin `<video>` existant, inchangé.
+  const activeFrames = isMobile && mobileFrames ? mobileFrames : frames
+
+  // Instancie/détruit la séquence — recréée si `activeFrames` change
+  // (nouvelle version livrée, OU bascule desktop/mobile au redimensionnement
+  // franchissant le seuil 767px), jamais pour un simple re-render (d'où la
+  // dépendance ciblée baseUrl/count plutôt que l'objet, nouvelle référence à
+  // chaque rendu). Cf. HeroScrub.tsx pour ce même pattern.
+  useEffect(() => {
+    if (!activeFrames) return
+    const seq = new FrameSequence(activeFrames.baseUrl, activeFrames.count)
+    framesRef.current = seq
+    return () => {
+      seq.destroy()
+      framesRef.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFrames?.baseUrl, activeFrames?.count])
+
   // iOS Safari reste très conservateur sur le buffering en arrière-plan tant
   // qu'une vidéo n'a jamais été « jouée » au moins une fois (surtout sur
   // cellulaire) — même avec `preload="auto"` : `buffered` peut rester
@@ -224,9 +266,10 @@ export default function ScrubHero({
   // simplement rien de plus tant que la vidéo est restée en pause depuis le
   // chargement. Un play()+pause() quasi instantané (mute + playsInline,
   // donc autorisé sans geste utilisateur) débloque son pipeline de
-  // téléchargement normal.
+  // téléchargement normal. Sans objet en mode "frames" : aucun `<video>` à
+  // débloquer.
   useEffect(() => {
-    if (reducedMotion) return
+    if (reducedMotion || activeFrames) return
     const video = videoRef.current
     if (!video) return
     const playPromise = video.play()
@@ -237,7 +280,7 @@ export default function ScrubHero({
           /* autoplay refusé — le clamp/throttle du scrub restent le filet de sécurité */
         })
     }
-  }, [reducedMotion])
+  }, [reducedMotion, activeFrames])
 
   const effectiveBeats = isMobile && mobileBeats ? mobileBeats : beats
 
@@ -320,8 +363,24 @@ export default function ScrubHero({
       state.current += (state.target - state.current) * LERP
       const p = remap(clamp01(state.current))
 
-      // Vidéo scrubbée
-      if (video && !videoFailed && Number.isFinite(video.duration) && video.duration > 0) {
+      // Préchargement séquentiel de fond (mode "frames") — même esprit que
+      // `preload="auto"` pour une vidéo, indépendant de la position de
+      // scroll courante (cf. `prioritize` juste en dessous pour la fenêtre
+      // réactive autour du scroll).
+      framesRef.current?.pump()
+
+      // Mode "frames" — dessine directement l'image la plus proche de `p`,
+      // aucune des subtilités de seek/buffering d'un <video> ci-dessous ne
+      // s'applique (cf. doc de FrameSequence.ts).
+      if (activeFrames) {
+        const seq = framesRef.current
+        const canvas = canvasRef.current
+        if (seq && canvas) {
+          const targetIndex = Math.round(p * (activeFrames.count - 1))
+          seq.prioritize(targetIndex)
+          seq.draw(canvas, targetIndex)
+        }
+      } else if (video && !videoFailed && Number.isFinite(video.duration) && video.duration > 0) {
         let t = p * video.duration
         // Safari iOS affiche une frame NOIRE en cherchant au-delà de ce qui
         // est déjà téléchargé (les navigateurs desktop gardent la dernière
@@ -427,7 +486,7 @@ export default function ScrubHero({
       gsap.ticker.remove(render)
       st.kill()
     }
-  }, [reducedMotion, videoFailed, effectiveBeats, durationVh, persistentFrom, remap, isDebug])
+  }, [reducedMotion, videoFailed, effectiveBeats, durationVh, persistentFrom, remap, isDebug, activeFrames])
 
   /* ---------- Fallback reduced-motion : poster + beats statiques ---------- */
   if (reducedMotion) {
@@ -475,9 +534,28 @@ export default function ScrubHero({
   /* ---------- Version scrub-scroll épinglée ---------- */
   return (
     <section ref={sectionRef} className={cn('relative', className)} aria-label="Introduction">
-      <div ref={stageRef} style={{ height: '100dvh' }} className="grain relative overflow-hidden bg-anthracite-950">
-        {/* Média de fond : vidéo scrubbée ou poster en fallback */}
-        {videoFailed ? (
+      <div
+        ref={stageRef}
+        style={{
+          height: '100dvh',
+          // Posé en fond CSS (pas seulement en attribut `poster` du
+          // <video>, absent en mode "frames") : peint dès le premier rendu,
+          // jamais de cadre vide le temps que le premier frame charge (même
+          // technique que `.hs-stage` dans hero-scrub/HeroScrub.tsx).
+          backgroundImage: `url(${posterSrc})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+        className="grain relative overflow-hidden bg-anthracite-950"
+      >
+        {/* Média de fond : séquence de frames, vidéo scrubbée, ou poster en fallback */}
+        {activeFrames ? (
+          // Mode "frames" — un <canvas> plutôt qu'un <video>, cf. doc de
+          // FrameSequence.ts. `aria-hidden` : purement décoratif, comme la
+          // vidéo qu'il remplace (le vrai contenu reste les beats + le
+          // `<h1>` sr-only ci-dessous).
+          <canvas ref={canvasRef} className="absolute inset-0 h-full w-full object-cover" aria-hidden />
+        ) : videoFailed ? (
           <img src={posterSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <video
