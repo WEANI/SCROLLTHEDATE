@@ -304,7 +304,12 @@ export default function Offres() {
               'Livraison en ~72 h',
             ]}
             ctaLabel="Commander le Save the Date"
-            ctaHref={checkoutHref('SAVE_THE_DATE')}
+            // Vers la page produit dédiée plutôt que directement
+            // /commander — cf. échange du 13/09/2026 : cette carte de
+            // comparaison ne suffit pas à elle seule pour commander (pas
+            // de choix de formule/vidéo démo), on renvoie donc vers
+            // SaveTheDateDigital.tsx, qui a son propre bouton de commande.
+            ctaHref="/save-the-date-digital"
             visual={
               <div className="mx-auto max-w-sm transition-transform duration-500 hover:scale-[1.03]">
                 <BrowserFrame
