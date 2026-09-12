@@ -9,6 +9,8 @@ type FairePartLink = {
   description: string
   /** Filet en tête de carte + accent du CTA — couleur propre à ce couple, pas la charte marketing terracotta. */
   accent: string
+  /** 1ère image de la séquence de frames du hero (l'enveloppe) — cf. doc de HERO_VIDEO dans demoFairePart1Content.ts/demoFairePart2Content.ts. */
+  poster: string
 }
 
 const FAIRE_PARTS: FairePartLink[] = [
@@ -19,6 +21,7 @@ const FAIRE_PARTS: FairePartLink[] = [
     eyebrow: 'Charte claire · Fraunces & filet or',
     description: 'Compte à rebours, loupe magnétique sur la carte du lieu, sceau de cire pressé',
     accent: '#c9a961',
+    poster: '/demo-faire-part-1-frames/00001.jpg',
   },
   {
     slug: 'demo-faire-part-2',
@@ -27,6 +30,7 @@ const FAIRE_PARTS: FairePartLink[] = [
     eyebrow: 'Charte sombre · Ambiance cinéma',
     description: 'Photo qui se reconstitue au scroll, programme en défilement épinglé, hébergements en cascade',
     accent: '#8B1E28',
+    poster: '/demo-faire-part-2-frames/00001.jpg',
   },
 ]
 
@@ -61,28 +65,42 @@ export default function DemoFairePart() {
           <Link
             key={fp.slug}
             to={`/faire-part/${fp.slug}`}
-            className="group relative block overflow-hidden rounded-[20px] border border-anthracite-700 bg-anthracite-900 p-8 transition-all duration-300 ease-out hover:-translate-y-1 sm:p-10"
+            className="group relative block overflow-hidden rounded-[20px] border border-anthracite-700 bg-anthracite-900 transition-all duration-300 ease-out hover:-translate-y-1"
             style={{ borderColor: undefined }}
             onMouseEnter={(e) => (e.currentTarget.style.borderColor = fp.accent)}
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = '')}
           >
-            <span className="absolute inset-x-0 top-0 h-[3px] opacity-85" style={{ background: fp.accent }} aria-hidden />
-            <p className="text-[11px] uppercase tracking-[0.14em]" style={{ color: fp.accent }}>
-              {fp.eyebrow}
-            </p>
-            <p className="mt-3.5 font-display text-[30px] italic leading-[1.15]">{fp.names}</p>
-            <p className="mt-2 text-[14px] text-neutral-500">{fp.date}</p>
-            <p className="mt-1 text-[13px] text-neutral-500">{fp.description}</p>
-            <span className="mt-7 inline-flex items-center gap-2 text-[13px] font-medium">
-              Voir le faire-part
+            <div className="relative aspect-[4/3] w-full overflow-hidden">
+              <img
+                src={fp.poster}
+                alt=""
+                className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                loading="lazy"
+              />
               <span
-                className="transition-transform duration-300 group-hover:translate-x-1"
-                style={{ color: fp.accent }}
+                className="absolute inset-0 bg-gradient-to-t from-anthracite-950/80 via-anthracite-950/10 to-transparent"
                 aria-hidden
-              >
-                →
+              />
+              <span className="absolute inset-x-0 top-0 h-[3px] opacity-85" style={{ background: fp.accent }} aria-hidden />
+            </div>
+            <div className="p-8 sm:p-10">
+              <p className="text-[11px] uppercase tracking-[0.14em]" style={{ color: fp.accent }}>
+                {fp.eyebrow}
+              </p>
+              <p className="mt-3.5 font-display text-[30px] italic leading-[1.15]">{fp.names}</p>
+              <p className="mt-2 text-[14px] text-neutral-500">{fp.date}</p>
+              <p className="mt-1 text-[13px] text-neutral-500">{fp.description}</p>
+              <span className="mt-7 inline-flex items-center gap-2 text-[13px] font-medium">
+                Voir le faire-part
+                <span
+                  className="transition-transform duration-300 group-hover:translate-x-1"
+                  style={{ color: fp.accent }}
+                  aria-hidden
+                >
+                  →
+                </span>
               </span>
-            </span>
+            </div>
           </Link>
         ))}
       </div>
