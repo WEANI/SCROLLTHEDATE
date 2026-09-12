@@ -1,3 +1,4 @@
+import { useState, type SyntheticEvent } from 'react'
 import { Link } from 'react-router'
 import { motion } from 'framer-motion'
 import { Check, Clapperboard, Layout, MessageCircle, PenLine, QrCode, Sparkles } from 'lucide-react'
@@ -5,9 +6,6 @@ import { useSeo } from '@/hooks/useSeo'
 import { FadeUp, WordReveal } from '@/components/commerce/Reveal'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
 import { formatEuros, getProduct, productSlug, usePricing } from '@/components/commerce/pricing'
-import { PRODUCTS } from '@/components/home/productsCatalog'
-
-const HERO_FEATURES = PRODUCTS.find((p) => p.id === 'SAVE_THE_DATE')!.features
 
 /**
  * Page produit dédiée au Save the Date digital — cf. doc de FairePartDigital.tsx
@@ -18,19 +16,93 @@ const HERO_FEATURES = PRODUCTS.find((p) => p.id === 'SAVE_THE_DATE')!.features
  * fournir avant de pouvoir construire le sélecteur, présentée en "Bientôt
  * disponible" plutôt que promettre un chemin de commande qui n'existe pas
  * encore.
+ *
+ * Hero remanié le 12/09/2026 : les 2 offres remontent tout en haut de page,
+ * côte à côte, chacune avec un aperçu vidéo de 5 s (au lieu d'une simple
+ * vignette statique + un unique CTA générique) — la vidéo est l'argument de
+ * vente principal du produit, autant la montrer immédiatement. La section
+ * "2 façons de l'annoncer" plus bas reste inchangée (choix explicite : cf.
+ * échange du 12/09/2026) pour le détail complet de chaque formule ; ce
+ * nouveau bloc en haut n'en est qu'un avant-goût visuel.
  */
 
-/** Vignette dans un cadre navigateur CSS — même composant que Offres.tsx (dupliqué : pas encore extrait en composant partagé, un seul autre appelant). */
-function BrowserFrame({ src, alt, url }: { src: string; alt: string; url: string }) {
+const CARD_PREVIEW_SECONDS = 5
+
+/**
+ * Carte d'aperçu vidéo (5 s en boucle) pour une des 2 offres, en haut de
+ * page. Même technique que `TemplateCard` (SaveTheDateTemplates.tsx) :
+ * `timeupdate` plutôt que `loop` natif, pour ne jamais montrer la fin du
+ * montage — seulement un avant-goût — et retomber sur le poster si la vidéo
+ * échoue à charger. Composant local : un seul appelant ici, pas encore de
+ * raison de le partager avec `TemplateCard`.
+ */
+function OfferPreviewCard({
+  eyebrow,
+  price,
+  tagline,
+  videoSrc,
+  posterSrc,
+  ctaLabel,
+  ctaHref,
+  featured,
+}: {
+  eyebrow: string
+  price: string
+  tagline: string
+  videoSrc: string
+  posterSrc: string
+  ctaLabel: string
+  ctaHref: string
+  featured: boolean
+}) {
+  const [failed, setFailed] = useState(false)
+
+  function handleTimeUpdate(e: SyntheticEvent<HTMLVideoElement>) {
+    if (e.currentTarget.currentTime >= CARD_PREVIEW_SECONDS) {
+      e.currentTarget.currentTime = 0
+      void e.currentTarget.play()
+    }
+  }
+
   return (
-    <div className="overflow-hidden rounded-lg border border-anthracite-700 bg-anthracite-950 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-      <div className="flex items-center gap-1.5 border-b border-anthracite-700/70 px-4 py-3">
-        <span className="h-2.5 w-2.5 rounded-full bg-anthracite-700" />
-        <span className="h-2.5 w-2.5 rounded-full bg-anthracite-700" />
-        <span className="h-2.5 w-2.5 rounded-full bg-terracotta-500/70" />
-        <span className="ml-3 truncate rounded-full bg-anthracite-800 px-3 py-1 text-[11px] text-white/50">{url}</span>
+    <div
+      className={`overflow-hidden rounded-2xl border bg-anthracite-900/60 ${
+        featured ? 'border-terracotta-500/40' : 'border-anthracite-700/60'
+      }`}
+    >
+      <div className="relative aspect-[9/16] w-full overflow-hidden bg-anthracite-950">
+        {!failed ? (
+          <video
+            className="h-full w-full object-cover"
+            src={videoSrc}
+            poster={posterSrc}
+            autoPlay
+            muted
+            playsInline
+            onTimeUpdate={handleTimeUpdate}
+            onError={() => setFailed(true)}
+          />
+        ) : (
+          <img src={posterSrc} alt="" className="h-full w-full object-cover" loading="lazy" />
+        )}
+        <span
+          className={`absolute inset-x-0 top-0 h-[3px] ${featured ? 'bg-terracotta-500' : 'bg-anthracite-700'}`}
+          aria-hidden
+        />
       </div>
-      <img src={src} alt={alt} className="aspect-[4/5] w-full object-cover" loading="lazy" />
+      <div className="p-6 lg:p-7">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-terracotta-300">{eyebrow}</p>
+        <div className="mt-2 flex items-baseline gap-3">
+          <span className="font-display tabular text-[1.7rem] font-light text-white">{price}</span>
+          <span className="text-[13px] text-white/60">{tagline}</span>
+        </div>
+        <Link
+          to={ctaHref}
+          className="mt-5 inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-6 py-2.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
+        >
+          {ctaLabel}
+        </Link>
+      </div>
     </div>
   )
 }
@@ -57,87 +129,56 @@ export default function SaveTheDateDigital() {
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 bg-[radial-gradient(50%_50%_at_50%_50%,rgba(201,111,90,0.10),transparent_70%)]"
         />
-        <div className="relative mx-auto grid max-w-[1440px] items-center gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
-          <div>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4 }}
-              className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300"
-            >
-              Save the Date digital
-            </motion.p>
-            <h1 className="font-display mt-6 max-w-2xl text-[clamp(2.6rem,6vw,4.6rem)] font-light leading-[1.05] tracking-[-0.02em] text-white">
-              <WordReveal segments={[{ text: 'Annoncez la date' }, { text: 'comme au cinéma.', accent: true }]} />
-            </h1>
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.4, ease: EASE_EDITORIAL }}
-              className="mt-8 max-w-lg text-[16px] leading-[1.65] text-white/60"
-            >
-              Une courte vidéo personnalisée et une page d'annonce élégante, des mois avant le jour J. De quoi faire
-              patienter vos invités avec style.
-            </motion.p>
-
-            <motion.ul
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.48, ease: EASE_EDITORIAL }}
-              className="mt-8 flex flex-col gap-3"
-            >
-              {HERO_FEATURES.map((f) => (
-                <li key={f.label} className="flex items-center gap-3 text-[14px] text-white/75">
-                  <f.icon size={17} strokeWidth={1.75} className="shrink-0 text-terracotta-500" aria-hidden />
-                  {f.label}
-                </li>
-              ))}
-              <li className="flex items-center gap-3 text-[14px] text-white/75">
-                <Check size={17} strokeWidth={1.75} className="shrink-0 text-terracotta-500" aria-hidden />
-                Prix unique — quel que soit le nombre d'invités
-              </li>
-            </motion.ul>
-
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.55, ease: EASE_EDITORIAL }}
-              className="mt-9 flex flex-wrap items-center gap-6"
-            >
-              <span className="font-display tabular text-[2rem] font-light text-terracotta-300">
-                {formatEuros(saveTheDate.priceCents)}
-              </span>
-              <div className="flex flex-wrap items-center gap-5">
-                <Link
-                  to={checkoutHref}
-                  className="inline-flex items-center rounded-full bg-terracotta-500 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
-                >
-                  Commander mon Save the Date
-                </Link>
-                <Link
-                  to="/demofairepart"
-                  className="group/link relative text-[13px] font-semibold uppercase tracking-[0.1em] text-white/80 transition-colors hover:text-white"
-                >
-                  Voir la démo
-                  <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-terracotta-500 transition-transform duration-300 group-hover/link:scale-x-100" />
-                </Link>
-              </div>
-            </motion.div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.3, ease: EASE_EDITORIAL }}
-            className="mx-auto max-w-sm lg:mx-0"
+        <div className="relative mx-auto max-w-[820px] text-center">
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300"
           >
-            <BrowserFrame
-              src="/template-minimal.jpg"
-              alt="Aperçu d'une page Save the Date digital"
-              url="scrollthedate.fr/s/anna-theo"
-            />
-          </motion.div>
+            Save the Date digital
+          </motion.p>
+          <h1 className="font-display mx-auto mt-6 max-w-2xl text-[clamp(2.6rem,6vw,4.6rem)] font-light leading-[1.05] tracking-[-0.02em] text-white">
+            <WordReveal segments={[{ text: 'Annoncez la date' }, { text: 'comme au cinéma.', accent: true }]} />
+          </h1>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4, ease: EASE_EDITORIAL }}
+            className="mx-auto mt-8 max-w-xl text-[16px] leading-[1.65] text-white/60"
+          >
+            Une page d'annonce personnalisée, une vidéo courte et élégante — personnalisée ou choisie dans la
+            bibliothèque —, des mois avant le jour J. De quoi faire patienter vos invités avec style.
+          </motion.p>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.3, ease: EASE_EDITORIAL }}
+          className="relative mx-auto mt-14 grid max-w-[820px] gap-6 sm:grid-cols-2"
+        >
+          <OfferPreviewCard
+            eyebrow="Sur mesure"
+            price={formatEuros(saveTheDate.priceCents)}
+            tagline="Votre histoire, en 45 secondes."
+            videoSrc="/save-the-date-sur-mesure-demo.mp4"
+            posterSrc="/save-the-date-sur-mesure-demo-poster.jpg"
+            ctaLabel="Commander"
+            ctaHref={checkoutHref}
+            featured
+          />
+          <OfferPreviewCard
+            eyebrow="Sur un modèle"
+            price={formatEuros(9900)}
+            tagline="Prêt en quelques minutes."
+            videoSrc="/red-door.mp4"
+            posterSrc="/red-door-frames/00001.jpg"
+            ctaLabel="Voir les modèles"
+            ctaHref="/save-the-date-modeles"
+            featured={false}
+          />
+        </motion.div>
       </section>
 
       {/* ------------------------------------------------------------ */}
