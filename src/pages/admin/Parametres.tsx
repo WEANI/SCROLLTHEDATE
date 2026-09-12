@@ -177,6 +177,7 @@ const TABS = [
   { id: "profil", label: "Profil" },
   { id: "produits", label: "Produits & prix" },
   { id: "modeles-std", label: "Modèles Save the Date" },
+  { id: "faire-part-demo", label: "Faire-part démo" },
   { id: "emails", label: "Emails" },
   { id: "notifications", label: "Notifications" },
   { id: "integrations", label: "Intégrations" },
@@ -232,6 +233,7 @@ export default function Parametres() {
             {tab === "profil" ? <TabProfil push={push} /> : null}
             {tab === "produits" ? <TabProduits push={push} /> : null}
             {tab === "modeles-std" ? <TabModelesStd push={push} /> : null}
+            {tab === "faire-part-demo" ? <TabFairePartDemo push={push} /> : null}
             {tab === "emails" ? <TabEmails push={push} /> : null}
             {tab === "notifications" ? <TabNotifications push={push} /> : null}
             {tab === "integrations" ? <TabIntegrations push={push} /> : null}
@@ -946,6 +948,108 @@ function TabModelesStd({ push }: { push: Push }) {
       <AdminButton className="self-start" disabled={save.isPending} onClick={persist}>
         {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
         Enregistrer les modèles
+      </AdminButton>
+    </div>
+  );
+}
+
+// ----------------------------------------------------- faire-part démo ----
+
+/**
+ * Prénoms affichés sur les 2 faire-part de démonstration (/demofairepart,
+ * cf. échange du 13/09/2026 : ces pages — copiées d'anciennes pages
+ * clients — ne portent plus aucun prénom en dur, pour éviter d'afficher
+ * le nom d'un vrai couple sur une page de démo). Vide = titre de repli
+ * neutre ("Demo Faire Part 1"/"2", cf. DemoFairePart1.tsx/
+ * DemoFairePart2.tsx). Même mécanisme de stockage que les onglets
+ * ci-dessus (site_settings, une clé par démo).
+ */
+function TabFairePartDemo({ push }: { push: Push }) {
+  const q1 = trpc.settings.get.useQuery({ key: "demoFairePart1" });
+  const q2 = trpc.settings.get.useQuery({ key: "demoFairePart2" });
+  const save = useSaveSetting(push);
+
+  const [names1, setNames1] = useState("");
+  const [names2, setNames2] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (loaded) return;
+    if (q1.data !== undefined && q2.data !== undefined) {
+      const v1 = q1.data?.value as { coupleNames?: string } | null | undefined;
+      const v2 = q2.data?.value as { coupleNames?: string } | null | undefined;
+      setNames1(v1?.coupleNames ?? "");
+      setNames2(v2?.coupleNames ?? "");
+      setLoaded(true);
+    }
+  }, [q1.data, q2.data, loaded]);
+
+  const persist = () => {
+    save.mutate({ key: "demoFairePart1", value: { coupleNames: names1 } });
+    save.mutate({ key: "demoFairePart2", value: { coupleNames: names2 } });
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Panel>
+        <PanelTitle
+          title="Demo Faire Part 1"
+          hint="Charte claire · Fraunces & filet or"
+          action={
+            <a
+              href="/faire-part/demo-faire-part-1"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
+            >
+              Voir la page publique →
+            </a>
+          }
+        />
+        <div className="p-6">
+          <label className="flex max-w-sm flex-col gap-1 text-xs font-medium text-neutral-500">
+            Prénoms affichés
+            <input
+              value={names1}
+              onChange={(e) => setNames1(e.target.value)}
+              placeholder="Vide = « Demo Faire Part 1 »"
+              className={inputClass}
+            />
+          </label>
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelTitle
+          title="Demo Faire Part 2"
+          hint="Charte sombre · Ambiance cinéma"
+          action={
+            <a
+              href="/faire-part/demo-faire-part-2"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
+            >
+              Voir la page publique →
+            </a>
+          }
+        />
+        <div className="p-6">
+          <label className="flex max-w-sm flex-col gap-1 text-xs font-medium text-neutral-500">
+            Prénoms affichés
+            <input
+              value={names2}
+              onChange={(e) => setNames2(e.target.value)}
+              placeholder="Vide = « Demo Faire Part 2 »"
+              className={inputClass}
+            />
+          </label>
+        </div>
+      </Panel>
+
+      <AdminButton className="self-start" disabled={save.isPending} onClick={persist}>
+        {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+        Enregistrer
       </AdminButton>
     </div>
   );

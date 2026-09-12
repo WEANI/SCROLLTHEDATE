@@ -13,16 +13,16 @@ type FairePartLink = {
 
 const FAIRE_PARTS: FairePartLink[] = [
   {
-    slug: 'edwige-wilfried',
-    names: 'Edwige & Wilfried',
+    slug: 'demo-faire-part-1',
+    names: 'Demo Faire Part 1',
     date: '21 décembre 2027',
     eyebrow: 'Charte claire · Fraunces & filet or',
     description: 'Compte à rebours, loupe magnétique sur la carte du lieu, sceau de cire pressé',
     accent: '#c9a961',
   },
   {
-    slug: 'lea-olivier',
-    names: 'Léa & Olivier',
+    slug: 'demo-faire-part-2',
+    names: 'Demo Faire Part 2',
     date: '15 août 2027',
     eyebrow: 'Charte sombre · Ambiance cinéma',
     description: 'Photo qui se reconstitue au scroll, programme en défilement épinglé, hébergements en cascade',
@@ -31,13 +31,14 @@ const FAIRE_PARTS: FairePartLink[] = [
 ]
 
 /**
- * Page démo publique — index des faire-part clients livrés, chacun avec sa
- * propre mise en scène bespoke (cf. FairePartEdwigeWilfried.tsx et
- * FairePartLeaOlivier.tsx). Reste dans le Layout public (Navbar/Footer,
- * charte marketing anthracite/terracotta) : ce n'est pas un faire-part en
+ * Page démo publique — index des 2 faire-part de démonstration (cf. doc de
+ * DemoFairePart1.tsx/DemoFairePart2.tsx), chacun avec sa propre mise en
+ * scène bespoke. Reste dans le Layout public (Navbar/Footer, charte
+ * marketing anthracite/terracotta) : ce n'est pas un faire-part en
  * lui-même, juste un sommaire qui y renvoie — d'où le filet de couleur
- * PROPRE À CHAQUE COUPLE sur sa carte plutôt qu'une 3e couleur inventée.
- * Prototypée en HTML autonome puis validée par la cliente avant ce portage.
+ * PROPRE À CHAQUE MISE EN SCÈNE sur sa carte plutôt qu'une 3e couleur
+ * inventée. Les prénoms affichés SUR chaque démo (pas ici, cf. `names`
+ * volontairement générique) se règlent depuis Réglages → Faire-part démo.
  */
 export default function DemoFairePart() {
   useEffect(() => {

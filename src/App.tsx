@@ -18,8 +18,8 @@ import Confidentialite from '@/pages/Confidentialite'
 import Demo from '@/pages/Demo'
 import DemoInfos from '@/pages/DemoInfos'
 import DemoFairePart from '@/pages/DemoFairePart'
-import FairePartEdwigeWilfried from '@/pages/FairePartEdwigeWilfried'
-import FairePartLeaOlivier from '@/pages/FairePartLeaOlivier'
+import DemoFairePart1 from '@/pages/DemoFairePart1'
+import DemoFairePart2 from '@/pages/DemoFairePart2'
 import FairePartCamilleAdrien from '@/pages/FairePartCamilleAdrien'
 import FairePart from '@/pages/FairePart'
 import ClientShell from '@/components/espace/ClientShell'
@@ -103,14 +103,16 @@ export default function App() {
             après un checkout invité, et mot de passe oublié. */}
         <Route path="/definir-mot-de-passe" element={<DefinirMotDePasse />} />
 
-        {/* Faire-part client livrés — hors Layout public (pas de Navbar/Footer
-            marketing devant les invités). /edwige-wilfried et /lea-olivier
-            restent des pages câblées en dur (skill SCROLL THE DATE) ;
+        {/* Faire-part démo — hors Layout public (pas de Navbar/Footer
+            marketing devant les invités). Pages câblées en dur (skill
+            SCROLL THE DATE), listées sur /demofairepart — cf. doc de
+            demoFairePart1Content.ts/demoFairePart2Content.ts (retirées le
+            13/09/2026 : /edwige-wilfried et /lea-olivier, jusque-là ici).
             /faire-part/:slug est la vraie page dynamique, alimentée par
             projects.getPublicInvite — react-router priorise les segments
             statiques sur le paramétré, ils coexistent sans conflit. */}
-        <Route path="/faire-part/edwige-wilfried" element={<FairePartEdwigeWilfried />} />
-        <Route path="/faire-part/lea-olivier" element={<FairePartLeaOlivier />} />
+        <Route path="/faire-part/demo-faire-part-1" element={<DemoFairePart1 />} />
+        <Route path="/faire-part/demo-faire-part-2" element={<DemoFairePart2 />} />
         <Route path="/faire-part/camille-adrien" element={<FairePartCamilleAdrien />} />
         <Route path="/faire-part/:slug" element={<FairePart />} />
 
