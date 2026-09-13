@@ -23,31 +23,40 @@ const PANELS: {
   tagline: string
 }[] = [
   {
-    // Test triptyque (13/09/2026) : les 3 tiers égaux d'une seule photo
-    // panoramique (2752×1536), découpée pour que le sujet (le voile)
-    // traverse visuellement les 3 panneaux — sensation de continuité
-    // pendant le glissement horizontal. Même triptyque en `image`
-    // (desktop) et `mobileImage` (ratio par tiers déjà proche de 9:16,
-    // `object-cover` fait le reste) — remplace les 3 photos mobiles
-    // distinctes précédentes. `gallery-1.jpg`/`gallery-*-mobile.jpg`
+    // Triptyque (13/09/2026) : les 3 tiers d'une seule photo panoramique
+    // (2752×1536), découpée pour que le sujet (le voile) traverse
+    // visuellement les 3 panneaux — sensation de continuité pendant le
+    // glissement horizontal. `gallery-1.jpg`/`gallery-*-mobile.jpg`
     // (partagés avec Gallery.tsx plus bas) ne sont plus utilisés ici, mais
     // pas supprimés.
+    //
+    // `mobileImage` recadré à part (640×1536, ratio ~0,417) plutôt que de
+    // réutiliser `image` (917×1536, ratio ~0,597) : ce 2e ratio est plus
+    // large que celui de la plupart des écrans de téléphone, donc
+    // `object-cover` rognait aussi la LARGEUR (pas seulement la hauteur)
+    // pour remplir un viewport portrait — un rognage différent selon la
+    // hauteur exacte de chaque appareil, qui cassait le raccord entre
+    // panneaux (le voile ne se retrouvait plus à la bonne position d'un
+    // panneau à l'autre). Un ratio plus étroit que n'importe quel écran de
+    // téléphone courant garantit qu'`object-cover` ne rogne plus jamais la
+    // largeur — seulement la hauteur, ce qui ne casse pas le raccord
+    // horizontal.
     image: '/advantages-1.jpg',
-    mobileImage: '/advantages-1.jpg',
+    mobileImage: '/advantages-1-mobile.jpg',
     title: ['La', 'surprise'],
     accentLast: false,
     tagline: "Vos invités s'attendent à du papier. Ils reçoivent un film.",
   },
   {
     image: '/advantages-2.jpg',
-    mobileImage: '/advantages-2.jpg',
+    mobileImage: '/advantages-2-mobile.jpg',
     title: ["L'originalité"],
     accentLast: false,
     tagline: 'Votre histoire, votre ton, vos images. Rien de générique.',
   },
   {
     image: '/advantages-3.jpg',
-    mobileImage: '/advantages-3.jpg',
+    mobileImage: '/advantages-3-mobile.jpg',
     title: ["L'unique"],
     accentLast: true,
     tagline: 'Chaque faire-part est créé à la main, pour un seul couple : vous.',
