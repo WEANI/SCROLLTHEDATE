@@ -35,7 +35,7 @@ const HERO_BEATS: ScrubHeroBeat[] = [
   {
     from: 0.08,
     to: 0.24,
-    segments: [{ text: 'Votre histoire.' }],
+    segments: [{ text: 'Votre histoire.', ink: true }],
   },
   {
     from: 0.37,
@@ -45,7 +45,7 @@ const HERO_BEATS: ScrubHeroBeat[] = [
   {
     from: 0.78,
     to: 0.95,
-    segments: [{ text: "Un faire-part que personne n'oublie." }],
+    segments: [{ text: 'Un' }, { text: 'faire-part', brand: true }, { text: "que personne n'oublie." }],
   },
 ]
 
@@ -68,7 +68,7 @@ const HERO_BEATS_MOBILE: ScrubHeroBeat[] = [
   {
     from: 0.08,
     to: 0.3,
-    segments: [{ text: 'Votre histoire.' }],
+    segments: [{ text: 'Votre histoire.', ink: true }],
   },
   {
     from: 0.48,
@@ -78,7 +78,7 @@ const HERO_BEATS_MOBILE: ScrubHeroBeat[] = [
   {
     from: 0.87,
     to: 0.97,
-    segments: [{ text: "Un faire-part que personne n'oublie." }],
+    segments: [{ text: 'Un' }, { text: 'faire-part', brand: true }, { text: "que personne n'oublie." }],
   },
 ]
 

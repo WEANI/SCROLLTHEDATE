@@ -11,6 +11,10 @@ export interface ScrubHeroSegment {
   text: string
   /** Fraunces italique terracotta-300 (mot d'émotion) */
   accent?: boolean
+  /** Noir plein (text-black) — cf. échange du 13/09/2026 */
+  ink?: boolean
+  /** terracotta-500 plein, non-italique — même couleur que le CTA persistant */
+  brand?: boolean
 }
 
 export interface ScrubHeroBeat {
@@ -288,12 +292,12 @@ export default function ScrubHero({
   const beatWords = useMemo(
     () =>
       effectiveBeats.map((beat) => {
-        const words: { text: string; accent: boolean }[] = []
+        const words: { text: string; accent: boolean; ink: boolean; brand: boolean }[] = []
         beat.segments?.forEach((seg) => {
           seg.text
             .split(/\s+/)
             .filter(Boolean)
-            .forEach((w) => words.push({ text: w, accent: !!seg.accent }))
+            .forEach((w) => words.push({ text: w, accent: !!seg.accent, ink: !!seg.ink, brand: !!seg.brand }))
         })
         return words
       }),
@@ -516,7 +520,11 @@ export default function ScrubHero({
                   {beat.segments.map((seg, si) => (
                     <span
                       key={si}
-                      className={seg.accent ? 'italic text-terracotta-300' : undefined}
+                      className={cn(
+                        seg.accent && 'italic text-terracotta-300',
+                        seg.ink && 'text-black',
+                        seg.brand && 'text-terracotta-500',
+                      )}
                     >
                       {seg.text}{' '}
                     </span>
@@ -617,6 +625,8 @@ export default function ScrubHero({
                       className={cn(
                         'inline-block will-change-transform',
                         word.accent && 'italic text-terracotta-300',
+                        word.ink && 'text-black',
+                        word.brand && 'text-terracotta-500',
                       )}
                     >
                       {word.text}
