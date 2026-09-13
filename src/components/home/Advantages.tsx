@@ -30,18 +30,20 @@ const PANELS: {
     // `gallery-1.jpg`/`gallery-*-mobile.jpg` (partagés avec Gallery.tsx plus
     // bas) ne sont plus utilisés ici, mais pas supprimés.
     //
-    // `image` (desktop) : 3 tiers ÉGAUX de 1000×1680 (aucune marge —
-    // `object-cover` ne rogne jamais la largeur sur un écran large, cf. plus
-    // bas). `mobileImage` : 3 tiers de 700×1680 (ratio ~0,417, plus étroit
-    // que n'importe quel écran de téléphone courant — garantit qu'
-    // `object-cover` ne rogne jamais la largeur non plus, seulement la
-    // hauteur) MAIS centrés aux mêmes points que les tiers desktop avec
-    // 300px de marge en plus (700 au lieu de 400 en largeur équivalente) :
-    // cette marge est le débord qu'absorbe `scale-110` pour la parallaxe
-    // (PARALLAX) sans jamais exposer le fond ni rogner le raccord entre
-    // panneaux (contrairement au 1er essai du 13/09/2026, où la marge était
-    // prise SUR le contenu utile faute d'avoir prévu cette marge dès le
-    // départ dans la photo source).
+    // Chaque recadrage (`image` ET `mobileImage`) est plus LARGE que ce qui
+    // est effectivement visible à l'écran : `scale-110`/`scale-125` (cf. plus
+    // bas) zoome pour absorber la parallaxe sans exposer le fond, ce qui
+    // réduit d'autant la largeur réellement montrée. Erreur commise au 1er
+    // essai (13/09/2026) : centrer les tiers en espaçant leurs centres de la
+    // largeur du FICHIER recadré — après le zoom, la largeur VISIBLE est
+    // plus étroite que ça, laissant un morceau de la photo jamais affiché
+    // entre deux panneaux (saut visible signalé le 13/09/2026). Correctif :
+    // l'espacement entre centres doit être la largeur VISIBLE après zoom
+    // (desktop : 1150px de fichier pour 920px visibles, espacés de 920px ;
+    // mobile : 704px de fichier pour 640px visibles, espacés de 640px) —
+    // ratio mobile (704/1680 ≈ 0,419) toujours plus étroit que n'importe
+    // quel écran de téléphone courant, pour qu'`object-cover` ne rogne
+    // jamais la largeur non plus (seulement la hauteur).
     image: '/advantages-1.jpg',
     mobileImage: '/advantages-1-mobile.jpg',
     title: ['La', 'surprise'],
