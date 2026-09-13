@@ -171,22 +171,32 @@ export default function Advantages() {
           { y: 0, opacity: 1, duration: 0.4, ease: 'power3.out' },
           revealStart + 0.15,
         )
-        // Parallaxe interne de l'image — sur toute la fenêtre où le panneau
-        // est à l'écran (son éventuelle transition d'entrée, son hold, son
-        // éventuelle transition de sortie). Même sens pour les 3 panneaux
-        // (cf. échange du 13/09/2026 — alterner gauche/droite d'un panneau à
-        // l'autre donnait une impression décousue).
-        if (PARALLAX > 0) {
-          const enterStart = i === 0 ? 0 : holdStart(i) - TRANSITION
-          const exitEnd = i === PANELS.length - 1 ? holdStart(i) + HOLD : holdStart(i) + HOLD + TRANSITION
-          tl.fromTo(
-            `.panel-${i} .adv-img`,
-            { x: PARALLAX },
-            { x: -PARALLAX, ease: 'none', duration: exitEnd - enterStart },
-            enterStart,
-          )
-        }
       })
+
+      // Parallaxe interne — UNE seule animation, appliquée à la fois à
+      // toutes les images (sélecteur `.adv-img` global, pas
+      // `.panel-${i} .adv-img`) plutôt qu'une par panneau avec sa propre
+      // fenêtre temporelle. Cf. échange du 13/09/2026 : avec une fenêtre par
+      // panneau, deux panneaux visibles en même temps pendant une
+      // transition n'étaient pas forcément au même décalage à cet instant
+      // précis (chacun interpolant sur SA PROPRE fenêtre, décalée d'un cycle
+      // HOLD+TRANSITION par rapport à son voisin) — d'où le petit décalage
+      // résiduel au raccord. Une seule tween sur le sélecteur global
+      // garantit que toutes les images reçoivent exactement la même valeur
+      // au même instant : leur écart relatif ne bouge jamais, seul le
+      // raccord entre panneaux (déjà pixel-parfait au repos) compte.
+      // `repeat`+`yoyo` sur un cycle de durée HOLD+TRANSITION font aller-
+      // retour le décalage à chaque palier, plutôt qu'un unique balayage
+      // linéaire sur toute la timeline (qui rendrait le mouvement à peine
+      // perceptible pendant un seul palier, noyé dans une dérive globale).
+      if (PARALLAX > 0) {
+        tl.fromTo(
+          '.adv-img',
+          { x: PARALLAX },
+          { x: -PARALLAX, ease: 'none', duration: HOLD + TRANSITION, repeat: PANELS.length - 1, yoyo: true },
+          0,
+        )
+      }
     },
     { scope: rootRef, dependencies: [isMobile] },
   )
