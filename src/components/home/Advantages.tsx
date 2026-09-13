@@ -92,6 +92,16 @@ export default function Advantages() {
       // de hold d'un panneau (GSAP conserve simplement la valeur courante) —
       // le texte apparaît entièrement PENDANT ce palier, avant que la
       // transition vers le panneau suivant ne démarre.
+      // Amplitude de la parallaxe interne — cf. échange du 13/09/2026 :
+      // un décalage de ±40px (réglage desktop d'origine) dépasse largement
+      // la marge de débord fournie par `scale-110` sur un écran mobile
+      // étroit (ex. ~19px de marge de chaque côté pour un viewport à
+      // 390px) — l'image se décale alors au-delà de son cadre et laisse
+      // apparaître le fond derrière elle, visible comme une coupure noire
+      // pile à la jonction entre panneaux (particulièrement gênant
+      // maintenant que les 3 images forment un triptyque continu). Amplitude
+      // réduite sur mobile pour rester largement sous cette marge.
+      const PARALLAX = isMobile ? 12 : 40
       const HOLD = 1
       const TRANSITION = 0.5
       const holdStart = (i: number) => i * (HOLD + TRANSITION)
@@ -148,13 +158,13 @@ export default function Advantages() {
         const exitEnd = i === PANELS.length - 1 ? holdStart(i) + HOLD : holdStart(i) + HOLD + TRANSITION
         tl.fromTo(
           `.panel-${i} .adv-img`,
-          { x: 40 },
-          { x: -40, ease: 'none', duration: exitEnd - enterStart },
+          { x: PARALLAX },
+          { x: -PARALLAX, ease: 'none', duration: exitEnd - enterStart },
           enterStart,
         )
       })
     },
-    { scope: rootRef },
+    { scope: rootRef, dependencies: [isMobile] },
   )
 
   return (
@@ -167,7 +177,7 @@ export default function Advantages() {
                 src={isMobile && panel.mobileImage ? panel.mobileImage : panel.image}
                 alt=""
                 loading="lazy"
-                className="adv-img absolute inset-0 h-full w-full scale-110 object-cover will-change-transform"
+                className="adv-img absolute inset-0 h-full w-full scale-125 object-cover will-change-transform"
               />
               <div className="absolute inset-0 bg-anthracite-950/55" />
               <div className="grain relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
