@@ -1,9 +1,7 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
-import { ClipboardCheck, Mic, Share2, ShoppingBag } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -12,103 +10,90 @@ const STEPS = [
     num: '01',
     title: 'Commandez',
     text: 'Choisissez votre formule, en quelques minutes. Paiement sécurisé.',
-    icon: ShoppingBag,
   },
   {
     num: '02',
     title: 'Racontez',
     text: "Questionnaire guidé, note vocale, vos photos. C'est vous la matière première du film.",
-    icon: Mic,
   },
   {
     num: '03',
     title: 'Validez',
     text: 'Des propositions de scénario, vous choisissez. Puis une vidéo en filigrane avant la version finale.',
-    icon: ClipboardCheck,
   },
   {
     num: '04',
     title: 'Recevez & partagez',
     text: 'Faire-part en ligne, lien illimité, QR code et RSVP intégré. Vos invités répondent en un clic.',
-    icon: Share2,
   },
 ]
 
+// Offset du 1er panneau — juste sous la navbar fixe (h-20 = 80px, cf.
+// Navbar.tsx) + un peu de respiration. Chaque carte suivante ajoute
+// STICKY_STEP pour l'effet d'empilement (cf. doc du composant).
+const STICKY_TOP = 96
+const STICKY_STEP = 18
+
 /**
- * Comment ça marche — recette « focus-sequence » (cf. maquette comparative
- * du 13/09/2026, 6 recettes d'animation aux couleurs du site) : une étape à
- * la fois, plein écran, avec son numéro en grand filigrane derrière le
- * titre. Remplace l'ancien empilement de cartes qui glissaient les unes sur
- * les autres — mêmes 4 étapes, même épinglage GSAP (300 → 400vh, cf.
- * `end` ci-dessous), transition pilotée par l'état React `active` plutôt que
- * par un timeline GSAP (plus simple : un simple fondu + zoom léger par
- * étape, pas de déplacement à synchroniser).
+ * Comment ça marche — recette « step-stack » (cf. maquette comparative des 6
+ * recettes d'animation aux couleurs du site, 13/09/2026) : des cartes en
+ * `position: sticky`, un `top` légèrement croissant d'une carte à l'autre —
+ * chacune se fige un peu plus bas que la précédente et la recouvre au
+ * scroll (z-index croissant + ombre), donnant un effet de pile de fiches.
+ * Remplace la recette « focus-sequence » précédente.
+ *
+ * Contrairement aux autres sections de la home, aucun pin GSAP ici :
+ * l'empilement fonctionne nativement en CSS (sticky), aussi bien sur
+ * desktop que sur mobile, sans recalcul de hauteur ni piège d'épinglage.
+ * GSAP n'intervient que pour l'effet de réduction (`scale`) qui accentue
+ * la profondeur d'une carte au moment où la suivante la recouvre.
  */
 export default function HowItWorks() {
   const rootRef = useRef<HTMLElement>(null)
-  const [active, setActive] = useState(0)
 
   useGSAP(
     () => {
-      ScrollTrigger.create({
-        trigger: rootRef.current,
-        start: 'top top',
-        end: '+=400%',
-        pin: true,
-        scrub: 1,
-        // Cf. ScrubHero : force le recalcul des sections épinglées de haut
-        // en bas (héros = 3, ici = 2, Advantages = 1).
-        refreshPriority: 2,
-        onUpdate: (self) => {
-          setActive(Math.min(STEPS.length - 1, Math.floor(self.progress * STEPS.length)))
-        },
+      const cards = gsap.utils.toArray<HTMLElement>('.stack-card')
+      cards.forEach((card, i) => {
+        gsap.to(card, {
+          scale: 0.955,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: card,
+            // Le point où la carte se fige (son propre `top` sticky) —
+            // au-delà, on la réduit progressivement sur 220px de scroll,
+            // pendant que la carte suivante vient la recouvrir.
+            start: `top top+=${STICKY_TOP + i * STICKY_STEP}`,
+            end: '+=220',
+            scrub: true,
+          },
+        })
       })
     },
     { scope: rootRef },
   )
 
   return (
-    <section ref={rootRef} id="comment-ca-marche" className="relative">
-      <div className="grain relative overflow-hidden bg-anthracite-950" style={{ height: '100dvh' }}>
-        {STEPS.map((step, i) => (
-          <div
-            key={step.num}
-            className={cn(
-              'absolute inset-0 flex items-center justify-center px-6 transition-all duration-500 ease-out',
-              i === active ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.04]',
-            )}
-          >
-            {/* Numéro en filigrane, plein écran derrière le contenu */}
-            <span
-              aria-hidden
-              className="text-outline-terracotta font-display pointer-events-none absolute inset-0 flex select-none items-center justify-center text-[42vh] font-light leading-none opacity-30"
-            >
-              {step.num}
-            </span>
-            <div className="relative z-10 flex flex-col items-center text-center">
-              <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-full border border-anthracite-700 bg-anthracite-950/60 backdrop-blur-sm">
-                <step.icon size={32} strokeWidth={1.25} className="text-terracotta-500" />
-              </div>
-              <h2 className="font-display text-[clamp(2.4rem,5vw,4.5rem)] font-light tracking-[-0.015em] text-white">
-                {step.title}
-              </h2>
-              <p className="mx-auto mt-6 max-w-md text-[16px] leading-[1.65] text-white/70">{step.text}</p>
-            </div>
-          </div>
-        ))}
+    <section ref={rootRef} id="comment-ca-marche" className="relative bg-anthracite-950 px-6 py-32 lg:px-12 lg:py-44">
+      <div className="mx-auto max-w-[660px] text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">Comment ça marche</p>
+        <h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.2rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
+          4 étapes, <em className="italic text-terracotta-300">sans complications</em>.
+        </h2>
+      </div>
 
-        {/* Barres de progression — cf. .bars de la maquette focus-sequence */}
-        <div className="absolute inset-x-0 bottom-12 z-20 flex items-center justify-center gap-2.5">
-          {STEPS.map((step, i) => (
-            <span
-              key={step.num}
-              className={cn(
-                'h-[2px] w-9 rounded-full transition-colors duration-300',
-                i <= active ? 'bg-terracotta-500' : 'bg-white/15',
-              )}
-            />
-          ))}
-        </div>
+      <div className="relative mx-auto mt-16 max-w-[660px] pb-[20vh]">
+        {STEPS.map((step, i) => (
+          <article
+            key={step.num}
+            className="stack-card sticky mb-7 rounded-xl border border-anthracite-700 bg-anthracite-800 p-10 shadow-[0_-20px_40px_-30px_rgba(0,0,0,0.8)] lg:p-11"
+            style={{ top: `${STICKY_TOP + i * STICKY_STEP}px`, zIndex: i + 1 }}
+          >
+            <p className="font-display text-[2.6rem] font-light leading-none text-terracotta-500">{step.num}</p>
+            <h3 className="font-display mt-3 text-2xl font-light tracking-[-0.01em] text-white">{step.title}</h3>
+            <p className="mt-3 max-w-md text-[15px] leading-[1.65] text-white/70">{step.text}</p>
+          </article>
+        ))}
       </div>
     </section>
   )

@@ -132,7 +132,8 @@ export default function Advantages() {
           pin: true,
           scrub: 1,
           // Cf. ScrubHero : force le recalcul des sections épinglées de haut
-          // en bas (héros = 3, HowItWorks = 2, ici = 1).
+          // en bas (héros = 3, ici = 1 — HowItWorks n'épingle plus rien
+          // depuis son passage à la recette « step-stack », cf. son doc).
           refreshPriority: 1,
         },
       })
