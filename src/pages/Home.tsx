@@ -163,10 +163,10 @@ export default function Home() {
       <SocialProof />
       <Concept />
       <Products />
-      <Included />
       <HowItWorks />
-      <Advantages />
+      <Included />
       <RsvpTeaser />
+      <Advantages />
       <Gallery />
       <Faq />
       <FinalCta />
