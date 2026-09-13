@@ -101,16 +101,20 @@ export default function Advantages() {
       // de hold d'un panneau (GSAP conserve simplement la valeur courante) —
       // le texte apparaît entièrement PENDANT ce palier, avant que la
       // transition vers le panneau suivant ne démarre.
-      // Amplitude de la parallaxe interne — cf. échange du 13/09/2026 :
-      // un décalage de ±40px (réglage desktop d'origine) dépasse largement
-      // la marge de débord fournie par `scale-110` sur un écran mobile
-      // étroit (ex. ~19px de marge de chaque côté pour un viewport à
-      // 390px) — l'image se décale alors au-delà de son cadre et laisse
-      // apparaître le fond derrière elle, visible comme une coupure noire
-      // pile à la jonction entre panneaux (particulièrement gênant
-      // maintenant que les 3 images forment un triptyque continu). Amplitude
-      // réduite sur mobile pour rester largement sous cette marge.
-      const PARALLAX = isMobile ? 12 : 40
+      // Parallaxe interne desktop uniquement — cf. échange du 13/09/2026 :
+      // le débord nécessaire (`scale-125`) pour absorber le déplacement sans
+      // exposer le fond ronge justement les bords des images, exactement la
+      // zone qui raccorde deux panneaux entre eux dans le triptyque — cassant
+      // le raccord malgré 2 correctifs précédents (largeur DOM mesurée,
+      // recadrages mobiles dédiés). La photo source ne fait que 1536px de
+      // haut : impossible d'élargir davantage les recadrages mobiles pour
+      // compenser cette perte sans dépasser le ratio le plus étroit garanti
+      // sûr pour tous les téléphones (cf. doc de `mobileImage` plus haut).
+      // Aucune parallaxe sur mobile = aucun débord nécessaire = le raccord
+      // reste pixel-parfait. Sur desktop, la photo occupe toute la largeur
+      // (aucun rognage web-cover, cf. même doc), donc perdre 12,5% sur les
+      // bords ne mange jamais un raccord visible.
+      const PARALLAX = isMobile ? 0 : 40
       const HOLD = 1
       const TRANSITION = 0.5
       const holdStart = (i: number) => i * (HOLD + TRANSITION)
@@ -175,14 +179,16 @@ export default function Advantages() {
         // éventuelle transition de sortie). Même sens pour les 3 panneaux
         // (cf. échange du 13/09/2026 — alterner gauche/droite d'un panneau à
         // l'autre donnait une impression décousue).
-        const enterStart = i === 0 ? 0 : holdStart(i) - TRANSITION
-        const exitEnd = i === PANELS.length - 1 ? holdStart(i) + HOLD : holdStart(i) + HOLD + TRANSITION
-        tl.fromTo(
-          `.panel-${i} .adv-img`,
-          { x: PARALLAX },
-          { x: -PARALLAX, ease: 'none', duration: exitEnd - enterStart },
-          enterStart,
-        )
+        if (PARALLAX > 0) {
+          const enterStart = i === 0 ? 0 : holdStart(i) - TRANSITION
+          const exitEnd = i === PANELS.length - 1 ? holdStart(i) + HOLD : holdStart(i) + HOLD + TRANSITION
+          tl.fromTo(
+            `.panel-${i} .adv-img`,
+            { x: PARALLAX },
+            { x: -PARALLAX, ease: 'none', duration: exitEnd - enterStart },
+            enterStart,
+          )
+        }
       })
     },
     { scope: rootRef, dependencies: [isMobile] },
@@ -198,7 +204,15 @@ export default function Advantages() {
                 src={isMobile && panel.mobileImage ? panel.mobileImage : panel.image}
                 alt=""
                 loading="lazy"
-                className="adv-img absolute inset-0 h-full w-full scale-125 object-cover will-change-transform"
+                // scale-125 (desktop) donne du débord pour la parallaxe ;
+                // sur mobile, sans parallaxe (cf. doc de PARALLAX plus haut),
+                // scale-105 suffit (juste une marge de sécurité subpixel) —
+                // un zoom minimal préserve le raccord entre panneaux du
+                // triptyque, que scale-125 aurait rogné sur les bords.
+                className={cn(
+                  'adv-img absolute inset-0 h-full w-full object-cover will-change-transform',
+                  isMobile ? 'scale-105' : 'scale-125',
+                )}
               />
               <div className="absolute inset-0 bg-anthracite-950/55" />
               <div className="grain relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
