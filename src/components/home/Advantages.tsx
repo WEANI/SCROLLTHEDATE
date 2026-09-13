@@ -136,8 +136,20 @@ export default function Advantages() {
         },
       })
 
+      // Largeur RÉELLE d'un panneau (mesurée dans le DOM) plutôt que
+      // `window.innerWidth` — cf. échange du 13/09/2026 : un fin trait
+      // sombre restait visible à la jonction entre panneaux sur mobile
+      // malgré une photo source parfaitement continue à cet endroit (vérifié
+      // pixel à pixel). `100vw` (largeur CSS réelle des panneaux, via
+      // `w-screen`) peut différer de quelques pixels de `window.innerWidth`
+      // sur certains mobiles (barre d'adresse, scrollbar) — un écart minime
+      // suffit à décaler le panneau suivant de quelques pixels par rapport à
+      // son cadrage prévu, laissant entrevoir le bord de l'image adjacente.
+      // Mesurer la largeur réellement rendue élimine cet écart à la source.
+      const panelWidth = () => track.children[0]?.getBoundingClientRect().width ?? window.innerWidth
+
       for (let i = 0; i < PANELS.length - 1; i++) {
-        tl.to(track, { x: () => -(i + 1) * window.innerWidth, ease: 'none', duration: TRANSITION }, holdStart(i) + HOLD)
+        tl.to(track, { x: () => -(i + 1) * panelWidth(), ease: 'none', duration: TRANSITION }, holdStart(i) + HOLD)
       }
 
       PANELS.forEach((_, i) => {
