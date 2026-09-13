@@ -136,10 +136,22 @@ export default function Home() {
           // ScrubHeroProps.frames (échange du 13/09/2026). Extraites avec le
           // même pipeline ffmpeg que les modèles Save the Date
           // (fps=12, scale=-2:1080) : 162 images pour le montage desktop
-          // (13,5 s), 146 pour le montage mobile (12,13 s), tous deux
-          // servis statiquement depuis public/.
+          // (13,5 s), tous deux servis statiquement depuis public/.
+          //
+          // Montage mobile remplacé le 13/09/2026 par « HERO MOBILE
+          // OUVERTURE » (206 images, 17,1 s) : ouverture d'enveloppe → sortie
+          // de cérémonie → alliance en silhouette. Vidéo source livrée en
+          // 1920×1080 avec un pillarboxing noir (portrait 608×1080 encadré
+          // dans un export CapCut) — recadrée avant extraction des frames
+          // (`crop=608:1080:656:0,fps=12,scale=-2:1080`).
+          //
+          // ⚠️ `HERO_BEATS_MOBILE` ci-dessus n'a PAS été retimé sur ce
+          // nouveau montage (durée différente, nouvelle scène d'ouverture) —
+          // ses fractions de progression restent celles calées sur l'ancien
+          // clip de 12,13 s. À revoir si le texte tombe mal par rapport aux
+          // nouvelles scènes.
           frames={{ baseUrl: '/home-hero-desktop-frames/', count: 162, fps: 12 }}
-          mobileFrames={{ baseUrl: '/home-hero-mobile-frames/', count: 146, fps: 12 }}
+          mobileFrames={{ baseUrl: '/home-hero-mobile-frames/', count: 206, fps: 12 }}
           heading="Votre histoire, racontée en images — le faire-part de mariage digital que vos invités n'oublieront pas"
           beats={HERO_BEATS}
           mobileBeats={HERO_BEATS_MOBILE}
