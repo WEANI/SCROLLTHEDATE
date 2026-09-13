@@ -23,21 +23,26 @@ const PANELS: {
   tagline: string
 }[] = [
   {
-    image: '/gallery-1.jpg',
+    // Test triptyque (13/09/2026) : les 3 `image` desktop sont les 3 tiers
+    // égaux d'une seule photo panoramique (2752×1536), découpée pour que le
+    // sujet (le voile) traverse visuellement les 3 panneaux — sensation de
+    // continuité pendant le glissement horizontal. `gallery-1.jpg` (partagé
+    // avec Gallery.tsx plus bas) n'est plus utilisé ici, mais pas supprimé.
+    image: '/advantages-1.jpg',
     mobileImage: '/gallery-1-mobile.jpg',
     title: ['La', 'surprise'],
     accentLast: false,
     tagline: "Vos invités s'attendent à du papier. Ils reçoivent un film.",
   },
   {
-    image: '/gallery-3.jpg',
+    image: '/advantages-2.jpg',
     mobileImage: '/gallery-3-mobile.jpg',
     title: ["L'originalité"],
     accentLast: false,
     tagline: 'Votre histoire, votre ton, vos images. Rien de générique.',
   },
   {
-    image: '/gallery-4.jpg',
+    image: '/advantages-3.jpg',
     mobileImage: '/gallery-4-mobile.jpg',
     title: ["L'unique"],
     accentLast: true,
