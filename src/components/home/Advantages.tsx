@@ -23,24 +23,25 @@ const PANELS: {
   tagline: string
 }[] = [
   {
-    // Triptyque (13/09/2026) : les 3 tiers d'une seule photo panoramique
-    // (2752×1536), découpée pour que le sujet (le voile) traverse
-    // visuellement les 3 panneaux — sensation de continuité pendant le
-    // glissement horizontal. `gallery-1.jpg`/`gallery-*-mobile.jpg`
-    // (partagés avec Gallery.tsx plus bas) ne sont plus utilisés ici, mais
-    // pas supprimés.
+    // Triptyque (13/09/2026, régénéré en 3000×1680 le même jour pour avoir
+    // la marge nécessaire à la parallaxe — cf. doc de PARALLAX dans le
+    // composant) : le sujet (le voile) traverse visuellement les 3
+    // panneaux — sensation de continuité pendant le glissement horizontal.
+    // `gallery-1.jpg`/`gallery-*-mobile.jpg` (partagés avec Gallery.tsx plus
+    // bas) ne sont plus utilisés ici, mais pas supprimés.
     //
-    // `mobileImage` recadré à part (640×1536, ratio ~0,417) plutôt que de
-    // réutiliser `image` (917×1536, ratio ~0,597) : ce 2e ratio est plus
-    // large que celui de la plupart des écrans de téléphone, donc
-    // `object-cover` rognait aussi la LARGEUR (pas seulement la hauteur)
-    // pour remplir un viewport portrait — un rognage différent selon la
-    // hauteur exacte de chaque appareil, qui cassait le raccord entre
-    // panneaux (le voile ne se retrouvait plus à la bonne position d'un
-    // panneau à l'autre). Un ratio plus étroit que n'importe quel écran de
-    // téléphone courant garantit qu'`object-cover` ne rogne plus jamais la
-    // largeur — seulement la hauteur, ce qui ne casse pas le raccord
-    // horizontal.
+    // `image` (desktop) : 3 tiers ÉGAUX de 1000×1680 (aucune marge —
+    // `object-cover` ne rogne jamais la largeur sur un écran large, cf. plus
+    // bas). `mobileImage` : 3 tiers de 700×1680 (ratio ~0,417, plus étroit
+    // que n'importe quel écran de téléphone courant — garantit qu'
+    // `object-cover` ne rogne jamais la largeur non plus, seulement la
+    // hauteur) MAIS centrés aux mêmes points que les tiers desktop avec
+    // 300px de marge en plus (700 au lieu de 400 en largeur équivalente) :
+    // cette marge est le débord qu'absorbe `scale-110` pour la parallaxe
+    // (PARALLAX) sans jamais exposer le fond ni rogner le raccord entre
+    // panneaux (contrairement au 1er essai du 13/09/2026, où la marge était
+    // prise SUR le contenu utile faute d'avoir prévu cette marge dès le
+    // départ dans la photo source).
     image: '/advantages-1.jpg',
     mobileImage: '/advantages-1-mobile.jpg',
     title: ['La', 'surprise'],
@@ -101,20 +102,14 @@ export default function Advantages() {
       // de hold d'un panneau (GSAP conserve simplement la valeur courante) —
       // le texte apparaît entièrement PENDANT ce palier, avant que la
       // transition vers le panneau suivant ne démarre.
-      // Parallaxe interne desktop uniquement — cf. échange du 13/09/2026 :
-      // le débord nécessaire (`scale-125`) pour absorber le déplacement sans
-      // exposer le fond ronge justement les bords des images, exactement la
-      // zone qui raccorde deux panneaux entre eux dans le triptyque — cassant
-      // le raccord malgré 2 correctifs précédents (largeur DOM mesurée,
-      // recadrages mobiles dédiés). La photo source ne fait que 1536px de
-      // haut : impossible d'élargir davantage les recadrages mobiles pour
-      // compenser cette perte sans dépasser le ratio le plus étroit garanti
-      // sûr pour tous les téléphones (cf. doc de `mobileImage` plus haut).
-      // Aucune parallaxe sur mobile = aucun débord nécessaire = le raccord
-      // reste pixel-parfait. Sur desktop, la photo occupe toute la largeur
-      // (aucun rognage web-cover, cf. même doc), donc perdre 12,5% sur les
-      // bords ne mange jamais un raccord visible.
-      const PARALLAX = isMobile ? 0 : 40
+      // Amplitude de la parallaxe interne — cf. doc de `mobileImage` plus
+      // haut : la marge nécessaire pour l'absorber sans exposer le fond est
+      // désormais prise sur une marge prévue dès la photo source (300px de
+      // large en plus par tier mobile), pas sur le contenu utile — le
+      // raccord entre panneaux reste donc intact avec la parallaxe active.
+      // ±15px sur mobile reste dans le budget de `scale-110` (10 % de
+      // débord) pour un viewport d'au moins 360px de large.
+      const PARALLAX = isMobile ? 15 : 40
       const HOLD = 1
       const TRANSITION = 0.5
       const holdStart = (i: number) => i * (HOLD + TRANSITION)
@@ -204,14 +199,13 @@ export default function Advantages() {
                 src={isMobile && panel.mobileImage ? panel.mobileImage : panel.image}
                 alt=""
                 loading="lazy"
-                // scale-125 (desktop) donne du débord pour la parallaxe ;
-                // sur mobile, sans parallaxe (cf. doc de PARALLAX plus haut),
-                // scale-105 suffit (juste une marge de sécurité subpixel) —
-                // un zoom minimal préserve le raccord entre panneaux du
-                // triptyque, que scale-125 aurait rogné sur les bords.
+                // scale-125 (desktop, tiers sans marge) / scale-110 (mobile,
+                // tiers avec 300px de marge intégrée, cf. doc de
+                // `mobileImage` plus haut) — le débord nécessaire à la
+                // parallaxe (PARALLAX) sans jamais exposer le fond.
                 className={cn(
                   'adv-img absolute inset-0 h-full w-full object-cover will-change-transform',
-                  isMobile ? 'scale-105' : 'scale-125',
+                  isMobile ? 'scale-110' : 'scale-125',
                 )}
               />
               <div className="absolute inset-0 bg-anthracite-950/55" />
