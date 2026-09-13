@@ -13,116 +13,98 @@ const STEPS = [
     title: 'Commandez',
     text: 'Choisissez votre formule, en quelques minutes. Paiement sécurisé.',
     icon: ShoppingBag,
-    dark: false,
   },
   {
     num: '02',
     title: 'Racontez',
     text: "Questionnaire guidé, note vocale, vos photos. C'est vous la matière première du film.",
     icon: Mic,
-    dark: true,
   },
   {
     num: '03',
     title: 'Validez',
     text: 'Des propositions de scénario, vous choisissez. Puis une vidéo en filigrane avant la version finale.',
     icon: ClipboardCheck,
-    dark: false,
   },
   {
     num: '04',
     title: 'Recevez & partagez',
     text: 'Faire-part en ligne, lien illimité, QR code et RSVP intégré. Vos invités répondent en un clic.',
     icon: Share2,
-    dark: true,
   },
 ]
 
-/** Comment ça marche — 4 cartes plein écran empilées, section épinglée 300vh. */
+/**
+ * Comment ça marche — recette « focus-sequence » (cf. maquette comparative
+ * du 13/09/2026, 6 recettes d'animation aux couleurs du site) : une étape à
+ * la fois, plein écran, avec son numéro en grand filigrane derrière le
+ * titre. Remplace l'ancien empilement de cartes qui glissaient les unes sur
+ * les autres — mêmes 4 étapes, même épinglage GSAP (300 → 400vh, cf.
+ * `end` ci-dessous), transition pilotée par l'état React `active` plutôt que
+ * par un timeline GSAP (plus simple : un simple fondu + zoom léger par
+ * étape, pas de déplacement à synchroniser).
+ */
 export default function HowItWorks() {
   const rootRef = useRef<HTMLElement>(null)
   const [active, setActive] = useState(0)
 
   useGSAP(
     () => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: rootRef.current,
-          start: 'top top',
-          end: '+=300%',
-          pin: true,
-          scrub: 1,
-          // Cf. ScrubHero : force le recalcul des sections épinglées de haut
-          // en bas (héros = 3, ici = 2, Advantages = 1).
-          refreshPriority: 2,
-          onUpdate: (self) => {
-            setActive(Math.min(STEPS.length - 1, Math.floor(self.progress * STEPS.length)))
-          },
+      ScrollTrigger.create({
+        trigger: rootRef.current,
+        start: 'top top',
+        end: '+=400%',
+        pin: true,
+        scrub: 1,
+        // Cf. ScrubHero : force le recalcul des sections épinglées de haut
+        // en bas (héros = 3, ici = 2, Advantages = 1).
+        refreshPriority: 2,
+        onUpdate: (self) => {
+          setActive(Math.min(STEPS.length - 1, Math.floor(self.progress * STEPS.length)))
         },
       })
-
-      // fromTo({ yPercent: 100 }) applique lui-même l'état initial "hors
-      // écran" dès le montage (immediateRender, avant peinture via
-      // useLayoutEffect) — ne PAS fixer aussi un transform inline en JSX sur
-      // la carte : GSAP ne le remplace pas, il l'empile (translate ×2), donc
-      // les cartes 2/3/4 finissaient décalées d'un écran entier et restaient
-      // invisibles.
-      for (let i = 1; i < STEPS.length; i++) {
-        tl.fromTo(
-          `.step-card-${i}`,
-          { yPercent: 100 },
-          { yPercent: 0, ease: 'none', duration: 1 },
-          i - 1,
-        ).to(
-          `.step-card-${i - 1}`,
-          { scale: 0.94, filter: 'brightness(0.6)', ease: 'none', duration: 1 },
-          i - 1,
-        )
-      }
     },
     { scope: rootRef },
   )
 
   return (
     <section ref={rootRef} id="comment-ca-marche" className="relative">
-      <div style={{ height: '100dvh' }} className="relative overflow-hidden">
+      <div className="grain relative overflow-hidden bg-anthracite-950" style={{ height: '100dvh' }}>
         {STEPS.map((step, i) => (
-          <article
+          <div
             key={step.num}
             className={cn(
-              `step-card-${i} absolute inset-0 flex items-center will-change-transform`,
-              step.dark ? 'bg-anthracite-800' : 'bg-anthracite-900',
-              i > 0 && 'shadow-[0_-24px_64px_rgba(0,0,0,0.45)]',
+              'absolute inset-0 flex items-center justify-center px-6 transition-all duration-500 ease-out',
+              i === active ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.04]',
             )}
-            style={{ zIndex: i + 1 }}
           >
-            <div className="grain mx-auto grid w-full max-w-[1440px] items-center gap-12 px-6 lg:grid-cols-2 lg:px-12">
-              <div>
-                <span className="text-outline-terracotta font-display block text-[8rem] font-light leading-none lg:text-[10rem]">
-                  {step.num}
-                </span>
-                <h2 className="font-display mt-6 text-[clamp(2.4rem,5vw,4.5rem)] font-light tracking-[-0.015em] text-white">
-                  {step.title}
-                </h2>
-                <p className="mt-6 max-w-md text-[16px] leading-[1.65] text-white/70">{step.text}</p>
+            {/* Numéro en filigrane, plein écran derrière le contenu */}
+            <span
+              aria-hidden
+              className="text-outline-terracotta font-display pointer-events-none absolute inset-0 flex select-none items-center justify-center text-[42vh] font-light leading-none opacity-30"
+            >
+              {step.num}
+            </span>
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-full border border-anthracite-700 bg-anthracite-950/60 backdrop-blur-sm">
+                <step.icon size={32} strokeWidth={1.25} className="text-terracotta-500" />
               </div>
-              <div className="hidden justify-center lg:flex">
-                <div className="flex h-48 w-48 items-center justify-center rounded-md border border-anthracite-700 bg-anthracite-950/40">
-                  <step.icon size={64} strokeWidth={1.25} className="text-terracotta-500" />
-                </div>
-              </div>
+              <h2 className="font-display text-[clamp(2.4rem,5vw,4.5rem)] font-light tracking-[-0.015em] text-white">
+                {step.title}
+              </h2>
+              <p className="mx-auto mt-6 max-w-md text-[16px] leading-[1.65] text-white/70">{step.text}</p>
             </div>
-          </article>
+          </div>
         ))}
 
-        {/* Progress dots latéraux */}
-        <div className="absolute right-6 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-3 lg:right-10">
+        {/* Barres de progression — cf. .bars de la maquette focus-sequence */}
+        <div className="absolute inset-x-0 bottom-12 z-20 flex items-center justify-center gap-2.5">
           {STEPS.map((step, i) => (
             <span
               key={step.num}
               className={cn(
-                'h-2 w-2 rounded-full transition-colors duration-300',
-                i === active ? 'bg-terracotta-500' : 'bg-white/20',
+                'h-[2px] w-9 rounded-full transition-colors duration-300',
+                i <= active ? 'bg-terracotta-500' : 'bg-white/15',
               )}
             />
           ))}
