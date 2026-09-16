@@ -82,7 +82,7 @@ export default function Navbar() {
         {/* Wordmark */}
         <motion.div variants={itemVariants}>
           <Link to="/" aria-label="Scroll The Date — accueil" className="flex items-center">
-            <img src="/logo.png" alt="Scroll The Date" className="h-9 w-auto" />
+            <img src="/logo.png" alt="Scroll The Date" className="h-[72px] w-auto" />
           </Link>
         </motion.div>
 
