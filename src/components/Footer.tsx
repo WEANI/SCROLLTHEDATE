@@ -28,7 +28,7 @@ export default function Footer() {
         {/* Wordmark + baseline */}
         <div className="flex flex-col gap-5">
           <Link to="/" aria-label="Scroll The Date — accueil">
-            <img src="/logo.svg" alt="Scroll The Date" className="h-9 w-auto" />
+            <img src="/logo.png" alt="Scroll The Date" className="h-9 w-auto" />
           </Link>
           <p className="font-display text-lg font-light italic text-white/70">
             Votre histoire, racontée en images.
