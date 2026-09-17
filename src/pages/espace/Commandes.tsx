@@ -50,31 +50,131 @@ function orderNumber(o: OrderLike) {
   return `FL-${new Date(o.createdAt).getFullYear()}-${String(o.id).padStart(4, '0')}`
 }
 
-function openInvoice(o: OrderLike, customerName: string) {
+/**
+ * Identité légale du vendeur — synchronisée avec MentionsLegales.tsx
+ * (source de vérité). NE PAS modifier ces valeurs ici sans les répercuter
+ * là-bas : un SIREN/une adresse qui divergent entre les deux pages seraient
+ * pires qu'une page incomplète. Code postal du siège manquant (cf.
+ * TodoBlock de MentionsLegales.tsx) — affiché tel quel, jamais inventé :
+ * un SIRET/une adresse fabriqués rendraient la facture invalide plutôt
+ * qu'incomplète. À compléter avant tout envoi de facture réelle à un
+ * client.
+ */
+const SELLER = {
+  legalName: 'WEANI',
+  brand: 'Scroll The Date',
+  form: 'SAS au capital social de 1 000 €',
+  address: '9 rue de Condé, Bordeaux', // code postal manquant, cf. doc ci-dessus
+  rcs: 'RCS Bordeaux 904 049 301',
+  siren: '904 049 301',
+  vat: 'FR76 904049301',
+}
+
+/**
+ * Taux de TVA standard (20 %) — appliqué aux prix affichés au client
+ * (`amountCents`), traités comme TTC (convention B2C : le prix annoncé à un
+ * particulier est toujours TTC, art. L112-1 C. consom.). Hypothèse à
+ * confirmer : si WEANI relève en réalité de la franchise en base de TVA
+ * (art. 293 B CGI) plutôt que d'un régime réel, ce taux et la ventilation
+ * HT/TVA ci-dessous ne s'appliquent pas — remplacer par la mention
+ * « TVA non applicable, art. 293 B du CGI » sur chaque ligne. Le numéro de
+ * TVA intracommunautaire déjà publié dans MentionsLegales.tsx (non signalé
+ * comme provisoire) suggère un régime réel, d'où ce choix par défaut.
+ */
+const VAT_RATE = 0.2
+
+function splitTTC(ttcCents: number) {
+  const ht = Math.round(ttcCents / (1 + VAT_RATE))
+  return { ht, tva: ttcCents - ht }
+}
+
+function openInvoice(o: OrderLike, customerName: string, customerEmail: string) {
   const options = (o.options as { id: string; label: string; priceCents: number }[] | null) ?? []
+  const baseCents = o.amountCents - options.reduce((s, x) => s + x.priceCents, 0)
+
+  const lineRow = (label: string, ttcCents: number) => {
+    const { ht } = splitTTC(ttcCents)
+    return `<tr><td>${label}</td><td class="num">${formatPrice(ht)}</td><td class="num">20 %</td><td class="num">${formatPrice(ttcCents)}</td></tr>`
+  }
   const rows = [
-    `<tr><td>${PRODUCT_LABEL[o.product] ?? o.product}</td><td class="num">${formatPrice(o.amountCents - options.reduce((s, x) => s + x.priceCents, 0))}</td></tr>`,
-    ...options.map(
-      (opt) => `<tr><td>Option — ${opt.label}</td><td class="num">${formatPrice(opt.priceCents)}</td></tr>`,
-    ),
+    lineRow(PRODUCT_LABEL[o.product] ?? o.product, baseCents),
+    ...options.map((opt) => lineRow(`Option — ${opt.label}`, opt.priceCents)),
   ].join('')
+
+  const { ht: totalHt, tva: totalTva } = splitTTC(o.amountCents)
+  const issueDate = formatDate(o.createdAt, { day: '2-digit', month: 'long', year: 'numeric' })
+
   const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${orderNumber(o)}</title>
 <style>
-  body{font-family:Georgia,serif;color:#232326;max-width:640px;margin:48px auto;padding:0 24px}
-  h1{font-style:italic;font-weight:500} .brand{color:#C96F5A}
-  table{width:100%;border-collapse:collapse;margin-top:32px}
-  td{padding:12px 8px;border-bottom:1px solid #E8E5E1;font-size:14px}
-  .num{text-align:right;font-variant-numeric:tabular-nums}
-  .total td{font-weight:bold;border-bottom:none;font-size:16px}
-  .meta{color:#9A9AA0;font-size:13px;margin-top:8px}
+  body{font-family:Georgia,serif;color:#232326;max-width:720px;margin:40px auto;padding:0 24px;font-size:13px;line-height:1.55}
+  .logo{height:56px;width:auto;display:block}
+  .sub{margin:8px 0 0;font-size:11px;color:#9A9AA0;font-family:Arial,sans-serif}
+  .top{display:flex;justify-content:space-between;gap:32px;margin-top:28px}
+  .block h2{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#9A9AA0;margin:0 0 6px;font-family:Arial,sans-serif;font-weight:600}
+  .block p{margin:0 0 2px}
+  .meta{margin-top:24px;font-size:12.5px}
+  .meta b{font-weight:600}
+  table{width:100%;border-collapse:collapse;margin-top:24px}
+  th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9A9AA0;font-family:Arial,sans-serif;font-weight:600;padding:6px 8px;border-bottom:1px solid #232326}
+  td{padding:10px 8px;border-bottom:1px solid #E8E5E1}
+  .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .totals{margin-top:0;width:280px;margin-left:auto;border-collapse:collapse}
+  .totals td{border-bottom:none;padding:4px 8px}
+  .totals .grand td{font-weight:bold;font-size:15px;border-top:1px solid #232326;padding-top:10px}
+  .pay{margin-top:28px;padding-top:16px;border-top:1px solid #E8E5E1;font-size:12px}
+  .legal{margin-top:28px;padding-top:16px;border-top:1px solid #E8E5E1;font-size:10.5px;color:#9A9AA0;line-height:1.6;font-family:Arial,sans-serif}
 </style></head><body>
-  <h1>Scroll The Date<span class="brand">.</span></h1>
-  <p class="meta">Facture ${orderNumber(o)} — ${formatDate(o.createdAt)}<br>Client : ${customerName}<br>Réf. paiement : ${o.stripeRef ?? '—'}</p>
-  <table>${rows}<tr class="total"><td>Total TTC</td><td class="num">${formatPrice(o.amountCents)}</td></tr></table>
-  <p class="meta">Scroll The Date — faire-parts de mariage digitaux — scrollthedate.fr<br>Paiement reçu. Merci pour votre confiance.</p>
+  <img class="logo" src="/logo-dark.png" alt="Scroll The Date" />
+  <p class="sub">${SELLER.legalName} — ${SELLER.form}</p>
+
+  <div class="top">
+    <div class="block">
+      <h2>Vendeur</h2>
+      <p><b>${SELLER.legalName}</b> (marque « ${SELLER.brand} »)</p>
+      <p>${SELLER.form}</p>
+      <p>${SELLER.address}</p>
+      <p>SIREN ${SELLER.siren} — ${SELLER.rcs}</p>
+      <p>TVA intracommunautaire : ${SELLER.vat}</p>
+    </div>
+    <div class="block">
+      <h2>Client</h2>
+      <p><b>${customerName}</b></p>
+      <p>${customerEmail || '—'}</p>
+    </div>
+  </div>
+
+  <p class="meta">
+    <b>Facture n°</b> ${orderNumber(o)} &nbsp; <b>Date d'émission</b> ${issueDate}<br>
+    <b>Date de vente</b> ${issueDate} — prestation numérique, livraison après validation du projet<br>
+    <b>Nature de l'opération</b> Prestation de services<br>
+    <b>Réf. paiement</b> ${o.stripeRef ?? '—'}
+  </p>
+
+  <table>
+    <thead><tr><th>Désignation</th><th class="num">Prix HT</th><th class="num">TVA</th><th class="num">Prix TTC</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <table class="totals">
+    <tr><td>Total HT</td><td class="num">${formatPrice(totalHt)}</td></tr>
+    <tr><td>TVA (20 %)</td><td class="num">${formatPrice(totalTva)}</td></tr>
+    <tr class="grand"><td>Total TTC</td><td class="num">${formatPrice(o.amountCents)}</td></tr>
+  </table>
+
+  <p class="pay">
+    <b>Statut</b> Facture réglée en totalité le ${issueDate} par carte bancaire (Stripe).<br>
+    Escompte pour paiement anticipé : néant.<br>
+    Taux de pénalités de retard applicable en cas de règlement différé : 3 fois le taux d'intérêt légal.
+  </p>
+
+  <p class="legal">
+    ${SELLER.legalName}, ${SELLER.form}, immatriculée au ${SELLER.rcs}, SIREN ${SELLER.siren}, siège social ${SELLER.address}.
+    TVA intracommunautaire ${SELLER.vat}. Éditeur du site scrollthedate.com sous la marque « ${SELLER.brand} ».
+  </p>
+
   <script>window.print()</script>
 </body></html>`
-  const win = window.open('', '_blank', 'width=720,height=900')
+  const win = window.open('', '_blank', 'width=760,height=920')
   if (!win) return
   win.document.write(html)
   win.document.close()
@@ -271,7 +371,7 @@ export default function Commandes() {
                               aria-label="Télécharger la facture"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                openInvoice(o, user?.name ?? 'Client')
+                                openInvoice(o, user?.name ?? 'Client', user?.email ?? '')
                               }}
                               onKeyDown={(e) => e.stopPropagation()}
                               className="flex h-9 w-9 items-center justify-center rounded-full text-terracotta-500 transition-colors hover:bg-terracotta-500/10"
@@ -338,7 +438,7 @@ export default function Commandes() {
                                   </p>
                                   <button
                                     type="button"
-                                    onClick={() => openInvoice(o, user?.name ?? 'Client')}
+                                    onClick={() => openInvoice(o, user?.name ?? 'Client', user?.email ?? '')}
                                     className="inline-flex items-center gap-1.5 rounded-full bg-anthracite-800 px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-anthracite-700"
                                   >
                                     <FileText size={13} /> Facture {orderNumber(o)}
@@ -571,7 +671,7 @@ export default function Commandes() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => openInvoice(o, user?.name ?? 'Client')}
+                    onClick={() => openInvoice(o, user?.name ?? 'Client', user?.email ?? '')}
                     className="flex h-9 w-9 items-center justify-center rounded-full text-terracotta-500 transition-colors hover:bg-terracotta-500/10"
                     aria-label="Télécharger la facture"
                   >
