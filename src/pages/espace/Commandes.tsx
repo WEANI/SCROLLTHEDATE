@@ -54,32 +54,23 @@ function orderNumber(o: OrderLike) {
  * Identité légale du vendeur — synchronisée avec MentionsLegales.tsx
  * (source de vérité). NE PAS modifier ces valeurs ici sans les répercuter
  * là-bas : un SIREN/une adresse qui divergent entre les deux pages seraient
- * pires qu'une page incomplète. Code postal du siège manquant (cf.
- * TodoBlock de MentionsLegales.tsx) — affiché tel quel, jamais inventé :
- * un SIRET/une adresse fabriqués rendraient la facture invalide plutôt
- * qu'incomplète. À compléter avant tout envoi de facture réelle à un
- * client.
+ * pires qu'une page incomplète.
  */
 const SELLER = {
   legalName: 'WEANI',
   brand: 'Scroll The Date',
   form: 'SAS au capital social de 1 000 €',
-  address: '9 rue de Condé, Bordeaux', // code postal manquant, cf. doc ci-dessus
+  address: '9 rue de Condé, 33000 Bordeaux',
   rcs: 'RCS Bordeaux 904 049 301',
   siren: '904 049 301',
   vat: 'FR76 904049301',
 }
 
 /**
- * Taux de TVA standard (20 %) — appliqué aux prix affichés au client
- * (`amountCents`), traités comme TTC (convention B2C : le prix annoncé à un
- * particulier est toujours TTC, art. L112-1 C. consom.). Hypothèse à
- * confirmer : si WEANI relève en réalité de la franchise en base de TVA
- * (art. 293 B CGI) plutôt que d'un régime réel, ce taux et la ventilation
- * HT/TVA ci-dessous ne s'appliquent pas — remplacer par la mention
- * « TVA non applicable, art. 293 B du CGI » sur chaque ligne. Le numéro de
- * TVA intracommunautaire déjà publié dans MentionsLegales.tsx (non signalé
- * comme provisoire) suggère un régime réel, d'où ce choix par défaut.
+ * Taux de TVA standard (20 %, confirmé le 18/09/2026 — WEANI est au régime
+ * réel, pas en franchise en base art. 293 B) — appliqué aux prix affichés
+ * au client (`amountCents`), traités comme TTC (convention B2C : le prix
+ * annoncé à un particulier est toujours TTC, art. L112-1 C. consom.).
  */
 const VAT_RATE = 0.2
 

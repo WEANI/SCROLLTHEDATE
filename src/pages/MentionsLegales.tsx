@@ -17,19 +17,18 @@ export default function MentionsLegales() {
   })
 
   return (
-    <LegalLayout kicker="Informations légales" title="Mentions légales" lastUpdated="24 août 2026">
+    <LegalLayout kicker="Informations légales" title="Mentions légales" lastUpdated="18 septembre 2026">
       <section>
         <h2>Éditeur du site</h2>
         <p>
           Le site scrollthedate.com est édité par <strong>WEANI</strong>, société par actions
           simplifiée (SAS) au capital social de 1 000 €, immatriculée au Registre du commerce et
           des sociétés de Bordeaux sous le numéro <strong>904 049 301</strong>, dont le siège
-          social est situé 9 rue de Condé, Bordeaux. Numéro de TVA intracommunautaire :{' '}
+          social est situé 9 rue de Condé, 33000 Bordeaux. Numéro de TVA intracommunautaire :{' '}
           <strong>FR76 904049301</strong>.
         </p>
         <TodoBlock>
-          Code postal manquant pour finaliser l'adresse (9 rue de Condé, [code postal] Bordeaux),
-          et nom du directeur de la publication (dirigeant de WEANI) à compléter.
+          Nom du directeur de la publication (dirigeant de WEANI) à compléter.
         </TodoBlock>
         <p>
           Contact :{' '}
