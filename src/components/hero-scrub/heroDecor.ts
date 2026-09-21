@@ -196,6 +196,49 @@ export const HERO_CARD_FRAMES: { id: string; label: string }[] = [
 ]
 
 /**
+ * Cadres pour une PHOTO CLIENT (9:16) — ajoutée le 22/09/2026, cf. CSS
+ * `.hs-photo-frame-*` dans hero-scrub.css pour le détail de chaque classe.
+ *
+ * PAS ENCORE BRANCHÉE : préparée en avance pour un futur template Save the
+ * Date permettant au client d'uploader sa propre photo (cf. échanges des
+ * 11/09 et 21/09/2026 — ce chantier n'est pas lancé). Aucun champ
+ * `photoUrl`/`photoFrame` n'existe encore sur HeroChapter/
+ * TemplateHeroChapter/HeroCustomCard, donc ce catalogue n'est référencé
+ * dans aucun sélecteur admin pour l'instant — contrairement à
+ * HERO_CARD_FRAMES ci-dessus (cadres de CARTE DE TEXTE, déjà en
+ * production), qu'il ne faut pas confondre : un `hs-frame-*` habille du
+ * texte, un `hs-photo-frame-*` habillera une image.
+ *
+ * Toutes ces entrées attendent UNE photo, sauf `stack` (cf. sa doc dans
+ * hero-scrub.css) qui en attend TROIS — un template proposant ce cadre
+ * devra donc demander 3 clichés au client au lieu d'un seul (à prévoir le
+ * jour de l'intégration, cf. échange du 22/09/2026).
+ */
+export const HERO_PHOTO_FRAMES: { id: string; label: string }[] = [
+  { id: 'polaroid', label: 'Polaroid incliné' },
+  { id: 'mat', label: 'Passe-partout double' },
+  { id: 'museum', label: 'Cadre doré musée' },
+  { id: 'crop', label: 'Repères de détourage' },
+  { id: 'arch', label: 'Arche pleine' },
+  { id: 'oval', label: 'Médaillon ovale' },
+  { id: 'cut', label: 'Coin coupé en diagonale' },
+  { id: 'ribbon', label: 'Accent de coin' },
+  { id: 'tape', label: 'Scotch aux coins' },
+  { id: 'film', label: 'Pellicule verticale' },
+  { id: 'story', label: 'Anneau dégradé (story)' },
+  { id: 'grad', label: 'Bordure dégradée animée' },
+  { id: 'line', label: 'Filet fin + marge' },
+  { id: 'vintage', label: 'Sépia + cadre crème' },
+  { id: 'duotone-reveal', label: 'Noir & blanc vers couleur' },
+  { id: 'curtain-reveal', label: 'Rideau de révélation' },
+  { id: 'frame-reveal', label: 'Cadre blanc qui apparaît' },
+  { id: 'float', label: 'Lévitation douce' },
+  // Seule entrée à 3 photos plutôt qu'une (cf. doc plus haut) — ajoutée le
+  // 22/09/2026 sur demande explicite malgré cette contrainte.
+  { id: 'stack', label: 'Éventail de 3 photos' },
+]
+
+/**
  * Filtre visuel appliqué à la vidéo/aux frames du hero (`.hs-video`) — UN
  * pour tout le hero, cf. même raisonnement que HERO_TEXT_ANIMATIONS.
  * Aucun filtre par défaut (identifiant vide) = vidéo telle que livrée,

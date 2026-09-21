@@ -1838,6 +1838,356 @@
 }
 
 /**
+ * Cadres pour PHOTO CLIENT (9:16) — bibliothèque ajoutée le 22/09/2026, cf.
+ * heroDecor.ts::HERO_PHOTO_FRAMES. PAS ENCORE BRANCHÉE : préparée pour un
+ * futur template Save the Date permettant au client d'uploader sa propre
+ * photo (cf. échanges des 11/09 et 21/09/2026) — aucun champ `photoUrl`
+ * n'existe encore sur HeroChapter/TemplateHeroChapter/HeroCustomCard, donc
+ * ces classes ne s'appliquent nulle part pour l'instant. Structure prévue
+ * le jour venu :
+ *   <div class="hs-photo-frame hs-photo-frame-<id>">
+ *     <img class="hs-photo-frame-img" src="…" alt="" />
+ *   </div>
+ * — espace de noms `hs-photo-frame-*` distinct de `hs-frame-*` (cadres de
+ * CARTE DE TEXTE ci-dessus), aucune collision possible. Effets au SURVOL de
+ * la bibliothèque source adaptés en effets déclenchés à l'apparition du
+ * bloc (`.hs-overlay.show`), même raisonnement que pour les cadres de
+ * texte — une vidéo n'a pas de survol, encore moins sur mobile. Écarté :
+ * l'indicateur "swipe up" (geste inexistant ici, le hero se pilote au
+ * scroll). `stack` (tout en bas de cette liste) est la SEULE entrée à
+ * attendre 3 photos plutôt qu'une — structure et doc séparées à son
+ * emplacement, cf. échange du 22/09/2026.
+ */
+.hs-photo-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.hs-photo-frame-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 1. Polaroid incliné — se redresse à l'apparition du bloc. */
+.hs-photo-frame-polaroid {
+  padding: 5% 5% 16%;
+  background: #f4f1ea;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  transform: rotate(-2deg);
+  transition: transform 0.6s ease;
+}
+.hs-overlay.show .hs-photo-frame-polaroid {
+  transform: rotate(0deg);
+}
+
+.hs-photo-frame-mat {
+  padding: 4%;
+  background: var(--hs-frame-bg);
+  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  outline: 5px solid var(--hs-frame-bg);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+}
+
+.hs-photo-frame-museum {
+  padding: 4%;
+  background: linear-gradient(135deg, #d8b36a, #8a6a2f, #e8cc85);
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.35),
+    0 16px 34px rgba(0, 0, 0, 0.55);
+}
+
+/* Repères de détourage — un enfant `.hs-photo-frame-crop-mark` (cf. la
+   future intégration) porte les 2 coins bas, les 2 coins haut restant sur
+   `.hs-photo-frame-crop` lui-même — même principe que `.hs-frame-corner`
+   pour les cadres de carte de texte. */
+.hs-photo-frame-crop {
+  position: relative;
+}
+.hs-photo-frame-crop::before,
+.hs-photo-frame-crop::after,
+.hs-photo-frame-crop .hs-photo-frame-crop-mark::before,
+.hs-photo-frame-crop .hs-photo-frame-crop-mark::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--hs-chapter-accent, var(--hs-accent));
+  z-index: 2;
+}
+.hs-photo-frame-crop::before {
+  top: -7px;
+  left: -7px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.hs-photo-frame-crop::after {
+  top: -7px;
+  right: -7px;
+  border-left: 0;
+  border-bottom: 0;
+}
+.hs-photo-frame-crop .hs-photo-frame-crop-mark::before {
+  bottom: -7px;
+  left: -7px;
+  border-right: 0;
+  border-top: 0;
+}
+.hs-photo-frame-crop .hs-photo-frame-crop-mark::after {
+  bottom: -7px;
+  right: -7px;
+  border-left: 0;
+  border-top: 0;
+}
+
+/* Arche pleine — ogive, parfaite pour un portrait 9:16. */
+.hs-photo-frame-arch {
+  border-radius: 30% 30% 6px 6px;
+  padding: 3%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hs-card-border);
+  overflow: hidden;
+}
+.hs-photo-frame-arch .hs-photo-frame-img {
+  border-radius: 28% 28% 4px 4px;
+}
+
+.hs-photo-frame-oval {
+  border-radius: 50%;
+  padding: 3%;
+  border: 1.5px solid var(--hs-chapter-accent, var(--hs-accent));
+  overflow: hidden;
+}
+.hs-photo-frame-oval .hs-photo-frame-img {
+  border-radius: 50%;
+}
+
+.hs-photo-frame-cut {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%);
+  outline: 1.5px solid var(--hs-chapter-accent, var(--hs-accent));
+  outline-offset: -1px;
+}
+
+/* Accent décoratif de coin — sans texte (générique, ne dépend d'aucun
+   champ admin), contrairement au badge "Exclu" de la bibliothèque source. */
+.hs-photo-frame-ribbon {
+  position: relative;
+  overflow: hidden;
+}
+.hs-photo-frame-ribbon::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  right: -34px;
+  width: 100px;
+  height: 22px;
+  transform: rotate(45deg);
+  background: var(--hs-chapter-accent, var(--hs-accent));
+  z-index: 3;
+}
+
+.hs-photo-frame-tape {
+  position: relative;
+  transform: rotate(1.5deg);
+}
+.hs-photo-frame-tape::before,
+.hs-photo-frame-tape::after {
+  content: '';
+  position: absolute;
+  width: 22%;
+  height: 8%;
+  background: rgba(240, 235, 220, 0.35);
+  backdrop-filter: blur(1px);
+  z-index: 3;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+.hs-photo-frame-tape::before {
+  top: -4%;
+  left: -6%;
+  transform: rotate(-40deg);
+}
+.hs-photo-frame-tape::after {
+  bottom: -4%;
+  right: -6%;
+  transform: rotate(-40deg);
+}
+
+.hs-photo-frame-film {
+  position: relative;
+  padding: 0 8%;
+}
+.hs-photo-frame-film::before,
+.hs-photo-frame-film::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6%;
+  background: repeating-linear-gradient(0deg, #0a0c11 0 8px, transparent 8px 18px);
+  z-index: 2;
+}
+.hs-photo-frame-film::before {
+  left: 0;
+}
+.hs-photo-frame-film::after {
+  right: 0;
+}
+
+.hs-photo-frame-story {
+  padding: 3%;
+  border-radius: 18px;
+  background: linear-gradient(45deg, #f9ce34, #ee2a7b, #6228d7);
+}
+.hs-photo-frame-story .hs-photo-frame-img {
+  border-radius: 14px;
+}
+
+.hs-photo-frame-grad {
+  padding: 3px;
+  background: linear-gradient(160deg, var(--hs-chapter-accent, var(--hs-accent)), var(--hs-text-primary), var(--hs-chapter-accent, var(--hs-accent)));
+  background-size: 200% 200%;
+  animation: hs-photo-gradmove 4s ease infinite;
+}
+@keyframes hs-photo-gradmove {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.hs-photo-frame-line {
+  padding: 6%;
+  border: 1px solid var(--hs-card-border);
+}
+
+.hs-photo-frame-vintage {
+  border: 5px solid #efe6d2;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+.hs-photo-frame-vintage .hs-photo-frame-img {
+  filter: sepia(0.45) contrast(1.05) brightness(0.95);
+}
+
+/* Noir & blanc → couleur à l'apparition du bloc — un souvenir qui reprend
+   vie, plutôt qu'un survol (inapplicable ici). */
+.hs-photo-frame-duotone-reveal .hs-photo-frame-img {
+  filter: grayscale(1) contrast(1.15);
+  transition: filter 1.4s ease;
+}
+.hs-overlay.show .hs-photo-frame-duotone-reveal .hs-photo-frame-img {
+  filter: grayscale(0) contrast(1);
+}
+
+/* Rideau de révélation — se retire à l'apparition du bloc. */
+.hs-photo-frame-curtain-reveal {
+  position: relative;
+  overflow: hidden;
+}
+.hs-photo-frame-curtain-reveal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--hs-frame-bg);
+  transition: transform 0.9s cubic-bezier(0.7, 0, 0.2, 1);
+  z-index: 2;
+}
+.hs-overlay.show .hs-photo-frame-curtain-reveal::after {
+  transform: translateY(-101%);
+}
+
+/* Cadre blanc qui apparaît — adapté du survol "zoom + cadre" de la
+   bibliothèque source, sans le zoom (repose sur la photo, jamais recadrée
+   après coup côté client). */
+.hs-photo-frame-frame-reveal {
+  position: relative;
+}
+.hs-photo-frame-frame-reveal::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  opacity: 0;
+  transform: scale(1.08);
+  transition: 0.6s ease;
+  pointer-events: none;
+  z-index: 3;
+}
+.hs-overlay.show .hs-photo-frame-frame-reveal::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Lévitation douce — flotte en continu tant que le bloc est actif. */
+.hs-overlay.show .hs-photo-frame-float {
+  animation: hs-photo-float 3.6s ease-in-out infinite;
+}
+@keyframes hs-photo-float {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    transform: translateY(-8px);
+    box-shadow: 0 22px 40px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/**
+ * Éventail de 3 photos — SEULE entrée de cette bibliothèque qui attend
+ * PLUSIEURS photos (3, pas 1) : un template proposant ce cadre devra donc
+ * demander 3 clichés au client au lieu d'un seul (à prévoir le jour de
+ * l'intégration, cf. échange du 22/09/2026). Structure attendue — 3
+ * `<img>` distincts DANS `.hs-photo-frame-stack`, pas 3
+ * `.hs-photo-frame` imbriqués (le cadre entier — rotation, superposition,
+ * ombres — porte sur ce conteneur unique) :
+ *   <div class="hs-photo-frame hs-photo-frame-stack">
+ *     <img class="hs-photo-frame-img hs-photo-frame-stack-1" src="…" />
+ *     <img class="hs-photo-frame-img hs-photo-frame-stack-2" src="…" />
+ *     <img class="hs-photo-frame-img hs-photo-frame-stack-3" src="…" />
+ *   </div>
+ */
+.hs-photo-frame-stack {
+  position: relative;
+}
+.hs-photo-frame-stack .hs-photo-frame-img {
+  position: absolute;
+  width: 52%;
+  height: 68%;
+  border: 5px solid #f4f1ea;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  transition: transform 0.5s ease;
+}
+.hs-photo-frame-stack .hs-photo-frame-stack-1 {
+  top: 2%;
+  left: 0;
+  transform: rotate(-8deg);
+  z-index: 1;
+}
+.hs-photo-frame-stack .hs-photo-frame-stack-2 {
+  top: 12%;
+  left: 24%;
+  transform: rotate(1deg);
+  z-index: 2;
+}
+.hs-photo-frame-stack .hs-photo-frame-stack-3 {
+  top: 22%;
+  left: 48%;
+  transform: rotate(9deg);
+  z-index: 1;
+}
+.hs-overlay.show .hs-photo-frame-stack .hs-photo-frame-stack-1 {
+  transform: rotate(-13deg) translate(-6px, -3px);
+}
+.hs-overlay.show .hs-photo-frame-stack .hs-photo-frame-stack-3 {
+  transform: rotate(14deg) translate(6px, 3px);
+}
+
+/**
  * Filtres visuels du hero ajoutés le 11/09/2026 — cf. heroDecor.ts::
  * HERO_FILTERS. Appliqués sur `.hs-video` (aussi bien la balise <video> que
  * le <canvas> du mode frames, cf. HeroScrub.tsx) via une classe posée sur
