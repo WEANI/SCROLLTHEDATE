@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
+  ArrowRight,
   Check,
   CreditCard,
   Download,
@@ -32,7 +34,6 @@ import {
   fmtDate,
   fmtTime,
   inputClass,
-  selectClass,
   textareaClass,
   useToasts,
 } from "@/components/admin-suite/ui";
@@ -42,17 +43,8 @@ import type {
 } from "@/components/admin-suite/types";
 import {
   SAVE_THE_DATE_TEMPLATES,
-  defaultOverrideFor,
-  parseTemplateOverrides,
   templateDurationSec,
-  type SaveTheDateTemplateOverride,
 } from "@contracts/saveTheDateTemplates";
-import {
-  HERO_OVERLAY_GRAPHICS,
-  HERO_FONTS,
-  HERO_TEXT_ANIMATIONS,
-  HERO_FILTERS,
-} from "@/components/hero-scrub/heroDecor";
 
 // ------------------------------------------------------------- défauts ----
 
@@ -232,7 +224,7 @@ export default function Parametres() {
           >
             {tab === "profil" ? <TabProfil push={push} /> : null}
             {tab === "produits" ? <TabProduits push={push} /> : null}
-            {tab === "modeles-std" ? <TabModelesStd push={push} /> : null}
+            {tab === "modeles-std" ? <TabModelesStd /> : null}
             {tab === "faire-part-demo" ? <TabFairePartDemo push={push} /> : null}
             {tab === "emails" ? <TabEmails push={push} /> : null}
             {tab === "notifications" ? <TabNotifications push={push} /> : null}
@@ -599,356 +591,57 @@ function TabProduits({ push }: { push: Push }) {
 // ----------------------------------------------------- modèles STD ----
 
 /** Sélecteur couleur + champ hex, même paire que StudioPanel.tsx::ColorField mais au style visuel de cet onglet (rounded-[10px], cf. inputClass). */
-function ColorField({
-  label,
-  hint,
-  value,
-  onChange,
-}: {
-  label: string;
-  hint?: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const isHex = /^#[0-9a-fA-F]{6}$/.test(value);
-  return (
-    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-      {label}
-      <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={isHex ? value : "#000000"}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-9 shrink-0 cursor-pointer rounded-[10px] border border-neutral-200 bg-transparent p-0"
-        />
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Vide = défaut"
-          className={cn(inputClass, "font-mono")}
-        />
-      </div>
-      {hint && <span className="text-[10px] font-normal normal-case text-neutral-400">{hint}</span>}
-    </label>
-  );
-}
-
 /**
- * Textes/minutage/position/couleurs/décor des modèles Save the Date "sur
- * un modèle" (cf. échange du 12/09/2026 : "dis-moi où piloter les textes
- * overlay des modèles", puis "je dois pouvoir gérer les couleurs... avec
- * la bibliothèque ajoutée récemment" — décor/police/animation/filtre de
- * src/components/hero-scrub/heroDecor.ts, jusque-là jamais branchés sur
- * les modèles). Vidéo, séquence d'images et thème de base (fond/accent du
- * cadre) restent codés en dur dans contracts/saveTheDateTemplates.ts — pas
+ * Liste des modèles Save the Date "sur un modèle" — chaque carte ouvre sa
+ * propre page dédiée (`/admin/parametres/modeles-std/:slug`, cf.
+ * ModeleStdDetail.tsx) pour éditer textes/minutage/couleurs/décor, avec la
+ * vidéo du montage et des aperçus en direct (échange du 21/09/2026 :
+ * l'ancien empilement de tout dans un seul long scroll, avec de simples
+ * `<select>` sans aperçu, rendait le calage des textes et le choix d'un
+ * décor/police/animation/filtre laborieux — plus qu'un lien "Voir la page
+ * publique" pour juger le résultat). Vidéo, séquence d'images et thème de
+ * base restent codés en dur dans contracts/saveTheDateTemplates.ts — pas
  * encore d'upload de nouveau modèle depuis l'admin, seulement l'édition de
- * ceux déjà livrés. Même mécanisme de stockage que Produits & prix
- * ci-dessus (clé `site_settings` dédiée, "saveTheDateTemplates").
+ * ceux déjà livrés.
  */
-function TabModelesStd({ push }: { push: Push }) {
-  const q = trpc.settings.get.useQuery({ key: "saveTheDateTemplates" });
-  const save = useSaveSetting(push);
-
-  const [overrides, setOverrides] = useState<Record<string, SaveTheDateTemplateOverride>>({});
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (loaded) return;
-    const saved = parseTemplateOverrides(q.data?.value);
-    setOverrides(
-      Object.fromEntries(SAVE_THE_DATE_TEMPLATES.map((t) => [t.slug, saved[t.slug] ?? defaultOverrideFor(t)])),
-    );
-    setLoaded(true);
-  }, [q.data, loaded]);
-
-  const update = (slug: string, patch: Partial<SaveTheDateTemplateOverride>) =>
-    setOverrides((prev) => ({ ...prev, [slug]: { ...prev[slug], ...patch } }));
-
-  const persist = () => {
-    save.mutate({ key: "saveTheDateTemplates", value: Object.values(overrides) });
-  };
-
-  if (!loaded) return null;
-
+function TabModelesStd() {
   return (
     <div className="flex flex-col gap-4">
       <Panel className="border-pending/40 bg-pending/5 p-4">
         <p className="flex items-center gap-2 text-sm text-ink">
           <AlertTriangle className="h-4 w-4 text-pending" />
-          Vidéo, séquence d'images et couleurs restent définies dans le code — seuls les textes, le minutage et la
-          position sont pilotables ici.
+          Vidéo, séquence d'images et thème de base restent définis dans le code — chaque modèle a sa propre page de
+          réglages (textes, minutage, couleurs, décor).
         </p>
       </Panel>
 
-      {SAVE_THE_DATE_TEMPLATES.map((t) => {
-        const o = overrides[t.slug];
-        if (!o) return null;
-        const duration = templateDurationSec(t);
-        return (
-          <Panel key={t.slug}>
-            <PanelTitle
-              title={o.name || t.name}
-              hint={`${duration.toFixed(1)} s de montage`}
-              action={
-                <a
-                  href={`/save-the-date-modeles/${t.slug}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
-                >
-                  Voir la page publique →
-                </a>
-              }
-            />
-            <div className="grid gap-4 p-6 md:grid-cols-2">
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Nom du modèle
-                <input value={o.name} onChange={(e) => update(t.slug, { name: e.target.value })} className={inputClass} />
-              </label>
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Accroche (carte bibliothèque)
-                <input value={o.tagline} onChange={(e) => update(t.slug, { tagline: e.target.value })} className={inputClass} />
-              </label>
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 md:col-span-2">
-                Description
-                <textarea
-                  rows={2}
-                  value={o.description}
-                  onChange={(e) => update(t.slug, { description: e.target.value })}
-                  className={textareaClass}
-                />
-              </label>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {SAVE_THE_DATE_TEMPLATES.map((t) => (
+          <Link
+            key={t.slug}
+            to={`/admin/parametres/modeles-std/${t.slug}`}
+            className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition-colors hover:border-terracotta-500/60"
+          >
+            <div className="aspect-[9/16] w-full overflow-hidden bg-anthracite-950">
+              <img
+                src={t.posterSrc}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
             </div>
-
-            <div className="border-t border-neutral-200 p-6">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                1er texte affiché (ex. « Save the date »)
-              </p>
-              <div className="grid gap-3 md:grid-cols-4">
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 md:col-span-2">
-                  Texte
-                  <input
-                    value={o.chapter1Text}
-                    onChange={(e) => update(t.slug, { chapter1Text: e.target.value })}
-                    className={inputClass}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Apparaît à (s)
-                  <input
-                    type="number"
-                    min={0}
-                    max={duration}
-                    step={0.1}
-                    value={o.chapter1FromSec}
-                    onChange={(e) => update(t.slug, { chapter1FromSec: Number(e.target.value) })}
-                    className={cn(inputClass, "tabular")}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Disparaît à (s)
-                  <input
-                    type="number"
-                    min={0}
-                    max={duration}
-                    step={0.1}
-                    value={o.chapter1ToSec}
-                    onChange={(e) => update(t.slug, { chapter1ToSec: Number(e.target.value) })}
-                    className={cn(inputClass, "tabular")}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Position verticale
-                  <select
-                    value={o.chapter1Position}
-                    onChange={(e) =>
-                      update(t.slug, {
-                        chapter1Position: e.target.value as SaveTheDateTemplateOverride["chapter1Position"],
-                      })
-                    }
-                    className={selectClass}
-                  >
-                    <option value="top">Haut</option>
-                    <option value="middle">Milieu</option>
-                    <option value="bottom">Bas</option>
-                  </select>
-                </label>
+            <div className="flex items-center justify-between gap-2 p-4">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-ink">{t.name}</p>
+                <p className="text-xs tabular text-neutral-500">{templateDurationSec(t).toFixed(1)} s de montage</p>
               </div>
+              <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-terracotta-500">
+                Configurer <ArrowRight className="h-3.5 w-3.5" />
+              </span>
             </div>
-
-            <div className="border-t border-neutral-200 p-6">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                2e texte — prénoms &amp; date d'exemple (un vrai client verra les siens à la place)
-              </p>
-              <div className="grid gap-3 md:grid-cols-4">
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Prénoms d'exemple
-                  <input
-                    value={o.exampleNames}
-                    onChange={(e) => update(t.slug, { exampleNames: e.target.value })}
-                    className={inputClass}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Date d'exemple
-                  <input
-                    value={o.exampleDate}
-                    onChange={(e) => update(t.slug, { exampleDate: e.target.value })}
-                    className={inputClass}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Apparaît à (s)
-                  <input
-                    type="number"
-                    min={0}
-                    max={duration}
-                    step={0.1}
-                    value={o.chapter2FromSec}
-                    onChange={(e) => update(t.slug, { chapter2FromSec: Number(e.target.value) })}
-                    className={cn(inputClass, "tabular")}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Disparaît à (s)
-                  <input
-                    type="number"
-                    min={0}
-                    max={duration}
-                    step={0.1}
-                    value={o.chapter2ToSec}
-                    onChange={(e) => update(t.slug, { chapter2ToSec: Number(e.target.value) })}
-                    className={cn(inputClass, "tabular")}
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Position verticale
-                  <select
-                    value={o.chapter2Position}
-                    onChange={(e) =>
-                      update(t.slug, {
-                        chapter2Position: e.target.value as SaveTheDateTemplateOverride["chapter2Position"],
-                      })
-                    }
-                    className={selectClass}
-                  >
-                    <option value="top">Haut</option>
-                    <option value="middle">Milieu</option>
-                    <option value="bottom">Bas</option>
-                  </select>
-                </label>
-              </div>
-            </div>
-
-            <div className="border-t border-neutral-200 p-6">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                Couleurs des 2 textes
-              </p>
-              <div className="grid gap-4 md:grid-cols-4">
-                <ColorField
-                  label="Texte — 1er bloc"
-                  hint="Vide = couleur du thème"
-                  value={o.chapter1TextColor}
-                  onChange={(v) => update(t.slug, { chapter1TextColor: v })}
-                />
-                <ColorField
-                  label="Fond de carte — 1er bloc"
-                  hint="Vide = fond du thème"
-                  value={o.chapter1CardBg}
-                  onChange={(v) => update(t.slug, { chapter1CardBg: v })}
-                />
-                <ColorField
-                  label="Texte — 2e bloc"
-                  hint="Vide = couleur du thème"
-                  value={o.chapter2TextColor}
-                  onChange={(v) => update(t.slug, { chapter2TextColor: v })}
-                />
-                <ColorField
-                  label="Fond de carte — 2e bloc"
-                  hint="Vide = fond du thème"
-                  value={o.chapter2CardBg}
-                  onChange={(v) => update(t.slug, { chapter2CardBg: v })}
-                />
-              </div>
-            </div>
-
-            <div className="border-t border-neutral-200 p-6">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                Décor & style (bibliothèque)
-              </p>
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Décor graphique
-                  <select
-                    value={o.overlayGraphic}
-                    onChange={(e) => update(t.slug, { overlayGraphic: e.target.value })}
-                    className={selectClass}
-                  >
-                    <option value="">Aucun</option>
-                    {HERO_OVERLAY_GRAPHICS.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Police du titre
-                  <select value={o.fontId} onChange={(e) => update(t.slug, { fontId: e.target.value })} className={selectClass}>
-                    <option value="">Police du site (Fraunces)</option>
-                    {Object.entries(
-                      HERO_FONTS.reduce<Record<string, typeof HERO_FONTS>>((acc, f) => {
-                        (acc[f.category] ??= []).push(f);
-                        return acc;
-                      }, {}),
-                    ).map(([category, fonts]) => (
-                      <optgroup key={category} label={category}>
-                        {fonts.map((f) => (
-                          <option key={f.id} value={f.id}>
-                            {f.label}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Animation du texte
-                  <select
-                    value={o.textAnimation}
-                    onChange={(e) => update(t.slug, { textAnimation: e.target.value })}
-                    className={selectClass}
-                  >
-                    <option value="">Fondu (défaut)</option>
-                    {HERO_TEXT_ANIMATIONS.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Filtre vidéo
-                  <select value={o.filter} onChange={(e) => update(t.slug, { filter: e.target.value })} className={selectClass}>
-                    <option value="">Aucun</option>
-                    {HERO_FILTERS.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            </div>
-          </Panel>
-        );
-      })}
-
-      <AdminButton className="self-start" disabled={save.isPending} onClick={persist}>
-        {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
-        Enregistrer les modèles
-      </AdminButton>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

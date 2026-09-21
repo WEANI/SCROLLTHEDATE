@@ -39,6 +39,7 @@ import AdminFormulaires from '@/pages/admin/Formulaires'
 import AdminAnalytique from '@/pages/admin/Analytique'
 import AdminMessages from '@/pages/admin/Messages'
 import AdminParametres from '@/pages/admin/Parametres'
+import AdminModeleStdDetail from '@/pages/admin/ModeleStdDetail'
 
 /**
  * Remet la page en haut à chaque changement d'URL.
@@ -148,6 +149,7 @@ export default function App() {
           <Route path="analytique" element={<AdminAnalytique />} />
           <Route path="messages" element={<AdminMessages />} />
           <Route path="parametres" element={<AdminParametres />} />
+          <Route path="parametres/modeles-std/:slug" element={<AdminModeleStdDetail />} />
         </Route>
 
         {/* 404 */}

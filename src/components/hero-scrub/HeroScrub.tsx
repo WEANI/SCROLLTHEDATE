@@ -566,7 +566,8 @@ export default function HeroScrub({
  * stricte ici, un id qui ne matche aucun `case` retombe simplement sur
  * `null`, jamais une erreur.
  */
-function HeroOverlayGraphic({ id }: { id?: string }) {
+/** Exporté pour réutilisation directe dans l'aperçu admin — cf. doc de ModeleStdDetail.tsx (échange du 21/09/2026). */
+export function HeroOverlayGraphic({ id }: { id?: string }) {
   switch (id) {
     case 'corners':
       return (
@@ -789,7 +790,8 @@ function HeroOverlayGraphic({ id }: { id?: string }) {
  * d'aucun DOM supplémentaire — gérés uniquement via la classe posée sur
  * `.hs-stage`, cf. HeroScrub — donc `null` ici pour eux.
  */
-function HeroFilterLayer({ id }: { id?: string }) {
+/** Exporté pour réutilisation directe dans l'aperçu admin — cf. doc de ModeleStdDetail.tsx (échange du 21/09/2026). */
+export function HeroFilterLayer({ id }: { id?: string }) {
   switch (id) {
     case 'grain-cinema':
       return <div className="hs-filter-layer hs-filter-layer-grain" aria-hidden />
@@ -841,7 +843,8 @@ function FitOneLineText({ children, className, style }: { children: ReactNode; c
 // et petals-in ont chacun leur propre rendu spécial, gérés à part ci-dessous.
 const HERO_ANIM_NEEDS_TARGET = new Set(['typewriter', 'curtain', 'underline-draw', 'shimmer', 'unfold'])
 
-function ChapterContent({
+/** Exporté pour réutilisation directe dans l'aperçu admin — cf. doc de ModeleStdDetail.tsx (échange du 21/09/2026). */
+export function ChapterContent({
   chapter,
   className,
   textAnimation,
