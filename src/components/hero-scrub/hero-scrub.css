@@ -1019,7 +1019,12 @@
   border-right: 2px solid var(--hs-accent);
   animation:
     hs-anim-type-w 1.4s steps(22) forwards,
-    hs-anim-type-c 0.7s step-end infinite;
+    /* 2 itérations (0,7s × 2 = 1,4s) — même durée que le "tapage" du texte
+       ci-dessus, plutôt que `infinite` (signalé le 21/09/2026 : un curseur
+       qui clignote pour toujours pendant tout le reste de la scène n'est
+       pas voulu). `forwards` + dernière keyframe transparente : le curseur
+       s'éteint et reste éteint une fois le texte entièrement affiché. */
+    hs-anim-type-c 0.7s step-end 2 forwards;
 }
 @keyframes hs-anim-type-w {
   from {
@@ -1030,8 +1035,12 @@
   }
 }
 @keyframes hs-anim-type-c {
-  50% {
+  0%,
+  100% {
     border-color: transparent;
+  }
+  50% {
+    border-color: var(--hs-accent);
   }
 }
 

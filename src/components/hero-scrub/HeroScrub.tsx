@@ -917,21 +917,27 @@ export function ChapterContent({
           >
             {textAnimation === 'letter-drop' ? (
               // Rendu spécial : chaque caractère dans son propre
-              // `.hs-anim-letter` (cf. hero-scrub.css), indépendamment de
-              // segmentLayout/fitOneLine — la retombée lettre par lettre
-              // prime sur le layout en pile/une-ligne pour cette animation.
+              // `.hs-anim-letter` (cf. hero-scrub.css) — la retombée
+              // lettre par lettre prime sur `fitOneLine`/le layout inline
+              // par défaut, mais respecte quand même `segmentLayout:
+              // 'stack'` (`<br/>` plutôt qu'un espace entre segments) —
+              // sinon un texte sur plusieurs lignes retombait sur une
+              // seule ligne avec cette animation, contrairement aux
+              // autres (signalé le 21/09/2026).
               <p>
                 {chapter.segments.map((seg, i) => {
                   let letterIdx = 0
                   for (let k = 0; k < i; k++) letterIdx += chapter.segments![k].text.length + 1
                   return (
-                    <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-chapter-accent, var(--hs-accent))' } : undefined}>
-                      {seg.text.split('').map((c, j) => (
-                        <span key={j} className="hs-anim-letter" style={{ animationDelay: `${(letterIdx + j) * 0.03}s` }}>
-                          {c === ' ' ? ' ' : c}
-                        </span>
-                      ))}
-                      {i < chapter.segments!.length - 1 ? ' ' : ''}
+                    <span key={i}>
+                      <span className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-chapter-accent, var(--hs-accent))' } : undefined}>
+                        {seg.text.split('').map((c, j) => (
+                          <span key={j} className="hs-anim-letter" style={{ animationDelay: `${(letterIdx + j) * 0.03}s` }}>
+                            {c === ' ' ? ' ' : c}
+                          </span>
+                        ))}
+                      </span>
+                      {i < chapter.segments!.length - 1 ? (chapter.segmentLayout === 'stack' ? <br /> : ' ') : ''}
                     </span>
                   )
                 })}
