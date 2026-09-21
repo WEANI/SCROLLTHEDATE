@@ -858,11 +858,21 @@ export function ChapterContent({
   // `cardBgOverride`. `undefined` (pas de override) laisse `style` vide
   // pour cette clé : React n'écrit alors rien, la valeur héritée du
   // parent (`themeVars`, thème commun) continue de s'appliquer.
+  //
+  // `cardBgOverride === 'none'` (sentinel, cf. échange du 21/09/2026) : un
+  // simple fond transparent laissait quand même le flou/la bordure/l'ombre
+  // de `.hs-card` visibles derrière le texte — ce sentinel neutralise les 4
+  // à la fois, pour un rendu "texte seul, aucun fond apparent".
+  const cardNone = chapter.cardBgOverride === 'none'
   const overrideVars = {
     ...(chapter.textColorOverride
       ? { '--hs-text-primary': chapter.textColorOverride, '--hs-text-secondary': chapter.textColorOverride }
       : null),
-    ...(chapter.cardBgOverride ? { '--hs-card-bg': chapter.cardBgOverride } : null),
+    ...(cardNone
+      ? { '--hs-card-bg': 'transparent', '--hs-card-border': 'transparent', '--hs-card-shadow': 'none', '--hs-card-blur': '0px' }
+      : chapter.cardBgOverride
+        ? { '--hs-card-bg': chapter.cardBgOverride }
+        : null),
   } as CSSProperties
   return (
     <div className={className} style={overrideVars}>

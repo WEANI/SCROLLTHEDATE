@@ -45,11 +45,14 @@ function ColorField({
   hint,
   value,
   onChange,
+  noneOption,
 }: {
   label: string;
   hint?: string;
   value: string;
   onChange: (v: string) => void;
+  /** Ajoute un bouton "Aucun fond" — sentinel 'none' (cf. doc de ChapterContent dans HeroScrub.tsx) : neutralise fond ET flou/bordure/ombre de la carte, pas juste un fond transparent. */
+  noneOption?: boolean;
 }) {
   const isHex = /^#[0-9a-fA-F]{6}$/.test(value);
   return (
@@ -69,6 +72,21 @@ function ColorField({
           placeholder="Vide = défaut"
           className={cn(inputClass, "font-mono")}
         />
+        {noneOption && (
+          <button
+            type="button"
+            onClick={() => onChange(value === "none" ? "" : "none")}
+            title="Aucun fond, aucun flou, aucune bordure — le texte seul"
+            className={cn(
+              "shrink-0 rounded-md border px-2 py-1.5 text-[10px] font-semibold whitespace-nowrap",
+              value === "none"
+                ? "border-terracotta-500 bg-terracotta-500/10 text-terracotta-500"
+                : "border-neutral-200 text-neutral-500 hover:bg-neutral-100",
+            )}
+          >
+            Aucun fond
+          </button>
+        )}
       </div>
       {hint && <span className="text-[10px] font-normal normal-case text-neutral-400">{hint}</span>}
     </label>
@@ -387,9 +405,9 @@ export default function ModeleStdDetail() {
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Couleurs des 2 textes</p>
             <div className="grid gap-4 md:grid-cols-4">
               <ColorField label="Texte — 1er bloc" hint="Vide = couleur du thème" value={o.chapter1TextColor} onChange={(v) => update({ chapter1TextColor: v })} />
-              <ColorField label="Fond de carte — 1er bloc" hint="Vide = fond du thème" value={o.chapter1CardBg} onChange={(v) => update({ chapter1CardBg: v })} />
+              <ColorField label="Fond de carte — 1er bloc" hint="Vide = fond du thème" value={o.chapter1CardBg} onChange={(v) => update({ chapter1CardBg: v })} noneOption />
               <ColorField label="Texte — 2e bloc" hint="Vide = couleur du thème" value={o.chapter2TextColor} onChange={(v) => update({ chapter2TextColor: v })} />
-              <ColorField label="Fond de carte — 2e bloc" hint="Vide = fond du thème" value={o.chapter2CardBg} onChange={(v) => update({ chapter2CardBg: v })} />
+              <ColorField label="Fond de carte — 2e bloc" hint="Vide = fond du thème" value={o.chapter2CardBg} onChange={(v) => update({ chapter2CardBg: v })} noneOption />
             </div>
           </div>
         </Panel>
