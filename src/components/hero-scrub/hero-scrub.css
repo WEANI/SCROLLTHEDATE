@@ -1228,6 +1228,353 @@
 }
 
 /**
+ * Animations de texte ajoutées le 21/09/2026 — cf. heroDecor.ts::
+ * HERO_TEXT_ANIMATIONS et la maquette "Cadres & Animations Texte". Même
+ * principe que le bloc ci-dessus (11/09/2026) : modificateurs de
+ * `.hs-overlay`/`.hs-overlay.show`, une seule classe active à la fois.
+ */
+.hs-overlay.hs-anim-slide.show {
+  animation: hs-anim-slide 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes hs-anim-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* text-shadow est une propriété héritée — posée sur `.hs-overlay` (le
+   conteneur), elle s'applique aux textes de `.hs-card` sans balisage
+   supplémentaire, comme `filter` pour ink-reveal/soft-zoom ci-dessus. */
+.hs-overlay.hs-anim-glow.show {
+  animation: hs-anim-glow 1.8s ease-in-out;
+}
+@keyframes hs-anim-glow {
+  0%,
+  100% {
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    text-shadow: 0 0 18px var(--hs-accent);
+  }
+}
+
+.hs-overlay.hs-anim-focus.show {
+  animation: hs-anim-focus 1s ease-out;
+}
+@keyframes hs-anim-focus {
+  from {
+    opacity: 0;
+    filter: blur(9px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* Cascade par MOT (pas par lettre comme letter-drop) — rendu spécial dans
+   ChapterContent (`.hs-anim-word`), plus lisible que letter-drop sur un
+   texte long (signalé le 21/09/2026). */
+.hs-overlay.hs-anim-wave .hs-anim-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(10px);
+}
+.hs-overlay.hs-anim-wave.show .hs-anim-word {
+  animation: hs-anim-wave 0.6s ease-out forwards;
+}
+@keyframes hs-anim-wave {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hs-overlay.hs-anim-elastic.show {
+  animation: hs-anim-elastic 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes hs-anim-elastic {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.hs-overlay.hs-anim-flicker.show {
+  animation: hs-anim-flicker 1.6s linear;
+}
+@keyframes hs-anim-flicker {
+  0%,
+  19%,
+  21%,
+  23%,
+  80% {
+    opacity: 1;
+  }
+  20%,
+  22%,
+  79% {
+    opacity: 0.2;
+  }
+  from {
+    opacity: 0;
+  }
+}
+
+.hs-overlay.hs-anim-wipe .hs-anim-target {
+  display: inline-block;
+  clip-path: inset(0 100% 0 0);
+}
+.hs-overlay.hs-anim-wipe.show .hs-anim-target {
+  animation: hs-anim-wipe 1s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes hs-anim-wipe {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Seule animation de cette liste qui ne s'arrête pas après l'apparition —
+   une présence continue plutôt qu'une simple entrée, cf. sa description
+   dans heroDecor.ts. `infinite` tant que `.show` reste posé (le chapitre
+   actif), s'arrête dès que le scrub passe au chapitre suivant. */
+.hs-overlay.hs-anim-breathe.show {
+  animation: hs-anim-breathe 3.2s ease-in-out infinite;
+}
+@keyframes hs-anim-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+/**
+ * Cadres décoratifs autour d'UN bloc de texte (`.hs-card`) — ajoutés le
+ * 21/09/2026, cf. heroDecor.ts::HERO_CARD_FRAMES et la même maquette que les
+ * animations ci-dessus. Par chapitre (classe posée directement sur
+ * `.hs-card` via `chapter.cardFrame`, cf. ChapterContent dans
+ * HeroScrub.tsx) — contrairement aux animations/filtres ci-dessus qui sont
+ * hero-wide. Couleur d'accent = `--hs-chapter-accent` (repli `--hs-accent`),
+ * jamais une couleur figée, cf. les décors HERO_OVERLAY_GRAPHICS.
+ */
+.hs-card.hs-frame-double-rule {
+  position: relative;
+}
+.hs-card.hs-frame-double-rule::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  opacity: 0.55;
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.hs-card.hs-frame-floral-corners {
+  position: relative;
+}
+.hs-card.hs-frame-floral-corners .hs-frame-corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--hs-chapter-accent, var(--hs-accent));
+  opacity: 0.85;
+  pointer-events: none;
+}
+.hs-card.hs-frame-floral-corners .hs-frame-corner::before {
+  content: '❀';
+  position: absolute;
+  font-size: 11px;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+}
+.hs-card.hs-frame-floral-corners .hs-frame-corner-1 {
+  top: 10px;
+  left: 10px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.hs-card.hs-frame-floral-corners .hs-frame-corner-1::before {
+  top: -7px;
+  left: -7px;
+}
+.hs-card.hs-frame-floral-corners .hs-frame-corner-2 {
+  top: 10px;
+  right: 10px;
+  border-left: 0;
+  border-bottom: 0;
+}
+.hs-card.hs-frame-floral-corners .hs-frame-corner-2::before {
+  top: -7px;
+  right: -7px;
+}
+.hs-card.hs-frame-floral-corners .hs-frame-corner-3 {
+  bottom: 10px;
+  left: 10px;
+  border-right: 0;
+  border-top: 0;
+}
+.hs-card.hs-frame-floral-corners .hs-frame-corner-3::before {
+  bottom: -7px;
+  left: -7px;
+}
+.hs-card.hs-frame-floral-corners .hs-frame-corner-4 {
+  bottom: 10px;
+  right: 10px;
+  border-left: 0;
+  border-top: 0;
+}
+.hs-card.hs-frame-floral-corners .hs-frame-corner-4::before {
+  bottom: -7px;
+  right: -7px;
+}
+
+.hs-card.hs-frame-ribbon-flag {
+  position: relative;
+  margin-top: 14px;
+}
+.hs-card.hs-frame-ribbon-flag .hs-frame-flag {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--hs-chapter-accent, var(--hs-accent));
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 5px 16px;
+  white-space: nowrap;
+  clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%);
+}
+
+.hs-card.hs-frame-wax-seal {
+  position: relative;
+  margin-top: 16px;
+}
+.hs-card.hs-frame-wax-seal .hs-frame-seal {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--hs-chapter-accent, var(--hs-accent)) 60%, #fff), var(--hs-chapter-accent, var(--hs-accent)) 75%);
+  box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--hs-font-family);
+  font-style: italic;
+  font-size: 12px;
+  color: #fff;
+}
+
+/* Deux branches posées de part et d'autre du contenu, EN DEHORS du flux
+   (position: absolute) plutôt qu'un flex sur `.hs-card` — celui-ci empile
+   verticalement lead/eyebrow/titre/règle/sous-texte, un flex en ligne
+   aurait cassé cet empilement. Un padding latéral leur laisse la place. */
+.hs-card.hs-frame-laurel {
+  padding-left: 46px;
+  padding-right: 46px;
+}
+.hs-card.hs-frame-laurel .hs-frame-laurel-svg {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 44px;
+  opacity: 0.85;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  pointer-events: none;
+}
+.hs-card.hs-frame-laurel .hs-frame-laurel-svg:first-of-type {
+  left: 12px;
+}
+.hs-card.hs-frame-laurel .hs-frame-laurel-svg.hs-frame-laurel-flip {
+  right: 12px;
+  transform: translateY(-50%) scaleX(-1);
+}
+
+.hs-card.hs-frame-art-deco {
+  border-top: 2px solid var(--hs-chapter-accent, var(--hs-accent));
+  border-bottom: 2px solid var(--hs-chapter-accent, var(--hs-accent));
+  position: relative;
+}
+.hs-card.hs-frame-art-deco::before,
+.hs-card.hs-frame-art-deco::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 6px;
+  height: 6px;
+  background: var(--hs-chapter-accent, var(--hs-accent));
+}
+.hs-card.hs-frame-art-deco::before {
+  top: -4px;
+}
+.hs-card.hs-frame-art-deco::after {
+  bottom: -4px;
+}
+
+.hs-card.hs-frame-swash {
+  padding-bottom: 44px;
+  position: relative;
+}
+.hs-card.hs-frame-swash .hs-frame-swash-svg {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 20px;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+}
+
+.hs-card.hs-frame-lace {
+  position: relative;
+}
+.hs-card.hs-frame-lace .hs-frame-lace-row {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  height: 6px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.hs-card.hs-frame-lace .hs-frame-lace-row span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--hs-chapter-accent, var(--hs-accent));
+  opacity: 0.7;
+}
+.hs-card.hs-frame-lace .hs-frame-lace-row.hs-frame-lace-top {
+  top: 2px;
+}
+.hs-card.hs-frame-lace .hs-frame-lace-row.hs-frame-lace-bottom {
+  bottom: 2px;
+}
+
+/**
  * Filtres visuels du hero ajoutés le 11/09/2026 — cf. heroDecor.ts::
  * HERO_FILTERS. Appliqués sur `.hs-video` (aussi bien la balise <video> que
  * le <canvas> du mode frames, cf. HeroScrub.tsx) via une classe posée sur

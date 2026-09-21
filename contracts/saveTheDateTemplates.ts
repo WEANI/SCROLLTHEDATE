@@ -78,6 +78,8 @@ export interface TemplateHeroChapter {
   textColorOverride?: string
   cardBgOverride?: string
   accentColorOverride?: string
+  /** cf. doc de HeroChapter.cardFrame (src/components/hero-scrub/types.ts) — ajouté le 21/09/2026. */
+  cardFrame?: string
   verticalAlign?: HeroVerticalAlign
 }
 
@@ -178,6 +180,8 @@ export interface SaveTheDateTemplateOverride {
   chapter1CardBg: string
   /** 'sm'/'md'/'lg' — vide = 'lg' (comportement historique de ce bloc). */
   chapter1TitleSize: string
+  /** cf. doc de TemplateHeroChapter.cardFrame — vide = aucun cadre. Ajouté le 21/09/2026. */
+  chapter1CardFrame: string
   /** Prénoms d'exemple affichés dans la bibliothèque — jamais un vrai client (cf. doc de EXAMPLE_NAMES). */
   exampleNames: string
   exampleDate: string
@@ -188,6 +192,8 @@ export interface SaveTheDateTemplateOverride {
   chapter2CardBg: string
   /** Couleur du "&"/"et" entre les 2 prénoms (segment `accent`, cf. nameSegments) — vide = couleur d'accent du thème. */
   chapter2AccentColor: string
+  /** cf. doc de TemplateHeroChapter.cardFrame — vide = aucun cadre. Ajouté le 21/09/2026. */
+  chapter2CardFrame: string
   /** cf. doc de SaveTheDateTemplate.overlayGraphic — vide = comportement par défaut. */
   overlayGraphic: string
   fontId: string
@@ -206,6 +212,31 @@ export interface SaveTheDateTemplateOverride {
    * ici sans toucher FairePart.tsx).
    */
   extraCards: HeroCustomCard[]
+  /**
+   * 3e bloc — la date, indépendant du bloc "prénoms" (cf. échange du
+   * 21/09/2026 : "je souhaite ajouter un bloc date indépendant"). `false`
+   * par défaut = comportement historique STRICTEMENT inchangé (la date
+   * reste affichée SOUS les prénoms, cf. `subLines` du chapitre 2) — tant
+   * qu'un admin n'active pas explicitement ce bloc pour un modèle donné,
+   * aucun projet existant ni nouveau n'est affecté. Une fois activé,
+   * `subLines` disparaît du chapitre 2 : la date ne vit plus QUE dans ce
+   * nouveau bloc (jamais les deux à la fois, cf. applyOverride/
+   * buildFulfillmentData plus bas).
+   *
+   * Techniquement porté par une carte `heroCustomCards` de type `kind:
+   * 'date'` plutôt que par un vrai 3e élément du tuple `heroChapters` — cf.
+   * doc de `HeroCustomCard.kind` (bespokePalette.ts) : ce tuple est figé à
+   * 2 éléments pour un Save the Date (webhook Stripe, `expectedChapterCount`
+   * dans FairePart.tsx) et volontairement jamais retouché, contrairement à
+   * `heroCustomCards`, une colonne JSONB flexible déjà réutilisée pour les
+   * "blocs supplémentaires" ci-dessus.
+   */
+  dateBlockEnabled: boolean
+  dateBlockFromSec: number
+  dateBlockToSec: number
+  dateBlockPosition: HeroVerticalAlign
+  /** Vide = couleur du thème (même convention que chapter1TextColor/chapter2TextColor). */
+  dateBlockTextColor: string
 }
 
 // Couple d'exemple repris à l'identique du reste du site (récap /commander,
@@ -387,6 +418,7 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     chapter1TextColor: ch1?.textColorOverride ?? '',
     chapter1CardBg: ch1?.cardBgOverride ?? '',
     chapter1TitleSize: ch1?.titleSize ?? 'lg',
+    chapter1CardFrame: ch1?.cardFrame ?? '',
     exampleNames: EXAMPLE_NAMES,
     exampleDate: EXAMPLE_DATE,
     chapter2FromSec: Math.round((ch2?.from ?? 0.9) * duration * 10) / 10,
@@ -395,11 +427,18 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     chapter2TextColor: ch2?.textColorOverride ?? '',
     chapter2CardBg: ch2?.cardBgOverride ?? '',
     chapter2AccentColor: ch2?.accentColorOverride ?? '',
+    chapter2CardFrame: ch2?.cardFrame ?? '',
     overlayGraphic: template.overlayGraphic ?? '',
     fontId: template.fontId ?? '',
     textAnimation: template.textAnimation ?? '',
     filter: template.filter ?? '',
     extraCards: [],
+    // Désactivé par défaut — cf. doc du champ sur SaveTheDateTemplateOverride.
+    dateBlockEnabled: false,
+    dateBlockFromSec: Math.round((ch2?.to ?? 1) * duration * 10) / 10,
+    dateBlockToSec: Math.round(duration * 10) / 10,
+    dateBlockPosition: 'bottom',
+    dateBlockTextColor: '',
   }
 }
 
@@ -428,6 +467,7 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         verticalAlign: override.chapter1Position,
         textColorOverride: override.chapter1TextColor || undefined,
         cardBgOverride: override.chapter1CardBg || undefined,
+        cardFrame: override.chapter1CardFrame || undefined,
       },
       {
         id: 1,
@@ -437,13 +477,31 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         segments: nameSegments(override.exampleNames || EXAMPLE_NAMES),
         fitOneLine: true,
         rule: true,
-        subLines: [override.exampleDate || EXAMPLE_DATE],
+        // La date ne vit sous les prénoms QUE si le bloc indépendant n'est
+        // pas activé — jamais les deux à la fois, cf. doc de
+        // dateBlockEnabled sur SaveTheDateTemplateOverride.
+        subLines: override.dateBlockEnabled ? undefined : [override.exampleDate || EXAMPLE_DATE],
         subSize: 'md',
         verticalAlign: override.chapter2Position,
         textColorOverride: override.chapter2TextColor || undefined,
         cardBgOverride: override.chapter2CardBg || undefined,
         accentColorOverride: override.chapter2AccentColor || undefined,
+        cardFrame: override.chapter2CardFrame || undefined,
       },
+      ...(override.dateBlockEnabled
+        ? [
+            {
+              id: 2,
+              kind: 'text' as const,
+              from: ratio(override.dateBlockFromSec),
+              to: ratio(override.dateBlockToSec),
+              segments: [{ text: override.exampleDate || EXAMPLE_DATE }],
+              titleSize: 'md' as const,
+              verticalAlign: override.dateBlockPosition,
+              textColorOverride: override.dateBlockTextColor || undefined,
+            },
+          ]
+        : []),
       ...extraCardsToChapters(override.extraCards ?? [], duration),
     ],
   }
@@ -507,9 +565,11 @@ export function buildFulfillmentData(
       stdSaveTheDateTextColor: o.chapter1TextColor || '',
       stdSaveTheDateCardBg: o.chapter1CardBg || '',
       stdSaveTheDateTitleSize: o.chapter1TitleSize || '',
+      stdSaveTheDateCardFrame: o.chapter1CardFrame || '',
       stdNamesDateTextColor: o.chapter2TextColor || '',
       stdNamesDateCardBg: o.chapter2CardBg || '',
       stdNamesDateAccentColor: o.chapter2AccentColor || '',
+      stdNamesDateCardFrame: o.chapter2CardFrame || '',
       heroOverlayGraphic: o.overlayGraphic || '',
       heroFontId: o.fontId || '',
       heroTextAnimation: o.textAnimation || '',
@@ -519,7 +579,28 @@ export function buildFulfillmentData(
       { fromSec: o.chapter1FromSec, toSec: o.chapter1ToSec, position: o.chapter1Position },
       { fromSec: o.chapter2FromSec, toSec: o.chapter2ToSec, position: o.chapter2Position },
     ],
-    heroCustomCards: o.extraCards ?? [],
+    // Bloc "date" indépendant (cf. doc de dateBlockEnabled) : une carte
+    // heroCustomCards de plus, marquée kind:'date' — FairePart.tsx la
+    // reconnaît pour (a) afficher la vraie date du client à sa place et
+    // (b) ne plus la répéter sous les prénoms (chapitre 2). `text`
+    // n'est qu'un placeholder, jamais affiché pour ce kind (cf. doc de
+    // heroCustomCardSchema, bespokePalette.ts).
+    heroCustomCards: [
+      ...(o.extraCards ?? []),
+      ...(o.dateBlockEnabled
+        ? [
+            {
+              id: 'date-block',
+              kind: 'date' as const,
+              text: 'Date',
+              fromSec: o.dateBlockFromSec,
+              toSec: o.dateBlockToSec,
+              position: o.dateBlockPosition,
+              textColor: o.dateBlockTextColor || '',
+            },
+          ]
+        : []),
+    ],
     video: {
       url: template.desktopSrc,
       posterUrl: template.posterSrc,

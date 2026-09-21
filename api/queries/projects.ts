@@ -205,4 +205,15 @@ export async function updateProjectHeroCustomCards(
   await getDb().update(projects).set({ heroCustomCards }).where(eq(projects.id, projectId));
 }
 
+/**
+ * Date du mariage — posée une fois à la commande (cf. ordersRouter.ts),
+ * désormais aussi modifiable par le client lui-même après achat pour un
+ * Save the Date (cf. projectsRouter.ts::updateMySaveTheDatePersonalization,
+ * échange du 21/09/2026). Jamais appelée pour un faire-part sur mesure
+ * (la date y est saisie via le questionnaire, `jourj.date`).
+ */
+export async function updateProjectWeddingDate(projectId: number, weddingDate: Date) {
+  await getDb().update(projects).set({ weddingDate }).where(eq(projects.id, projectId));
+}
+
 export type ProjectStatus = Project["status"];

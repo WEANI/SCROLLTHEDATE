@@ -25,6 +25,7 @@ import {
   HERO_FONTS,
   HERO_TEXT_ANIMATIONS,
   HERO_FILTERS,
+  HERO_CARD_FRAMES,
   getHeroFont,
   useGoogleFont,
 } from "@/components/hero-scrub/heroDecor";
@@ -143,7 +144,7 @@ export default function ModeleStdDetail() {
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle" },
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "" },
       ],
     });
   const removeExtraCard = (id: string) => update({ extraCards: (o?.extraCards ?? []).filter((c) => c.id !== id) });
@@ -219,6 +220,39 @@ export default function ModeleStdDetail() {
     segments: (previewLines.length > 0 ? previewLines : ["Save the date"]).map((text) => ({ text })),
     segmentLayout: previewLines.length > 1 ? "stack" : undefined,
     titleSize: (o.chapter1TitleSize || "lg") as HeroChapter["titleSize"],
+  };
+  // Aperçus des cadres — texte d'exemple fixe (indépendant du champ texte
+  // libre ci-dessus) pour rester lisible quel que soit ce qui est tapé,
+  // cf. la maquette "Cadres & Animations Texte" (mêmes libellés d'exemple).
+  const chapter1FramePreview: HeroChapter = {
+    id: 0,
+    kind: "text",
+    from: 0,
+    to: 1,
+    segments: [{ text: "Save the date" }],
+    titleSize: "sm",
+    cardFrame: o.chapter1CardFrame || undefined,
+  };
+  const chapter2FramePreview: HeroChapter = {
+    id: 1,
+    kind: "text",
+    from: 0,
+    to: 1,
+    segments: [{ text: "Anna" }, { text: "&", accent: true }, { text: "Théo" }],
+    titleSize: "sm",
+    fitOneLine: true,
+    cardFrame: o.chapter2CardFrame || undefined,
+  };
+  // Aperçu du 3e bloc (la date, indépendant du bloc prénoms — cf. échange
+  // du 21/09/2026) — même principe que les aperçus ci-dessus.
+  const dateBlockPreview: HeroChapter = {
+    id: 2,
+    kind: "text",
+    from: 0,
+    to: 1,
+    segments: [{ text: o.exampleDate || "12 juin 2027" }],
+    titleSize: "sm",
+    textColorOverride: o.dateBlockTextColor || undefined,
   };
   const themeVars = {
     "--hs-frame-bg": template.theme.frameBg,
@@ -445,6 +479,64 @@ export default function ModeleStdDetail() {
           </div>
 
           <div className="border-t border-neutral-200 p-6">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                3e bloc — la date, indépendant des prénoms
+              </p>
+              <label className="flex items-center gap-2 text-[12.5px] font-medium text-neutral-500">
+                <input
+                  type="checkbox"
+                  checked={o.dateBlockEnabled}
+                  onChange={(e) => update({ dateBlockEnabled: e.target.checked })}
+                  className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
+                />
+                Bloc activé
+              </label>
+            </div>
+            {!o.dateBlockEnabled ? (
+              <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
+                Désactivé — la date reste affichée sous les prénoms, comme aujourd'hui (comportement historique).
+              </p>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-5">
+                <TimecodeField
+                  label="Apparaît à (s)"
+                  value={o.dateBlockFromSec}
+                  max={duration}
+                  onChange={(v) => update({ dateBlockFromSec: v })}
+                  onCaler={() => update({ dateBlockFromSec: Math.round(currentTime * 10) / 10 })}
+                />
+                <TimecodeField
+                  label="Disparaît à (s)"
+                  value={o.dateBlockToSec}
+                  max={duration}
+                  onChange={(v) => update({ dateBlockToSec: v })}
+                  onCaler={() => update({ dateBlockToSec: Math.round(currentTime * 10) / 10 })}
+                />
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Position verticale
+                  <select
+                    value={o.dateBlockPosition}
+                    onChange={(e) => update({ dateBlockPosition: e.target.value as SaveTheDateTemplateOverride["dateBlockPosition"] })}
+                    className={inputClass}
+                  >
+                    <option value="top">Haut</option>
+                    <option value="middle">Milieu</option>
+                    <option value="bottom">Bas</option>
+                  </select>
+                </label>
+                <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.dateBlockTextColor} onChange={(v) => update({ dateBlockTextColor: v })} />
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium text-neutral-500">Aperçu</span>
+                  <PreviewStage themeVars={themeVars}>
+                    <ChapterContent chapter={dateBlockPreview} className="hs-overlay show" />
+                  </PreviewStage>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-neutral-200 p-6">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Couleurs des 2 textes</p>
             <div className="grid gap-4 md:grid-cols-4">
               <ColorField label="Texte — 1er bloc" hint="Vide = couleur du thème" value={o.chapter1TextColor} onChange={(v) => update({ chapter1TextColor: v })} />
@@ -452,6 +544,42 @@ export default function ModeleStdDetail() {
               <ColorField label="Texte — 2e bloc" hint="Vide = couleur du thème" value={o.chapter2TextColor} onChange={(v) => update({ chapter2TextColor: v })} />
               <ColorField label="Fond de carte — 2e bloc" hint="Vide = fond du thème" value={o.chapter2CardBg} onChange={(v) => update({ chapter2CardBg: v })} noneOption />
               <ColorField label={'Couleur du "&" — 2e bloc'} hint="Vide = accent du thème" value={o.chapter2AccentColor} onChange={(v) => update({ chapter2AccentColor: v })} />
+            </div>
+          </div>
+
+          <div className="border-t border-neutral-200 p-6">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+              Cadre décoratif — indépendant par bloc
+            </p>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Cadre — 1er bloc
+                  <select value={o.chapter1CardFrame} onChange={(e) => update({ chapter1CardFrame: e.target.value })} className={inputClass}>
+                    <option value="">Aucun</option>
+                    {HERO_CARD_FRAMES.map((f) => (
+                      <option key={f.id} value={f.id}>{f.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <PreviewStage themeVars={themeVars}>
+                  <ChapterContent chapter={chapter1FramePreview} className="hs-overlay show" />
+                </PreviewStage>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Cadre — 2e bloc
+                  <select value={o.chapter2CardFrame} onChange={(e) => update({ chapter2CardFrame: e.target.value })} className={inputClass}>
+                    <option value="">Aucun</option>
+                    {HERO_CARD_FRAMES.map((f) => (
+                      <option key={f.id} value={f.id}>{f.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <PreviewStage themeVars={themeVars}>
+                  <ChapterContent chapter={chapter2FramePreview} className="hs-overlay show" />
+                </PreviewStage>
+              </div>
             </div>
           </div>
         </Panel>

@@ -107,6 +107,13 @@ export const bespokePaletteSchema = z.object({
   // couleur d'accent du thème (comportement historique). Ajouté le
   // 21/09/2026, même raisonnement que les champs stdNamesDate* ci-dessus.
   stdNamesDateAccentColor: z.string().default(""),
+  // Cadre décoratif autour de CE bloc (cf. HeroChapter.cardFrame,
+  // src/components/hero-scrub/heroDecor.ts::HERO_CARD_FRAMES) — vide =
+  // aucun cadre, comportement inchangé. Ajouté le 21/09/2026, même
+  // raisonnement par-bloc que titleSize/accentColor ci-dessus (un cadre
+  // habille un bloc précis, pas toute la scène comme heroOverlayGraphic).
+  stdSaveTheDateCardFrame: z.string().default(""),
+  stdNamesDateCardFrame: z.string().default(""),
   // Décor du hero — cf. src/components/hero-scrub/heroDecor.ts (bibliothèque
   // ajoutée le 10/09/2026). Chaîne vide = aucun décor / police du site
   // (Fraunces), comportement inchangé. `heroFontId` ne change QUE le titre
@@ -185,6 +192,21 @@ export const heroCustomCardSchema = z.object({
   text: z.string().min(1).max(280),
   // `.default("middle")` — cf. même remarque que heroChapterTimingSchema.position.
   position: heroVerticalAlignSchema.default("middle"),
+  // Ajoutés le 21/09/2026 pour le bloc "date" indépendant du Save the Date
+  // (cf. contracts/saveTheDateTemplates.ts, échange du 21/09/2026) —
+  // `.default("text")` absorbe toutes les cartes déjà en base (aucune ne
+  // porte ce champ), comportement strictement inchangé pour elles. `"date"`
+  // : `text` est ignoré au rendu (FairePart.tsx), remplacé par la vraie
+  // date du projet — une carte de ce type reste néanmoins un `HeroCustomCard`
+  // ordinaire pour tout le reste (timing/position), donc `text` garde sa
+  // contrainte `.min(1)` même si son contenu n'est alors qu'un placeholder.
+  kind: z.enum(["text", "date"]).default("text"),
+  // Couleur de CETTE carte — vide = couleur du thème (comportement actuel
+  // inchangé). Distinct de `textColorOverride` sur HeroChapter (nom
+  // différent car HeroCustomCard n'a jamais eu ce champ avant) — permet au
+  // client de personnaliser la couleur du bloc "date" sans toucher au
+  // thème du modèle.
+  textColor: z.string().default(""),
 });
 /** Plafonné à 10 : au-delà, plus un outil de personnalisation qu'un risque réel côté produit — évite un payload sans limite. */
 export const heroCustomCardsSchema = z.array(heroCustomCardSchema).max(10);

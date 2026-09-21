@@ -134,6 +134,9 @@ export type BespokePalette = {
   stdNamesDateCardBg: string
   /** Couleur du "&"/"et" entre les 2 prénoms — vide = accent du thème. Ajouté le 21/09/2026. */
   stdNamesDateAccentColor: string
+  /** Cadre décoratif propre à ce bloc — vide = aucun cadre. Ajouté le 21/09/2026. */
+  stdSaveTheDateCardFrame: string
+  stdNamesDateCardFrame: string
   /**
    * Décor du hero — cf. src/components/hero-scrub/heroDecor.ts. Chaîne
    * vide = aucun décor / police du site (Fraunces). `heroFontId` ne
@@ -190,6 +193,8 @@ export const EW_PALETTE: BespokePalette = {
   stdNamesDateTextColor: '',
   stdNamesDateCardBg: '',
   stdNamesDateAccentColor: '',
+  stdSaveTheDateCardFrame: '',
+  stdNamesDateCardFrame: '',
   heroOverlayGraphic: '',
   heroFontId: '',
   heroTextAnimation: '',

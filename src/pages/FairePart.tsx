@@ -284,6 +284,12 @@ export default function FairePart() {
   const weddingDateShort = invite.weddingDate
     ? new Date(invite.weddingDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : undefined
+  // Bloc "date" indépendant (cf. échange du 21/09/2026, HeroCustomCard.kind
+  // dans bespokePalette.ts) : quand une carte `kind: 'date'` est présente,
+  // la date vit UNIQUEMENT dans ce bloc (rendu par customChapters plus
+  // bas) — jamais répétée sous les prénoms via `subLines` du chapitre 2
+  // (baseChapters ci-dessous).
+  const hasDateBlock = (invite.heroCustomCards ?? []).some((c) => c.kind === 'date')
   // Jour/mois/année séparés — chapitre "Détails pratiques" du hero (cf.
   // échange du 07/09/2026 : uniquement la date, une ligne par partie,
   // plus d'heure/lieu/dress code dans ce chapitre). `weddingDateShort`
@@ -364,6 +370,8 @@ export default function FairePart() {
             // d'un fond pensé pour le faire-part.
             textColorOverride: palette.stdSaveTheDateTextColor || undefined,
             cardBgOverride: palette.stdSaveTheDateCardBg || 'transparent',
+            // Cadre décoratif propre à ce bloc — vide = aucun cadre (comportement historique), cf. échange du 21/09/2026.
+            cardFrame: palette.stdSaveTheDateCardFrame || undefined,
           },
           {
             id: 1,
@@ -381,13 +389,14 @@ export default function FairePart() {
             segments,
             fitOneLine: true,
             rule: true,
-            subLines: weddingDateShort ? [weddingDateShort] : undefined,
+            subLines: weddingDateShort && !hasDateBlock ? [weddingDateShort] : undefined,
             subSize: 'md',
             textColorOverride: palette.stdNamesDateTextColor || undefined,
             cardBgOverride: palette.stdNamesDateCardBg || 'transparent',
             // Couleur du "&" entre les 2 prénoms — vide = accent du thème
             // (comportement historique), cf. échange du 21/09/2026.
             accentColorOverride: palette.stdNamesDateAccentColor || undefined,
+            cardFrame: palette.stdNamesDateCardFrame || undefined,
           },
         ]
       : [
@@ -408,6 +417,8 @@ export default function FairePart() {
             // d'un fond pensé pour le faire-part.
             textColorOverride: palette.stdSaveTheDateTextColor || undefined,
             cardBgOverride: palette.stdSaveTheDateCardBg || 'transparent',
+            // Cadre décoratif propre à ce bloc — vide = aucun cadre (comportement historique), cf. échange du 21/09/2026.
+            cardFrame: palette.stdSaveTheDateCardFrame || undefined,
           },
           {
             id: 1,
@@ -424,13 +435,14 @@ export default function FairePart() {
             segments,
             fitOneLine: true,
             rule: true,
-            subLines: weddingDateShort ? [weddingDateShort] : undefined,
+            subLines: weddingDateShort && !hasDateBlock ? [weddingDateShort] : undefined,
             subSize: 'md',
             textColorOverride: palette.stdNamesDateTextColor || undefined,
             cardBgOverride: palette.stdNamesDateCardBg || 'transparent',
             // Couleur du "&" entre les 2 prénoms — vide = accent du thème
             // (comportement historique), cf. échange du 21/09/2026.
             accentColorOverride: palette.stdNamesDateAccentColor || undefined,
+            cardFrame: palette.stdNamesDateCardFrame || undefined,
           },
         ]
     : studioChapters && videoDuration
@@ -508,14 +520,33 @@ export default function FairePart() {
   // `videoDuration` n'est pas connu (cf. hasCustomCards plus haut, qui
   // bloque déjà le chargement de la page dans ce cas).
   const customChapters: HeroChapter[] = videoDuration
-    ? (invite.heroCustomCards ?? []).map((card, i) => ({
-        id: 1000 + i,
-        kind: 'text' as const,
-        from: card.fromSec / videoDuration,
-        to: card.toSec / videoDuration,
-        lead: card.text,
-        verticalAlign: card.position,
-      }))
+    ? (invite.heroCustomCards ?? []).map((card, i) =>
+        // Carte "date" (cf. échange du 21/09/2026) : `card.text` n'est
+        // qu'un placeholder (cf. doc de heroCustomCardSchema), jamais
+        // affiché — la vraie date du client (`weddingDateShort`, déjà
+        // calculée plus haut) est rendue en titre plutôt qu'en `lead`
+        // (paragraphe libre des cartes texte ordinaires), pour le même
+        // poids visuel que les 2 autres blocs fixes.
+        card.kind === 'date'
+          ? {
+              id: 1000 + i,
+              kind: 'text' as const,
+              from: card.fromSec / videoDuration,
+              to: card.toSec / videoDuration,
+              segments: [{ text: weddingDateShort ?? '' }],
+              titleSize: 'md' as const,
+              verticalAlign: card.position,
+              textColorOverride: card.textColor || undefined,
+            }
+          : {
+              id: 1000 + i,
+              kind: 'text' as const,
+              from: card.fromSec / videoDuration,
+              to: card.toSec / videoDuration,
+              lead: card.text,
+              verticalAlign: card.position,
+            },
+      )
     : []
   const chapters: HeroChapter[] = [...baseChapters, ...customChapters]
 

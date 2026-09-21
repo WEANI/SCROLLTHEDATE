@@ -277,6 +277,8 @@ export const CA_PALETTE: BespokePalette = {
   stdNamesDateTextColor: '',
   stdNamesDateCardBg: '',
   stdNamesDateAccentColor: '',
+  stdSaveTheDateCardFrame: '',
+  stdNamesDateCardFrame: '',
   heroOverlayGraphic: '',
   heroFontId: '',
   heroTextAnimation: '',

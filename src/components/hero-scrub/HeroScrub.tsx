@@ -838,10 +838,12 @@ function FitOneLineText({ children, className, style }: { children: ReactNode; c
 
 // Animations dont le titre a besoin d'un wrapper `.hs-anim-target` dédié
 // (largeur/clip/dégradé animés), cf. hero-scrub.css. Les autres (ink-reveal,
-// soft-zoom, bloom, handwrite, et le fondu par défaut) animent directement
-// `.hs-overlay.show` — aucun balisage supplémentaire nécessaire. letter-drop
-// et petals-in ont chacun leur propre rendu spécial, gérés à part ci-dessous.
-const HERO_ANIM_NEEDS_TARGET = new Set(['typewriter', 'curtain', 'underline-draw', 'shimmer', 'unfold'])
+// soft-zoom, bloom, handwrite, glow, focus, elastic, flicker, breathe, et le
+// fondu par défaut) animent directement `.hs-overlay.show` — aucun balisage
+// supplémentaire nécessaire. letter-drop et wave (rendu par mot plutôt que
+// par lettre, ajouté le 21/09/2026) et petals-in ont chacun leur propre
+// rendu spécial, gérés à part ci-dessous.
+const HERO_ANIM_NEEDS_TARGET = new Set(['typewriter', 'curtain', 'underline-draw', 'shimmer', 'unfold', 'wipe'])
 
 /** Exporté pour réutilisation directe dans l'aperçu admin — cf. doc de ModeleStdDetail.tsx (échange du 21/09/2026). */
 export function ChapterContent({
@@ -879,7 +881,62 @@ export function ChapterContent({
     <div className={className} style={overrideVars}>
       {/* Encadré flouté : le texte se lit sur n'importe quelle image de la
           vidéo derrière, sans jamais figer le fond en plein cadre. */}
-      <div className={cn('hs-card text-center', chapter.kind === 'list' && 'text-left')}>
+      <div
+        className={cn(
+          'hs-card text-center',
+          chapter.kind === 'list' && 'text-left',
+          chapter.cardFrame && `hs-frame-${chapter.cardFrame}`,
+        )}
+      >
+        {/* Décor propre au cadre choisi (chapter.cardFrame, cf.
+            heroDecor.ts::HERO_CARD_FRAMES) — purement visuel, positionné en
+            CSS par rapport à `.hs-card` (position: relative, déjà posée
+            plus haut pour les pétales de l'animation petals-in). */}
+        {chapter.cardFrame === 'floral-corners' && (
+          <>
+            <i className="hs-frame-corner hs-frame-corner-1" aria-hidden />
+            <i className="hs-frame-corner hs-frame-corner-2" aria-hidden />
+            <i className="hs-frame-corner hs-frame-corner-3" aria-hidden />
+            <i className="hs-frame-corner hs-frame-corner-4" aria-hidden />
+          </>
+        )}
+        {chapter.cardFrame === 'ribbon-flag' && (
+          // `chapter.eyebrow` si posé (cas général), sinon repli "Save the
+          // date" : les 2 blocs fixes du save the date n'ont pas d'eyebrow
+          // propre aujourd'hui, ce repli les couvre tous les deux sans
+          // ajouter de champ admin dédié rien que pour ce cadre.
+          <span className="hs-frame-flag" aria-hidden>
+            {chapter.eyebrow || 'Save the date'}
+          </span>
+        )}
+        {chapter.cardFrame === 'wax-seal' && (
+          <span className="hs-frame-seal" aria-hidden>
+            S
+          </span>
+        )}
+        {chapter.cardFrame === 'laurel' && (
+          <>
+            <LaurelSvg className="hs-frame-laurel-svg" />
+            <LaurelSvg className="hs-frame-laurel-svg hs-frame-laurel-flip" />
+          </>
+        )}
+        {chapter.cardFrame === 'swash' && (
+          <SwashSvg className="hs-frame-swash-svg" />
+        )}
+        {chapter.cardFrame === 'lace' && (
+          <>
+            <span className="hs-frame-lace-row hs-frame-lace-top" aria-hidden>
+              {Array.from({ length: 9 }).map((_, i) => (
+                <span key={i} />
+              ))}
+            </span>
+            <span className="hs-frame-lace-row hs-frame-lace-bottom" aria-hidden>
+              {Array.from({ length: 9 }).map((_, i) => (
+                <span key={i} />
+              ))}
+            </span>
+          </>
+        )}
         {chapter.lead && (
           <p className="mb-4 text-center text-[15px] font-light leading-relaxed" style={{ color: 'var(--hs-text-secondary)' }}>
             {chapter.lead}
@@ -938,6 +995,32 @@ export function ChapterContent({
                         ))}
                       </span>
                       {i < chapter.segments!.length - 1 ? (chapter.segmentLayout === 'stack' ? <br /> : ' ') : ''}
+                    </span>
+                  )
+                })}
+              </p>
+            ) : textAnimation === 'wave' ? (
+              // Rendu spécial : cascade par MOT (pas par lettre, cf.
+              // hs-anim-word dans hero-scrub.css) — plus lisible que
+              // letter-drop sur un texte long, ajouté le 21/09/2026. Même
+              // gestion de segmentLayout: 'stack' que letter-drop ci-dessus.
+              <p>
+                {chapter.segments.map((seg, i) => {
+                  let wordIdx = 0
+                  for (let k = 0; k < i; k++) wordIdx += chapter.segments![k].text.split(' ').filter(Boolean).length
+                  return (
+                    <span key={i}>
+                      <span className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-chapter-accent, var(--hs-accent))' } : undefined}>
+                        {seg.text.split(' ').filter(Boolean).map((word, j) => (
+                          <span key={j}>
+                            <span className="hs-anim-word" style={{ animationDelay: `${(wordIdx + j) * 0.1}s` }}>
+                              {word}
+                            </span>
+                            {j < seg.text.split(' ').filter(Boolean).length - 1 ? ' ' : ''}
+                          </span>
+                        ))}
+                      </span>
+                      {i < chapter.segments!.length - 1 ? (chapter.segmentLayout === 'stack' ? <br /> : ' ') : ''}
                     </span>
                   )
                 })}
@@ -1061,6 +1144,27 @@ export function ChapterContent({
  * animations qui n'en ont pas besoin (ink-reveal, soft-zoom, bloom,
  * handwrite, fondu par défaut).
  */
+/** Branche de laurier du cadre "laurel" (cf. HERO_CARD_FRAMES) — `currentColor` : hérite de `color` posé par `.hs-frame-laurel-svg` en CSS (variable d'accent du chapitre). */
+function LaurelSvg({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 34 64" fill="none" aria-hidden>
+      <path d="M17 4 C 8 14, 8 50, 17 60" stroke="currentColor" strokeWidth="1.2" />
+      {[10, 20, 30, 40, 50].map((y) => (
+        <ellipse key={y} cx="11" cy={y} rx="5" ry="2.4" fill="currentColor" opacity="0.8" transform={`rotate(-30 11 ${y})`} />
+      ))}
+    </svg>
+  )
+}
+
+/** Paraphe du cadre "swash" (cf. HERO_CARD_FRAMES) — même logique `currentColor`. */
+function SwashSvg({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 120 24" fill="none" aria-hidden>
+      <path d="M4 4 C 30 22, 90 22, 116 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function MaybeAnimTarget({ active, children }: { active: boolean; children: ReactNode }) {
   return active ? <span className="hs-anim-target">{children}</span> : <>{children}</>
 }

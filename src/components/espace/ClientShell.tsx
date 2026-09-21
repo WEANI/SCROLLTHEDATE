@@ -13,6 +13,7 @@ import {
   MessageCircle,
   Settings,
   ShoppingBag,
+  Sparkles,
   Users,
   X,
 } from 'lucide-react'
@@ -43,6 +44,8 @@ interface NavItem {
   icon: typeof LayoutDashboard
   end?: boolean
   disabled?: boolean
+  /** N'apparaît que pour ce produit — cf. filtre au rendu plus bas. Absent = visible pour tous (comportement historique de tous les autres onglets). */
+  product?: 'SAVE_THE_DATE'
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -50,6 +53,10 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Questionnaire', to: '/espace/questionnaire', icon: ClipboardList },
   { label: 'Médias', to: '/espace/questionnaire#medias', icon: Images },
   { label: 'Projet & scénarios', to: '/espace/projet', icon: Clapperboard },
+  // Save the Date "sur un modèle" uniquement (cf. échange du 21/09/2026) —
+  // rien à personnaliser ici pour un faire-part bespoke (scénarios/montage
+  // sur mesure, déjà couvert par "Projet & scénarios" ci-dessus).
+  { label: 'Personnalisation', to: '/espace/personnalisation', icon: Sparkles, product: 'SAVE_THE_DATE' },
   { label: 'Commandes', to: '/espace/commandes', icon: ShoppingBag },
   { label: 'RSVP', to: '/espace/rsvp', icon: Users },
   { label: 'Messages', to: '/espace/messages', icon: MessageCircle },
@@ -60,6 +67,7 @@ const CRUMB_LABEL: Record<string, string> = {
   espace: 'Espace client',
   questionnaire: 'Questionnaire',
   projet: 'Projet & scénarios',
+  personnalisation: 'Personnalisation',
   commandes: 'Commandes',
   rsvp: 'RSVP',
   messages: 'Messages',
@@ -240,7 +248,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-5">
         <ul className="flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.product || project?.order?.product === item.product).map((item) => {
             const Icon = item.icon
             if (item.disabled) {
               return (

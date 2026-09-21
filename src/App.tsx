@@ -26,6 +26,7 @@ import ClientShell from '@/components/espace/ClientShell'
 import TableauDeBord from '@/pages/espace/TableauDeBord'
 import Questionnaire from '@/pages/espace/Questionnaire'
 import Projet from '@/pages/espace/Projet'
+import PersonnalisationClient from '@/pages/espace/Personnalisation'
 import CommandesClient from '@/pages/espace/Commandes'
 import MessagesClient from '@/pages/espace/Messages'
 import ParametresClient from '@/pages/espace/Parametres'
@@ -133,6 +134,7 @@ export default function App() {
           <Route index element={<TableauDeBord />} />
           <Route path="questionnaire" element={<Questionnaire />} />
           <Route path="projet" element={<Projet />} />
+          <Route path="personnalisation" element={<PersonnalisationClient />} />
           <Route path="commandes" element={<CommandesClient />} />
           <Route path="messages" element={<MessagesClient />} />
           <Route path="rsvp" element={<RsvpClient />} />

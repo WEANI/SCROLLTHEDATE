@@ -58,6 +58,14 @@ export interface HeroChapter {
    */
   accentColorOverride?: string
   /**
+   * Cadre décoratif autour de la carte de CE chapitre (ex. double liseré
+   * doré, cachet de cire…) — cf. `HERO_CARD_FRAMES` dans heroDecor.ts.
+   * Absent = pas de cadre, comportement inchangé (bord/flou du thème
+   * seuls). Par chapitre, comme `textColorOverride` ci-dessus : un cadre
+   * habille un bloc précis, pas toute la scène — cf. échange du 21/09/2026.
+   */
+  cardFrame?: string
+  /**
    * Position verticale de la carte dans le cadre du hero — 'middle' (défaut,
    * comportement inchangé) centre comme avant ; 'top'/'bottom' déplacent le
    * bloc de texte en haut/bas du cadre (cf. `.hs-overlay.hs-valign-*` dans

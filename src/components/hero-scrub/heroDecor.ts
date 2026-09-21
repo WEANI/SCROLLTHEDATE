@@ -141,6 +141,33 @@ export const HERO_TEXT_ANIMATIONS: { id: string; label: string }[] = [
   { id: 'petals-in', label: 'Pétales dispersés' },
   { id: 'unfold', label: 'Dépliage' },
   { id: 'handwrite', label: 'Écriture manuscrite' },
+  // Ajoutées le 21/09/2026 — cf. maquette "Cadres & Animations Texte".
+  { id: 'slide', label: 'Glissement latéral' },
+  { id: 'glow', label: 'Halo pulsé' },
+  { id: 'focus', label: 'Mise au point' },
+  { id: 'wave', label: 'Cascade en vague' },
+  { id: 'elastic', label: 'Élastique' },
+  { id: 'flicker', label: 'Scintillement' },
+  { id: 'wipe', label: 'Effacement latéral' },
+  { id: 'breathe', label: 'Respiration continue' },
+]
+
+/**
+ * Cadre décoratif autour d'UN bloc de texte (`.hs-card`) — par chapitre,
+ * contrairement à `HERO_TEXT_ANIMATIONS`/`HERO_FILTERS` (un seul réglage
+ * pour tout le hero) : un cadre habille un bloc précis, pas la scène
+ * entière, même raisonnement que `textColorOverride`/`cardBgOverride`.
+ * Ajoutée le 21/09/2026, cf. maquette "Cadres & Animations Texte".
+ */
+export const HERO_CARD_FRAMES: { id: string; label: string }[] = [
+  { id: 'double-rule', label: 'Double liseré doré' },
+  { id: 'floral-corners', label: 'Coins fleuris' },
+  { id: 'ribbon-flag', label: 'Ruban banderole' },
+  { id: 'wax-seal', label: 'Cachet de cire' },
+  { id: 'laurel', label: 'Laurier encadrant' },
+  { id: 'art-deco', label: 'Pointillés Art déco' },
+  { id: 'swash', label: 'Paraphe calligraphié' },
+  { id: 'lace', label: 'Cadre ajouré (dentelle)' },
 ]
 
 /**

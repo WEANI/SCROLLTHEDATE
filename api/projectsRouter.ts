@@ -6,6 +6,8 @@ import {
   bespokePaletteSchema,
   heroChaptersSchema,
   heroCustomCardsSchema,
+  heroVerticalAlignSchema,
+  type HeroChapterTiming,
   type HeroCustomCard,
 } from "../contracts/bespokePalette";
 import { QUESTIONNAIRE_KEYS } from "../contracts/questionnaireKeys";
@@ -22,9 +24,10 @@ import {
   updateProjectPalette,
   updateProjectStatus,
   updateProjectTemplate,
+  updateProjectWeddingDate,
 } from "./queries/projects";
 import { findVideosByProject } from "./queries/domain";
-import { actorOf, logAudit, notifyUser } from "./queries/helpers";
+import { actorOf, findProjectForUser, logAudit, notifyUser } from "./queries/helpers";
 import { findUserById } from "./queries/orders";
 import { sendEmail } from "./lib/email";
 import { projectStatusChangedEmail } from "./lib/emailTemplates";
@@ -177,6 +180,113 @@ export const projectsRouter = createRouter({
   myProjects: authedQuery.query(async ({ ctx }) => {
     return findProjectsSummaryByUser(ctx.user.id);
   }),
+
+  // Personnalisation d'un Save the Date par le client lui-même, APRÈS
+  // achat (cf. échange du 21/09/2026 : "je souhaite ajouter un bloc date
+  // indépendant... coté client ils ne peuvent personnaliser que : la date,
+  // les prénoms, les couleurs de texte et police, emplacement du texte, et
+  // animation d'apparition"). Volontairement une allow-list explicite de
+  // champs, PAS `adminSetPalette`/`adminSetHeroChapters` réutilisés avec
+  // une autre policy : le timing (fromSec/toSec) et tout le reste (cadre,
+  // fond de carte, couleur du "&"…) doivent rester HORS DE PORTÉE de ce
+  // endpoint, quoi qu'il arrive — le schéma d'entrée ci-dessous ne connaît
+  // même pas ces champs, impossible de les faire passer par erreur.
+  updateMySaveTheDatePersonalization: authedQuery
+    .input(
+      z.object({
+        projectId: z.number().int().positive().optional(),
+        weddingDate: z.coerce.date().optional(),
+        chapter1TextColor: z.string().optional(),
+        chapter1Position: heroVerticalAlignSchema.optional(),
+        chapter2TextColor: z.string().optional(),
+        chapter2Position: heroVerticalAlignSchema.optional(),
+        dateTextColor: z.string().optional(),
+        datePosition: heroVerticalAlignSchema.optional(),
+        fontId: z.string().optional(),
+        textAnimation: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const project = await findProjectForUser(ctx.user.id, input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+      // N'a de sens que pour un Save the Date "sur un modèle" — un
+      // faire-part bespoke n'a ni palette de blocs fixes ni ce concept de
+      // bloc "date" (scénarios/montage sur mesure, cf. Projet.tsx).
+      const product = await findProjectProduct(project.id);
+      if (product !== "SAVE_THE_DATE") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Personnalisation réservée aux commandes Save the Date.",
+        });
+      }
+
+      // Palette : merge allow-listé sur la palette déjà en base (JAMAIS un
+      // remplacement complet — `updateProjectPalette` écrase toute la
+      // colonne, cf. sa doc). Couleur par bloc (1/2) + police/animation
+      // pour tout le hero, cf. contracts/bespokePalette.ts.
+      const existingPalette =
+        project.palette && typeof project.palette === "object"
+          ? (project.palette as Record<string, string | boolean>)
+          : {};
+      const nextPalette = { ...existingPalette };
+      let paletteChanged = false;
+      if (input.chapter1TextColor !== undefined) {
+        nextPalette.stdSaveTheDateTextColor = input.chapter1TextColor;
+        paletteChanged = true;
+      }
+      if (input.chapter2TextColor !== undefined) {
+        nextPalette.stdNamesDateTextColor = input.chapter2TextColor;
+        paletteChanged = true;
+      }
+      if (input.fontId !== undefined) {
+        nextPalette.heroFontId = input.fontId;
+        paletteChanged = true;
+      }
+      if (input.textAnimation !== undefined) {
+        nextPalette.heroTextAnimation = input.textAnimation;
+        paletteChanged = true;
+      }
+      if (paletteChanged) await updateProjectPalette(project.id, nextPalette);
+
+      // heroChapters : ne réassigne QUE `.position` aux index fournis,
+      // JAMAIS `.fromSec`/`.toSec` (décidés exclusivement par l'admin) —
+      // cf. doc du endpoint ci-dessus.
+      if (input.chapter1Position || input.chapter2Position) {
+        const existingChapters = (project.heroChapters as HeroChapterTiming[] | null) ?? [];
+        if (existingChapters.length === 2) {
+          const nextChapters: HeroChapterTiming[] = [
+            input.chapter1Position ? { ...existingChapters[0], position: input.chapter1Position } : existingChapters[0],
+            input.chapter2Position ? { ...existingChapters[1], position: input.chapter2Position } : existingChapters[1],
+          ];
+          await updateProjectHeroChapters(project.id, nextChapters);
+        }
+      }
+
+      // Bloc "date" (carte heroCustomCards kind:'date', cf.
+      // contracts/saveTheDateTemplates.ts::dateBlockEnabled) — ignoré
+      // silencieusement si ce modèle n'a pas ce bloc (commande passée
+      // avant son introduction, ou modèle où l'admin ne l'a pas activé) :
+      // le client n'a alors simplement rien à personnaliser ici, pas une
+      // erreur.
+      if (input.dateTextColor !== undefined || input.datePosition !== undefined) {
+        const existingCards = (project.heroCustomCards as HeroCustomCard[] | null) ?? [];
+        const dateCardIdx = existingCards.findIndex((c) => c.kind === "date");
+        if (dateCardIdx !== -1) {
+          const nextCards = [...existingCards];
+          nextCards[dateCardIdx] = {
+            ...nextCards[dateCardIdx],
+            ...(input.dateTextColor !== undefined ? { textColor: input.dateTextColor } : null),
+            ...(input.datePosition !== undefined ? { position: input.datePosition } : null),
+          };
+          await updateProjectHeroCustomCards(project.id, nextCards);
+        }
+      }
+
+      if (input.weddingDate) await updateProjectWeddingDate(project.id, input.weddingDate);
+
+      await logAudit(project.id, actorOf(ctx.user), "project.save_the_date_personalized", {});
+      return { success: true };
+    }),
 
   // Kanban admin : projets + client + commande + complétion questionnaire.
   adminList: adminQuery.query(() => findAllProjects()),
