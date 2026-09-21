@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, X } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
 import {
@@ -30,6 +30,7 @@ import {
 } from "@/components/hero-scrub/heroDecor";
 import { HeroOverlayGraphic, HeroFilterLayer, ChapterContent } from "@/components/hero-scrub/HeroScrub";
 import type { HeroChapter } from "@/components/hero-scrub/types";
+import type { HeroCustomCard } from "@contracts/bespokePalette";
 
 type Push = (kind: "success" | "error", text: string) => void;
 
@@ -135,6 +136,20 @@ export default function ModeleStdDetail() {
   const update = (patch: Partial<SaveTheDateTemplateOverride>) =>
     setO((prev) => (prev ? { ...prev, ...patch } : prev));
 
+  // ---- blocs supplémentaires (extraCards) — mêmes opérations que
+  // CustomCardsEditor (StudioPanel.tsx), même génération d'id. `?? []` :
+  // défensif pour un override déjà enregistré avant l'ajout de ce champ.
+  const addExtraCard = () =>
+    update({
+      extraCards: [
+        ...(o?.extraCards ?? []),
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle" },
+      ],
+    });
+  const removeExtraCard = (id: string) => update({ extraCards: (o?.extraCards ?? []).filter((c) => c.id !== id) });
+  const updateExtraCard = (id: string, patch: Partial<HeroCustomCard>) =>
+    update({ extraCards: (o?.extraCards ?? []).map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+
   const persist = () => {
     if (!o || !template) return;
     save.mutate({ key: "saveTheDateTemplates", value: Object.values({ ...allOverrides, [template.slug]: o }) });
@@ -188,13 +203,22 @@ export default function ModeleStdDetail() {
   if (!loaded || !o) return null;
 
   const duration = templateDurationSec(template);
+  // Même règle que splitLines (contracts/saveTheDateTemplates.ts) : un
+  // retour à la ligne tapé = une ligne forcée à l'affichage, reproduite ici
+  // pour que l'aperçu "Animation du texte" montre le texte tel qu'il
+  // apparaîtra vraiment (pas juste "Save the date" sur une ligne).
+  const previewLines = (o.chapter1Text || "Save the date")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
   const previewChapter: HeroChapter = {
     id: 0,
     kind: "text",
     from: 0,
     to: 1,
-    segments: [{ text: o.chapter1Text || "Save the date" }],
-    titleSize: "lg",
+    segments: (previewLines.length > 0 ? previewLines : ["Save the date"]).map((text) => ({ text })),
+    segmentLayout: previewLines.length > 1 ? "stack" : undefined,
+    titleSize: (o.chapter1TitleSize || "lg") as HeroChapter["titleSize"],
   };
   const themeVars = {
     "--hs-frame-bg": template.theme.frameBg,
@@ -327,8 +351,13 @@ export default function ModeleStdDetail() {
             </p>
             <div className="grid gap-3 md:grid-cols-5">
               <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 md:col-span-2">
-                Texte
-                <input value={o.chapter1Text} onChange={(e) => update({ chapter1Text: e.target.value })} className={inputClass} />
+                Texte — une ligne par retour à la ligne (1 à 3 lignes)
+                <textarea
+                  rows={2}
+                  value={o.chapter1Text}
+                  onChange={(e) => update({ chapter1Text: e.target.value })}
+                  className={textareaClass}
+                />
               </label>
               <TimecodeField
                 label="Apparaît à (s)"
@@ -344,18 +373,32 @@ export default function ModeleStdDetail() {
                 onChange={(v) => update({ chapter1ToSec: v })}
                 onCaler={() => update({ chapter1ToSec: Math.round(currentTime * 10) / 10 })}
               />
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Position verticale
-                <select
-                  value={o.chapter1Position}
-                  onChange={(e) => update({ chapter1Position: e.target.value as SaveTheDateTemplateOverride["chapter1Position"] })}
-                  className={inputClass}
-                >
-                  <option value="top">Haut</option>
-                  <option value="middle">Milieu</option>
-                  <option value="bottom">Bas</option>
-                </select>
-              </label>
+              <div className="flex flex-col gap-3">
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Position verticale
+                  <select
+                    value={o.chapter1Position}
+                    onChange={(e) => update({ chapter1Position: e.target.value as SaveTheDateTemplateOverride["chapter1Position"] })}
+                    className={inputClass}
+                  >
+                    <option value="top">Haut</option>
+                    <option value="middle">Milieu</option>
+                    <option value="bottom">Bas</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Taille de police
+                  <select
+                    value={o.chapter1TitleSize}
+                    onChange={(e) => update({ chapter1TitleSize: e.target.value })}
+                    className={inputClass}
+                  >
+                    <option value="sm">Petite</option>
+                    <option value="md">Moyenne</option>
+                    <option value="lg">Grande</option>
+                  </select>
+                </label>
+              </div>
             </div>
           </div>
 
@@ -408,7 +451,76 @@ export default function ModeleStdDetail() {
               <ColorField label="Fond de carte — 1er bloc" hint="Vide = fond du thème" value={o.chapter1CardBg} onChange={(v) => update({ chapter1CardBg: v })} noneOption />
               <ColorField label="Texte — 2e bloc" hint="Vide = couleur du thème" value={o.chapter2TextColor} onChange={(v) => update({ chapter2TextColor: v })} />
               <ColorField label="Fond de carte — 2e bloc" hint="Vide = fond du thème" value={o.chapter2CardBg} onChange={(v) => update({ chapter2CardBg: v })} noneOption />
+              <ColorField label={'Couleur du "&" — 2e bloc'} hint="Vide = accent du thème" value={o.chapter2AccentColor} onChange={(v) => update({ chapter2AccentColor: v })} />
             </div>
+          </div>
+        </Panel>
+
+        {/* ---- Blocs supplémentaires (généralistes, pas personnalisables par le client) ---- */}
+        <Panel>
+          <PanelTitle
+            title="Blocs supplémentaires"
+            hint={'Généralistes — identiques pour tous les clients de ce modèle (pas de personnalisation), mais bien présents sur la vraie vidéo livrée.'}
+          />
+          <div className="flex flex-col gap-3 p-6">
+            {(o.extraCards ?? []).map((card) => (
+              <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                <div className="flex items-start gap-3">
+                  <textarea
+                    value={card.text}
+                    onChange={(e) => updateExtraCard(card.id, { text: e.target.value })}
+                    placeholder="Votre texte…"
+                    rows={2}
+                    maxLength={280}
+                    className={cn(textareaClass, "flex-1")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeExtraCard(card.id)}
+                    aria-label="Retirer ce bloc"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-3">
+                  <TimecodeField
+                    label="Apparaît à (s)"
+                    value={card.fromSec}
+                    max={duration}
+                    onChange={(v) => updateExtraCard(card.id, { fromSec: v })}
+                    onCaler={() => updateExtraCard(card.id, { fromSec: Math.round(currentTime * 10) / 10 })}
+                  />
+                  <TimecodeField
+                    label="Disparaît à (s)"
+                    value={card.toSec}
+                    max={duration}
+                    onChange={(v) => updateExtraCard(card.id, { toSec: v })}
+                    onCaler={() => updateExtraCard(card.id, { toSec: Math.round(currentTime * 10) / 10 })}
+                  />
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Position verticale
+                    <select
+                      value={card.position}
+                      onChange={(e) => updateExtraCard(card.id, { position: e.target.value as HeroCustomCard["position"] })}
+                      className={inputClass}
+                    >
+                      <option value="top">Haut</option>
+                      <option value="middle">Milieu</option>
+                      <option value="bottom">Bas</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addExtraCard}
+              className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
+            >
+              <Plus size={14} /> Ajouter un bloc
+            </button>
           </div>
         </Panel>
 

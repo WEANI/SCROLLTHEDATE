@@ -353,7 +353,9 @@ export default function FairePart() {
             to: studioChapters[0].toSec / videoDuration,
             verticalAlign: studioChapters[0].position,
             segments: [{ text: 'Save the date' }],
-            titleSize: 'lg',
+            // 'sm'/'md'/'lg' (Studio → Save the Date, cf. échange du
+            // 21/09/2026) — vide = 'lg', comportement historique.
+            titleSize: (palette.stdSaveTheDateTitleSize || 'lg') as HeroChapter['titleSize'],
             // Couleur propre à ce bloc (Studio → Save the Date), vide =
             // retombe sur le texte overlay commun (Palette & Hero). Fond
             // de carte INDÉPENDANT du réglage commun (contrairement à la
@@ -383,6 +385,9 @@ export default function FairePart() {
             subSize: 'md',
             textColorOverride: palette.stdNamesDateTextColor || undefined,
             cardBgOverride: palette.stdNamesDateCardBg || 'transparent',
+            // Couleur du "&" entre les 2 prénoms — vide = accent du thème
+            // (comportement historique), cf. échange du 21/09/2026.
+            accentColorOverride: palette.stdNamesDateAccentColor || undefined,
           },
         ]
       : [
@@ -392,7 +397,9 @@ export default function FairePart() {
             from: 0.8,
             to: 0.9,
             segments: [{ text: 'Save the date' }],
-            titleSize: 'lg',
+            // 'sm'/'md'/'lg' (Studio → Save the Date, cf. échange du
+            // 21/09/2026) — vide = 'lg', comportement historique.
+            titleSize: (palette.stdSaveTheDateTitleSize || 'lg') as HeroChapter['titleSize'],
             // Couleur propre à ce bloc (Studio → Save the Date), vide =
             // retombe sur le texte overlay commun (Palette & Hero). Fond
             // de carte INDÉPENDANT du réglage commun (contrairement à la
@@ -421,6 +428,9 @@ export default function FairePart() {
             subSize: 'md',
             textColorOverride: palette.stdNamesDateTextColor || undefined,
             cardBgOverride: palette.stdNamesDateCardBg || 'transparent',
+            // Couleur du "&" entre les 2 prénoms — vide = accent du thème
+            // (comportement historique), cf. échange du 21/09/2026.
+            accentColorOverride: palette.stdNamesDateAccentColor || undefined,
           },
         ]
     : studioChapters && videoDuration

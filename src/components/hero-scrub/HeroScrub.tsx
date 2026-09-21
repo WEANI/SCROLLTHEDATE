@@ -873,6 +873,7 @@ export function ChapterContent({
       : chapter.cardBgOverride
         ? { '--hs-card-bg': chapter.cardBgOverride }
         : null),
+    ...(chapter.accentColorOverride ? { '--hs-chapter-accent': chapter.accentColorOverride } : null),
   } as CSSProperties
   return (
     <div className={className} style={overrideVars}>
@@ -902,7 +903,11 @@ export function ChapterContent({
               // hero-scrub.css) — jamais vw (largeur viewport), qui a déjà
               // fait déborder "décembre" puis "Couleurs" sur desktop, où le
               // viewport est bien plus large que la colonne 9:16 réelle.
-              chapter.titleSize === 'lg' ? 'text-[clamp(32px,19cqw,56px)]' : 'text-[clamp(28px,18cqw,46px)]',
+              chapter.titleSize === 'lg'
+                ? 'text-[clamp(32px,19cqw,56px)]'
+                : chapter.titleSize === 'sm'
+                  ? 'text-[clamp(20px,14cqw,36px)]'
+                  : 'text-[clamp(28px,18cqw,46px)]',
             )}
             // `font-display` (classe Tailwind, Fraunces figée) retirée au
             // profit de la variable CSS ci-dessous — pilotable au studio
@@ -920,7 +925,7 @@ export function ChapterContent({
                   let letterIdx = 0
                   for (let k = 0; k < i; k++) letterIdx += chapter.segments![k].text.length + 1
                   return (
-                    <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                    <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-chapter-accent, var(--hs-accent))' } : undefined}>
                       {seg.text.split('').map((c, j) => (
                         <span key={j} className="hs-anim-letter" style={{ animationDelay: `${(letterIdx + j) * 0.03}s` }}>
                           {c === ' ' ? ' ' : c}
@@ -937,7 +942,7 @@ export function ChapterContent({
                   <p>
                     {chapter.segments.map((seg, i) => (
                       <span key={i}>
-                        <span className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                        <span className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-chapter-accent, var(--hs-accent))' } : undefined}>
                           {seg.text}
                         </span>
                         {i < chapter.segments!.length - 1 && <br />}
@@ -947,7 +952,7 @@ export function ChapterContent({
                 ) : chapter.fitOneLine ? (
                   <FitOneLineText>
                     {chapter.segments.map((seg, i) => (
-                      <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                      <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-chapter-accent, var(--hs-accent))' } : undefined}>
                         {seg.text}
                         {i < chapter.segments!.length - 1 ? ' ' : ''}
                       </span>
@@ -956,7 +961,7 @@ export function ChapterContent({
                 ) : (
                   <p>
                     {chapter.segments.map((seg, i) => (
-                      <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-accent)' } : undefined}>
+                      <span key={i} className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-chapter-accent, var(--hs-accent))' } : undefined}>
                         {seg.text}
                         {i < chapter.segments!.length - 1 ? ' ' : ''}
                       </span>

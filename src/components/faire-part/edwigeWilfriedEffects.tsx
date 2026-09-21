@@ -128,8 +128,12 @@ export type BespokePalette = {
    */
   stdSaveTheDateTextColor: string
   stdSaveTheDateCardBg: string
+  /** 'sm'/'md'/'lg' — vide = 'lg' (comportement historique). Ajouté le 21/09/2026. */
+  stdSaveTheDateTitleSize: string
   stdNamesDateTextColor: string
   stdNamesDateCardBg: string
+  /** Couleur du "&"/"et" entre les 2 prénoms — vide = accent du thème. Ajouté le 21/09/2026. */
+  stdNamesDateAccentColor: string
   /**
    * Décor du hero — cf. src/components/hero-scrub/heroDecor.ts. Chaîne
    * vide = aucun décor / police du site (Fraunces). `heroFontId` ne
@@ -182,8 +186,10 @@ export const EW_PALETTE: BespokePalette = {
   heroClosingEnabled: true,
   stdSaveTheDateTextColor: '',
   stdSaveTheDateCardBg: '',
+  stdSaveTheDateTitleSize: '',
   stdNamesDateTextColor: '',
   stdNamesDateCardBg: '',
+  stdNamesDateAccentColor: '',
   heroOverlayGraphic: '',
   heroFontId: '',
   heroTextAnimation: '',

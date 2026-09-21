@@ -97,8 +97,16 @@ export const bespokePaletteSchema = z.object({
   // the Date" de StudioPanel, pas dans "Palette & Hero".
   stdSaveTheDateTextColor: z.string().default(""),
   stdSaveTheDateCardBg: z.string().default(""),
+  // 'sm'/'md'/'lg' (cf. HeroChapter.titleSize) — vide = 'lg' (comportement
+  // historique de ce bloc). Ajouté le 21/09/2026 aux côtés de
+  // stdSaveTheDateTextColor/CardBg, même raisonnement.
+  stdSaveTheDateTitleSize: z.string().default(""),
   stdNamesDateTextColor: z.string().default(""),
   stdNamesDateCardBg: z.string().default(""),
+  // Couleur du "&"/"et" entre les 2 prénoms (segment `accent`) — vide =
+  // couleur d'accent du thème (comportement historique). Ajouté le
+  // 21/09/2026, même raisonnement que les champs stdNamesDate* ci-dessus.
+  stdNamesDateAccentColor: z.string().default(""),
   // Décor du hero — cf. src/components/hero-scrub/heroDecor.ts (bibliothèque
   // ajoutée le 10/09/2026). Chaîne vide = aucun décor / police du site
   // (Fraunces), comportement inchangé. `heroFontId` ne change QUE le titre

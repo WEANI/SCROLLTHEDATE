@@ -1,4 +1,4 @@
-import type { BespokePaletteInput, HeroChapterTiming, HeroVerticalAlign } from './bespokePalette'
+import type { BespokePaletteInput, HeroChapterTiming, HeroCustomCard, HeroVerticalAlign } from './bespokePalette'
 
 /**
  * Bibliothèque de modèles Save the Date « sur un modèle » (99 €, cf.
@@ -67,14 +67,17 @@ export interface TemplateHeroChapter {
   kind: 'text' | 'list' | 'card'
   from: number
   to: number
+  lead?: string
   segments?: { text: string; accent?: boolean }[]
-  titleSize?: 'md' | 'lg'
+  segmentLayout?: 'inline' | 'stack'
+  titleSize?: 'sm' | 'md' | 'lg'
   fitOneLine?: boolean
   rule?: boolean
   subLines?: string[]
   subSize?: 'sm' | 'md'
   textColorOverride?: string
   cardBgOverride?: string
+  accentColorOverride?: string
   verticalAlign?: HeroVerticalAlign
 }
 
@@ -165,7 +168,7 @@ export interface SaveTheDateTemplateOverride {
   name: string
   tagline: string
   description: string
-  /** 1er texte affiché ("Save the date" par défaut) — n'affecte QUE la page d'aperçu générique, pas une vraie commande (cf. doc de buildFulfillmentData). */
+  /** 1er texte affiché ("Save the date" par défaut) — n'affecte QUE la page d'aperçu générique, pas une vraie commande (cf. doc de buildFulfillmentData). Un retour à la ligne = une ligne forcée à l'affichage (1 à 3 lignes typiquement), cf. doc de `splitLines` plus bas. */
   chapter1Text: string
   chapter1FromSec: number
   chapter1ToSec: number
@@ -173,6 +176,8 @@ export interface SaveTheDateTemplateOverride {
   /** Vide = couleur/fond par défaut du thème du modèle (jamais un héritage silencieux — même règle que pour un vrai projet). */
   chapter1TextColor: string
   chapter1CardBg: string
+  /** 'sm'/'md'/'lg' — vide = 'lg' (comportement historique de ce bloc). */
+  chapter1TitleSize: string
   /** Prénoms d'exemple affichés dans la bibliothèque — jamais un vrai client (cf. doc de EXAMPLE_NAMES). */
   exampleNames: string
   exampleDate: string
@@ -181,11 +186,26 @@ export interface SaveTheDateTemplateOverride {
   chapter2Position: HeroVerticalAlign
   chapter2TextColor: string
   chapter2CardBg: string
+  /** Couleur du "&"/"et" entre les 2 prénoms (segment `accent`, cf. nameSegments) — vide = couleur d'accent du thème. */
+  chapter2AccentColor: string
   /** cf. doc de SaveTheDateTemplate.overlayGraphic — vide = comportement par défaut. */
   overlayGraphic: string
   fontId: string
   textAnimation: string
   filter: string
+  /**
+   * Blocs de texte supplémentaires, en plus des 2 chapitres fixes ci-dessus
+   * — GÉNÉRALISTES (identiques pour tous les clients de ce modèle, jamais
+   * personnalisés) mais bien présents sur la vraie vidéo livrée (cf.
+   * échange du 21/09/2026 : ajouter un vrai 3e chapitre personnalisable
+   * toucherait le webhook Stripe et la structure figée à 2 chapitres de
+   * chaque projet — trop risqué pour ce besoin). Réutilise le mécanisme
+   * `heroCustomCards` déjà en production pour les faire-part sur mesure
+   * (cf. StudioPanel.tsx::CustomCardsEditor, FairePart.tsx `customChapters`
+   * — rendu SANS condition sur le produit, donc directement réutilisable
+   * ici sans toucher FairePart.tsx).
+   */
+  extraCards: HeroCustomCard[]
 }
 
 // Couple d'exemple repris à l'identique du reste du site (récap /commander,
@@ -323,6 +343,34 @@ function nameSegments(names: string): { text: string; accent?: boolean }[] {
   return parts.length === 3 ? [{ text: parts[0] }, { text: parts[1], accent: true }, { text: parts[2] }] : [{ text: names }]
 }
 
+/**
+ * Texte libre de l'admin (chapter1Text) → segments + segmentLayout — un
+ * retour à la ligne tapé dans le champ = une ligne forcée à l'affichage
+ * (cf. échange du 21/09/2026, "texte écrit sur 1, 2 ou 3 lignes"). 1 seule
+ * ligne restante = comportement historique inchangé (un seul segment, pas
+ * de `segmentLayout`, le texte s'enchaîne/retombe naturellement selon la
+ * largeur). Lignes vides filtrées (un admin qui appuie sur Entrée deux fois
+ * par erreur ne doit pas se retrouver avec une ligne fantôme).
+ */
+function splitLines(text: string): Pick<TemplateHeroChapter, 'segments' | 'segmentLayout'> {
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+  if (lines.length <= 1) return { segments: [{ text: lines[0] ?? text }] }
+  return { segments: lines.map((l) => ({ text: l })), segmentLayout: 'stack' }
+}
+
+/** `extraCards` (admin, généraliste) → chapitres additionnels, même conversion que `customChapters` dans FairePart.tsx (secondes → ratio [0,1], `lead` = paragraphe libre). Id décalé à 1000+ pour ne jamais entrer en collision avec les chapitres fixes 0/1, même règle que FairePart.tsx. */
+function extraCardsToChapters(cards: HeroCustomCard[], duration: number): TemplateHeroChapter[] {
+  const ratio = (sec: number) => Math.min(1, Math.max(0, sec / duration))
+  return cards.map((card, i) => ({
+    id: 1000 + i,
+    kind: 'text' as const,
+    from: ratio(card.fromSec),
+    to: ratio(card.toSec),
+    lead: card.text,
+    verticalAlign: card.position,
+  }))
+}
+
 /** Override "vide" (mêmes valeurs que les défauts codés en dur ci-dessus) — état initial du formulaire admin pour un modèle sans surcharge enregistrée. */
 export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTemplateOverride {
   const duration = templateDurationSec(template)
@@ -338,6 +386,7 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     chapter1Position: ch1?.verticalAlign ?? 'bottom',
     chapter1TextColor: ch1?.textColorOverride ?? '',
     chapter1CardBg: ch1?.cardBgOverride ?? '',
+    chapter1TitleSize: ch1?.titleSize ?? 'lg',
     exampleNames: EXAMPLE_NAMES,
     exampleDate: EXAMPLE_DATE,
     chapter2FromSec: Math.round((ch2?.from ?? 0.9) * duration * 10) / 10,
@@ -345,10 +394,12 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     chapter2Position: ch2?.verticalAlign ?? 'bottom',
     chapter2TextColor: ch2?.textColorOverride ?? '',
     chapter2CardBg: ch2?.cardBgOverride ?? '',
+    chapter2AccentColor: ch2?.accentColorOverride ?? '',
     overlayGraphic: template.overlayGraphic ?? '',
     fontId: template.fontId ?? '',
     textAnimation: template.textAnimation ?? '',
     filter: template.filter ?? '',
+    extraCards: [],
   }
 }
 
@@ -372,8 +423,8 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         kind: 'text',
         from: ratio(override.chapter1FromSec),
         to: ratio(override.chapter1ToSec),
-        segments: [{ text: override.chapter1Text || 'Save the date' }],
-        titleSize: 'lg',
+        ...splitLines(override.chapter1Text || 'Save the date'),
+        titleSize: (override.chapter1TitleSize || 'lg') as TemplateHeroChapter['titleSize'],
         verticalAlign: override.chapter1Position,
         textColorOverride: override.chapter1TextColor || undefined,
         cardBgOverride: override.chapter1CardBg || undefined,
@@ -391,7 +442,9 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         verticalAlign: override.chapter2Position,
         textColorOverride: override.chapter2TextColor || undefined,
         cardBgOverride: override.chapter2CardBg || undefined,
+        accentColorOverride: override.chapter2AccentColor || undefined,
       },
+      ...extraCardsToChapters(override.extraCards ?? [], duration),
     ],
   }
 }
@@ -440,6 +493,8 @@ export function buildFulfillmentData(
 ): {
   palette: Partial<BespokePaletteInput>
   heroChapters: [HeroChapterTiming, HeroChapterTiming]
+  /** Blocs supplémentaires généralistes (cf. doc de `extraCards` sur SaveTheDateTemplateOverride) — réutilise heroCustomCards tel quel, aucun changement de FairePart.tsx nécessaire pour les rendre. */
+  heroCustomCards: HeroCustomCard[]
   video: { url: string; posterUrl: string; frameBaseUrl: string; frameCount: number; frameFps: number }
 } {
   const o = override ?? defaultOverrideFor(template)
@@ -451,8 +506,10 @@ export function buildFulfillmentData(
       bg: template.theme.frameBg,
       stdSaveTheDateTextColor: o.chapter1TextColor || '',
       stdSaveTheDateCardBg: o.chapter1CardBg || '',
+      stdSaveTheDateTitleSize: o.chapter1TitleSize || '',
       stdNamesDateTextColor: o.chapter2TextColor || '',
       stdNamesDateCardBg: o.chapter2CardBg || '',
+      stdNamesDateAccentColor: o.chapter2AccentColor || '',
       heroOverlayGraphic: o.overlayGraphic || '',
       heroFontId: o.fontId || '',
       heroTextAnimation: o.textAnimation || '',
@@ -462,6 +519,7 @@ export function buildFulfillmentData(
       { fromSec: o.chapter1FromSec, toSec: o.chapter1ToSec, position: o.chapter1Position },
       { fromSec: o.chapter2FromSec, toSec: o.chapter2ToSec, position: o.chapter2Position },
     ],
+    heroCustomCards: o.extraCards ?? [],
     video: {
       url: template.desktopSrc,
       posterUrl: template.posterSrc,

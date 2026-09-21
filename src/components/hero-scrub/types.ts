@@ -27,8 +27,8 @@ export interface HeroChapter {
    * Adam" — cf. échange du 08/09/2026).
    */
   fitOneLine?: boolean
-  /** 'md' (défaut, clamp jusqu'à 46px) ou 'lg' (clamp jusqu'à 56px) — vérifier l'absence de débordement à l'écran avant de choisir 'lg' sur un mot long. */
-  titleSize?: 'md' | 'lg'
+  /** 'sm' (clamp jusqu'à 36px), 'md' (défaut, clamp jusqu'à 46px) ou 'lg' (clamp jusqu'à 56px) — vérifier l'absence de débordement à l'écran avant de choisir 'lg' sur un mot long. */
+  titleSize?: 'sm' | 'md' | 'lg'
   sub?: string
   /** Alternative à `sub` : plusieurs lignes, chacune séparée par le même filet que `rule`. */
   subLines?: string[]
@@ -48,6 +48,15 @@ export interface HeroChapter {
    */
   textColorOverride?: string
   cardBgOverride?: string
+  /**
+   * Couleur du/des segment(s) `accent: true` de CE chapitre (ex. le "&"
+   * entre deux prénoms) — prévaut sur `HeroTheme.accent` pour ce chapitre
+   * seulement, même principe que `textColorOverride`/`cardBgOverride`
+   * ci-dessus (variable CSS locale, cf. ChapterContent). Cf. échange du
+   * 21/09/2026 : besoin de distinguer la couleur du "&" de celle du reste
+   * du thème, bloc par bloc.
+   */
+  accentColorOverride?: string
   /**
    * Position verticale de la carte dans le cadre du hero — 'middle' (défaut,
    * comportement inchangé) centre comme avant ; 'top'/'bottom' déplacent le

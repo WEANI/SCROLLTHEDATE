@@ -143,8 +143,10 @@ export function suggestPaletteFromColors(
     // saisir à la main au studio si besoin, cf. doc de BespokePalette).
     stdSaveTheDateTextColor: "",
     stdSaveTheDateCardBg: "",
+    stdSaveTheDateTitleSize: "",
     stdNamesDateTextColor: "",
     stdNamesDateCardBg: "",
+    stdNamesDateAccentColor: "",
     // Décor/police du hero : jamais suggérés automatiquement, cf. doc de
     // BespokePalette.heroOverlayGraphic/heroFontId.
     heroOverlayGraphic: "",

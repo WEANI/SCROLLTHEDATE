@@ -8,7 +8,12 @@ import {
   getSiteSetting,
   updateOrderPaymentStatus,
 } from "../queries/orders";
-import { updateProjectStatus, updateProjectPalette, updateProjectHeroChapters } from "../queries/projects";
+import {
+  updateProjectStatus,
+  updateProjectPalette,
+  updateProjectHeroChapters,
+  updateProjectHeroCustomCards,
+} from "../queries/projects";
 import { addVideoVersion } from "../queries/domain";
 import { upsertQuestionnaire, markQuestionnaireSubmitted } from "../queries/questionnaire";
 import { logAudit, notifyUser } from "../queries/helpers";
@@ -94,9 +99,14 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
         const template = getSaveTheDateTemplate(templateSlug);
         if (template) {
           const overrides = parseTemplateOverrides(await getSiteSetting<unknown>("saveTheDateTemplates"));
-          const { palette, heroChapters, video } = buildFulfillmentData(template, overrides[template.slug]);
+          const { palette, heroChapters, heroCustomCards, video } = buildFulfillmentData(template, overrides[template.slug]);
           await updateProjectPalette(project.id, palette as Record<string, string | boolean>);
           await updateProjectHeroChapters(project.id, heroChapters);
+          // Blocs supplémentaires généralistes du modèle (cf. doc de
+          // `extraCards`, contracts/saveTheDateTemplates.ts) — réutilise le
+          // même mécanisme que les cartes libres du Studio, vide si le
+          // modèle n'en a aucun de configuré (comportement inchangé).
+          if (heroCustomCards.length > 0) await updateProjectHeroCustomCards(project.id, heroCustomCards);
           await upsertQuestionnaire(project.id, { "couple.prenoms": pi.metadata?.names ?? "" }, 100);
           await markQuestionnaireSubmitted(project.id);
           await addVideoVersion({
