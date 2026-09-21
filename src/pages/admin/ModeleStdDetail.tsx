@@ -101,6 +101,54 @@ function fmtTimecode(sec: number) {
   return `${m}:${s}`;
 }
 
+/** Sélecteur de police — factorisé, réutilisé pour le réglage hero-wide ET chaque réglage par bloc (échange du 21/09/2026). */
+function FontSelect({ value, onChange, defaultLabel }: { value: string; onChange: (v: string) => void; defaultLabel: string }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
+      <option value="">{defaultLabel}</option>
+      {Object.entries(
+        HERO_FONTS.reduce<Record<string, typeof HERO_FONTS>>((acc, f) => {
+          (acc[f.category] ??= []).push(f);
+          return acc;
+        }, {}),
+      ).map(([category, fonts]) => (
+        <optgroup key={category} label={category}>
+          {fonts.map((f) => (
+            <option key={f.id} value={f.id}>{f.label}</option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
+  );
+}
+
+/** Sélecteur d'animation — factorisé, même raisonnement que FontSelect ci-dessus. */
+function AnimSelect({ value, onChange, defaultLabel }: { value: string; onChange: (v: string) => void; defaultLabel: string }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
+      <option value="">{defaultLabel}</option>
+      {HERO_TEXT_ANIMATIONS.map((a) => (
+        <option key={a.id} value={a.id}>{a.label}</option>
+      ))}
+    </select>
+  );
+}
+
+/** Case à cocher "Gras" — factorisée, un bloc de texte à la fois (échange du 21/09/2026). */
+function BoldField({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 self-end pb-2 text-[12.5px] font-medium text-neutral-500">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
+      />
+      Gras
+    </label>
+  );
+}
+
 /**
  * Page de réglages d'UN modèle Save the Date — cf. doc de TabModelesStd
  * dans Parametres.tsx (échange du 21/09/2026) : remplace l'ancien
@@ -144,7 +192,7 @@ export default function ModeleStdDetail() {
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "" },
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false },
       ],
     });
   const removeExtraCard = (id: string) => update({ extraCards: (o?.extraCards ?? []).filter((c) => c.id !== id) });
@@ -232,6 +280,9 @@ export default function ModeleStdDetail() {
     segments: [{ text: "Save the date" }],
     titleSize: "sm",
     cardFrame: o.chapter1CardFrame || undefined,
+    fontId: o.chapter1FontId || undefined,
+    textAnimation: o.chapter1TextAnimation || undefined,
+    bold: o.chapter1Bold,
   };
   const chapter2FramePreview: HeroChapter = {
     id: 1,
@@ -242,6 +293,9 @@ export default function ModeleStdDetail() {
     titleSize: "sm",
     fitOneLine: true,
     cardFrame: o.chapter2CardFrame || undefined,
+    fontId: o.chapter2FontId || undefined,
+    textAnimation: o.chapter2TextAnimation || undefined,
+    bold: o.chapter2Bold,
   };
   // Aperçu du 3e bloc (la date, indépendant du bloc prénoms — cf. échange
   // du 21/09/2026) — même principe que les aperçus ci-dessus.
@@ -253,6 +307,9 @@ export default function ModeleStdDetail() {
     segments: [{ text: o.exampleDate || "12 juin 2027" }],
     titleSize: "sm",
     textColorOverride: o.dateBlockTextColor || undefined,
+    fontId: o.dateBlockFontId || undefined,
+    textAnimation: o.dateBlockTextAnimation || undefined,
+    bold: o.dateBlockBold,
   };
   const themeVars = {
     "--hs-frame-bg": template.theme.frameBg,
@@ -526,10 +583,23 @@ export default function ModeleStdDetail() {
                   </select>
                 </label>
                 <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.dateBlockTextColor} onChange={(v) => update({ dateBlockTextColor: v })} />
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Police — ce bloc
+                  <FontSelect value={o.dateBlockFontId} onChange={(v) => update({ dateBlockFontId: v })} defaultLabel="Police du hero" />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Animation — ce bloc
+                  <AnimSelect value={o.dateBlockTextAnimation} onChange={(v) => update({ dateBlockTextAnimation: v })} defaultLabel="Animation du hero" />
+                </label>
+                <BoldField checked={o.dateBlockBold} onChange={(v) => update({ dateBlockBold: v })} />
                 <div className="flex flex-col gap-1">
                   <span className="text-xs font-medium text-neutral-500">Aperçu</span>
                   <PreviewStage themeVars={themeVars}>
-                    <ChapterContent chapter={dateBlockPreview} className="hs-overlay show" />
+                    <ChapterContent
+                      chapter={dateBlockPreview}
+                      textAnimation={dateBlockPreview.textAnimation || o.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", (dateBlockPreview.textAnimation || o.textAnimation) && `hs-anim-${dateBlockPreview.textAnimation || o.textAnimation}`)}
+                    />
                   </PreviewStage>
                 </div>
               </div>
@@ -549,7 +619,7 @@ export default function ModeleStdDetail() {
 
           <div className="border-t border-neutral-200 p-6">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-              Cadre décoratif — indépendant par bloc
+              Style par bloc — cadre, police, animation, gras
             </p>
             <div className="grid gap-6 md:grid-cols-2">
               <div className="flex flex-col gap-2">
@@ -562,8 +632,23 @@ export default function ModeleStdDetail() {
                     ))}
                   </select>
                 </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Police — ce bloc
+                    <FontSelect value={o.chapter1FontId} onChange={(v) => update({ chapter1FontId: v })} defaultLabel="Police du hero" />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Animation — ce bloc
+                    <AnimSelect value={o.chapter1TextAnimation} onChange={(v) => update({ chapter1TextAnimation: v })} defaultLabel="Animation du hero" />
+                  </label>
+                </div>
+                <BoldField checked={o.chapter1Bold} onChange={(v) => update({ chapter1Bold: v })} />
                 <PreviewStage themeVars={themeVars}>
-                  <ChapterContent chapter={chapter1FramePreview} className="hs-overlay show" />
+                  <ChapterContent
+                    chapter={chapter1FramePreview}
+                    textAnimation={chapter1FramePreview.textAnimation || o.textAnimation || undefined}
+                    className={cn("hs-overlay", animShow && "show", (chapter1FramePreview.textAnimation || o.textAnimation) && `hs-anim-${chapter1FramePreview.textAnimation || o.textAnimation}`)}
+                  />
                 </PreviewStage>
               </div>
               <div className="flex flex-col gap-2">
@@ -576,8 +661,23 @@ export default function ModeleStdDetail() {
                     ))}
                   </select>
                 </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Police — ce bloc
+                    <FontSelect value={o.chapter2FontId} onChange={(v) => update({ chapter2FontId: v })} defaultLabel="Police du hero" />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Animation — ce bloc
+                    <AnimSelect value={o.chapter2TextAnimation} onChange={(v) => update({ chapter2TextAnimation: v })} defaultLabel="Animation du hero" />
+                  </label>
+                </div>
+                <BoldField checked={o.chapter2Bold} onChange={(v) => update({ chapter2Bold: v })} />
                 <PreviewStage themeVars={themeVars}>
-                  <ChapterContent chapter={chapter2FramePreview} className="hs-overlay show" />
+                  <ChapterContent
+                    chapter={chapter2FramePreview}
+                    textAnimation={chapter2FramePreview.textAnimation || o.textAnimation || undefined}
+                    className={cn("hs-overlay", animShow && "show", (chapter2FramePreview.textAnimation || o.textAnimation) && `hs-anim-${chapter2FramePreview.textAnimation || o.textAnimation}`)}
+                  />
                 </PreviewStage>
               </div>
             </div>
@@ -639,6 +739,22 @@ export default function ModeleStdDetail() {
                     </select>
                   </label>
                 </div>
+                {/* Police/animation/gras propres à CE bloc — vide = réglage
+                    hero-wide (cf. échange du 21/09/2026, "pour les blocs
+                    ajoutés, je dois pouvoir choisir la police et les
+                    animations"). */}
+                <div className="mt-2 grid grid-cols-4 gap-3">
+                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Police — ce bloc
+                    <FontSelect value={card.fontId} onChange={(v) => updateExtraCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Animation — ce bloc
+                    <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                  </label>
+                  <BoldField checked={card.bold} onChange={(v) => updateExtraCard(card.id, { bold: v })} />
+                </div>
               </div>
             ))}
 
@@ -673,22 +789,8 @@ export default function ModeleStdDetail() {
 
             <div className="flex flex-col gap-2">
               <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Police du titre
-                <select value={o.fontId} onChange={(e) => update({ fontId: e.target.value })} className={inputClass}>
-                  <option value="">Police du site (Fraunces)</option>
-                  {Object.entries(
-                    HERO_FONTS.reduce<Record<string, typeof HERO_FONTS>>((acc, f) => {
-                      (acc[f.category] ??= []).push(f);
-                      return acc;
-                    }, {}),
-                  ).map(([category, fonts]) => (
-                    <optgroup key={category} label={category}>
-                      {fonts.map((f) => (
-                        <option key={f.id} value={f.id}>{f.label}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+                Police du titre — tout le hero
+                <FontSelect value={o.fontId} onChange={(v) => update({ fontId: v })} defaultLabel="Police du site (Fraunces)" />
               </label>
               <PreviewStage themeVars={themeVars}>
                 <p
@@ -702,13 +804,8 @@ export default function ModeleStdDetail() {
 
             <div className="flex flex-col gap-2">
               <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Animation du texte
-                <select value={o.textAnimation} onChange={(e) => update({ textAnimation: e.target.value })} className={inputClass}>
-                  <option value="">Fondu (défaut)</option>
-                  {HERO_TEXT_ANIMATIONS.map((a) => (
-                    <option key={a.id} value={a.id}>{a.label}</option>
-                  ))}
-                </select>
+                Animation du texte — tout le hero
+                <AnimSelect value={o.textAnimation} onChange={(v) => update({ textAnimation: v })} defaultLabel="Fondu (défaut)" />
               </label>
               <PreviewStage themeVars={themeVars}>
                 <ChapterContent

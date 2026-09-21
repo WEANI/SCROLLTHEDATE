@@ -80,6 +80,10 @@ export interface TemplateHeroChapter {
   accentColorOverride?: string
   /** cf. doc de HeroChapter.cardFrame (src/components/hero-scrub/types.ts) — ajouté le 21/09/2026. */
   cardFrame?: string
+  /** cf. doc de HeroChapter.fontId/textAnimation/bold (src/components/hero-scrub/types.ts) — ajoutés le 21/09/2026 (2e vague). */
+  fontId?: string
+  textAnimation?: string
+  bold?: boolean
   verticalAlign?: HeroVerticalAlign
 }
 
@@ -182,6 +186,10 @@ export interface SaveTheDateTemplateOverride {
   chapter1TitleSize: string
   /** cf. doc de TemplateHeroChapter.cardFrame — vide = aucun cadre. Ajouté le 21/09/2026. */
   chapter1CardFrame: string
+  /** cf. doc de TemplateHeroChapter.fontId/textAnimation/bold — vide/false = réglage hero-wide (fontId/textAnimation ci-dessous). Ajoutés le 21/09/2026 (2e vague). */
+  chapter1FontId: string
+  chapter1TextAnimation: string
+  chapter1Bold: boolean
   /** Prénoms d'exemple affichés dans la bibliothèque — jamais un vrai client (cf. doc de EXAMPLE_NAMES). */
   exampleNames: string
   exampleDate: string
@@ -194,6 +202,10 @@ export interface SaveTheDateTemplateOverride {
   chapter2AccentColor: string
   /** cf. doc de TemplateHeroChapter.cardFrame — vide = aucun cadre. Ajouté le 21/09/2026. */
   chapter2CardFrame: string
+  /** cf. doc de TemplateHeroChapter.fontId/textAnimation/bold — vide/false = réglage hero-wide. Ajoutés le 21/09/2026 (2e vague). */
+  chapter2FontId: string
+  chapter2TextAnimation: string
+  chapter2Bold: boolean
   /** cf. doc de SaveTheDateTemplate.overlayGraphic — vide = comportement par défaut. */
   overlayGraphic: string
   fontId: string
@@ -237,6 +249,10 @@ export interface SaveTheDateTemplateOverride {
   dateBlockPosition: HeroVerticalAlign
   /** Vide = couleur du thème (même convention que chapter1TextColor/chapter2TextColor). */
   dateBlockTextColor: string
+  /** cf. doc de TemplateHeroChapter.fontId/textAnimation/bold — vide/false = réglage hero-wide. Ajoutés le 21/09/2026 (2e vague). */
+  dateBlockFontId: string
+  dateBlockTextAnimation: string
+  dateBlockBold: boolean
 }
 
 // Couple d'exemple repris à l'identique du reste du site (récap /commander,
@@ -399,6 +415,9 @@ function extraCardsToChapters(cards: HeroCustomCard[], duration: number): Templa
     to: ratio(card.toSec),
     lead: card.text,
     verticalAlign: card.position,
+    fontId: card.fontId || undefined,
+    textAnimation: card.textAnimation || undefined,
+    bold: card.bold,
   }))
 }
 
@@ -419,6 +438,9 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     chapter1CardBg: ch1?.cardBgOverride ?? '',
     chapter1TitleSize: ch1?.titleSize ?? 'lg',
     chapter1CardFrame: ch1?.cardFrame ?? '',
+    chapter1FontId: ch1?.fontId ?? '',
+    chapter1TextAnimation: ch1?.textAnimation ?? '',
+    chapter1Bold: ch1?.bold ?? false,
     exampleNames: EXAMPLE_NAMES,
     exampleDate: EXAMPLE_DATE,
     chapter2FromSec: Math.round((ch2?.from ?? 0.9) * duration * 10) / 10,
@@ -428,6 +450,9 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     chapter2CardBg: ch2?.cardBgOverride ?? '',
     chapter2AccentColor: ch2?.accentColorOverride ?? '',
     chapter2CardFrame: ch2?.cardFrame ?? '',
+    chapter2FontId: ch2?.fontId ?? '',
+    chapter2TextAnimation: ch2?.textAnimation ?? '',
+    chapter2Bold: ch2?.bold ?? false,
     overlayGraphic: template.overlayGraphic ?? '',
     fontId: template.fontId ?? '',
     textAnimation: template.textAnimation ?? '',
@@ -439,6 +464,9 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     dateBlockToSec: Math.round(duration * 10) / 10,
     dateBlockPosition: 'bottom',
     dateBlockTextColor: '',
+    dateBlockFontId: '',
+    dateBlockTextAnimation: '',
+    dateBlockBold: false,
   }
 }
 
@@ -468,6 +496,9 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         textColorOverride: override.chapter1TextColor || undefined,
         cardBgOverride: override.chapter1CardBg || undefined,
         cardFrame: override.chapter1CardFrame || undefined,
+        fontId: override.chapter1FontId || undefined,
+        textAnimation: override.chapter1TextAnimation || undefined,
+        bold: override.chapter1Bold,
       },
       {
         id: 1,
@@ -487,6 +518,9 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         cardBgOverride: override.chapter2CardBg || undefined,
         accentColorOverride: override.chapter2AccentColor || undefined,
         cardFrame: override.chapter2CardFrame || undefined,
+        fontId: override.chapter2FontId || undefined,
+        textAnimation: override.chapter2TextAnimation || undefined,
+        bold: override.chapter2Bold,
       },
       ...(override.dateBlockEnabled
         ? [
@@ -499,6 +533,9 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
               titleSize: 'md' as const,
               verticalAlign: override.dateBlockPosition,
               textColorOverride: override.dateBlockTextColor || undefined,
+              fontId: override.dateBlockFontId || undefined,
+              textAnimation: override.dateBlockTextAnimation || undefined,
+              bold: override.dateBlockBold,
             },
           ]
         : []),
@@ -570,6 +607,12 @@ export function buildFulfillmentData(
       stdNamesDateCardBg: o.chapter2CardBg || '',
       stdNamesDateAccentColor: o.chapter2AccentColor || '',
       stdNamesDateCardFrame: o.chapter2CardFrame || '',
+      stdSaveTheDateFontId: o.chapter1FontId || '',
+      stdSaveTheDateTextAnimation: o.chapter1TextAnimation || '',
+      stdSaveTheDateBold: o.chapter1Bold,
+      stdNamesDateFontId: o.chapter2FontId || '',
+      stdNamesDateTextAnimation: o.chapter2TextAnimation || '',
+      stdNamesDateBold: o.chapter2Bold,
       heroOverlayGraphic: o.overlayGraphic || '',
       heroFontId: o.fontId || '',
       heroTextAnimation: o.textAnimation || '',
@@ -597,6 +640,9 @@ export function buildFulfillmentData(
               toSec: o.dateBlockToSec,
               position: o.dateBlockPosition,
               textColor: o.dateBlockTextColor || '',
+              fontId: o.dateBlockFontId || '',
+              textAnimation: o.dateBlockTextAnimation || '',
+              bold: o.dateBlockBold,
             },
           ]
         : []),

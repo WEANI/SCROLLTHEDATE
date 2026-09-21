@@ -10,7 +10,7 @@ import DetailsSombre, { parseFaqItem, parseProgrammeItem } from '@/components/fa
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { HERO_THEMES } from '@/components/hero-scrub/themes'
 import type { HeroChapter } from '@/components/hero-scrub/types'
-import { getHeroFont, useGoogleFont } from '@/components/hero-scrub/heroDecor'
+import { getHeroFont, useGoogleFont, useGoogleFonts } from '@/components/hero-scrub/heroDecor'
 import type { HeroChapterTiming } from '@contracts/bespokePalette'
 import {
   BespokePaletteProvider,
@@ -125,6 +125,18 @@ export default function FairePart() {
   // retombe sur la police du site (Fraunces).
   const heroFont = getHeroFont(palette.heroFontId)
   useGoogleFont(palette.heroFontId)
+  // Polices PAR BLOC (chapitre 1/2 fixes + éventuelles cartes libres,
+  // cf. échange du 21/09/2026) — en plus de la police hero-wide ci-dessus,
+  // chacune chargée une seule fois (déduplication déjà gérée par
+  // useGoogleFonts). Doit rester AVANT les `return` anticipés plus bas
+  // (règles des hooks) : lu directement sur `palette`/`invite`, sans
+  // attendre la construction de `chapters` (bien plus bas dans ce
+  // composant).
+  useGoogleFonts([
+    palette.stdSaveTheDateFontId,
+    palette.stdNamesDateFontId,
+    ...(invite?.heroCustomCards?.map((c) => c.fontId) ?? []),
+  ])
   // Save the date : page dédiée bien plus courte — hero + footer
   // uniquement, pas de corps (programme/lieu/RSVP/menu/FAQ…), cf. échange
   // du 07/09/2026. `product` vient de orders.product (getPublicInvite),
@@ -372,6 +384,9 @@ export default function FairePart() {
             cardBgOverride: palette.stdSaveTheDateCardBg || 'transparent',
             // Cadre décoratif propre à ce bloc — vide = aucun cadre (comportement historique), cf. échange du 21/09/2026.
             cardFrame: palette.stdSaveTheDateCardFrame || undefined,
+            fontId: palette.stdSaveTheDateFontId || undefined,
+            textAnimation: palette.stdSaveTheDateTextAnimation || undefined,
+            bold: palette.stdSaveTheDateBold,
           },
           {
             id: 1,
@@ -397,6 +412,9 @@ export default function FairePart() {
             // (comportement historique), cf. échange du 21/09/2026.
             accentColorOverride: palette.stdNamesDateAccentColor || undefined,
             cardFrame: palette.stdNamesDateCardFrame || undefined,
+            fontId: palette.stdNamesDateFontId || undefined,
+            textAnimation: palette.stdNamesDateTextAnimation || undefined,
+            bold: palette.stdNamesDateBold,
           },
         ]
       : [
@@ -419,6 +437,9 @@ export default function FairePart() {
             cardBgOverride: palette.stdSaveTheDateCardBg || 'transparent',
             // Cadre décoratif propre à ce bloc — vide = aucun cadre (comportement historique), cf. échange du 21/09/2026.
             cardFrame: palette.stdSaveTheDateCardFrame || undefined,
+            fontId: palette.stdSaveTheDateFontId || undefined,
+            textAnimation: palette.stdSaveTheDateTextAnimation || undefined,
+            bold: palette.stdSaveTheDateBold,
           },
           {
             id: 1,
@@ -443,6 +464,9 @@ export default function FairePart() {
             // (comportement historique), cf. échange du 21/09/2026.
             accentColorOverride: palette.stdNamesDateAccentColor || undefined,
             cardFrame: palette.stdNamesDateCardFrame || undefined,
+            fontId: palette.stdNamesDateFontId || undefined,
+            textAnimation: palette.stdNamesDateTextAnimation || undefined,
+            bold: palette.stdNamesDateBold,
           },
         ]
     : studioChapters && videoDuration
@@ -537,6 +561,9 @@ export default function FairePart() {
               titleSize: 'md' as const,
               verticalAlign: card.position,
               textColorOverride: card.textColor || undefined,
+              fontId: card.fontId || undefined,
+              textAnimation: card.textAnimation || undefined,
+              bold: card.bold,
             }
           : {
               id: 1000 + i,
@@ -545,6 +572,9 @@ export default function FairePart() {
               to: card.toSec / videoDuration,
               lead: card.text,
               verticalAlign: card.position,
+              fontId: card.fontId || undefined,
+              textAnimation: card.textAnimation || undefined,
+              bold: card.bold,
             },
       )
     : []

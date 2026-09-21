@@ -945,6 +945,12 @@ const BLANK_PALETTE: BespokePaletteInput = {
   stdNamesDateAccentColor: "",
   stdSaveTheDateCardFrame: "",
   stdNamesDateCardFrame: "",
+  stdSaveTheDateFontId: "",
+  stdSaveTheDateTextAnimation: "",
+  stdSaveTheDateBold: false,
+  stdNamesDateFontId: "",
+  stdNamesDateTextAnimation: "",
+  stdNamesDateBold: false,
   heroOverlayGraphic: "",
   heroFontId: "",
   heroTextAnimation: "",
@@ -1028,7 +1034,7 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
   const addCard = () =>
     setCards((prev) => [
       ...prev,
-      { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "" },
+      { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false },
     ]);
   const removeCard = (id: string) => setCards((prev) => prev.filter((c) => c.id !== id));
   const updateCard = (id: string, patch: Partial<HeroCustomCard>) =>

@@ -149,6 +149,12 @@ export function suggestPaletteFromColors(
     stdNamesDateAccentColor: "",
     stdSaveTheDateCardFrame: "",
     stdNamesDateCardFrame: "",
+    stdSaveTheDateFontId: "",
+    stdSaveTheDateTextAnimation: "",
+    stdSaveTheDateBold: false,
+    stdNamesDateFontId: "",
+    stdNamesDateTextAnimation: "",
+    stdNamesDateBold: false,
     // Décor/police du hero : jamais suggérés automatiquement, cf. doc de
     // BespokePalette.heroOverlayGraphic/heroFontId.
     heroOverlayGraphic: "",

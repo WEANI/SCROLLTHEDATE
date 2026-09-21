@@ -114,6 +114,18 @@ export const bespokePaletteSchema = z.object({
   // habille un bloc précis, pas toute la scène comme heroOverlayGraphic).
   stdSaveTheDateCardFrame: z.string().default(""),
   stdNamesDateCardFrame: z.string().default(""),
+  // Police / animation / gras propres à CE bloc — prévalent sur
+  // heroFontId/heroTextAnimation (hero-wide, plus bas) pour ce bloc
+  // seulement, même raisonnement par-bloc que cardFrame ci-dessus. Vide/
+  // false = retombe sur le réglage hero-wide, comportement historique
+  // inchangé. Ajoutés le 21/09/2026 : "je dois pouvoir choisir la police et
+  // les animations [...] pour chaque bloc".
+  stdSaveTheDateFontId: z.string().default(""),
+  stdSaveTheDateTextAnimation: z.string().default(""),
+  stdSaveTheDateBold: z.boolean().default(false),
+  stdNamesDateFontId: z.string().default(""),
+  stdNamesDateTextAnimation: z.string().default(""),
+  stdNamesDateBold: z.boolean().default(false),
   // Décor du hero — cf. src/components/hero-scrub/heroDecor.ts (bibliothèque
   // ajoutée le 10/09/2026). Chaîne vide = aucun décor / police du site
   // (Fraunces), comportement inchangé. `heroFontId` ne change QUE le titre
@@ -207,6 +219,12 @@ export const heroCustomCardSchema = z.object({
   // client de personnaliser la couleur du bloc "date" sans toucher au
   // thème du modèle.
   textColor: z.string().default(""),
+  // Police / animation / gras propres à CETTE carte — vide/false = retombe
+  // sur le réglage hero-wide (heroFontId/heroTextAnimation), même principe
+  // que stdSaveTheDateFontId/etc. ci-dessus. Ajoutés le 21/09/2026.
+  fontId: z.string().default(""),
+  textAnimation: z.string().default(""),
+  bold: z.boolean().default(false),
 });
 /** Plafonné à 10 : au-delà, plus un outil de personnalisation qu'un risque réel côté produit — évite un payload sans limite. */
 export const heroCustomCardsSchema = z.array(heroCustomCardSchema).max(10);

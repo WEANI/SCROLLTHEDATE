@@ -1364,6 +1364,125 @@
 }
 
 /**
+ * Animations de texte ajoutées le 21/09/2026 (2e vague) — cf.
+ * heroDecor.ts::HERO_TEXT_ANIMATIONS et la bibliothèque "cadres &
+ * animations" fournie le même jour. Même principe que les blocs
+ * précédents : modificateurs de `.hs-overlay`/`.hs-overlay.show`.
+ */
+.hs-overlay.hs-anim-fade-up.show {
+  animation: hs-anim-fadeup 1s ease both;
+}
+@keyframes hs-anim-fadeup {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Révélation par LIGNE (un `<span>` par segment, cf. ChapterContent) — un
+   masque (overflow hidden) sur l'extérieur, le glissement sur l'intérieur :
+   sans ça, le texte glisserait visiblement hors du cadre avant de se
+   figer. */
+.hs-anim-line {
+  display: block;
+  overflow: hidden;
+}
+.hs-anim-line-inner {
+  display: block;
+  transform: translateY(110%);
+}
+.hs-overlay.hs-anim-reveal-lines.show .hs-anim-line-inner {
+  animation: hs-anim-revealline 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+@keyframes hs-anim-revealline {
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Dégradé de texte en mouvement continu — `--hs-accent`/`--hs-text-primary`
+   du thème courant (jamais une couleur figée), contrairement au dégradé
+   doré/bleu de la bibliothèque source. */
+.hs-overlay.hs-anim-gradient-shift.show .hs-anim-target {
+  display: inline-block;
+  background: linear-gradient(90deg, var(--hs-chapter-accent, var(--hs-accent)), var(--hs-text-primary), var(--hs-chapter-accent, var(--hs-accent)));
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: hs-anim-gradshift 6s linear infinite;
+}
+@keyframes hs-anim-gradshift {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 300% 0;
+  }
+}
+
+/* Respiration par ESPACEMENT DES LETTRES — distincte de "breathe"
+   ci-dessus (celle-ci change l'échelle globale de la carte). */
+.hs-overlay.hs-anim-tracking-breathe.show {
+  animation: hs-anim-tracking 4s ease-in-out infinite;
+}
+@keyframes hs-anim-tracking {
+  0%,
+  100% {
+    letter-spacing: 0;
+    opacity: 0.92;
+  }
+  50% {
+    letter-spacing: 0.1em;
+    opacity: 1;
+  }
+}
+
+.hs-overlay.hs-anim-letter-pop .hs-anim-letter-pop-item {
+  display: inline-block;
+  opacity: 0;
+  transform: scale(0.3) translateY(14px);
+}
+.hs-overlay.hs-anim-letter-pop.show .hs-anim-letter-pop-item {
+  animation: hs-anim-letterpop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+@keyframes hs-anim-letterpop {
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Tremblement d'attention — bref et rare (une fois toutes les ~3,4s),
+   plutôt qu'un tremblement permanent qui fatiguerait l'œil. */
+.hs-overlay.hs-anim-attention-wiggle.show {
+  animation: hs-anim-wiggle 3.4s ease-in-out infinite;
+}
+@keyframes hs-anim-wiggle {
+  0%,
+  88%,
+  100% {
+    transform: rotate(0);
+  }
+  90% {
+    transform: rotate(1.6deg);
+  }
+  92% {
+    transform: rotate(-1.4deg);
+  }
+  94% {
+    transform: rotate(1deg);
+  }
+  96% {
+    transform: rotate(-0.6deg);
+  }
+}
+
+/**
  * Cadres décoratifs autour d'UN bloc de texte (`.hs-card`) — ajoutés le
  * 21/09/2026, cf. heroDecor.ts::HERO_CARD_FRAMES et la même maquette que les
  * animations ci-dessus. Par chapitre (classe posée directement sur
@@ -1572,6 +1691,150 @@
 }
 .hs-card.hs-frame-lace .hs-frame-lace-row.hs-frame-lace-bottom {
   bottom: 2px;
+}
+
+/**
+ * Cadres ajoutés le 21/09/2026 (2e vague) — cf. heroDecor.ts::
+ * HERO_CARD_FRAMES et la bibliothèque "cadres & animations" fournie le même
+ * jour. Les effets au SURVOL (`:hover`) de la bibliothèque source n'ont pas
+ * de sens sur une vidéo non interactive (invités mobiles compris) — adaptés
+ * en effets déclenchés à l'apparition du bloc (`.hs-overlay.show`) à la
+ * place, comme "draw-in" ci-dessous.
+ */
+.hs-card.hs-frame-offset-frame {
+  position: relative;
+}
+.hs-card.hs-frame-offset-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--hs-card-border);
+  pointer-events: none;
+}
+.hs-card.hs-frame-offset-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translate(7px, 7px);
+  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  pointer-events: none;
+}
+
+.hs-card.hs-frame-dashed-march {
+  border: 1.5px dashed var(--hs-chapter-accent, var(--hs-accent));
+  animation: hs-frame-march 12s linear infinite;
+}
+@keyframes hs-frame-march {
+  to {
+    border-color: var(--hs-text-secondary);
+  }
+}
+
+/* Bordure dégradée animée — technique double-background (padding-box +
+   border-box) : `.hs-card` porte déjà `border`/`background`, pas de
+   wrapper supplémentaire nécessaire. */
+.hs-card.hs-frame-gradient-frame {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--hs-card-bg), var(--hs-card-bg)) padding-box,
+    linear-gradient(120deg, var(--hs-chapter-accent, var(--hs-accent)), var(--hs-text-primary), var(--hs-chapter-accent, var(--hs-accent))) border-box;
+  background-size:
+    100% 100%,
+    300% 300%;
+  animation: hs-frame-gradmove 5s ease infinite;
+}
+@keyframes hs-frame-gradmove {
+  0%,
+  100% {
+    background-position:
+      0 0,
+      0% 50%;
+  }
+  50% {
+    background-position:
+      0 0,
+      100% 50%;
+  }
+}
+
+/* Les 4 arêtes se tracent à l'apparition du bloc plutôt qu'au survol (sans
+   effet sur vidéo) — haut/bas directement sur `.hs-card` (::before/::after),
+   gauche/droite sur l'élément `.hs-frame-draw-edge` dédié (cf.
+   ChapterContent, HeroScrub.tsx) : 2 pseudo-éléments ne suffisent pas pour
+   4 arêtes indépendantes. `transition` (pas `@keyframes`) : se rejoue
+   naturellement à chaque fois que `.show` est reposé par le scroll, sans
+   avoir à retirer/reposer une classe d'animation. */
+.hs-card.hs-frame-draw-in {
+  position: relative;
+}
+.hs-card.hs-frame-draw-in::before,
+.hs-card.hs-frame-draw-in::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: var(--hs-chapter-accent, var(--hs-accent));
+  transition: width 0.6s ease 0.3s;
+}
+.hs-card.hs-frame-draw-in::before {
+  top: 0;
+}
+.hs-card.hs-frame-draw-in::after {
+  bottom: 0;
+  left: auto;
+  right: 0;
+}
+.hs-overlay.show .hs-card.hs-frame-draw-in::before,
+.hs-overlay.show .hs-card.hs-frame-draw-in::after {
+  width: 100%;
+}
+.hs-card.hs-frame-draw-in .hs-frame-draw-edge {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hs-card.hs-frame-draw-in .hs-frame-draw-edge::before,
+.hs-card.hs-frame-draw-in .hs-frame-draw-edge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 1.5px;
+  height: 0;
+  background: var(--hs-chapter-accent, var(--hs-accent));
+  transition: height 0.6s ease;
+}
+.hs-card.hs-frame-draw-in .hs-frame-draw-edge::before {
+  left: 0;
+}
+.hs-card.hs-frame-draw-in .hs-frame-draw-edge::after {
+  right: 0;
+}
+.hs-overlay.show .hs-card.hs-frame-draw-in .hs-frame-draw-edge::before,
+.hs-overlay.show .hs-card.hs-frame-draw-in .hs-frame-draw-edge::after {
+  height: 100%;
+}
+
+.hs-card.hs-frame-notch {
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  outline: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  outline-offset: -1px;
+}
+
+/* Halo qui pulse en continu tant que le bloc est actif — distinct de
+   l'animation de TEXTE "glow" (text-shadow) : ici, tout le cadre respire. */
+.hs-overlay.show .hs-card.hs-frame-pulse-glow {
+  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  animation: hs-frame-pulseglow 2.4s ease-in-out infinite;
+}
+@keyframes hs-frame-pulseglow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px 0 var(--hs-chapter-accent, var(--hs-accent));
+  }
+  50% {
+    box-shadow: 0 0 26px 4px var(--hs-chapter-accent, var(--hs-accent));
+  }
 }
 
 /**

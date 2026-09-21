@@ -137,6 +137,13 @@ export type BespokePalette = {
   /** Cadre décoratif propre à ce bloc — vide = aucun cadre. Ajouté le 21/09/2026. */
   stdSaveTheDateCardFrame: string
   stdNamesDateCardFrame: string
+  /** Police/animation/gras propres à ce bloc — vide/false = réglage hero-wide. Ajoutés le 21/09/2026 (2e vague). */
+  stdSaveTheDateFontId: string
+  stdSaveTheDateTextAnimation: string
+  stdSaveTheDateBold: boolean
+  stdNamesDateFontId: string
+  stdNamesDateTextAnimation: string
+  stdNamesDateBold: boolean
   /**
    * Décor du hero — cf. src/components/hero-scrub/heroDecor.ts. Chaîne
    * vide = aucun décor / police du site (Fraunces). `heroFontId` ne
@@ -195,6 +202,12 @@ export const EW_PALETTE: BespokePalette = {
   stdNamesDateAccentColor: '',
   stdSaveTheDateCardFrame: '',
   stdNamesDateCardFrame: '',
+  stdSaveTheDateFontId: '',
+  stdSaveTheDateTextAnimation: '',
+  stdSaveTheDateBold: false,
+  stdNamesDateFontId: '',
+  stdNamesDateTextAnimation: '',
+  stdNamesDateBold: false,
   heroOverlayGraphic: '',
   heroFontId: '',
   heroTextAnimation: '',

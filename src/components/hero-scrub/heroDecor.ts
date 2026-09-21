@@ -121,13 +121,16 @@ export function getHeroFont(id: string | undefined): HeroFontOption | null {
 }
 
 /**
- * Animation d'apparition des blocs de texte overlay — UNE pour tout le
- * hero (pas par bloc/carte, contrairement à `verticalAlign` : autant de
- * menus par chapitre aurait été lourd pour un réglage surtout esthétique).
- * 'fade' (identifiant vide) = comportement historique inchangé (le
- * fondu + léger glissement déjà posé par `.hs-overlay`/`.hs-overlay.show`
- * dans hero-scrub.css) — les autres AJOUTENT une classe modificatrice sur
- * ce même conteneur (cf. `.hs-anim-*`).
+ * Animation d'apparition des blocs de texte overlay — réglage HERO-WIDE par
+ * défaut (`HeroScrub`'s `textAnimation` prop, cf. FairePart.tsx), mais
+ * DÉSORMAIS aussi surchargeable PAR BLOC (`HeroChapter.textAnimation`/
+ * `HeroCustomCard.textAnimation`, cf. échange du 21/09/2026 : "je dois
+ * pouvoir choisir les animations pour chaque bloc") — vide sur un bloc =
+ * retombe sur le réglage hero-wide, comportement historique inchangé pour
+ * tout projet qui ne personnalise aucun bloc. 'fade' (identifiant vide) =
+ * comportement historique inchangé (le fondu + léger glissement déjà posé
+ * par `.hs-overlay`/`.hs-overlay.show` dans hero-scrub.css) — les autres
+ * AJOUTENT une classe modificatrice sur ce même conteneur (cf. `.hs-anim-*`).
  */
 export const HERO_TEXT_ANIMATIONS: { id: string; label: string }[] = [
   { id: 'typewriter', label: 'Machine à écrire' },
@@ -150,14 +153,24 @@ export const HERO_TEXT_ANIMATIONS: { id: string; label: string }[] = [
   { id: 'flicker', label: 'Scintillement' },
   { id: 'wipe', label: 'Effacement latéral' },
   { id: 'breathe', label: 'Respiration continue' },
+  // Ajoutées le 21/09/2026 (2e vague) — cf. bibliothèque "cadres &
+  // animations" fournie le même jour. Les entrées redondantes avec les
+  // 19 ci-dessus (machine à écrire en boucle, flou, reflet doré au survol…)
+  // n'ont volontairement pas été reprises.
+  { id: 'fade-up', label: 'Fondu montant' },
+  { id: 'reveal-lines', label: 'Révélation par ligne' },
+  { id: 'gradient-shift', label: 'Couleurs en mouvement' },
+  { id: 'tracking-breathe', label: 'Respiration des lettres' },
+  { id: 'letter-pop', label: 'Rebond lettre par lettre' },
+  { id: 'attention-wiggle', label: "Tremblement d'attention" },
 ]
 
 /**
  * Cadre décoratif autour d'UN bloc de texte (`.hs-card`) — par chapitre,
- * contrairement à `HERO_TEXT_ANIMATIONS`/`HERO_FILTERS` (un seul réglage
- * pour tout le hero) : un cadre habille un bloc précis, pas la scène
- * entière, même raisonnement que `textColorOverride`/`cardBgOverride`.
- * Ajoutée le 21/09/2026, cf. maquette "Cadres & Animations Texte".
+ * contrairement à `HERO_FILTERS` (un seul réglage pour tout le hero) : un
+ * cadre habille un bloc précis, pas la scène entière, même raisonnement que
+ * `textColorOverride`/`cardBgOverride`. Ajoutée le 21/09/2026, cf. maquette
+ * "Cadres & Animations Texte".
  */
 export const HERO_CARD_FRAMES: { id: string; label: string }[] = [
   { id: 'double-rule', label: 'Double liseré doré' },
@@ -168,6 +181,18 @@ export const HERO_CARD_FRAMES: { id: string; label: string }[] = [
   { id: 'art-deco', label: 'Pointillés Art déco' },
   { id: 'swash', label: 'Paraphe calligraphié' },
   { id: 'lace', label: 'Cadre ajouré (dentelle)' },
+  // Ajoutés le 21/09/2026 (2e vague) — cf. bibliothèque "cadres &
+  // animations" fournie le même jour. Adaptés au survol (`:hover`, sans
+  // effet sur une vidéo non interactive) en effets déclenchés à
+  // l'apparition du bloc ; le cadre circulaire (forme fixe) et les entrées
+  // trop proches de "Double liseré doré"/"Coins fleuris" n'ont pas été
+  // repris.
+  { id: 'offset-frame', label: 'Cadre décalé' },
+  { id: 'dashed-march', label: 'Pointillés en marche' },
+  { id: 'gradient-frame', label: 'Cadre dégradé animé' },
+  { id: 'draw-in', label: 'Cadre qui se dessine' },
+  { id: 'notch', label: 'Coins coupés' },
+  { id: 'pulse-glow', label: 'Halo de cadre pulsant' },
 ]
 
 /**
@@ -212,4 +237,32 @@ export function useGoogleFont(id: string | undefined) {
     link.dataset.heroFont = font.id
     document.head.appendChild(link)
   }, [id])
+}
+
+/**
+ * Variante multi-polices de `useGoogleFont` ci-dessus — nécessaire depuis
+ * que la police est surchargeable PAR BLOC (`HeroChapter.fontId`, cf.
+ * échange du 21/09/2026) : un même hero peut désormais charger la police
+ * hero-wide ET une police différente par bloc. Un seul effet pour toute la
+ * liste (plutôt qu'un `useGoogleFont` par bloc, impossible côté React — le
+ * nombre de blocs varie d'un projet à l'autre, hooks appelés en boucle
+ * interdits) ; déduplication identique (attribut `data-hero-font`), un
+ * `id` répété ou vide est ignoré sans coût.
+ */
+export function useGoogleFonts(ids: (string | undefined)[]) {
+  // Clé de dépendance stable — un tableau de nouvelle référence à chaque
+  // rendu ferait rejouer l'effet en boucle sans ce join.
+  const key = ids.filter(Boolean).join(',')
+  useEffect(() => {
+    for (const id of key ? key.split(',') : []) {
+      const font = getHeroFont(id)
+      if (!font) continue
+      if (document.querySelector(`link[data-hero-font="${font.id}"]`)) continue
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = `https://fonts.googleapis.com/css2?family=${font.googleFontsFamily}&display=swap`
+      link.dataset.heroFont = font.id
+      document.head.appendChild(link)
+    }
+  }, [key])
 }

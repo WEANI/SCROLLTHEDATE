@@ -66,6 +66,18 @@ export interface HeroChapter {
    */
   cardFrame?: string
   /**
+   * Police / animation d'apparition PROPRES à CE chapitre — prévalent sur
+   * les props `fontId`/`textAnimation` hero-wide de `HeroScrub` (cf. leur
+   * doc dans heroDecor.ts) pour ce chapitre seulement. Vide/absent =
+   * retombe sur le réglage hero-wide, comportement historique inchangé.
+   * Ajoutés le 21/09/2026 : "je dois pouvoir choisir la police et les
+   * animations [...] pour chaque bloc".
+   */
+  fontId?: string
+  textAnimation?: string
+  /** Titre de CE chapitre en gras — cf. échange du 21/09/2026. `false`/absent = comportement historique (`font-normal`). */
+  bold?: boolean
+  /**
    * Position verticale de la carte dans le cadre du hero — 'middle' (défaut,
    * comportement inchangé) centre comme avant ; 'top'/'bottom' déplacent le
    * bloc de texte en haut/bas du cadre (cf. `.hs-overlay.hs-valign-*` dans

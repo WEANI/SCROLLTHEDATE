@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { cn } from '@/lib/utils'
 import type { HeroChapter, HeroTheme, HeroVideoConfig } from './types'
 import { FrameSequence } from './FrameSequence'
+import { getHeroFont } from './heroDecor'
 import './hero-scrub.css'
 
 /**
@@ -474,20 +475,26 @@ export default function HeroScrub({
               vidéo, derrière le texte. */}
           <HeroOverlayGraphic id={overlayGraphic} />
 
-          {chapters.map((ch, i) => (
-            <ChapterContent
-              key={ch.id}
-              chapter={ch}
-              textAnimation={textAnimation}
-              className={cn(
-                'hs-overlay',
-                i === activeIdx && 'show',
-                ch.verticalAlign === 'top' && 'hs-valign-top',
-                ch.verticalAlign === 'bottom' && 'hs-valign-bottom',
-                textAnimation && `hs-anim-${textAnimation}`,
-              )}
-            />
-          ))}
+          {chapters.map((ch, i) => {
+            // Animation hero-wide (prop `textAnimation`), sauf si CE
+            // chapitre en choisit une autre — cf. doc de
+            // `HeroChapter.textAnimation` (types.ts, échange du 21/09/2026).
+            const chAnim = ch.textAnimation || textAnimation
+            return (
+              <ChapterContent
+                key={ch.id}
+                chapter={ch}
+                textAnimation={chAnim}
+                className={cn(
+                  'hs-overlay',
+                  i === activeIdx && 'show',
+                  ch.verticalAlign === 'top' && 'hs-valign-top',
+                  ch.verticalAlign === 'bottom' && 'hs-valign-bottom',
+                  chAnim && `hs-anim-${chAnim}`,
+                )}
+              />
+            )
+          })}
         </div>
 
         {/* Points de repère de chapitre — seulement s'il y a plus d'un chapitre à distinguer. */}
@@ -838,12 +845,13 @@ function FitOneLineText({ children, className, style }: { children: ReactNode; c
 
 // Animations dont le titre a besoin d'un wrapper `.hs-anim-target` dédié
 // (largeur/clip/dégradé animés), cf. hero-scrub.css. Les autres (ink-reveal,
-// soft-zoom, bloom, handwrite, glow, focus, elastic, flicker, breathe, et le
-// fondu par défaut) animent directement `.hs-overlay.show` — aucun balisage
-// supplémentaire nécessaire. letter-drop et wave (rendu par mot plutôt que
-// par lettre, ajouté le 21/09/2026) et petals-in ont chacun leur propre
-// rendu spécial, gérés à part ci-dessous.
-const HERO_ANIM_NEEDS_TARGET = new Set(['typewriter', 'curtain', 'underline-draw', 'shimmer', 'unfold', 'wipe'])
+// soft-zoom, bloom, handwrite, glow, focus, elastic, flicker, breathe,
+// fade-up, tracking-breathe, attention-wiggle, et le fondu par défaut)
+// animent directement `.hs-overlay.show` — aucun balisage supplémentaire
+// nécessaire. letter-drop, wave (par mot), letter-pop (par lettre, rebond)
+// et reveal-lines (par ligne) ont chacun leur propre rendu spécial, gérés à
+// part ci-dessous, comme petals-in.
+const HERO_ANIM_NEEDS_TARGET = new Set(['typewriter', 'curtain', 'underline-draw', 'shimmer', 'unfold', 'wipe', 'gradient-shift'])
 
 /** Exporté pour réutilisation directe dans l'aperçu admin — cf. doc de ModeleStdDetail.tsx (échange du 21/09/2026). */
 export function ChapterContent({
@@ -876,6 +884,14 @@ export function ChapterContent({
         ? { '--hs-card-bg': chapter.cardBgOverride }
         : null),
     ...(chapter.accentColorOverride ? { '--hs-chapter-accent': chapter.accentColorOverride } : null),
+    // Police propre à CE chapitre — prévaut sur `--hs-font-family` posée
+    // hero-wide dans `themeVars` (cascade normale). `getHeroFont` renvoie
+    // `null` pour un id vide/inconnu, auquel cas ce spread n'ajoute rien
+    // (repli sur la police hero-wide, comportement historique) — cf.
+    // échange du 21/09/2026.
+    ...(chapter.fontId && getHeroFont(chapter.fontId)
+      ? { '--hs-font-family': getHeroFont(chapter.fontId)!.fontFamily }
+      : null),
   } as CSSProperties
   return (
     <div className={className} style={overrideVars}>
@@ -937,8 +953,25 @@ export function ChapterContent({
             </span>
           </>
         )}
+        {/* Élément dédié aux 2 arêtes gauche/droite du cadre "draw-in" — les
+            2 autres (haut/bas) sont posées directement sur `.hs-card` via
+            ::before/::after (cf. hero-scrub.css), 2 pseudo-éléments ne
+            suffisant pas pour 4 arêtes indépendantes. */}
+        {chapter.cardFrame === 'draw-in' && <i className="hs-frame-draw-edge" aria-hidden />}
         {chapter.lead && (
-          <p className="mb-4 text-center text-[15px] font-light leading-relaxed" style={{ color: 'var(--hs-text-secondary)' }}>
+          <p
+            className={cn('mb-4 text-center text-[15px] leading-relaxed', chapter.bold ? 'font-semibold' : 'font-light')}
+            style={{
+              color: 'var(--hs-text-secondary)',
+              // `lead` reste dans la police du site par défaut (jamais
+              // héritée de la police hero-wide, cf. doc de HERO_FONTS) —
+              // SAUF si CE bloc choisit explicitement une police (cas des
+              // "blocs supplémentaires"/heroCustomCards, seul contenu rendu
+              // en `lead` plutôt qu'en `segments` — cf. échange du
+              // 21/09/2026, "pour les blocs ajoutés... choisir la police").
+              ...(chapter.fontId ? { fontFamily: 'var(--hs-font-family)' } : null),
+            }}
+          >
             {chapter.lead}
           </p>
         )}
@@ -955,7 +988,11 @@ export function ChapterContent({
         {chapter.segments && (
           <div
             className={cn(
-              'mb-2 font-normal leading-[1.12]',
+              'mb-2 leading-[1.12]',
+              // `bold` (échange du 21/09/2026) : par chapitre, comme
+              // fontId/textAnimation ci-dessus — `font-normal` reste le
+              // comportement historique tant que rien n'est choisi.
+              chapter.bold ? 'font-semibold' : 'font-normal',
               // cqw (largeur de .hs-stage, cf. container-type dans
               // hero-scrub.css) — jamais vw (largeur viewport), qui a déjà
               // fait déborder "décembre" puis "Couleurs" sur desktop, où le
@@ -1024,6 +1061,51 @@ export function ChapterContent({
                     </span>
                   )
                 })}
+              </p>
+            ) : textAnimation === 'letter-pop' ? (
+              // Rendu spécial : chaque caractère dans son propre
+              // `.hs-anim-letter-pop-item` (cf. hero-scrub.css) — rebond
+              // par lettre, distinct de letter-drop (chute simple, sans
+              // rebond). Même structure/gestion de segmentLayout que
+              // letter-drop ci-dessus. Ajouté le 21/09/2026 (2e vague).
+              <p>
+                {chapter.segments.map((seg, i) => {
+                  let letterIdx = 0
+                  for (let k = 0; k < i; k++) letterIdx += chapter.segments![k].text.length + 1
+                  return (
+                    <span key={i}>
+                      <span className={cn(seg.accent && 'italic')} style={seg.accent ? { color: 'var(--hs-chapter-accent, var(--hs-accent))' } : undefined}>
+                        {seg.text.split('').map((c, j) => (
+                          <span key={j} className="hs-anim-letter-pop-item" style={{ animationDelay: `${(letterIdx + j) * 0.04}s` }}>
+                            {c === ' ' ? ' ' : c}
+                          </span>
+                        ))}
+                      </span>
+                      {i < chapter.segments!.length - 1 ? (chapter.segmentLayout === 'stack' ? <br /> : ' ') : ''}
+                    </span>
+                  )
+                })}
+              </p>
+            ) : textAnimation === 'reveal-lines' ? (
+              // Rendu spécial : chaque SEGMENT masqué dans son propre
+              // `.hs-anim-line` (overflow hidden) et révélé par un glissement
+              // interne (`.hs-anim-line-inner`) — plus posé que letter-drop/
+              // wave sur un texte long, un segment = une ligne réelle dès
+              // que `segmentLayout: 'stack'` (sinon un seul "segment" en
+              // général, effet identique à une révélation globale). Ajouté
+              // le 21/09/2026 (2e vague).
+              <p>
+                {chapter.segments.map((seg, i) => (
+                  <span key={i} className="hs-anim-line">
+                    <span
+                      className={cn('hs-anim-line-inner', seg.accent && 'italic')}
+                      style={{ animationDelay: `${i * 0.14}s`, ...(seg.accent ? { color: 'var(--hs-chapter-accent, var(--hs-accent))' } : undefined) }}
+                    >
+                      {seg.text}
+                    </span>
+                    {i < chapter.segments!.length - 1 ? (chapter.segmentLayout === 'stack' ? <br /> : ' ') : ''}
+                  </span>
+                ))}
               </p>
             ) : (
               <MaybeAnimTarget active={HERO_ANIM_NEEDS_TARGET.has(textAnimation ?? '')}>
