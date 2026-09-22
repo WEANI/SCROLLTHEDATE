@@ -84,21 +84,24 @@ export default function Navbar() {
         initial="hidden"
         animate="show"
       >
-        {/* Wordmark */}
-        <motion.div variants={itemVariants}>
+        {/* Wordmark — `shrink-0` : logo très large (1689×400), ne doit
+            jamais être comprimé par le flex du reste de la nav (liens +
+            cluster compte/CTA/panier/langue), sans quoi son texte se
+            retrouvait tassé/tronqué visuellement aux largeurs moyennes. */}
+        <motion.div variants={itemVariants} className="shrink-0">
           <Link to="/" aria-label="Scroll The Date — accueil" className="flex items-center">
-            <img src="/logo.png" alt="Scroll The Date" className="h-[72px] w-auto" />
+            <img src="/logo.png" alt="Scroll The Date" className="h-14 w-auto shrink-0 sm:h-16 lg:h-[72px]" />
           </Link>
         </motion.div>
 
         {/* Liens centre — desktop */}
-        <ul className="hidden items-center gap-8 lg:flex">
+        <ul className="hidden items-center gap-6 xl:flex">
           {NAV_LINKS.map((link) => (
             <motion.li key={link.key} variants={itemVariants}>
               <button
                 type="button"
                 onClick={() => go(link.href)}
-                className="group relative text-[13px] font-medium uppercase tracking-[0.14em] text-white/80 transition-colors hover:text-white"
+                className="group relative whitespace-nowrap text-[13px] font-medium uppercase tracking-[0.14em] text-white/80 transition-colors hover:text-white"
               >
                 {link.label}
                 <span className="absolute -bottom-1.5 left-0 h-px w-full origin-left scale-x-0 bg-terracotta-500 transition-transform duration-300 group-hover:scale-x-100" />
@@ -108,20 +111,20 @@ export default function Navbar() {
         </ul>
 
         {/* Zone compte + CTA — desktop */}
-        <motion.div variants={itemVariants} className="hidden items-center gap-6 lg:flex">
+        <motion.div variants={itemVariants} className="hidden items-center gap-5 xl:flex">
           {/* AUTH-SLOT: rewired to useAuth() */}
           {isLoading ? (
-            <span className="inline-block h-5 w-24 animate-pulse rounded bg-white/10" aria-hidden="true" />
+            <span className="inline-block h-5 w-24 shrink-0 animate-pulse rounded bg-white/10" aria-hidden="true" />
           ) : isAuthenticated && user ? (
-            <span className="flex items-center gap-4">
+            <span className="flex shrink-0 items-center gap-4">
               <Link
                 to={user.role === 'admin' ? '/admin' : '/espace'}
-                className="flex items-center gap-2.5 text-[13px] font-medium uppercase tracking-[0.14em] text-white/80 transition-colors hover:text-white"
+                className="flex items-center gap-2.5 whitespace-nowrap text-[13px] font-medium uppercase tracking-[0.14em] text-white/80 transition-colors hover:text-white"
               >
                 {user.avatar ? (
-                  <img src={user.avatar} alt="" className="h-7 w-7 rounded-full object-cover" />
+                  <img src={user.avatar} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
                 ) : (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-terracotta-500 text-[11px] font-semibold text-white">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-terracotta-500 text-[11px] font-semibold text-white">
                     {(user.name ?? '?').slice(0, 1).toUpperCase()}
                   </span>
                 )}
@@ -130,7 +133,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => logout()}
-                className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50 transition-colors hover:text-white"
+                className="whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em] text-white/50 transition-colors hover:text-white"
               >
                 {t('nav.logout')}
               </button>
@@ -138,19 +141,19 @@ export default function Navbar() {
           ) : (
             <Link
               to={LOGIN_PATH}
-              className="text-[13px] font-medium uppercase tracking-[0.14em] text-white/80 transition-colors hover:text-white"
+              className="whitespace-nowrap text-[13px] font-medium uppercase tracking-[0.14em] text-white/80 transition-colors hover:text-white"
             >
               {t('nav.login')}
             </Link>
           )}
           <Link
             to="/offres"
-            className="rounded-full bg-terracotta-500 px-6 py-2.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
+            className="shrink-0 whitespace-nowrap rounded-full bg-terracotta-500 px-6 py-2.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
           >
             {t('nav.createInvite')}
           </Link>
-          <CartMenu variant="dark" />
-          <LanguageSwitcher variant="dark" />
+          <CartMenu variant="dark" className="shrink-0" />
+          <LanguageSwitcher variant="dark" className="shrink-0" />
         </motion.div>
 
         {/* Burger — mobile */}
@@ -159,7 +162,7 @@ export default function Navbar() {
           type="button"
           aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
           onClick={() => setOpen((v) => !v)}
-          className="flex h-11 w-11 items-center justify-center text-white lg:hidden"
+          className="flex h-11 w-11 shrink-0 items-center justify-center text-white xl:hidden"
         >
           {open ? <X size={24} /> : <Menu size={24} />}
         </motion.button>
@@ -181,7 +184,7 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 top-20 z-40 flex flex-col bg-anthracite-950 px-8 pb-10 pt-6 lg:hidden"
+            className="fixed inset-0 top-20 z-40 flex flex-col bg-anthracite-950 px-8 pb-10 pt-6 xl:hidden"
           >
             <motion.ul
               className="flex flex-1 flex-col justify-center gap-2"
