@@ -1,27 +1,42 @@
+import type { Lang } from '@/i18n/LanguageContext'
+
 // ---------------------------------------------------------------------------
-// Helpers de formatage & libellés métier — espace client (fr-FR)
+// Helpers de formatage & libellés métier — espace client (FR/EN)
+// Les libellés viennent des dictionnaires i18n (espace.*) : ces fonctions
+// prennent `t` (et parfois `lang` pour le formatage natif Intl) en
+// paramètre plutôt que d'appeler useLanguage() elles-mêmes — ce sont de
+// simples fonctions, pas des hooks, réutilisées aussi bien dans des
+// composants React que dans des libellés construits en dehors du rendu.
 // ---------------------------------------------------------------------------
 
-export function formatDate(d: Date | string | null | undefined, opts?: Intl.DateTimeFormatOptions) {
+function locale(lang: Lang) {
+  return lang === 'en' ? 'en-GB' : 'fr-FR'
+}
+
+export function formatDate(
+  d: Date | string | null | undefined,
+  opts?: Intl.DateTimeFormatOptions,
+  lang: Lang = 'fr',
+) {
   if (!d) return '—'
   const date = d instanceof Date ? d : new Date(d)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleDateString('fr-FR', opts ?? { day: '2-digit', month: 'short', year: 'numeric' })
+  return date.toLocaleDateString(locale(lang), opts ?? { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-export function formatDateShort(d: Date | string | null | undefined) {
-  return formatDate(d, { day: '2-digit', month: '2-digit' })
+export function formatDateShort(d: Date | string | null | undefined, lang: Lang = 'fr') {
+  return formatDate(d, { day: '2-digit', month: '2-digit' }, lang)
 }
 
-export function formatTime(d: Date | string | null | undefined) {
+export function formatTime(d: Date | string | null | undefined, lang: Lang = 'fr') {
   if (!d) return ''
   const date = d instanceof Date ? d : new Date(d)
-  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleTimeString(locale(lang), { hour: '2-digit', minute: '2-digit' })
 }
 
-export function formatPrice(cents: number | null | undefined) {
+export function formatPrice(cents: number | null | undefined, lang: Lang = 'fr') {
   if (cents == null) return '—'
-  return (cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
+  return (cents / 100).toLocaleString(locale(lang), { style: 'currency', currency: 'EUR' })
 }
 
 export function formatDuration(sec: number) {
@@ -55,18 +70,30 @@ export function daysUntil(d: Date | string | null | undefined): number | null {
 // Libellés métier
 // ---------------------------------------------------------------------------
 
-export const PROJECT_STATUS_LABEL: Record<string, string> = {
-  ONBOARDING: 'Premiers pas',
-  QUESTIONNAIRE: 'Questionnaire',
-  SCENARIOS: 'Scénarios en cours',
-  PRODUCTION: 'Montage',
-  REVIEW: 'À valider',
-  DELIVERED: 'Livré ✓',
+type T = (key: string) => string
+
+const STATUS_KEY: Record<string, string> = {
+  ONBOARDING: 'espace.status.onboarding',
+  QUESTIONNAIRE: 'espace.status.questionnaire',
+  SCENARIOS: 'espace.status.scenarios',
+  PRODUCTION: 'espace.status.production',
+  REVIEW: 'espace.status.review',
+  DELIVERED: 'espace.status.delivered',
 }
 
-export const PRODUCT_LABEL: Record<string, string> = {
-  FAIRE_PART: 'Faire-part digital',
-  SAVE_THE_DATE: 'Save the Date digital',
+export function projectStatusLabel(status: string, t: T): string {
+  const key = STATUS_KEY[status]
+  return key ? t(key) : status
+}
+
+const PRODUCT_KEY: Record<string, string> = {
+  FAIRE_PART: 'espace.product.fairePart',
+  SAVE_THE_DATE: 'espace.product.saveTheDate',
+}
+
+export function productLabel(product: string, t: T): string {
+  const key = PRODUCT_KEY[product]
+  return key ? t(key) : product
 }
 
 export const TEMPLATE_VIGNETTE: Record<string, string> = {
@@ -75,84 +102,92 @@ export const TEMPLATE_VIGNETTE: Record<string, string> = {
   minimal: '/template-minimal.jpg',
 }
 
-export const TEMPLATE_LABEL: Record<string, string> = {
-  editorial: 'Éditorial',
-  cinema: 'Cinéma',
-  minimal: 'Minimal',
+const TEMPLATE_KEY: Record<string, string> = {
+  editorial: 'espace.template.editorial',
+  cinema: 'espace.template.cinema',
+  minimal: 'espace.template.minimal',
+}
+
+export function templateLabel(template: string, t: T): string {
+  const key = TEMPLATE_KEY[template]
+  return key ? t(key) : template
 }
 
 export const WHATSAPP_NUMBER = '33600000000'
-export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-  'Bonjour Scroll The Date, voici ma note vocale pour notre faire-part !',
-)}`
+
+/** Message WhatsApp pré-rempli du fallback micro indisponible — traduit (cf. VoiceRecorder). */
+export function voiceNoteWhatsappUrl(lang: Lang): string {
+  const message =
+    lang === 'en'
+      ? 'Hello Scroll The Date, here is my voice note for our invitation!'
+      : 'Bonjour Scroll The Date, voici ma note vocale pour notre faire-part !'
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
+}
 
 /** Libellé lisible d'un événement d'audit (timeline projet). */
-export function auditLabel(action: string, meta?: unknown): string {
+export function auditLabel(action: string, meta: unknown, t: T): string {
   const m = (meta ?? {}) as Record<string, unknown>
   switch (action) {
     case 'order.paid':
-      return 'Commande confirmée'
+      return t('espace.audit.orderPaid')
     case 'project.created':
-      return 'Votre projet est créé'
+      return t('espace.audit.projectCreated')
     case 'questionnaire.started':
-      return 'Questionnaire commencé'
+      return t('espace.audit.questionnaireStarted')
     case 'questionnaire.completed':
-      return 'Questionnaire complété'
+      return t('espace.audit.questionnaireCompleted')
     case 'media.uploaded':
-      return m.filename ? `Photo reçue — ${String(m.filename)}` : 'Média reçu'
+      return m.filename ? `${t('espace.audit.mediaUploadedPrefix')} ${String(m.filename)}` : t('espace.audit.mediaUploaded')
     case 'voice_note.received':
-      return 'Note vocale reçue'
+      return t('espace.audit.voiceNoteReceived')
     case 'scenarios.sent':
-      return 'Vos scénarios ont été envoyés'
+      return t('espace.audit.scenariosSent')
     case 'scenario.chosen':
-      return m.title ? `Scénario choisi — « ${String(m.title)} »` : 'Scénario choisi'
+      return m.title ? `${t('espace.audit.scenarioChosenPrefix')} « ${String(m.title)} »` : t('espace.audit.scenarioChosen')
     case 'scenario.changes_requested':
-      return 'Modification de scénario demandée'
+      return t('espace.audit.scenarioChangesRequested')
     case 'video.version_added':
-      return `Vidéo filigrane envoyée — version ${String(m.version ?? '')}`
+      return `${t('espace.audit.videoVersionAddedPrefix')} ${String(m.version ?? '')}`
     case 'video.approved':
-      return 'Vidéo approuvée'
+      return t('espace.audit.videoApproved')
     case 'video.changes_requested':
-      return 'Modifications vidéo demandées'
+      return t('espace.audit.videoChangesRequested')
     case 'project.status_changed':
-      return `Étape « ${PROJECT_STATUS_LABEL[String(m.to)] ?? String(m.to)} »`
+      return `${t('espace.audit.statusChangedPrefix')} « ${projectStatusLabel(String(m.to), t)} »`
     case 'project.template_changed':
-      return `Ambiance « ${TEMPLATE_LABEL[String(m.to)] ?? String(m.to)} »`
+      return `${t('espace.audit.templateChangedPrefix')} « ${templateLabel(String(m.to), t)} »`
     case 'rsvp.config_saved':
-      return 'Configuration RSVP enregistrée'
+      return t('espace.audit.rsvpConfigSaved')
     case 'rsvp.submitted':
-      return 'Nouvelle réponse RSVP'
+      return t('espace.audit.rsvpSubmitted')
     case 'message.admin_sent':
-      return 'Message de Scroll The Date'
+      return t('espace.audit.messageAdminSent')
     case 'message.customer_sent':
-      return 'Message envoyé à Scroll The Date'
+      return t('espace.audit.messageCustomerSent')
     default:
       return action
   }
 }
 
 /** Libellé lisible d'une notification. */
-export function notificationLabel(type: string): { title: string; detail?: string } {
+export function notificationLabel(type: string, t: T): { title: string; detail?: string } {
   switch (type) {
     case 'scenarios.sent':
-      return { title: 'Vos scénarios sont arrivés', detail: 'À découvrir dans Projet & scénarios' }
+      return { title: t('espace.notif.scenariosSentTitle'), detail: t('espace.notif.scenariosSentDetail') }
     case 'scenarios.updated':
-      return {
-        title: 'Vos scénarios ont été retravaillés',
-        detail: 'Nous avons pris en compte vos retours',
-      }
+      return { title: t('espace.notif.scenariosUpdatedTitle'), detail: t('espace.notif.scenariosUpdatedDetail') }
     case 'video.sent':
-      return { title: 'Votre faire-part provisoire est prêt', detail: 'Découvrez-le et donnez votre retour' }
+      return { title: t('espace.notif.videoSentTitle'), detail: t('espace.notif.videoSentDetail') }
     case 'project.status_changed':
-      return { title: 'Votre projet avance', detail: 'Une nouvelle étape vient de commencer' }
+      return { title: t('espace.notif.statusChangedTitle'), detail: t('espace.notif.statusChangedDetail') }
     case 'message.received':
-      return { title: 'Nouveau message de Scroll The Date', detail: 'Élise vous a répondu' }
+      return { title: t('espace.notif.messageReceivedTitle'), detail: t('espace.notif.messageReceivedDetail') }
     case 'order.confirmed':
       // Sans ce cas, un client qui venait de payer voyait « Notification »
       // suivi du code technique brut « order.confirmed ».
-      return { title: 'Commande confirmée', detail: 'Votre paiement a bien été reçu' }
+      return { title: t('espace.notif.orderConfirmedTitle'), detail: t('espace.notif.orderConfirmedDetail') }
     default:
-      return { title: 'Notification', detail: type }
+      return { title: t('espace.notif.defaultTitle'), detail: type }
   }
 }
 

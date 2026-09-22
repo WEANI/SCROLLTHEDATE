@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
+import { useLanguage } from '@/i18n/LanguageContext'
 import {
   EmptyState,
   ErrorState,
@@ -25,8 +26,8 @@ import {
   daysUntil,
   formatDate,
   formatPrice,
-  PRODUCT_LABEL,
-  PROJECT_STATUS_LABEL,
+  productLabel,
+  projectStatusLabel,
   TEMPLATE_VIGNETTE,
 } from '@/components/espace/utils'
 import { useSelectedProject } from '@/components/espace/ProjectSelection'
@@ -45,6 +46,7 @@ const STATUS_RANK: Record<string, number> = {
 }
 
 interface Step {
+  key: string
   label: string
   state: 'done' | 'active' | 'todo'
   dateLabel?: string
@@ -68,7 +70,7 @@ function ProjectStepper({ steps }: { steps: Step[] }) {
       </div>
       <ol className="relative flex flex-col gap-6 md:flex-row md:justify-between md:gap-2">
         {steps.map((step) => (
-          <li key={step.label} className="flex items-start gap-3 md:flex-1 md:flex-col md:items-center md:gap-2 md:text-center">
+          <li key={step.key} className="flex items-start gap-3 md:flex-1 md:flex-col md:items-center md:gap-2 md:text-center">
             <span className="relative z-10 shrink-0">
               {step.state === 'active' && (
                 <motion.span
@@ -114,6 +116,7 @@ function ProjectStepper({ steps }: { steps: Step[] }) {
 // ---------------------------------------------------------------------------
 
 export default function TableauDeBord() {
+  const { t, lang } = useLanguage()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   // `enabled: isAuthenticated` — sans ça, ces requêtes partent dès le
   // montage, avant que la session Supabase ne soit confirmée (juste après un
@@ -153,92 +156,107 @@ export default function TableauDeBord() {
     const mediaDone = photoCount >= 5 || rank >= 2
     return [
       {
-        label: 'Questionnaire',
+        key: 'questionnaire',
+        label: t('espace.tableauDeBord.stepQuestionnaire'),
         state: questionnaireDone ? 'done' : 'active',
-        dateLabel: questionnaireDone ? 'Complété' : 'En cours',
+        dateLabel: questionnaireDone
+          ? t('espace.tableauDeBord.stepQuestionnaireDone')
+          : t('espace.tableauDeBord.stepQuestionnaireActive'),
       },
       {
-        label: 'Médias reçus',
+        key: 'media',
+        label: t('espace.tableauDeBord.stepMedia'),
         state: mediaDone ? 'done' : questionnaireDone ? 'active' : 'todo',
-        dateLabel: mediaDone ? `${photoCount} fichier${photoCount > 1 ? 's' : ''}` : undefined,
+        dateLabel: mediaDone
+          ? `${photoCount} ${photoCount > 1 ? t('espace.tableauDeBord.filePlural') : t('espace.tableauDeBord.fileSingular')}`
+          : undefined,
       },
       {
-        label: 'Scénarios',
+        key: 'scenarios',
+        label: t('espace.tableauDeBord.stepScenarios'),
         state: rank >= 3 ? 'done' : rank === 2 ? 'active' : 'todo',
-        dateLabel: rank === 2 ? 'Propositions en préparation' : undefined,
+        dateLabel: rank === 2 ? t('espace.tableauDeBord.stepScenariosActive') : undefined,
       },
       {
-        label: 'À valider',
+        key: 'review',
+        label: t('espace.tableauDeBord.stepReview'),
         state: rank >= 5 ? 'done' : rank === 4 ? 'active' : 'todo',
-        dateLabel: rank === 4 ? 'Vidéo filigrane reçue' : undefined,
+        dateLabel: rank === 4 ? t('espace.tableauDeBord.stepReviewActive') : undefined,
       },
       {
-        label: 'Montage',
+        key: 'production',
+        label: t('espace.tableauDeBord.stepProduction'),
         state: rank >= 4 ? 'done' : rank === 3 ? 'active' : 'todo',
       },
       {
-        label: 'Livré',
+        key: 'delivered',
+        label: t('espace.tableauDeBord.stepDelivered'),
         state: rank >= 5 ? 'done' : 'todo',
-        dateLabel: rank >= 5 && project ? `Livré le ${formatDate(project.updatedAt)}` : undefined,
+        dateLabel:
+          rank >= 5 && project
+            ? `${t('espace.tableauDeBord.stepDeliveredDatePrefix')} ${formatDate(project.updatedAt, undefined, lang)}`
+            : undefined,
       },
     ]
-  }, [completionPct, rank, photoCount, project])
+  }, [completionPct, rank, photoCount, project, t, lang])
 
   // Bannière « prochaine action » dynamique
   const nextAction = useMemo((): { text: string; cta: string; to: string } | null => {
     if (rank <= 1)
       return {
-        text: 'Votre histoire est la matière première de votre film — complétez le questionnaire pour lancer la rédaction.',
-        cta: 'Répondre au questionnaire',
+        text: t('espace.tableauDeBord.nextAction1Text'),
+        cta: t('espace.tableauDeBord.nextAction1Cta'),
         to: '/espace/questionnaire',
       }
     if (rank === 2)
       return {
-        text: 'Vos propositions de scénario arrivent ou vous attendent — complétez votre médiathèque pour une vidéo encore plus personnelle.',
-        cta: photoCount < 5 ? 'Ajouter des photos' : 'Voir mes scénarios',
+        text: t('espace.tableauDeBord.nextAction2Text'),
+        cta: photoCount < 5 ? t('espace.tableauDeBord.nextAction2CtaPhotos') : t('espace.tableauDeBord.nextAction2CtaScenarios'),
         to: photoCount < 5 ? '/espace/questionnaire#medias' : '/espace/projet',
       }
     if (rank === 3)
       return {
-        text: 'Votre scénario est entre les mains de notre monteuse — la première version arrive sous quelques jours.',
-        cta: 'Suivre mon projet',
+        text: t('espace.tableauDeBord.nextAction3Text'),
+        cta: t('espace.tableauDeBord.nextAction3Cta'),
         to: '/espace/projet',
       }
     if (rank === 4)
       return {
-        text: 'Votre vidéo filigrane vous attend — visionnez-la et validez-la pour lancer la livraison.',
-        cta: 'Valider ma vidéo',
+        text: t('espace.tableauDeBord.nextAction4Text'),
+        cta: t('espace.tableauDeBord.nextAction4Cta'),
         to: '/espace/projet',
       }
     if (rank >= 5)
       return {
-        text: 'Votre faire-part est en ligne — partagez-le avec vos proches et suivez les réponses en direct.',
-        cta: 'Partager mon faire-part',
+        text: t('espace.tableauDeBord.nextAction5Text'),
+        cta: t('espace.tableauDeBord.nextAction5Cta'),
         to: '/espace/commandes',
       }
     return null
-  }, [rank, photoCount])
+  }, [rank, photoCount, t])
 
   // Checklist d'onboarding
   const checklist = useMemo(
     () => [
-      { label: 'Commande validée', done: orders.some((o) => o.paymentStatus === 'paid') },
-      { label: 'Compte créé', done: true },
-      { label: 'Questionnaire complété', done: completionPct >= 100 },
+      { key: 'order', label: t('espace.tableauDeBord.checklistOrderValidated'), done: orders.some((o) => o.paymentStatus === 'paid') },
+      { key: 'account', label: t('espace.tableauDeBord.checklistAccountCreated'), done: true },
+      { key: 'questionnaire', label: t('espace.tableauDeBord.checklistQuestionnaireCompleted'), done: completionPct >= 100 },
       {
-        label: 'Note vocale envoyée',
+        key: 'voice',
+        label: t('espace.tableauDeBord.checklistVoiceNote'),
         done: voiceNoteCount > 0,
-        cta: 'Enregistrer',
+        cta: t('espace.tableauDeBord.checklistVoiceNoteCta'),
         to: '/espace/questionnaire#vocale',
       },
       {
-        label: '5+ photos téléversées',
+        key: 'photos',
+        label: t('espace.tableauDeBord.checklistPhotos'),
         done: photoCount >= 5,
-        cta: 'Téléverser',
+        cta: t('espace.tableauDeBord.checklistPhotosCta'),
         to: '/espace/questionnaire#medias',
       },
     ],
-    [orders, completionPct, voiceNoteCount, photoCount],
+    [orders, completionPct, voiceNoteCount, photoCount, t],
   )
   const checklistPct = Math.round((checklist.filter((c) => c.done).length / checklist.length) * 100)
 
@@ -260,10 +278,10 @@ export default function TableauDeBord() {
             transition={{ duration: 0.5 }}
             className="font-display text-3xl font-medium tracking-[-0.01em] text-ink sm:text-4xl"
           >
-            Bonjour <span className="italic text-terracotta-500">{names || 'à vous deux'}</span>
+            {t('espace.tableauDeBord.greetingPrefix')} <span className="italic text-terracotta-500">{names || t('espace.tableauDeBord.greetingFallback')}</span>
           </motion.h2>
           <p className="mt-2 text-[15px] text-neutral-500">
-            Votre faire-part prend vie. Voici où en est votre projet.
+            {t('espace.tableauDeBord.subtitle')}
           </p>
         </div>
         {project?.weddingDate && (
@@ -274,11 +292,11 @@ export default function TableauDeBord() {
             className="flex items-center gap-3 rounded-full bg-anthracite-800 py-2 pl-4 pr-2 text-white"
           >
             <span className="text-[13px] font-medium">
-              {formatDate(project.weddingDate, { day: 'numeric', month: 'long', year: 'numeric' })}
+              {formatDate(project.weddingDate, { day: 'numeric', month: 'long', year: 'numeric' }, lang)}
             </span>
             {countdown !== null && (
               <span className="rounded-full bg-terracotta-500 px-2.5 py-1 text-[11px] font-semibold tabular-nums">
-                J−{countdown}
+                {t('espace.tableauDeBord.countdownPrefix')}{countdown}
               </span>
             )}
           </motion.div>
@@ -287,8 +305,8 @@ export default function TableauDeBord() {
 
       {!project ? (
         <EmptyState
-          title="Votre projet n'est pas encore créé"
-          description="Il apparaîtra ici dès confirmation de votre commande. Une question ? Écrivez-nous depuis l'onglet Messages."
+          title={t('espace.tableauDeBord.noProjectTitle')}
+          description={t('espace.tableauDeBord.noProjectDescription')}
         />
       ) : (
         <>
@@ -328,7 +346,7 @@ export default function TableauDeBord() {
             {/* Checklist d'onboarding */}
             <SectionCard>
               <div className="mb-5 flex items-center justify-between gap-4">
-                <h3 className="font-display text-xl font-medium text-ink">Vos premiers pas</h3>
+                <h3 className="font-display text-xl font-medium text-ink">{t('espace.tableauDeBord.firstStepsTitle')}</h3>
                 <div className="relative">
                   <ProgressRing pct={checklistPct} size={64} />
                   <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold tabular-nums text-ink">
@@ -339,7 +357,7 @@ export default function TableauDeBord() {
               <ul className="flex flex-col gap-1">
                 {checklist.map((item) => (
                   <li
-                    key={item.label}
+                    key={item.key}
                     className="flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-neutral-100/60"
                   >
                     <span
@@ -375,30 +393,40 @@ export default function TableauDeBord() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {[
                 {
+                  key: 'questionnaire',
                   to: '/espace/questionnaire',
                   icon: ClipboardList,
-                  title: 'Questionnaire',
-                  desc: completionPct >= 100 ? 'Complété — merci !' : `Complété à ${completionPct} % — reprendre`,
+                  title: t('espace.tableauDeBord.cardQuestionnaireTitle'),
+                  desc:
+                    completionPct >= 100
+                      ? t('espace.tableauDeBord.cardQuestionnaireDoneDesc')
+                      : `${t('espace.tableauDeBord.cardQuestionnaireInProgressPrefix')}${t('espace.tableauDeBord.cardQuestionnaireInProgressPrefix') ? ' ' : ''}${completionPct}${t('espace.tableauDeBord.cardQuestionnaireInProgressSuffix')}`,
                   bar: completionPct,
                 },
                 {
+                  key: 'project',
                   to: '/espace/projet',
                   icon: Clapperboard,
-                  title: 'Projet & scénarios',
-                  desc: project ? PROJECT_STATUS_LABEL[project.status] : '—',
+                  title: t('espace.tableauDeBord.cardProjectTitle'),
+                  desc: project ? projectStatusLabel(project.status, t) : '—',
                 },
                 {
+                  key: 'messages',
                   to: '/espace/messages',
                   icon: MessageCircle,
-                  title: 'Messages',
-                  desc: unreadMessages > 0 ? `${unreadMessages} nouveau${unreadMessages > 1 ? 'x' : ''}` : 'Écrire à Élise',
+                  title: t('espace.tableauDeBord.cardMessagesTitle'),
+                  desc:
+                    unreadMessages > 0
+                      ? `${unreadMessages} ${unreadMessages > 1 ? t('espace.tableauDeBord.unreadPlural') : t('espace.tableauDeBord.unreadSingular')}`
+                      : t('espace.tableauDeBord.cardMessagesEmptyDesc'),
                   badge: unreadMessages,
                 },
                 {
+                  key: 'invitation',
                   to: rank >= 5 ? `/faire-part/${project.slug}` : '#',
                   icon: Sparkles,
-                  title: 'Mon faire-part',
-                  desc: rank >= 5 ? 'En ligne — voir' : 'Disponible après livraison',
+                  title: t('espace.tableauDeBord.cardInvitationTitle'),
+                  desc: rank >= 5 ? t('espace.tableauDeBord.cardInvitationLiveDesc') : t('espace.tableauDeBord.cardInvitationLockedDesc'),
                   disabled: rank < 5,
                 },
               ].map((card, i) => {
@@ -425,7 +453,7 @@ export default function TableauDeBord() {
                           transition={{ duration: 1.6, repeat: Infinity }}
                           className="rounded-full bg-terracotta-500 px-2.5 py-1 text-[11px] font-semibold text-white"
                         >
-                          {card.badge} nouveau{card.badge > 1 ? 'x' : ''}
+                          {card.badge} {card.badge > 1 ? t('espace.tableauDeBord.unreadPlural') : t('espace.tableauDeBord.unreadSingular')}
                         </motion.span>
                       ) : null}
                     </span>
@@ -448,9 +476,9 @@ export default function TableauDeBord() {
                   </motion.div>
                 )
                 return card.disabled ? (
-                  <div key={card.title} aria-disabled="true">{inner}</div>
+                  <div key={card.key} aria-disabled="true">{inner}</div>
                 ) : (
-                  <Link key={card.title} to={card.to}>{inner}</Link>
+                  <Link key={card.key} to={card.to}>{inner}</Link>
                 )
               })}
             </div>
@@ -463,27 +491,27 @@ export default function TableauDeBord() {
         <SectionCard className="flex flex-wrap items-center gap-5">
           <img
             src={TEMPLATE_VIGNETTE[project?.template ?? 'editorial']}
-            alt="Aperçu du template"
+            alt={t('espace.tableauDeBord.orderVignetteAlt')}
             className="h-20 w-16 rounded-lg object-cover"
           />
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-semibold text-ink">
-              {PRODUCT_LABEL[firstOrder.product] ?? firstOrder.product} — {formatPrice(firstOrder.amountCents)}
+              {productLabel(firstOrder.product, t)} — {formatPrice(firstOrder.amountCents, lang)}
             </p>
             <p className="mt-0.5 text-[13px] text-neutral-500">
-              Commande FL-{new Date(firstOrder.createdAt).getFullYear()}-{String(firstOrder.id).padStart(4, '0')} du{' '}
-              {formatDate(firstOrder.createdAt)}
+              {t('espace.tableauDeBord.orderNumberPrefix')} FL-{new Date(firstOrder.createdAt).getFullYear()}-{String(firstOrder.id).padStart(4, '0')} {t('espace.tableauDeBord.orderDateConnector')}{' '}
+              {formatDate(firstOrder.createdAt, undefined, lang)}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <StatusBadge tone={firstOrder.paymentStatus === 'paid' ? 'success' : 'pending'}>
-              {firstOrder.paymentStatus === 'paid' ? 'Payé' : 'En attente'}
+              {firstOrder.paymentStatus === 'paid' ? t('espace.tableauDeBord.statusPaid') : t('espace.tableauDeBord.statusPending')}
             </StatusBadge>
             <Link
               to="/espace/commandes"
               className="inline-flex items-center gap-1 text-[13px] font-medium text-terracotta-500 hover:text-terracotta-400"
             >
-              Voir mes commandes <ArrowRight size={14} />
+              {t('espace.tableauDeBord.viewOrdersLink')} <ArrowRight size={14} />
             </Link>
           </div>
         </SectionCard>

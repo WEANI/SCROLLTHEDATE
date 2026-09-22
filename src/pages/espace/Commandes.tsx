@@ -14,6 +14,7 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
+import { useLanguage } from '@/i18n/LanguageContext'
 import {
   ErrorState,
   Kicker,
@@ -25,8 +26,8 @@ import {
   formatDate,
   formatDateShort,
   formatPrice,
-  PRODUCT_LABEL,
-  PROJECT_STATUS_LABEL,
+  productLabel,
+  projectStatusLabel,
 } from '@/components/espace/utils'
 import QrShare from '@/components/espace/QrShare'
 import { EmptyState } from '@/components/espace/shared'
@@ -79,6 +80,18 @@ function splitTTC(ttcCents: number) {
   return { ht, tva: ttcCents - ht }
 }
 
+/**
+ * Libellés produit UNIQUEMENT pour la facture — volontairement séparés de
+ * `productLabel()` (i18n) : une facture est un document fiscal français,
+ * toujours émise en français quelle que soit la langue de l'interface,
+ * même logique que les CGV/Mentions légales (cf. échange du 22/09/2026 sur
+ * la portée de la traduction — la facture n'est pas de la copy marketing).
+ */
+const FR_PRODUCT_LABEL: Record<string, string> = {
+  FAIRE_PART: 'Faire-part digital',
+  SAVE_THE_DATE: 'Save the Date digital',
+}
+
 function openInvoice(o: OrderLike, customerName: string, customerEmail: string) {
   const options = (o.options as { id: string; label: string; priceCents: number }[] | null) ?? []
   const baseCents = o.amountCents - options.reduce((s, x) => s + x.priceCents, 0)
@@ -88,7 +101,7 @@ function openInvoice(o: OrderLike, customerName: string, customerEmail: string) 
     return `<tr><td>${label}</td><td class="num">${formatPrice(ht)}</td><td class="num">20 %</td><td class="num">${formatPrice(ttcCents)}</td></tr>`
   }
   const rows = [
-    lineRow(PRODUCT_LABEL[o.product] ?? o.product, baseCents),
+    lineRow(FR_PRODUCT_LABEL[o.product] ?? o.product, baseCents),
     ...options.map((opt) => lineRow(`Option — ${opt.label}`, opt.priceCents)),
   ].join('')
 
@@ -200,6 +213,7 @@ function CountUp({ value }: { value: number }) {
 // ---------------------------------------------------------------------------
 
 export default function Commandes() {
+  const { t, tArray, lang } = useLanguage()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   // `enabled: isAuthenticated` — cf. TableauDeBord.tsx pour l'explication :
   // évite de lancer ces requêtes avant que la session ne soit confirmée
@@ -230,26 +244,29 @@ export default function Commandes() {
   const chartData = useMemo(() => {
     const byDay = new Map<string, number>()
     for (const r of responses) {
-      const key = formatDateShort(r.createdAt)
+      const key = formatDateShort(r.createdAt, lang)
       byDay.set(key, (byDay.get(key) ?? 0) + 1)
     }
     return Array.from(byDay.entries()).map(([day, count]) => ({ day, reponses: count }))
-  }, [responses])
+  }, [responses, lang])
 
   const filteredResponses = responses.filter((r) => rsvpFilter === 'all' || r.attending === rsvpFilter)
 
+  const responseLabel = (attending: 'yes' | 'no' | 'maybe') =>
+    attending === 'yes' ? t('espace.commandes.responseYes') : attending === 'no' ? t('espace.commandes.responseNo') : t('espace.commandes.responseMaybe')
+
   const exportCsv = () => {
-    const header = 'Invité;Email;Réponse;Accompagnants;Allergies;Chanson;Message;Date'
+    const header = tArray('espace.commandes.csvHeaders').join(';')
     const lines = responses.map((r) =>
       [
         r.guestName,
         r.email ?? '',
-        r.attending === 'yes' ? 'Oui' : r.attending === 'no' ? 'Non' : 'Peut-être',
+        responseLabel(r.attending),
         String(r.plusOnes),
         r.allergies ?? '',
         r.song ?? '',
         (r.message ?? '').replace(/[\n;]+/g, ' '),
-        formatDate(r.createdAt),
+        formatDate(r.createdAt, undefined, lang),
       ]
         .map((c) => `"${c.replace(/"/g, '""')}"`)
         .join(';'),
@@ -272,23 +289,23 @@ export default function Commandes() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <Kicker>Vos achats</Kicker>
-        <h2 className="font-display mt-1 text-3xl font-medium tracking-[-0.01em] text-ink">Commandes</h2>
+        <Kicker>{t('espace.commandes.kicker')}</Kicker>
+        <h2 className="font-display mt-1 text-3xl font-medium tracking-[-0.01em] text-ink">{t('espace.commandes.title')}</h2>
         <p className="mt-1.5 text-[14px] text-neutral-500">
-          Historique, factures et suivi de votre faire-part.
+          {t('espace.commandes.subtitle')}
         </p>
       </div>
 
       {orders.length === 0 ? (
         <EmptyState
-          title="Aucune commande pour le moment"
-          description="Votre espace se remplira dès votre première commande."
+          title={t('espace.commandes.emptyTitle')}
+          description={t('espace.commandes.emptyDescription')}
           action={
             <Link
               to="/offres"
               className="mt-2 rounded-full bg-terracotta-500 px-6 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400"
             >
-              Découvrir les offres
+              {t('espace.commandes.emptyCta')}
             </Link>
           }
         />
@@ -298,13 +315,13 @@ export default function Commandes() {
             <table className="w-full min-w-[720px] text-left">
               <thead>
                 <tr className="border-b border-neutral-200 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                  <th className="px-6 py-4">N°</th>
-                  <th className="px-4 py-4">Produit</th>
-                  <th className="px-4 py-4">Date</th>
-                  <th className="px-4 py-4">Montant</th>
-                  <th className="px-4 py-4">Paiement</th>
-                  <th className="px-4 py-4">Projet</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-6 py-4">{t('espace.commandes.colNumber')}</th>
+                  <th className="px-4 py-4">{t('espace.commandes.colProduct')}</th>
+                  <th className="px-4 py-4">{t('espace.commandes.colDate')}</th>
+                  <th className="px-4 py-4">{t('espace.commandes.colAmount')}</th>
+                  <th className="px-4 py-4">{t('espace.commandes.colPayment')}</th>
+                  <th className="px-4 py-4">{t('espace.commandes.colProject')}</th>
+                  <th className="px-6 py-4 text-right">{t('espace.commandes.colActions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -333,23 +350,23 @@ export default function Commandes() {
                             {orderNumber(o)}
                           </span>
                           <span className="px-6 py-1 text-[13.5px] text-ink md:px-4 md:py-4">
-                            {PRODUCT_LABEL[o.product] ?? o.product}
+                            {productLabel(o.product, t)}
                           </span>
                           <span className="px-6 py-1 text-[13px] text-neutral-500 md:px-4 md:py-4">
-                            {formatDate(o.createdAt)}
+                            {formatDate(o.createdAt, undefined, lang)}
                           </span>
                           <span className="px-6 py-1 text-[13.5px] font-medium tabular-nums text-ink md:px-4 md:py-4">
-                            {formatPrice(o.amountCents)}
+                            {formatPrice(o.amountCents, lang)}
                           </span>
                           <span className="px-6 py-1 md:px-4 md:py-4">
                             <StatusBadge tone={o.paymentStatus === 'paid' ? 'success' : 'pending'}>
-                              {o.paymentStatus === 'paid' ? 'Payé' : 'En attente'}
+                              {o.paymentStatus === 'paid' ? t('espace.commandes.statusPaid') : t('espace.commandes.statusPending')}
                             </StatusBadge>
                           </span>
                           <span className="px-6 py-1 md:px-4 md:py-4">
                             {project ? (
                               <StatusBadge tone={project.status === 'DELIVERED' ? 'success' : 'terracotta'}>
-                                {PROJECT_STATUS_LABEL[project.status] ?? project.status}
+                                {projectStatusLabel(project.status, t)}
                               </StatusBadge>
                             ) : (
                               <span className="text-[12.5px] text-neutral-500">—</span>
@@ -359,7 +376,7 @@ export default function Commandes() {
                             <span
                               role="button"
                               tabIndex={0}
-                              aria-label="Télécharger la facture"
+                              aria-label={t('espace.commandes.downloadInvoiceAria')}
                               onClick={(e) => {
                                 e.stopPropagation()
                                 openInvoice(o, user?.name ?? 'Client', user?.email ?? '')
@@ -375,7 +392,7 @@ export default function Commandes() {
                                 onClick={(e) => e.stopPropagation()}
                                 className="hidden items-center gap-1 rounded-full border border-neutral-200 px-3.5 py-2 text-[12px] font-medium text-ink transition-colors hover:bg-neutral-100 sm:inline-flex"
                               >
-                                Voir le projet <ArrowRight size={12} />
+                                {t('espace.commandes.viewProjectLink')} <ArrowRight size={12} />
                               </Link>
                             )}
                             <ChevronDown
@@ -397,16 +414,16 @@ export default function Commandes() {
                               <div className="grid gap-6 border-t border-neutral-200/70 bg-neutral-100/50 px-6 py-5 sm:grid-cols-3">
                                 <div>
                                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                                    Options choisies
+                                    {t('espace.commandes.optionsChosenTitle')}
                                   </p>
                                   {((o.options as { label: string; priceCents: number }[] | null) ?? []).length === 0 ? (
-                                    <p className="text-[13px] text-neutral-500">Formule seule</p>
+                                    <p className="text-[13px] text-neutral-500">{t('espace.commandes.formulaOnly')}</p>
                                   ) : (
                                     <ul className="flex flex-col gap-1">
                                       {((o.options as { label: string; priceCents: number }[] | null) ?? []).map((opt, j) => (
                                         <li key={j} className="flex justify-between gap-4 text-[13px]">
                                           <span className="text-ink">{opt.label}</span>
-                                          <span className="tabular-nums text-neutral-500">{formatPrice(opt.priceCents)}</span>
+                                          <span className="tabular-nums text-neutral-500">{formatPrice(opt.priceCents, lang)}</span>
                                         </li>
                                       ))}
                                     </ul>
@@ -414,25 +431,25 @@ export default function Commandes() {
                                 </div>
                                 <div>
                                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                                    Paiement
+                                    {t('espace.commandes.paymentTitle')}
                                   </p>
                                   <p className="text-[13px] text-ink">
-                                    {o.paymentStatus === 'paid' ? 'Réglé en totalité' : 'En attente'}
+                                    {o.paymentStatus === 'paid' ? t('espace.commandes.paymentPaid') : t('espace.commandes.statusPending')}
                                   </p>
                                   <p className="mt-1 text-[12px] text-neutral-500">
-                                    Réf. : {o.stripeRef ?? '—'}
+                                    {t('espace.commandes.paymentRefPrefix')} {o.stripeRef ?? '—'}
                                   </p>
                                 </div>
                                 <div>
                                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                                    Reçu
+                                    {t('espace.commandes.receiptTitle')}
                                   </p>
                                   <button
                                     type="button"
                                     onClick={() => openInvoice(o, user?.name ?? 'Client', user?.email ?? '')}
                                     className="inline-flex items-center gap-1.5 rounded-full bg-anthracite-800 px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-anthracite-700"
                                   >
-                                    <FileText size={13} /> Facture {orderNumber(o)}
+                                    <FileText size={13} /> {t('espace.commandes.invoiceCtaPrefix')} {orderNumber(o)}
                                   </button>
                                 </div>
                               </div>
@@ -454,12 +471,12 @@ export default function Commandes() {
         <SectionCard>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-display text-2xl font-medium italic text-ink">Mon faire-part.</h3>
+              <h3 className="font-display text-2xl font-medium italic text-ink">{t('espace.commandes.myInvitationTitle')}</h3>
               <p className="mt-1 text-[13.5px] text-neutral-500">
-                Suivez les réponses de vos invités en temps réel.
+                {t('espace.commandes.myInvitationSubtitle')}
               </p>
             </div>
-            <StatusBadge tone="success">En ligne ✓</StatusBadge>
+            <StatusBadge tone="success">{t('espace.commandes.liveStatusBadge')}</StatusBadge>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-[1fr_1.6fr_1fr]">
@@ -467,7 +484,7 @@ export default function Commandes() {
             {inviteUrl && (
               <QrShare
                 url={inviteUrl}
-                shareMessage={`Nous nous marions ! Découvrez notre histoire : ${inviteUrl}`}
+                shareMessage={`${t('espace.commandes.shareMessage')} ${inviteUrl}`}
               />
             )}
 
@@ -475,12 +492,12 @@ export default function Commandes() {
             <div>
               <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  { label: 'réponses', value: stats.total },
-                  { label: 'oui', value: stats.yes },
-                  { label: 'non', value: stats.no },
-                  { label: 'personnes attendues', value: stats.people },
+                  { key: 'total', label: t('espace.commandes.kpiResponses'), value: stats.total },
+                  { key: 'yes', label: t('espace.commandes.kpiYes'), value: stats.yes },
+                  { key: 'no', label: t('espace.commandes.kpiNo'), value: stats.no },
+                  { key: 'people', label: t('espace.commandes.kpiPeopleExpected'), value: stats.people },
                 ].map((kpi) => (
-                  <div key={kpi.label} className="rounded-xl bg-neutral-100/70 p-3">
+                  <div key={kpi.key} className="rounded-xl bg-neutral-100/70 p-3">
                     <p className="font-display text-2xl font-medium text-ink">
                       <CountUp value={kpi.value} />
                     </p>
@@ -494,11 +511,11 @@ export default function Commandes() {
               <div className="mb-5 flex flex-col gap-2">
                 {(
                   [
-                    ['Oui', stats.yes, '#C96F5A'],
-                    ['Non', stats.no, '#9A9AA0'],
+                    ['yes', t('espace.commandes.barYes'), stats.yes, '#C96F5A'],
+                    ['no', t('espace.commandes.barNo'), stats.no, '#9A9AA0'],
                   ] as const
-                ).map(([label, value, color], i) => (
-                  <div key={label} className="flex items-center gap-3">
+                ).map(([key, label, value, color], i) => (
+                  <div key={key} className="flex items-center gap-3">
                     <span className="w-8 text-[12px] font-medium text-neutral-500">{label}</span>
                     <span className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-200">
                       <motion.span
@@ -519,10 +536,10 @@ export default function Commandes() {
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 {(
                   [
-                    ['all', 'Tous'],
-                    ['yes', 'Oui'],
-                    ['no', 'Non'],
-                    ['maybe', 'Peut-être'],
+                    ['all', t('espace.commandes.filterAll')],
+                    ['yes', t('espace.commandes.filterYes')],
+                    ['no', t('espace.commandes.filterNo')],
+                    ['maybe', t('espace.commandes.filterMaybe')],
                   ] as const
                 ).map(([key, label]) => (
                   <button
@@ -543,7 +560,7 @@ export default function Commandes() {
                   disabled={responses.length === 0}
                   className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-terracotta-500 px-4 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-terracotta-400 disabled:opacity-50"
                 >
-                  <Download size={13} /> Exporter CSV
+                  <Download size={13} /> {t('espace.commandes.exportCsv')}
                 </button>
               </div>
 
@@ -552,11 +569,11 @@ export default function Commandes() {
                 <table className="w-full text-left">
                   <thead className="sticky top-0 bg-white">
                     <tr className="border-b border-neutral-200 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
-                      <th className="px-4 py-2.5">Invité</th>
-                      <th className="px-3 py-2.5">Réponse</th>
+                      <th className="px-4 py-2.5">{t('espace.commandes.tableGuest')}</th>
+                      <th className="px-3 py-2.5">{t('espace.commandes.tableResponse')}</th>
                       <th className="px-3 py-2.5">+</th>
-                      <th className="hidden px-3 py-2.5 md:table-cell">Chanson</th>
-                      <th className="px-4 py-2.5">Date</th>
+                      <th className="hidden px-3 py-2.5 md:table-cell">{t('espace.commandes.tableSong')}</th>
+                      <th className="px-4 py-2.5">{t('espace.commandes.tableDate')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -571,7 +588,7 @@ export default function Commandes() {
                         <td className="px-4 py-2.5 text-[13px] font-medium text-ink">{r.guestName}</td>
                         <td className="px-3 py-2.5">
                           <StatusBadge tone={r.attending === 'yes' ? 'success' : r.attending === 'no' ? 'neutral' : 'pending'}>
-                            {r.attending === 'yes' ? 'Oui' : r.attending === 'no' ? 'Non' : 'Peut-être'}
+                            {responseLabel(r.attending)}
                           </StatusBadge>
                         </td>
                         <td className="px-3 py-2.5 text-[13px] tabular-nums text-neutral-500">
@@ -586,13 +603,13 @@ export default function Commandes() {
                             '—'
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-[12px] text-neutral-500">{formatDateShort(r.createdAt)}</td>
+                        <td className="px-4 py-2.5 text-[12px] text-neutral-500">{formatDateShort(r.createdAt, lang)}</td>
                       </motion.tr>
                     ))}
                     {filteredResponses.length === 0 && (
                       <tr>
                         <td colSpan={5} className="px-4 py-8 text-center text-[13px] text-neutral-500">
-                          Aucune réponse dans ce filtre.
+                          {t('espace.commandes.noResponsesFilter')}
                         </td>
                       </tr>
                     )}
@@ -601,22 +618,22 @@ export default function Commandes() {
               </div>
 
               <a
-                href={`https://wa.me/?text=${encodeURIComponent('Petit rappel : pensez à répondre à notre faire-part ! ' + (inviteUrl ?? ''))}`}
+                href={`https://wa.me/?text=${encodeURIComponent(t('espace.commandes.remindWhatsappMessage') + ' ' + (inviteUrl ?? ''))}`}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-terracotta-500 underline-offset-4 hover:underline"
               >
-                <MessageCircle size={13} /> Relancer les sans-réponse (WhatsApp)
+                <MessageCircle size={13} /> {t('espace.commandes.remindWhatsapp')}
               </a>
             </div>
 
             {/* Réponses par jour */}
             <div>
               <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                <Users size={13} /> Réponses par jour
+                <Users size={13} /> {t('espace.commandes.responsesByDayTitle')}
               </p>
               {chartData.length === 0 ? (
-                <p className="text-[13px] text-neutral-500">Les statistiques apparaîtront dès les premières réponses.</p>
+                <p className="text-[13px] text-neutral-500">{t('espace.commandes.chartEmptyHint')}</p>
               ) : (
                 <div className="h-44">
                   <ResponsiveContainer width="100%" height="100%">
@@ -627,7 +644,7 @@ export default function Commandes() {
                         contentStyle={{ borderRadius: 12, border: '1px solid #E8E5E1', fontSize: 12 }}
                         labelStyle={{ color: '#232326' }}
                       />
-                      <Bar dataKey="reponses" name="Réponses" fill="#C96F5A" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="reponses" name={t('espace.commandes.chartBarName')} fill="#C96F5A" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -640,7 +657,7 @@ export default function Commandes() {
       {/* Factures */}
       {orders.some((o) => o.paymentStatus === 'paid') && (
         <SectionCard>
-          <h3 className="font-display mb-4 text-xl font-medium text-ink">Factures</h3>
+          <h3 className="font-display mb-4 text-xl font-medium text-ink">{t('espace.commandes.invoicesTitle')}</h3>
           <ul className="flex flex-col divide-y divide-neutral-200/70">
             {orders
               .filter((o) => o.paymentStatus === 'paid')
@@ -657,14 +674,14 @@ export default function Commandes() {
                     <FileText size={17} />
                   </span>
                   <p className="min-w-0 flex-1 text-[13.5px] text-ink">
-                    Facture {orderNumber(o)} — <span className="tabular-nums">{formatPrice(o.amountCents)}</span>
-                    <span className="block text-[12px] text-neutral-500">{formatDate(o.createdAt)}</span>
+                    {t('espace.commandes.invoiceCtaPrefix')} {orderNumber(o)} — <span className="tabular-nums">{formatPrice(o.amountCents, lang)}</span>
+                    <span className="block text-[12px] text-neutral-500">{formatDate(o.createdAt, undefined, lang)}</span>
                   </p>
                   <button
                     type="button"
                     onClick={() => openInvoice(o, user?.name ?? 'Client', user?.email ?? '')}
                     className="flex h-9 w-9 items-center justify-center rounded-full text-terracotta-500 transition-colors hover:bg-terracotta-500/10"
-                    aria-label="Télécharger la facture"
+                    aria-label={t('espace.commandes.downloadInvoiceAria')}
                   >
                     <Download size={16} />
                   </button>

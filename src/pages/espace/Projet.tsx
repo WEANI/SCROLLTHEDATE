@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
+import { useLanguage } from '@/i18n/LanguageContext'
 import {
   ErrorState,
   Kicker,
@@ -51,6 +52,7 @@ function ConfirmModal({
   onClose: () => void
   pending?: boolean
 }) {
+  const { t } = useLanguage()
   return (
     <AnimatePresence>
       {open && (
@@ -79,7 +81,7 @@ function ConfirmModal({
                 onClick={onClose}
                 className="rounded-full border border-neutral-200 px-5 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-100"
               >
-                Annuler
+                {t('espace.projet.cancel')}
               </button>
               <button
                 type="button"
@@ -87,7 +89,7 @@ function ConfirmModal({
                 disabled={pending}
                 className="rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:bg-terracotta-400 active:scale-[0.97] disabled:opacity-60"
               >
-                {pending ? 'Envoi…' : confirmLabel}
+                {pending ? t('espace.projet.sending') : confirmLabel}
               </button>
             </div>
           </motion.div>
@@ -111,6 +113,7 @@ const STATUS_RANK: Record<string, number> = {
 }
 
 export default function Projet() {
+  const { t, lang } = useLanguage()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { hash } = useLocation()
   const utils = trpc.useUtils()
@@ -188,11 +191,11 @@ export default function Projet() {
   }
 
   const answers = (project?.questionnaire?.answers as Record<string, unknown> | null) ?? {}
-  const names = (answers['couple.prenoms'] as string | undefined) ?? 'vous deux'
+  const names = (answers['couple.prenoms'] as string | undefined) ?? t('espace.projet.namesFallback')
   const inviteUrl = project ? `${window.location.origin}/faire-part/${project.slug}` : `${window.location.origin}/demo`
   const effectiveShareMessage =
     shareMessage ||
-    `${names} se marient ! Découvrez leur histoire : ${inviteUrl}`
+    `${names} ${t('espace.projet.shareTextMiddle')} ${inviteUrl}`
 
   const auditEvents = project?.auditEvents ?? []
   const chosenScenario = scenarios.find((s) => s.status === 'chosen')
@@ -200,12 +203,12 @@ export default function Projet() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <Kicker>Suivi de production</Kicker>
+        <Kicker>{t('espace.projet.kicker')}</Kicker>
         <h2 className="font-display mt-1 text-3xl font-medium tracking-[-0.01em] text-ink">
-          Projet & scénarios
+          {t('espace.projet.title')}
         </h2>
         <p className="mt-1.5 text-[14px] text-neutral-500">
-          Suivez l'avancement, choisissez votre scénario, validez votre vidéo.
+          {t('espace.projet.subtitle')}
         </p>
       </div>
 
@@ -226,7 +229,7 @@ export default function Projet() {
       {!project ? (
         <SectionCard>
           <p className="text-[14px] text-neutral-500">
-            Votre projet apparaîtra ici dès confirmation de votre commande.
+            {t('espace.projet.noProjectYet')}
           </p>
         </SectionCard>
       ) : (
@@ -234,7 +237,7 @@ export default function Projet() {
           {/* Bloc 1 — Timeline + interlocutrice */}
           <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
             <SectionCard>
-              <h3 className="font-display mb-6 text-xl font-medium text-ink">L'aventure jusqu'ici</h3>
+              <h3 className="font-display mb-6 text-xl font-medium text-ink">{t('espace.projet.timelineTitle')}</h3>
               <ol className="relative flex flex-col gap-5 border-l-2 border-terracotta-500/30 pl-6">
                 {auditEvents.map((event, i) => (
                   <motion.li
@@ -267,10 +270,10 @@ export default function Projet() {
                       />
                     </span>
                     <p className="text-[13.5px] font-medium text-ink">
-                      {auditLabel(event.action, event.meta)}
+                      {auditLabel(event.action, event.meta, t)}
                     </p>
                     <p className="text-[12px] text-neutral-500">
-                      {formatDateShort(event.createdAt)} — {event.actor === 'system' ? 'Scroll The Date' : event.actor}
+                      {formatDateShort(event.createdAt, lang)} — {event.actor === 'system' ? t('espace.projet.timelineActorSystem') : event.actor}
                     </p>
                   </motion.li>
                 ))}
@@ -278,7 +281,7 @@ export default function Projet() {
                   <li className="relative">
                     <span className="absolute -left-[31px] top-1 h-4 w-4 rounded-full border-2 border-dashed border-neutral-200 bg-white" />
                     <p className="text-[13.5px] text-neutral-500">
-                      Faire-part en ligne — à venir
+                      {t('espace.projet.timelineUpcoming')}
                     </p>
                   </li>
                 )}
@@ -292,18 +295,18 @@ export default function Projet() {
               </span>
               <div>
                 <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-500">
-                  Votre interlocutrice
+                  {t('espace.projet.contactLabel')}
                 </p>
-                <p className="font-display mt-1 text-xl font-medium text-ink">Élise</p>
+                <p className="font-display mt-1 text-xl font-medium text-ink">{t('espace.projet.contactName')}</p>
                 <p className="mt-1 text-[13px] leading-snug text-neutral-500">
-                  Elle écrit, monte et veille sur votre film de bout en bout.
+                  {t('espace.projet.contactBio')}
                 </p>
               </div>
               <Link
                 to="/espace/messages"
                 className="inline-flex items-center gap-2 rounded-full bg-anthracite-800 px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-anthracite-700"
               >
-                <MessageCircle size={14} /> Envoyer un message
+                <MessageCircle size={14} /> {t('espace.projet.contactCta')}
               </Link>
             </SectionCard>
           </div>
@@ -313,23 +316,23 @@ export default function Projet() {
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-display text-2xl font-medium italic text-ink">
-                  Choisissez votre histoire.
+                  {t('espace.projet.scenariosTitle')}
                 </h3>
                 <p className="mt-1 text-[13.5px] text-neutral-500">
-                  Des propositions écrites à partir de votre questionnaire et de votre note vocale.
+                  {t('espace.projet.scenariosSubtitle')}
                 </p>
               </div>
-              {chosenScenario && <StatusBadge tone="success">Scénario choisi ✓</StatusBadge>}
+              {chosenScenario && <StatusBadge tone="success">{t('espace.projet.scenariosChosenBadge')}</StatusBadge>}
             </div>
 
             {rank < 2 && scenarios.length === 0 ? (
-              <LockedBlock label="Les scénarios arrivent après votre questionnaire" />
+              <LockedBlock label={t('espace.projet.lockedScenarios')} />
             ) : scenarios.length === 0 ? (
               <div className="rounded-xl border border-dashed border-neutral-200 px-6 py-10 text-center">
                 <Clock3 className="mx-auto text-terracotta-500" size={22} />
-                <p className="mt-3 text-[14px] font-medium text-ink">Rédaction en cours</p>
+                <p className="mt-3 text-[14px] font-medium text-ink">{t('espace.projet.writingInProgressTitle')}</p>
                 <p className="mt-1 text-[13px] text-neutral-500">
-                  Élise écrit vos propositions — vous serez notifié dès qu'elles arrivent.
+                  {t('espace.projet.writingInProgressDesc')}
                 </p>
               </div>
             ) : (
@@ -378,7 +381,7 @@ export default function Projet() {
                             </h4>
                             {chosen && (
                               <span className="shrink-0 rounded-full bg-terracotta-500 px-2.5 py-1 text-[10.5px] font-semibold text-white">
-                                Choisi ✓
+                                {t('espace.projet.chosenBadge')}
                               </span>
                             )}
                           </div>
@@ -386,12 +389,12 @@ export default function Projet() {
                             {s.summary}
                           </p>
                           <p className="text-[11.5px] text-neutral-500">
-                            Proposition {s.ordre}
-                            {s.sentAt ? ` — envoyée le ${formatDate(s.sentAt)}` : ''}
+                            {t('espace.projet.proposalPrefix')} {s.ordre}
+                            {s.sentAt ? ` ${t('espace.projet.proposalSentConnector')} ${formatDate(s.sentAt, undefined, lang)}` : ''}
                           </p>
                           {s.status === 'changes_requested' && (
                             <p className="rounded-lg bg-[#C98850]/10 px-3 py-2 text-[12px] text-[#9a6534]">
-                              Modification demandée — Élise retravaille cette piste.
+                              {t('espace.projet.changesRequestedNote')}
                             </p>
                           )}
                           {!chosenScenario && s.status !== 'changes_requested' && (
@@ -401,7 +404,7 @@ export default function Projet() {
                                 onClick={() => setConfirmScenarioId(s.id)}
                                 className="rounded-full bg-terracotta-500 px-4 py-2.5 text-[13px] font-semibold text-white transition-all hover:bg-terracotta-400 active:scale-[0.97]"
                               >
-                                Choisir ce scénario
+                                {t('espace.projet.chooseThisScenario')}
                               </button>
                               <button
                                 type="button"
@@ -411,7 +414,7 @@ export default function Projet() {
                                 }}
                                 className="text-[12.5px] font-medium text-neutral-500 underline-offset-4 hover:text-ink hover:underline"
                               >
-                                Demander une modification
+                                {t('espace.projet.requestChange')}
                               </button>
                             </div>
                           )}
@@ -427,7 +430,7 @@ export default function Projet() {
                                   value={changesText}
                                   onChange={(e) => setChangesText(e.target.value)}
                                   rows={3}
-                                  placeholder="Dites-nous ce qui vous manque ou vous gêne…"
+                                  placeholder={t('espace.projet.changesPlaceholder')}
                                   className="w-full resize-none rounded-xl border border-neutral-200 px-3 py-2 text-[13px] outline-none focus:border-terracotta-500"
                                 />
                                 <button
@@ -439,14 +442,14 @@ export default function Projet() {
                                       {
                                         onSuccess: () => {
                                           setChangesFor(null)
-                                          showToast('Demande envoyée à Élise')
+                                          showToast(t('espace.projet.requestSentToast'))
                                         },
                                       },
                                     )
                                   }}
                                   className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-anthracite-800 px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-anthracite-700 disabled:opacity-50"
                                 >
-                                  <Send size={12} /> Envoyer à Élise
+                                  <Send size={12} /> {t('espace.projet.sendToElise')}
                                 </button>
                               </motion.div>
                             )}
@@ -460,15 +463,15 @@ export default function Projet() {
                 {/* Historique */}
                 <div className="mt-6 border-t border-neutral-200 pt-4">
                   <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                    Historique
+                    {t('espace.projet.historyTitle')}
                   </p>
                   <ul className="flex flex-col gap-1">
                     {auditEvents
                       .filter((e) => e.action.startsWith('scenario'))
                       .map((e) => (
                         <li key={e.id} className="text-[12.5px] text-neutral-500">
-                          <span className="font-medium text-ink">{formatDate(e.createdAt)}</span> —{' '}
-                          {auditLabel(e.action, e.meta)}
+                          <span className="font-medium text-ink">{formatDate(e.createdAt, undefined, lang)}</span> —{' '}
+                          {auditLabel(e.action, e.meta, t)}
                         </li>
                       ))}
                   </ul>
@@ -479,19 +482,18 @@ export default function Projet() {
 
           {/* Bloc 3 — Faire-part provisoire */}
           <SectionCard id="video">
-            <h3 className="font-display mb-1 text-2xl font-medium italic text-ink">Votre faire-part.</h3>
+            <h3 className="font-display mb-1 text-2xl font-medium italic text-ink">{t('espace.projet.videoTitle')}</h3>
             <p className="mb-6 text-[13.5px] text-neutral-500">
-              Découvrez votre faire-part en avant-première — la section vidéo est filigranée.
-              Une fois approuvé, le filigrane disparaît et votre faire-part est prêt à partager.
+              {t('espace.projet.videoSubtitle')}
             </p>
             {rank < 4 && !currentVideo ? (
-              <LockedBlock label="Votre faire-part provisoire arrive après le choix du scénario et le montage" />
+              <LockedBlock label={t('espace.projet.lockedVideo')} />
             ) : !currentVideo ? (
               <div className="rounded-xl border border-dashed border-neutral-200 px-6 py-10 text-center">
                 <Clapperboard className="mx-auto text-terracotta-500" size={22} />
-                <p className="mt-3 text-[14px] font-medium text-ink">Montage en cours</p>
+                <p className="mt-3 text-[14px] font-medium text-ink">{t('espace.projet.editingInProgressTitle')}</p>
                 <p className="mt-1 text-[13px] text-neutral-500">
-                  Votre faire-part provisoire sera disponible sous quelques jours.
+                  {t('espace.projet.editingInProgressDesc')}
                 </p>
               </div>
             ) : (
@@ -504,13 +506,13 @@ export default function Projet() {
                   <div className="min-w-0 flex-1">
                     <p className="text-[14px] font-medium text-white/90">
                       {currentVideo.status === 'approved' || currentVideo.status === 'final'
-                        ? 'Votre faire-part est approuvé !'
-                        : 'Votre faire-part provisoire est prêt'}
+                        ? t('espace.projet.videoApprovedTitle')
+                        : t('espace.projet.videoReadyTitle')}
                     </p>
                     <p className="mt-0.5 text-[12px] text-white/60">
                       {currentVideo.status === 'approved' || currentVideo.status === 'final'
-                        ? 'Le filigrane sera retiré lors de la livraison finale.'
-                        : 'La vidéo est filigranée — visionnez le résultat et donnez-nous votre retour.'}
+                        ? t('espace.projet.videoApprovedDesc')
+                        : t('espace.projet.videoReadyDesc')}
                     </p>
                   </div>
                   <a
@@ -519,15 +521,15 @@ export default function Projet() {
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-[13px] font-semibold text-anthracite-900 transition-all hover:-translate-y-0.5 active:scale-[0.97]"
                   >
-                    Voir mon faire-part <ExternalLink size={13} />
+                    {t('espace.projet.viewInvitation')} <ExternalLink size={13} />
                   </a>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-[13px] text-neutral-500">
-                    Version {currentVideo.version} — reçue le {formatDate(currentVideo.createdAt)}
-                    {currentVideo.status === 'approved' && ' — approuvée ✓'}
-                    {currentVideo.status === 'final' && ' — version finale'}
+                    {t('espace.projet.versionPrefix')} {currentVideo.version} {t('espace.projet.versionReceivedConnector')} {formatDate(currentVideo.createdAt, undefined, lang)}
+                    {currentVideo.status === 'approved' && ` ${t('espace.projet.versionApprovedSuffix')}`}
+                    {currentVideo.status === 'final' && ` ${t('espace.projet.versionFinalSuffix')}`}
                   </p>
                   {currentVideo.status === 'sent' && (
                     <div className="flex flex-wrap gap-2.5">
@@ -536,7 +538,7 @@ export default function Projet() {
                         onClick={() => setConfirmApprove(true)}
                         className="rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
                       >
-                        J'approuve cette version
+                        {t('espace.projet.approveThisVersion')}
                       </button>
                     </div>
                   )}
@@ -545,12 +547,12 @@ export default function Projet() {
                 {/* Demander des modifications (message simple, sans timecodes) */}
                 {currentVideo.status === 'sent' && (
                   <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-neutral-100/50 p-4">
-                    <p className="text-[13px] font-semibold text-ink">Demander des modifications</p>
+                    <p className="text-[13px] font-semibold text-ink">{t('espace.projet.requestChangesTitle')}</p>
                     <textarea
                       value={videoMessage}
                       onChange={(e) => setVideoMessage(e.target.value)}
                       rows={3}
-                      placeholder="Dites-nous ce que vous aimeriez changer…"
+                      placeholder={t('espace.projet.videoChangesPlaceholder')}
                       className="w-full resize-none rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[13px] outline-none focus:border-terracotta-500"
                     />
                     {videoMessage.trim() && (
@@ -567,14 +569,14 @@ export default function Projet() {
                             {
                               onSuccess: () => {
                                 setVideoMessage('')
-                                showToast('Modifications envoyées à Élise')
+                                showToast(t('espace.projet.videoChangesSentToast'))
                               },
                             },
                           )
                         }}
                         className="inline-flex w-fit items-center gap-1.5 rounded-full bg-anthracite-800 px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-anthracite-700 disabled:opacity-50"
                       >
-                        <Send size={12} /> Envoyer à Élise
+                        <Send size={12} /> {t('espace.projet.sendToElise')}
                       </button>
                     )}
                   </div>
@@ -586,10 +588,10 @@ export default function Projet() {
           {/* Bloc 4 — Livraison */}
           <SectionCard id="livraison">
             <h3 className="font-display mb-6 text-2xl font-medium italic text-ink">
-              {rank >= 5 ? 'Votre faire-part est en ligne.' : 'Livraison & partage.'}
+              {rank >= 5 ? t('espace.projet.deliveryLiveTitle') : t('espace.projet.deliveryTitle')}
             </h3>
             {rank < 5 ? (
-              <LockedBlock label="Votre lien, votre QR et votre kit de partage apparaîtront ici après validation de la vidéo" />
+              <LockedBlock label={t('espace.projet.lockedDelivery')} />
             ) : (
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
@@ -600,7 +602,7 @@ export default function Projet() {
                 <div className="flex flex-wrap items-center gap-4 rounded-xl bg-[#6FA287]/10 p-4">
                   <Check size={18} className="shrink-0 text-[#4d7a62]" />
                   <p className="min-w-0 flex-1 text-[14px] font-medium text-ink">
-                    Partagez-le sans compter — le lien est illimité.
+                    {t('espace.projet.shareUnlimited')}
                   </p>
                   <a
                     href={`/faire-part/${project.slug}`}
@@ -608,7 +610,7 @@ export default function Projet() {
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-full bg-anthracite-800 px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-anthracite-700"
                   >
-                    Ouvrir le faire-part <ExternalLink size={13} />
+                    {t('espace.projet.openInvitation')} <ExternalLink size={13} />
                   </a>
                 </div>
 
@@ -628,7 +630,7 @@ export default function Projet() {
                       }}
                       className="inline-flex items-center gap-1.5 text-[13px] font-medium text-terracotta-500 underline-offset-4 hover:underline"
                     >
-                      <PencilLine size={13} /> Personnaliser le texte d'accueil
+                      <PencilLine size={13} /> {t('espace.projet.customizeWelcome')}
                     </button>
                   ) : (
                     <div className="flex flex-col gap-2">
@@ -636,7 +638,7 @@ export default function Projet() {
                         value={welcomeText ?? ''}
                         onChange={(e) => setWelcomeText(e.target.value)}
                         rows={3}
-                        placeholder="Le petit mot qui accueillera vos invités…"
+                        placeholder={t('espace.projet.welcomePlaceholder')}
                         className="w-full resize-none rounded-xl border border-neutral-200 px-4 py-3 text-[14px] outline-none focus:border-terracotta-500"
                       />
                       <div className="flex gap-2">
@@ -649,21 +651,21 @@ export default function Projet() {
                               {
                                 onSuccess: () => {
                                   setEditingWelcome(false)
-                                  showToast('Texte d’accueil enregistré — Élise est prévenue')
+                                  showToast(t('espace.projet.welcomeSavedToast'))
                                 },
                               },
                             )
                           }}
                           className="rounded-full bg-terracotta-500 px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-terracotta-400 disabled:opacity-50"
                         >
-                          Enregistrer
+                          {t('espace.projet.save')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setEditingWelcome(false)}
                           className="rounded-full border border-neutral-200 px-4 py-2 text-[12.5px] font-medium text-ink hover:bg-neutral-100"
                         >
-                          Annuler
+                          {t('espace.projet.cancel')}
                         </button>
                       </div>
                     </div>
@@ -678,9 +680,9 @@ export default function Projet() {
       {/* Modals */}
       <ConfirmModal
         open={confirmScenarioId !== null}
-        title="Confirmer votre choix ?"
-        body="Votre choix est définitif pour lancer le montage — vous pourrez toujours affiner pendant les révisions vidéo."
-        confirmLabel="Confirmer ce scénario"
+        title={t('espace.projet.modal1Title')}
+        body={t('espace.projet.modal1Body')}
+        confirmLabel={t('espace.projet.modal1Confirm')}
         pending={chooseMutation.isPending}
         onClose={() => setConfirmScenarioId(null)}
         onConfirm={() => {
@@ -690,7 +692,7 @@ export default function Projet() {
             {
               onSuccess: () => {
                 setConfirmScenarioId(null)
-                showToast('Scénario choisi — le montage commence !')
+                showToast(t('espace.projet.scenarioChosenToast'))
               },
             },
           )
@@ -698,9 +700,9 @@ export default function Projet() {
       />
       <ConfirmModal
         open={confirmApprove}
-        title="Approuver cette version ?"
-        body="La version finale sans filigrane sera générée et votre faire-part passera en ligne."
-        confirmLabel="J'approuve"
+        title={t('espace.projet.modal2Title')}
+        body={t('espace.projet.modal2Body')}
+        confirmLabel={t('espace.projet.modal2Confirm')}
         pending={approveMutation.isPending}
         onClose={() => setConfirmApprove(false)}
         onConfirm={() => {
@@ -710,7 +712,7 @@ export default function Projet() {
             {
               onSuccess: () => {
                 setConfirmApprove(false)
-                showToast('Vidéo approuvée — livraison en cours !')
+                showToast(t('espace.projet.videoApprovedToast'))
               },
             },
           )
@@ -721,10 +723,11 @@ export default function Projet() {
 }
 
 function LockedBlock({ label }: { label: string }) {
+  const { t } = useLanguage()
   return (
     <div className="flex items-center gap-3 rounded-xl border border-dashed border-neutral-200 px-5 py-6 text-neutral-500">
       <Lock size={16} className="shrink-0" />
-      <p className="text-[13.5px]">{label} — <span className="italic">à venir</span></p>
+      <p className="text-[13.5px]">{label} — <span className="italic">{t('espace.projet.lockedSuffix')}</span></p>
     </div>
   )
 }

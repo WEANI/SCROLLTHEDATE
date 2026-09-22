@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/providers/trpc'
+import { useLanguage } from '@/i18n/LanguageContext'
 import {
   EmptyState,
   ErrorState,
@@ -43,26 +44,34 @@ interface RsvpResponse {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const ATTENDING_LABEL: Record<string, { label: string; tone: 'success' | 'error' | 'pending' }> = {
-  yes: { label: 'Présent', tone: 'success' },
-  no: { label: 'Absent', tone: 'error' },
-  maybe: { label: 'Peut-être', tone: 'pending' },
+type T = (key: string) => string
+type TArray = (key: string) => string[]
+
+function attendingLabel(value: string, t: T): { label: string; tone: 'success' | 'error' | 'pending' } {
+  switch (value) {
+    case 'yes':
+      return { label: t('espace.rsvp.attendingYes'), tone: 'success' }
+    case 'no':
+      return { label: t('espace.rsvp.attendingNo'), tone: 'error' }
+    default:
+      return { label: t('espace.rsvp.attendingMaybe'), tone: 'pending' }
+  }
 }
 
 type FilterValue = 'all' | 'yes' | 'no' | 'maybe'
 
-function exportCsv(responses: RsvpResponse[]) {
-  const headers = ['Nom', 'Email', 'Réponse', 'Adultes', 'Enfants', 'Allergies', 'Chanson', 'Message', 'Date']
+function exportCsv(responses: RsvpResponse[], t: T, tArray: TArray, lang: 'fr' | 'en') {
+  const headers = tArray('espace.rsvp.csvHeaders')
   const rows = responses.map((r) => [
     r.guestName,
     r.email ?? '',
-    ATTENDING_LABEL[r.attending]?.label ?? r.attending,
+    attendingLabel(r.attending, t).label,
     String(r.adults),
     String(r.children),
     r.allergies ?? '',
     r.song ?? '',
     r.message ?? '',
-    formatDate(r.createdAt),
+    formatDate(r.createdAt, undefined, lang),
   ])
   const csv = [headers, ...rows].map((row) => row.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n')
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
@@ -79,6 +88,7 @@ function exportCsv(responses: RsvpResponse[]) {
 // ---------------------------------------------------------------------------
 
 export default function Rsvp() {
+  const { t, tArray, lang } = useLanguage()
   const { projectId } = useSelectedProject()
   const { data, isLoading, isError, refetch } = trpc.rsvp.listMine.useQuery({ projectId })
   const [filter, setFilter] = useState<FilterValue>('all')
@@ -111,33 +121,33 @@ export default function Rsvp() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-display text-3xl font-medium tracking-[-0.01em] text-ink">
-          Réponses RSVP
+          {t('espace.rsvp.title')}
         </h1>
         <p className="mt-1 text-[15px] text-neutral-500">
-          Suivez les réponses de vos invités en temps réel.
+          {t('espace.rsvp.subtitle')}
         </p>
       </div>
 
       {/* Compteurs */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <CountCard label="Réponses" value={counts.total} tone="info" />
-        <CountCard label="Présents" value={counts.yes} tone="success" />
-        <CountCard label="Absents" value={counts.no} tone="error" />
-        <CountCard label="Adultes" value={counts.adults} tone="pending" />
-        <CountCard label="Enfants" value={counts.children} tone="pending" />
+        <CountCard label={t('espace.rsvp.countResponses')} value={counts.total} tone="info" />
+        <CountCard label={t('espace.rsvp.countPresent')} value={counts.yes} tone="success" />
+        <CountCard label={t('espace.rsvp.countAbsent')} value={counts.no} tone="error" />
+        <CountCard label={t('espace.rsvp.countAdults')} value={counts.adults} tone="pending" />
+        <CountCard label={t('espace.rsvp.countChildren')} value={counts.children} tone="pending" />
       </div>
 
       {responses.length === 0 ? (
         <EmptyState
-          title="Aucune réponse pour le moment"
-          description="Les réponses de vos invités apparaîtront ici dès qu'ils auront rempli le formulaire RSVP de votre faire-part."
+          title={t('espace.rsvp.emptyTitle')}
+          description={t('espace.rsvp.emptyDescription')}
         />
       ) : (
         <SectionCard className="!p-0 overflow-hidden">
           {/* Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-5 py-4 sm:px-6">
             <div className="flex items-center gap-2">
-              <Kicker className="!text-neutral-500">Filtrer</Kicker>
+              <Kicker className="!text-neutral-500">{t('espace.rsvp.filterLabel')}</Kicker>
               {(['all', 'yes', 'no', 'maybe'] as FilterValue[]).map((v) => (
                 <button
                   key={v}
@@ -150,17 +160,17 @@ export default function Rsvp() {
                       : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200',
                   )}
                 >
-                  {v === 'all' ? 'Tous' : ATTENDING_LABEL[v].label}
+                  {v === 'all' ? t('espace.rsvp.filterAll') : attendingLabel(v, t).label}
                 </button>
               ))}
             </div>
             <button
               type="button"
-              onClick={() => exportCsv(responses)}
+              onClick={() => exportCsv(responses, t, tArray, lang)}
               className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-4 py-1.5 text-[12px] font-medium text-neutral-500 transition-colors hover:border-terracotta-500 hover:text-terracotta-500"
             >
               <Download size={14} />
-              Exporter CSV
+              {t('espace.rsvp.exportCsv')}
             </button>
           </div>
 
@@ -168,7 +178,7 @@ export default function Rsvp() {
           <ul className="divide-y divide-neutral-100">
             <AnimatePresence initial={false}>
               {filtered.map((r) => {
-                const att = ATTENDING_LABEL[r.attending]
+                const att = attendingLabel(r.attending, t)
                 const expanded = expandedId === r.id
                 const hasDetails = !!(r.allergies || r.song || r.message)
                 return (
@@ -206,7 +216,7 @@ export default function Rsvp() {
                       {/* Nom + date */}
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[14px] font-semibold text-ink">{r.guestName}</p>
-                        <p className="text-[12px] text-neutral-500">{formatDate(r.createdAt)}</p>
+                        <p className="text-[12px] text-neutral-500">{formatDate(r.createdAt, undefined, lang)}</p>
                       </div>
 
                       {/* Adultes / enfants */}
@@ -252,19 +262,19 @@ export default function Rsvp() {
                           <div className="grid gap-3 py-4 text-[13px] sm:grid-cols-3">
                             {r.allergies && (
                               <div>
-                                <p className="font-medium text-neutral-500">Allergies / régime</p>
+                                <p className="font-medium text-neutral-500">{t('espace.rsvp.allergiesLabel')}</p>
                                 <p className="mt-0.5 text-ink">{r.allergies}</p>
                               </div>
                             )}
                             {r.song && (
                               <div>
-                                <p className="font-medium text-neutral-500">Chanson souhaitée</p>
+                                <p className="font-medium text-neutral-500">{t('espace.rsvp.songLabel')}</p>
                                 <p className="mt-0.5 text-ink">{r.song}</p>
                               </div>
                             )}
                             {r.message && (
                               <div>
-                                <p className="font-medium text-neutral-500">Message</p>
+                                <p className="font-medium text-neutral-500">{t('espace.rsvp.messageLabel')}</p>
                                 <p className="mt-0.5 text-ink">{r.message}</p>
                               </div>
                             )}

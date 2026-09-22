@@ -5,7 +5,8 @@ import { ChevronsUpDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
-import { PROJECT_STATUS_LABEL, PRODUCT_LABEL } from '@/components/espace/utils'
+import { useLanguage } from '@/i18n/LanguageContext'
+import { projectStatusLabel, productLabel } from '@/components/espace/utils'
 
 /**
  * Sélecteur de projet — l'espace client supposait un seul projet actif par
@@ -114,9 +115,9 @@ export function useSelectedProject() {
   return useContext(ProjectSelectionContext)
 }
 
-function projectLabel(p: ProjectSummary) {
+function projectLabel(p: ProjectSummary, t: (key: string) => string) {
   const name = p.coupleNames ?? p.slug
-  const product = p.product ? PRODUCT_LABEL[p.product] ?? p.product : null
+  const product = p.product ? productLabel(p.product, t) : null
   return product ? `${name} · ${product}` : name
 }
 
@@ -126,6 +127,7 @@ function projectLabel(p: ProjectSummary) {
  * expliquer pour un choix qui n'existe pas.
  */
 export function ProjectSwitcher() {
+  const { t } = useLanguage()
   const { projectId, setProjectId, projects, current } = useSelectedProject()
   const [open, setOpen] = useState(false)
 
@@ -140,11 +142,11 @@ export function ProjectSwitcher() {
       >
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-semibold text-ink">
-            {current ? projectLabel(current) : 'Choisir un projet'}
+            {current ? projectLabel(current, t) : t('espace.projectSwitcher.choose')}
           </p>
           {current && (
             <p className="truncate text-[11px] text-neutral-500">
-              {PROJECT_STATUS_LABEL[current.status] ?? current.status}
+              {projectStatusLabel(current.status, t)}
             </p>
           )}
         </div>
@@ -156,7 +158,7 @@ export function ProjectSwitcher() {
           <>
             <button
               type="button"
-              aria-label="Fermer"
+              aria-label={t('espace.projectSwitcher.closeAria')}
               className="fixed inset-0 z-30 cursor-default"
               onClick={() => setOpen(false)}
             />
@@ -181,9 +183,9 @@ export function ProjectSwitcher() {
                   )}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-medium text-ink">{projectLabel(p)}</p>
+                    <p className="truncate text-[13px] font-medium text-ink">{projectLabel(p, t)}</p>
                     <p className="truncate text-[11px] text-neutral-500">
-                      {PROJECT_STATUS_LABEL[p.status] ?? p.status}
+                      {projectStatusLabel(p.status, t)}
                     </p>
                   </div>
                   {p.id === projectId && <Check size={14} className="shrink-0 text-terracotta-500" />}

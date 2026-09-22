@@ -3,6 +3,7 @@ import type { DragEvent } from 'react'
 import { motion } from 'framer-motion'
 import { CloudUpload } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 // ---------------------------------------------------------------------------
 // UploadZone — drag & drop + parcourir. Lit les fichiers en dataURI et les
@@ -32,6 +33,7 @@ export default function UploadZone({
   onFiles: (files: { filename: string; type: 'photo' | 'video'; dataUri: string; previewUrl: string }[]) => void
   disabled?: boolean
 }) {
+  const { t } = useLanguage()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +52,7 @@ export default function UploadZone({
         continue
       }
       if (file.size > MAX_FILE_BYTES) {
-        rejected.push(`${file.name} (> 8 Mo)`)
+        rejected.push(`${file.name} ${t('espace.uploadZone.overSizeSuffix')}`)
         continue
       }
       const dataUri = await new Promise<string>((resolve, rejectPromise) => {
@@ -67,7 +69,7 @@ export default function UploadZone({
       })
     }
     if (rejected.length > 0) {
-      setError(`Fichiers ignorés : ${rejected.join(', ')}`)
+      setError(`${t('espace.uploadZone.rejectedPrefix')} ${rejected.join(', ')}`)
     }
     if (accepted.length > 0) onFiles(accepted)
   }
@@ -108,10 +110,10 @@ export default function UploadZone({
           <CloudUpload size={24} />
         </span>
         <span className="text-[14px] font-medium text-ink">
-          Glissez vos fichiers ou <span className="text-terracotta-500 underline underline-offset-4">parcourez</span>
+          {t('espace.uploadZone.dropPrefix')} <span className="text-terracotta-500 underline underline-offset-4">{t('espace.uploadZone.dropLink')}</span>
         </span>
         <span className="text-[12px] text-neutral-500">
-          Photos — 8 Mo max par fichier
+          {t('espace.uploadZone.hint')}
         </span>
       </motion.button>
       <input

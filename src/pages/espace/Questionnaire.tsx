@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
+import { useLanguage } from '@/i18n/LanguageContext'
 import {
   ErrorState,
   Kicker,
@@ -38,7 +39,8 @@ import {
   formatDate,
   formatDurationLong,
   formatTime,
-  WHATSAPP_URL,
+  templateLabel,
+  voiceNoteWhatsappUrl,
 } from '@/components/espace/utils'
 import VoiceRecorder from '@/components/espace/VoiceRecorder'
 import UploadZone from '@/components/espace/UploadZone'
@@ -66,19 +68,24 @@ interface Question {
 }
 
 type Answers = Record<string, unknown>
+type T = (key: string) => string
 
-const STEP_TITLES: Record<number, { title: string; sub: string }> = {
-  1: { title: 'Le couple', sub: 'Présentez-vous comme à des amis.' },
-  2: { title: 'Votre rencontre', sub: 'Les détails font la magie du film.' },
-  3: { title: 'Le jour J', sub: 'Ces informations alimentent votre faire-part.' },
-  4: { title: 'Votre style', sub: 'L’ambiance de votre vidéo et de votre faire-part.' },
+function buildStepTitles(t: T): Record<number, { title: string; sub: string }> {
+  return {
+    1: { title: t('espace.questionnaire.step1Title'), sub: t('espace.questionnaire.step1Sub') },
+    2: { title: t('espace.questionnaire.step2Title'), sub: t('espace.questionnaire.step2Sub') },
+    3: { title: t('espace.questionnaire.step3Title'), sub: t('espace.questionnaire.step3Sub') },
+    4: { title: t('espace.questionnaire.step4Title'), sub: t('espace.questionnaire.step4Sub') },
+  }
 }
 
-const AMBIANCE_CARDS = [
-  { value: 'editorial', label: 'Éditorial', img: '/template-editorial.jpg', desc: 'Magazine, typographie, élégance' },
-  { value: 'cinema', label: 'Cinéma', img: '/template-cinema.jpg', desc: 'Plein écran, affiche de film' },
-  { value: 'minimal', label: 'Minimal', img: '/template-minimal.jpg', desc: 'Clair, épuré, beaucoup de blanc' },
-]
+function buildAmbianceCards(t: T) {
+  return [
+    { value: 'editorial', label: templateLabel('editorial', t), img: '/template-editorial.jpg', desc: t('espace.questionnaire.ambianceEditorialDesc') },
+    { value: 'cinema', label: templateLabel('cinema', t), img: '/template-cinema.jpg', desc: t('espace.questionnaire.ambianceCinemaDesc') },
+    { value: 'minimal', label: templateLabel('minimal', t), img: '/template-minimal.jpg', desc: t('espace.questionnaire.ambianceMinimalDesc') },
+  ]
+}
 
 const INSPIRATION: Record<string, string[]> = {
   'rencontre.lieu_date': [
@@ -119,6 +126,7 @@ function FieldShell({
   question: Question
   children: React.ReactNode
 }) {
+  const { t } = useLanguage()
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -131,7 +139,7 @@ function FieldShell({
         {question.required && <span className="text-terracotta-500">*</span>}
         {question.showOnInvite && (
           <span className="rounded-full bg-terracotta-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-terracotta-500">
-            Affiché sur votre faire-part
+            {t('espace.questionnaire.showOnInviteBadge')}
           </span>
         )}
       </label>
@@ -144,6 +152,7 @@ function FieldShell({
 }
 
 function InspirationButton({ questionId, onUse }: { questionId: string; onUse: (text: string) => void }) {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const [offset, setOffset] = useState(0)
   const pool = INSPIRATION[questionId] ?? []
@@ -164,7 +173,7 @@ function InspirationButton({ questionId, onUse }: { questionId: string; onUse: (
         className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-terracotta-500 hover:text-terracotta-400"
       >
         <Lightbulb size={13} />
-        Inspirez-moi
+        {t('espace.questionnaire.inspireMe')}
       </button>
       <AnimatePresence>
         {open && (
@@ -185,7 +194,7 @@ function InspirationButton({ questionId, onUse }: { questionId: string; onUse: (
                   }}
                   className="shrink-0 rounded-full border border-terracotta-500/40 px-2.5 py-0.5 text-[11px] font-medium text-terracotta-500 hover:bg-terracotta-500 hover:text-white"
                 >
-                  Utiliser
+                  {t('espace.questionnaire.useThis')}
                 </button>
               </div>
             ))}
@@ -224,14 +233,16 @@ function InspirationButton({ questionId, onUse }: { questionId: string; onUse: (
  * La valeur stockée est toujours une chaîne "#rrggbb" en minuscules, pour
  * que le Studio puisse la réutiliser telle quelle dans la palette.
  */
-const SUGGESTIONS_COULEUR = [
-  { hex: '#1b1b1e', nom: 'Anthracite' },
-  { hex: '#2e4a3d', nom: 'Vert forêt' },
-  { hex: '#1f3448', nom: 'Bleu nuit' },
-  { hex: '#f5f1ea', nom: 'Lin' },
-  { hex: '#e8ded3', nom: 'Sable' },
-  { hex: '#c96f5a', nom: 'Terracotta' },
-]
+function buildColorSuggestions(t: T) {
+  return [
+    { hex: '#1b1b1e', nom: t('espace.questionnaire.colorSuggestionAnthracite') },
+    { hex: '#2e4a3d', nom: t('espace.questionnaire.colorSuggestionForestGreen') },
+    { hex: '#1f3448', nom: t('espace.questionnaire.colorSuggestionMidnightBlue') },
+    { hex: '#f5f1ea', nom: t('espace.questionnaire.colorSuggestionLinen') },
+    { hex: '#e8ded3', nom: t('espace.questionnaire.colorSuggestionSand') },
+    { hex: '#c96f5a', nom: t('espace.questionnaire.colorSuggestionTerracotta') },
+  ]
+}
 
 const HEX_VALIDE = /^#[0-9a-fA-F]{6}$/
 
@@ -256,6 +267,8 @@ function MultiColorQuestionField({
   onChange: (v: unknown) => void
   maxColors: number
 }) {
+  const { t } = useLanguage()
+  const colorSuggestions = buildColorSuggestions(t)
   const colors = Array.isArray(value)
     ? value.filter((v): v is string => typeof v === 'string' && HEX_VALIDE.test(v)).map((v) => v.toLowerCase())
     : typeof value === 'string' && HEX_VALIDE.test(value)
@@ -310,20 +323,20 @@ function MultiColorQuestionField({
               <label
                 className="relative block h-11 w-11 cursor-pointer overflow-hidden rounded-full border border-neutral-200 shadow-inner"
                 style={{ backgroundColor: hex }}
-                title="Changer cette couleur"
+                title={t('espace.questionnaire.changeColorTitle')}
               >
                 <input
                   type="color"
                   value={hex}
                   onChange={(e) => replaceAt(i, e.target.value)}
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                  aria-label={`${question.label} — couleur ${i + 1}`}
+                  aria-label={`${question.label} — ${t('espace.questionnaire.colorCountSingular')} ${i + 1}`}
                 />
               </label>
               <button
                 type="button"
                 onClick={() => removeAt(i)}
-                aria-label="Retirer cette couleur"
+                aria-label={t('espace.questionnaire.removeColorAria')}
                 className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-neutral-500 shadow-sm ring-1 ring-neutral-200 transition-colors hover:text-error"
               >
                 <X size={11} />
@@ -337,7 +350,7 @@ function MultiColorQuestionField({
               onChange={(e) => typeAt(i, e.target.value)}
               placeholder="#e8a33d"
               spellCheck={false}
-              aria-label={`${question.label} — code de la couleur ${i + 1}`}
+              aria-label={`${question.label} — ${t('espace.questionnaire.colorCountSingular')} ${i + 1}`}
               className="h-8 w-24 rounded-lg border border-neutral-200 bg-white px-2 text-center font-mono text-[12px] text-ink outline-none transition-colors placeholder:text-neutral-500 focus:border-terracotta-500"
             />
           </div>
@@ -347,7 +360,7 @@ function MultiColorQuestionField({
           <div className="flex flex-col items-center gap-1.5">
             <label
               className="relative flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-neutral-300 text-[16px] text-neutral-500 transition-colors hover:border-terracotta-400 hover:text-terracotta-500"
-              title="Ajouter une couleur"
+              title={t('espace.questionnaire.addColorTitle')}
             >
               +
               <input
@@ -355,7 +368,7 @@ function MultiColorQuestionField({
                 value="#ffffff"
                 onChange={(e) => add(e.target.value)}
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                aria-label="Ajouter une couleur"
+                aria-label={t('espace.questionnaire.addColorTitle')}
               />
             </label>
             <input
@@ -364,19 +377,19 @@ function MultiColorQuestionField({
               onChange={(e) => typeAt(colors.length, e.target.value)}
               placeholder="#e8a33d"
               spellCheck={false}
-              aria-label="Ajouter une couleur par son code"
+              aria-label={t('espace.questionnaire.addColorByCode')}
               className="h-8 w-24 rounded-lg border border-neutral-200 bg-white px-2 text-center font-mono text-[12px] text-ink outline-none transition-colors placeholder:text-neutral-500 focus:border-terracotta-500"
             />
           </div>
         )}
 
         <span className="pb-2 text-[12px] text-neutral-500">
-          {colors.length}/{maxColors} couleur{maxColors > 1 ? 's' : ''}
+          {colors.length}/{maxColors} {maxColors > 1 ? t('espace.questionnaire.colorCountPlural') : t('espace.questionnaire.colorCountSingular')}
         </span>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {SUGGESTIONS_COULEUR.map((c) => {
+        {colorSuggestions.map((c) => {
           const selected = colors.includes(c.hex)
           const disabled = !selected && colors.length >= maxColors
           return (
@@ -411,6 +424,8 @@ function ColorQuestionField({
   value: unknown
   onChange: (v: unknown) => void
 }) {
+  const { t } = useLanguage()
+  const colorSuggestions = buildColorSuggestions(t)
   const courant = typeof value === 'string' && HEX_VALIDE.test(value) ? value.toLowerCase() : ''
   // Saisie libre tolérée pendant la frappe (« #2e4 » n'est pas encore
   // valide) : on ne remonte la valeur que lorsqu'elle est complète.
@@ -432,7 +447,7 @@ function ColorQuestionField({
         <label
           className="relative h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-full border border-neutral-200 shadow-inner"
           style={{ backgroundColor: courant || '#ffffff' }}
-          title="Choisir une couleur"
+          title={t('espace.questionnaire.chooseColorTitle')}
         >
           <input
             type="color"
@@ -469,13 +484,13 @@ function ColorQuestionField({
             }}
             className="text-[12px] text-neutral-500 underline-offset-2 transition-colors hover:text-terracotta-500 hover:underline"
           >
-            Effacer
+            {t('espace.questionnaire.clear')}
           </button>
         )}
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {SUGGESTIONS_COULEUR.map((c) => (
+        {colorSuggestions.map((c) => (
           <button
             key={c.hex}
             type="button"
@@ -503,6 +518,7 @@ function PhotoQuestionField({
   value: unknown
   onChange: (v: unknown) => void
 }) {
+  const { t } = useLanguage()
   const url = typeof value === 'string' ? value : ''
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -516,11 +532,11 @@ function PhotoQuestionField({
   async function handleFile(file: File) {
     setError(null)
     if (!file.type.startsWith('image/')) {
-      setError('Seules les images sont acceptées.')
+      setError(t('espace.questionnaire.photoOnlyImages'))
       return
     }
     if (file.size > 8 * 1024 * 1024) {
-      setError('Fichier trop lourd (8 Mo max).')
+      setError(t('espace.questionnaire.photoTooHeavy'))
       return
     }
     setUploading(true)
@@ -534,7 +550,7 @@ function PhotoQuestionField({
       await addMediaMutation.mutateAsync({ projectId, type: 'photo', url: dataUri, filename: file.name })
       onChange(dataUri)
     } catch {
-      setError('Échec de l’envoi — réessayez.')
+      setError(t('espace.questionnaire.photoUploadFailed'))
     } finally {
       setUploading(false)
     }
@@ -581,7 +597,7 @@ function PhotoQuestionField({
           <img src={url} alt="" className="h-40 w-auto max-w-full object-cover" />
           <button
             type="button"
-            aria-label="Supprimer la photo"
+            aria-label={t('espace.questionnaire.removePhotoAria')}
             onClick={() => onChange('')}
             disabled={uploading}
             className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-500 opacity-0 shadow backdrop-blur transition-all hover:bg-error hover:text-white group-hover:opacity-100 focus-visible:opacity-100"
@@ -595,7 +611,7 @@ function PhotoQuestionField({
             className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-anthracite-950/70 py-2 text-[12px] font-medium text-white backdrop-blur-sm transition-colors hover:bg-anthracite-950/85"
           >
             {uploading ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-            Remplacer
+            {t('espace.questionnaire.replacePhoto')}
           </button>
         </div>
       ) : (
@@ -614,7 +630,7 @@ function PhotoQuestionField({
             {uploading ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
           </span>
           <span className="text-[13px] font-medium text-ink">
-            {uploading ? 'Envoi…' : 'Choisir une photo, ou glisser-déposer'}
+            {uploading ? t('espace.questionnaire.uploading') : t('espace.questionnaire.choosePhoto')}
           </span>
         </button>
       )}
@@ -632,6 +648,7 @@ function QuestionField({
   value: unknown
   onChange: (v: unknown) => void
 }) {
+  const { t } = useLanguage()
   const str = typeof value === 'string' ? value : ''
 
   if (question.type === 'toggle') {
@@ -648,7 +665,7 @@ function QuestionField({
                 : 'border-neutral-200 bg-white text-ink hover:border-terracotta-400',
             )}
           >
-            {question.trueLabel ?? 'Oui'}
+            {question.trueLabel ?? t('espace.questionnaire.toggleYes')}
           </button>
           <button
             type="button"
@@ -660,7 +677,7 @@ function QuestionField({
                 : 'border-neutral-200 bg-white text-ink hover:border-terracotta-400',
             )}
           >
-            {question.falseLabel ?? 'Non'}
+            {question.falseLabel ?? t('espace.questionnaire.toggleNo')}
           </button>
         </div>
       </FieldShell>
@@ -693,7 +710,9 @@ function QuestionField({
         />
         <div className="flex items-center justify-between gap-3">
           <span className={cn('text-[12px]', words >= 40 ? 'text-[#4d7a62]' : 'text-neutral-500')}>
-            {str ? `~${words} mots${words >= 40 ? ', parfait' : ''}` : 'Pas de minimum — écrivez avec le cœur'}
+            {str
+              ? `~${words} ${t('espace.questionnaire.wordsCountedSuffix')}${words >= 40 ? t('espace.questionnaire.wordsPerfectSuffix') : ''}`
+              : t('espace.questionnaire.noMinimumHint')}
           </span>
           <InspirationButton questionId={question.id} onUse={onChange} />
         </div>
@@ -729,12 +748,12 @@ function QuestionField({
                   next[i] = e.target.value
                   onChange(next)
                 }}
-                placeholder={question.placeholder ?? 'Un élément par ligne'}
+                placeholder={question.placeholder ?? t('espace.questionnaire.listDefaultPlaceholder')}
                 className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-[14px] text-ink outline-none transition-colors placeholder:text-neutral-500 focus:border-terracotta-500"
               />
               <button
                 type="button"
-                aria-label="Supprimer"
+                aria-label={t('espace.questionnaire.removeAria')}
                 onClick={() => onChange(items.filter((_, j) => j !== i))}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-error/10 hover:text-error"
               >
@@ -747,7 +766,7 @@ function QuestionField({
             onClick={() => onChange([...items, ''])}
             className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dashed border-neutral-200 px-4 py-2 text-[13px] font-medium text-ink transition-colors hover:border-terracotta-500 hover:text-terracotta-500"
           >
-            <Plus size={14} /> Ajouter
+            <Plus size={14} /> {t('espace.questionnaire.add')}
           </button>
         </div>
       </FieldShell>
@@ -755,10 +774,11 @@ function QuestionField({
   }
 
   if (question.type === 'choice' && question.id === 'style.ambiance') {
+    const ambianceCards = buildAmbianceCards(t)
     return (
       <FieldShell question={question}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {AMBIANCE_CARDS.map((card) => (
+          {ambianceCards.map((card) => (
             <button
               key={card.value}
               type="button"
@@ -813,6 +833,7 @@ function QuestionField({
 // ---------------------------------------------------------------------------
 
 export default function Questionnaire() {
+  const { t, lang } = useLanguage()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const location = useLocation()
   const utils = trpc.useUtils()
@@ -1002,11 +1023,11 @@ export default function Questionnaire() {
 
   const submitMutation = trpc.questionnaire.submit.useMutation({
     onSuccess: async () => {
-      setSubmitFeedback('Merci ! Nous avons été prévenus, la production peut démarrer.')
+      setSubmitFeedback(t('espace.questionnaire.submitSuccess'))
       await utils.questionnaire.get.invalidate()
     },
     onError: (err) =>
-      setSubmitFeedback(err.message || "La validation n'a pas pu être enregistrée."),
+      setSubmitFeedback(err.message || t('espace.questionnaire.submitError')),
   })
 
   const saveDraft = useCallback(() => {
@@ -1036,18 +1057,18 @@ export default function Questionnaire() {
     flushSave()
     if (completionPct < 100) {
       const details = [
-        `Votre questionnaire est complété à ${completionPct} %.`,
+        `${t('espace.questionnaire.confirmCompletionPrefix')} ${completionPct} %.`,
         missingRequired > 0
-          ? `${missingRequired} question${missingRequired > 1 ? 's' : ''} obligatoire${missingRequired > 1 ? 's' : ''} sans réponse.`
+          ? `${missingRequired} ${missingRequired > 1 ? t('espace.questionnaire.confirmMissingPlural') : t('espace.questionnaire.confirmMissingSingular')}`
           : '',
-        'Vous pouvez valider maintenant et compléter plus tard — souhaitez-vous continuer ?',
+        t('espace.questionnaire.confirmContinue'),
       ]
         .filter(Boolean)
         .join('\n\n')
       if (!window.confirm(details)) return
     }
     submitMutation.mutate({ projectId })
-  }, [flushSave, completionPct, missingRequired, submitMutation, projectId])
+  }, [flushSave, completionPct, missingRequired, submitMutation, projectId, t])
 
   // --- Médiathèque ------------------------------------------------------------
   const [mediaFilter, setMediaFilter] = useState<'all' | 'photo' | 'video'>('all')
@@ -1085,14 +1106,14 @@ export default function Questionnaire() {
           setTimeout(() => setPending((prev) => prev.filter((p) => p.key !== key)), 600)
         } catch {
           setPending((prev) =>
-            prev.map((p) => (p.key === key ? { ...p, error: 'Échec de l’envoi' } : p)),
+            prev.map((p) => (p.key === key ? { ...p, error: t('espace.questionnaire.uploadFailedShort') } : p)),
           )
         } finally {
           clearInterval(tick)
         }
       }
     },
-    [addMediaMutation, utils, projectId],
+    [addMediaMutation, utils, projectId, t],
   )
 
   const mediaItems = (mediaQuery.data ?? []).filter(
@@ -1113,34 +1134,35 @@ export default function Questionnaire() {
   }
 
   const noProject = notFound
+  const stepTitles = buildStepTitles(t)
 
   return (
     <div className="flex flex-col gap-8">
       {/* Header + indicateur autosave */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <Kicker>Votre histoire</Kicker>
+          <Kicker>{t('espace.questionnaire.kicker')}</Kicker>
           <h2 className="font-display mt-1 text-3xl font-medium tracking-[-0.01em] text-ink">
-            Questionnaire
+            {t('espace.questionnaire.title')}
           </h2>
           <p className="mt-1.5 text-[14px] text-neutral-500">
-            Vos réponses nourrissent le scénario de votre film{user?.name ? `, ${user.name.split(' ')[0]}` : ''}.
+            {t('espace.questionnaire.subtitlePrefix')}{user?.name ? `, ${user.name.split(' ')[0]}` : ''}.
           </p>
         </div>
         <div aria-live="polite" className="text-[12.5px] font-medium">
           {saveState === 'saving' && (
             <span className="inline-flex items-center gap-1.5 text-neutral-500">
-              <Loader2 size={13} className="animate-spin" /> Enregistrement…
+              <Loader2 size={13} className="animate-spin" /> {t('espace.questionnaire.saving')}
             </span>
           )}
           {saveState === 'saved' && savedAt && (
             <span className="inline-flex items-center gap-1.5 text-terracotta-500">
-              <Check size={13} /> Enregistré il y a {Math.max(1, Math.round((Date.now() - savedAt.getTime()) / 1000))} s
+              <Check size={13} /> {t('espace.questionnaire.savedPrefix')} {Math.max(1, Math.round((Date.now() - savedAt.getTime()) / 1000))} {t('espace.questionnaire.savedSuffix')}
             </span>
           )}
           {saveState === 'error' && (
             <span className="inline-flex items-center gap-1.5 text-error">
-              Échec — nouvelle tentative automatique à la prochaine modification
+              {t('espace.questionnaire.saveError')}
             </span>
           )}
         </div>
@@ -1149,8 +1171,7 @@ export default function Questionnaire() {
       {noProject ? (
         <SectionCard>
           <p className="text-[14px] text-neutral-500">
-            Votre projet apparaîtra ici dès confirmation de votre commande. Le questionnaire s'ouvrira
-            automatiquement à ce moment-là.
+            {t('espace.questionnaire.noProjectYet')}
           </p>
         </SectionCard>
       ) : (
@@ -1165,7 +1186,7 @@ export default function Questionnaire() {
                   onClick={() => (n < step || stepValidated(n)) && goStep(n)}
                   disabled={!(n < step || stepValidated(n))}
                   className="group flex-1"
-                  aria-label={`Étape ${n} — ${STEP_TITLES[n]!.title}`}
+                  aria-label={`${t('espace.questionnaire.stepAriaPrefix')} ${n} — ${stepTitles[n]!.title}`}
                 >
                   <span className="block h-1.5 overflow-hidden rounded-full bg-neutral-200">
                     <motion.span
@@ -1182,7 +1203,7 @@ export default function Questionnaire() {
                       n === step ? 'text-terracotta-500' : 'text-neutral-500 group-hover:text-ink',
                     )}
                   >
-                    {n}. {STEP_TITLES[n]!.title}
+                    {n}. {stepTitles[n]!.title}
                   </span>
                 </button>
               ))}
@@ -1196,9 +1217,9 @@ export default function Questionnaire() {
           <SectionCard id={`etape-${step}`}>
             <div className="mb-6">
               <h3 className="font-display text-2xl font-medium text-ink">
-                {STEP_TITLES[step]!.title}
+                {stepTitles[step]!.title}
               </h3>
-              <p className="mt-1 text-[13.5px] text-neutral-500">{STEP_TITLES[step]!.sub}</p>
+              <p className="mt-1 text-[13.5px] text-neutral-500">{stepTitles[step]!.sub}</p>
             </div>
             <AnimatePresence mode="wait">
               <motion.div
@@ -1223,9 +1244,9 @@ export default function Questionnaire() {
                   <div className="rounded-2xl border border-neutral-200 bg-neutral-100/50 p-5">
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[14px] font-semibold text-ink">Réponses de vos invités (RSVP)</p>
+                        <p className="text-[14px] font-semibold text-ink">{t('espace.questionnaire.rsvpTitle')}</p>
                         <p className="text-[12.5px] text-neutral-500">
-                          Choisissez ce que vos invités pourront renseigner sur le faire-part.
+                          {t('espace.questionnaire.rsvpSubtitle')}
                         </p>
                       </div>
                       <button
@@ -1249,7 +1270,7 @@ export default function Questionnaire() {
                     {rsvpState.enabled && (
                       <div className="flex flex-col gap-4">
                         <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
-                          Date limite de réponse
+                          {t('espace.questionnaire.rsvpDeadlineLabel')}
                           <input
                             type="date"
                             value={rsvpState.deadline}
@@ -1260,10 +1281,10 @@ export default function Questionnaire() {
                         <div className="flex flex-wrap gap-2">
                           {(
                             [
-                              ['askPlusOnes', 'Accompagnants'],
-                              ['askAllergies', 'Allergies'],
-                              ['askSong', 'Chanson favorite'],
-                              ['askMessage', 'Message libre'],
+                              ['askPlusOnes', t('espace.questionnaire.rsvpAskPlusOnes')],
+                              ['askAllergies', t('espace.questionnaire.rsvpAskAllergies')],
+                              ['askSong', t('espace.questionnaire.rsvpAskSong')],
+                              ['askMessage', t('espace.questionnaire.rsvpAskMessage')],
                             ] as const
                           ).map(([key, label]) => (
                             <button
@@ -1296,7 +1317,7 @@ export default function Questionnaire() {
                 disabled={step === 1}
                 className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-5 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-100 disabled:opacity-40"
               >
-                <ChevronLeft size={15} /> Précédent
+                <ChevronLeft size={15} /> {t('espace.questionnaire.previous')}
               </button>
               {step < 4 ? (
                 <button
@@ -1304,12 +1325,12 @@ export default function Questionnaire() {
                   onClick={() => goStep(step + 1)}
                   className="inline-flex items-center gap-1.5 rounded-full bg-terracotta-500 px-6 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
                 >
-                  Suivant <ChevronRight size={15} />
+                  {t('espace.questionnaire.next')} <ChevronRight size={15} />
                 </button>
               ) : (
                 <div className="flex flex-wrap items-center justify-end gap-3">
                   <StatusBadge tone={completionPct >= 100 ? 'success' : 'terracotta'}>
-                    {completionPct >= 100 ? 'Complété ✓' : `Complété à ${completionPct} %`}
+                    {completionPct >= 100 ? t('espace.questionnaire.completedBadge') : `${t('espace.questionnaire.completedPrefix')} ${completionPct} %`}
                   </StatusBadge>
                   <button
                     type="button"
@@ -1317,7 +1338,7 @@ export default function Questionnaire() {
                     disabled={saveMutation.isPending}
                     className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-5 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-100 disabled:opacity-50"
                   >
-                    {saveMutation.isPending ? 'Enregistrement…' : 'Enregistrer le brouillon'}
+                    {saveMutation.isPending ? t('espace.questionnaire.saving') : t('espace.questionnaire.saveDraft')}
                   </button>
                   <button
                     type="button"
@@ -1326,10 +1347,10 @@ export default function Questionnaire() {
                     className="inline-flex items-center gap-1.5 rounded-full bg-terracotta-500 px-6 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97] disabled:opacity-60"
                   >
                     {submitMutation.isPending
-                      ? 'Envoi…'
+                      ? t('espace.questionnaire.submitting')
                       : submittedAt
-                        ? 'Revalider le questionnaire'
-                        : 'Valider le questionnaire'}
+                        ? t('espace.questionnaire.revalidate')
+                        : t('espace.questionnaire.validate')}
                   </button>
                 </div>
               )}
@@ -1343,8 +1364,7 @@ export default function Questionnaire() {
 
             {step === 4 && submittedAt && (
               <p className="mt-2 text-right text-[12px] text-neutral-500">
-                Validé le {formatDate(submittedAt)} à {formatTime(submittedAt)}. Vous pouvez
-                encore modifier vos réponses — pensez à revalider pour nous prévenir.
+                {t('espace.questionnaire.validatedPrefix')} {formatDate(submittedAt, undefined, lang)} {t('espace.questionnaire.validatedConnector')} {formatTime(submittedAt, lang)}. {t('espace.questionnaire.validatedSuffix')}
               </p>
             )}
           </SectionCard>
@@ -1357,17 +1377,16 @@ export default function Questionnaire() {
               </span>
               <div className="min-w-0 flex-1">
                 <h3 className="font-display text-2xl font-medium italic text-ink">
-                  Racontez-nous à voix haute.
+                  {t('espace.questionnaire.voiceTitle')}
                 </h3>
                 <p className="mt-2 max-w-xl text-[14px] leading-relaxed text-neutral-500">
-                  2 à 5 minutes, parlez comme à un ami : votre rencontre, les détails du mariage, ce
-                  qui vous fait rire. Votre voix guide l'écriture de la voix off.
+                  {t('espace.questionnaire.voiceSubtitle')}
                 </p>
 
                 {latestVoiceNote && (
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <StatusBadge tone="success">
-                      <Check size={13} /> Note vocale reçue — {formatDurationLong(latestVoiceNote.durationSec)}
+                      <Check size={13} /> {t('espace.questionnaire.voiceReceivedPrefix')} {formatDurationLong(latestVoiceNote.durationSec)}
                     </StatusBadge>
                     {latestVoiceNote.url.startsWith('data:') && (
                       <audio controls src={latestVoiceNote.url} className="h-9 max-w-64" />
@@ -1382,20 +1401,20 @@ export default function Questionnaire() {
                 {/* Alternative WhatsApp */}
                 <div className="mt-6 flex items-center gap-4">
                   <span className="h-px flex-1 bg-neutral-200" />
-                  <span className="text-[12px] font-medium uppercase tracking-widest text-neutral-500">ou</span>
+                  <span className="text-[12px] font-medium uppercase tracking-widest text-neutral-500">{t('espace.questionnaire.orDivider')}</span>
                   <span className="h-px flex-1 bg-neutral-200" />
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-4">
                   <a
-                    href={WHATSAPP_URL}
+                    href={voiceNoteWhatsappUrl(lang)}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 rounded-full bg-anthracite-800 px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-anthracite-700"
                   >
-                    Ouvrir WhatsApp
+                    {t('espace.questionnaire.openWhatsapp')}
                   </a>
                   <p className="max-w-xs text-[12.5px] leading-snug text-neutral-500">
-                    Votre message vocal WhatsApp sera rattaché à votre dossier par notre équipe.
+                    {t('espace.questionnaire.whatsappHint')}
                   </p>
                 </div>
               </div>
@@ -1407,14 +1426,14 @@ export default function Questionnaire() {
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-display text-2xl font-medium italic text-ink">
-                  Vos photos.
+                  {t('espace.questionnaire.mediaTitle')}
                 </h3>
                 <p className="mt-1 text-[13.5px] text-neutral-500">
-                  Ces images alimentent votre vidéo. 10–30 photos, c'est l'idéal.
+                  {t('espace.questionnaire.mediaSubtitle')}
                 </p>
               </div>
               <span className="text-[13px] font-medium text-neutral-500">
-                {(mediaQuery.data ?? []).length} fichier{(mediaQuery.data ?? []).length > 1 ? 's' : ''}
+                {(mediaQuery.data ?? []).length} {(mediaQuery.data ?? []).length > 1 ? t('espace.questionnaire.filePlural') : t('espace.questionnaire.fileSingular')}
               </span>
             </div>
 
@@ -1424,8 +1443,8 @@ export default function Questionnaire() {
             <div className="mt-5 flex gap-2">
               {(
                 [
-                  ['all', 'Tous'],
-                  ['photo', 'Photos'],
+                  ['all', t('espace.questionnaire.filterAll')],
+                  ['photo', t('espace.questionnaire.filterPhotos')],
                   // 'video' retiré (2026-08-27, demande client) : l'envoi
                   // n'accepte plus que des images (cf. UploadZone
                   // ci-dessus, accept="image/*") — d'éventuelles vidéos
@@ -1472,7 +1491,7 @@ export default function Questionnaire() {
                         <span className="text-error">{p.error}</span>
                       ) : (
                         <span className="text-ink">
-                          Envoi… {p.progress}%
+                          {t('espace.questionnaire.uploadingProgress')} {p.progress}%
                           <span className="mt-1 block h-1 overflow-hidden rounded-full bg-neutral-200">
                             <span
                               className="block h-full bg-terracotta-500 transition-all"
@@ -1505,7 +1524,7 @@ export default function Questionnaire() {
                   )}
                   <button
                     type="button"
-                    aria-label="Supprimer ce fichier"
+                    aria-label={t('espace.questionnaire.removeFileAria')}
                     onClick={() => setDeleteTarget({ id: m.id, filename: m.filename ?? `fichier-${m.id}` })}
                     className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-500 opacity-0 shadow backdrop-blur transition-all hover:bg-error hover:text-white group-hover:opacity-100 focus-visible:opacity-100"
                   >
@@ -1517,15 +1536,15 @@ export default function Questionnaire() {
                     </span>
                     {m.status === 'rejected' ? (
                       <span className="shrink-0 rounded-full bg-error/10 px-2 py-0.5 text-[10px] font-semibold text-error">
-                        À remplacer
+                        {t('espace.questionnaire.toReplace')}
                       </span>
                     ) : m.status === 'validated' ? (
                       <span className="shrink-0 rounded-full bg-[#6FA287]/15 px-2 py-0.5 text-[10px] font-semibold text-[#4d7a62]">
-                        Validé ✓
+                        {t('espace.questionnaire.validated')}
                       </span>
                     ) : (
                       <span className="shrink-0 rounded-full bg-[#6FA287]/15 px-2 py-0.5 text-[10px] font-semibold text-[#4d7a62]">
-                        Reçu ✓
+                        {t('espace.questionnaire.received')}
                       </span>
                     )}
                   </span>
@@ -1534,7 +1553,7 @@ export default function Questionnaire() {
             </div>
             {mediaItems.length === 0 && pending.length === 0 && (
               <p className="mt-4 text-center text-[13px] text-neutral-500">
-                Aucun fichier pour ce filtre — vos envois apparaîtront ici.
+                {t('espace.questionnaire.noFilesForFilter')}
               </p>
             )}
           </SectionCard>
@@ -1543,14 +1562,14 @@ export default function Questionnaire() {
           <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Supprimer ce fichier ?</AlertDialogTitle>
+                <AlertDialogTitle>{t('espace.questionnaire.deleteFileTitle')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {deleteTarget ? `« ${deleteTarget.filename} » sera définitivement supprimé.` : ''}{' '}
-                  Cette action est irréversible.
+                  {deleteTarget ? `« ${deleteTarget.filename} » ${t('espace.questionnaire.deleteFileSuffix')}` : ''}{' '}
+                  {t('espace.questionnaire.deleteFileIrreversible')}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={deleteMediaMutation.isPending}>Annuler</AlertDialogCancel>
+                <AlertDialogCancel disabled={deleteMediaMutation.isPending}>{t('espace.questionnaire.cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   disabled={deleteMediaMutation.isPending}
                   onClick={(e) => {
@@ -1564,7 +1583,7 @@ export default function Questionnaire() {
                   ) : (
                     <Trash2 size={14} />
                   )}
-                  Supprimer
+                  {t('espace.questionnaire.delete')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

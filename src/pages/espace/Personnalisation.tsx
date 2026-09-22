@@ -4,6 +4,7 @@ import { Check, ExternalLink, Save } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
+import { useLanguage } from '@/i18n/LanguageContext'
 import { ErrorState, Kicker, PageSkeleton, SectionCard } from '@/components/espace/shared'
 import { useSelectedProject } from '@/components/espace/ProjectSelection'
 import { HERO_FONTS, HERO_TEXT_ANIMATIONS, getHeroFont, useGoogleFont } from '@/components/hero-scrub/heroDecor'
@@ -23,38 +24,46 @@ import type { HeroChapterTiming, HeroCustomCard, HeroVerticalAlign } from '@cont
  * plus soigné pour du client-facing, et garantit des couleurs qui
  * fonctionnent sur la plupart des montages plutôt qu'un choix hasardeux.
  */
-const SWATCHES = [
-  { label: 'Ivoire', value: '#F7EFE0' },
-  { label: 'Or', value: '#D4AF6A' },
-  { label: 'Terracotta', value: '#C96F5A' },
-  { label: 'Rose poudré', value: '#C08769' },
-  { label: 'Bordeaux', value: '#7A2E2E' },
-  { label: 'Vert forêt', value: '#3E4D3A' },
-  { label: 'Bleu nuit', value: '#242C40' },
-  { label: 'Anthracite', value: '#2A2A2E' },
-]
+type T = (key: string) => string
 
-const POSITIONS: { value: HeroVerticalAlign; label: string }[] = [
-  { value: 'top', label: 'Haut' },
-  { value: 'middle', label: 'Milieu' },
-  { value: 'bottom', label: 'Bas' },
-]
+function useSwatches(t: T) {
+  return [
+    { label: t('espace.personnalisation.swatchIvory'), value: '#F7EFE0' },
+    { label: t('espace.personnalisation.swatchGold'), value: '#D4AF6A' },
+    { label: t('espace.personnalisation.swatchTerracotta'), value: '#C96F5A' },
+    { label: t('espace.personnalisation.swatchDustyPink'), value: '#C08769' },
+    { label: t('espace.personnalisation.swatchBurgundy'), value: '#7A2E2E' },
+    { label: t('espace.personnalisation.swatchForestGreen'), value: '#3E4D3A' },
+    { label: t('espace.personnalisation.swatchMidnightBlue'), value: '#242C40' },
+    { label: t('espace.personnalisation.swatchAnthracite'), value: '#2A2A2E' },
+  ]
+}
+
+function usePositions(t: T): { value: HeroVerticalAlign; label: string }[] {
+  return [
+    { value: 'top', label: t('espace.personnalisation.positionTop') },
+    { value: 'middle', label: t('espace.personnalisation.positionMiddle') },
+    { value: 'bottom', label: t('espace.personnalisation.positionBottom') },
+  ]
+}
 
 function ColorSwatches({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useLanguage()
+  const swatches = useSwatches(t)
   return (
     <div className="flex flex-wrap gap-2">
       <button
         type="button"
         onClick={() => onChange('')}
-        title="Couleur du thème (défaut)"
+        title={t('espace.personnalisation.defaultColorTitle')}
         className={cn(
           'flex h-8 w-8 items-center justify-center rounded-full border-2 text-[9px] font-semibold text-neutral-500',
           value === '' ? 'border-terracotta-500' : 'border-neutral-200',
         )}
       >
-        Défaut
+        {t('espace.personnalisation.defaultColorLabel')}
       </button>
-      {SWATCHES.map((s) => (
+      {swatches.map((s) => (
         <button
           key={s.value}
           type="button"
@@ -74,9 +83,11 @@ function ColorSwatches({ value, onChange }: { value: string; onChange: (v: strin
 }
 
 function PositionSelect({ value, onChange }: { value: HeroVerticalAlign; onChange: (v: HeroVerticalAlign) => void }) {
+  const { t } = useLanguage()
+  const positions = usePositions(t)
   return (
     <div className="flex gap-1.5">
-      {POSITIONS.map((p) => (
+      {positions.map((p) => (
         <button
           key={p.value}
           type="button"
@@ -131,6 +142,7 @@ function BlockPreview({ chapter, fontId, textAnimation }: { chapter: HeroChapter
 }
 
 export default function Personnalisation() {
+  const { t } = useLanguage()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const utils = trpc.useUtils()
   const { projectId } = useSelectedProject()
@@ -201,7 +213,7 @@ export default function Personnalisation() {
       }),
     ])
     await utils.projects.myProject.invalidate()
-    showToast('Personnalisation enregistrée !')
+    showToast(t('espace.personnalisation.savedToast'))
   }
 
   if (authLoading || projectQuery.isLoading) return <PageSkeleton />
@@ -245,13 +257,12 @@ export default function Personnalisation() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <Kicker>Votre Save the Date</Kicker>
+        <Kicker>{t('espace.personnalisation.kicker')}</Kicker>
         <h2 className="font-display mt-1 text-3xl font-medium tracking-[-0.01em] text-ink">
-          Personnalisez votre annonce.
+          {t('espace.personnalisation.title')}
         </h2>
         <p className="mt-1.5 text-[14px] text-neutral-500">
-          Prénoms, date, couleurs, police et animation — le montage lui-même (quand chaque bloc apparaît et
-          disparaît) reste calé par notre équipe.
+          {t('espace.personnalisation.subtitle')}
         </p>
       </div>
 
@@ -270,28 +281,28 @@ export default function Personnalisation() {
 
       {!project ? (
         <SectionCard>
-          <p className="text-[14px] text-neutral-500">Votre projet apparaîtra ici dès confirmation de votre commande.</p>
+          <p className="text-[14px] text-neutral-500">{t('espace.personnalisation.noProjectYet')}</p>
         </SectionCard>
       ) : project.order?.product !== 'SAVE_THE_DATE' ? (
         <SectionCard>
-          <p className="text-[14px] text-neutral-500">Cette page est réservée aux commandes Save the Date.</p>
+          <p className="text-[14px] text-neutral-500">{t('espace.personnalisation.wrongProduct')}</p>
         </SectionCard>
       ) : (
         <>
           <SectionCard className="flex flex-col gap-5">
-            <h3 className="font-display text-xl font-medium text-ink">Prénoms &amp; date</h3>
+            <h3 className="font-display text-xl font-medium text-ink">{t('espace.personnalisation.namesDateTitle')}</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5 text-[13px] font-medium text-neutral-500">
-                Vos prénoms
+                {t('espace.personnalisation.namesLabel')}
                 <input
                   value={names}
                   onChange={(e) => setNames(e.target.value)}
-                  placeholder="Anna &amp; Théo"
+                  placeholder={t('espace.personnalisation.namesPlaceholder')}
                   className="rounded-xl border border-neutral-200 px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-terracotta-500"
                 />
               </label>
               <label className="flex flex-col gap-1.5 text-[13px] font-medium text-neutral-500">
-                Date du mariage
+                {t('espace.personnalisation.dateLabel')}
                 <input
                   type="date"
                   value={weddingDate}
@@ -303,11 +314,11 @@ export default function Personnalisation() {
           </SectionCard>
 
           <SectionCard className="flex flex-col gap-6">
-            <h3 className="font-display text-xl font-medium text-ink">Vos 3 blocs</h3>
+            <h3 className="font-display text-xl font-medium text-ink">{t('espace.personnalisation.blocksTitle')}</h3>
 
             <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
               <div className="flex flex-col gap-2">
-                <p className="text-[13px] font-semibold text-ink">« Save the date »</p>
+                <p className="text-[13px] font-semibold text-ink">{t('espace.personnalisation.blockSaveLabel')}</p>
                 <ColorSwatches value={chapter1Color} onChange={setChapter1Color} />
                 <PositionSelect value={chapter1Position} onChange={setChapter1Position} />
               </div>
@@ -316,7 +327,7 @@ export default function Personnalisation() {
 
             <div className="grid gap-4 border-t border-neutral-200 pt-6 lg:grid-cols-[1fr_260px]">
               <div className="flex flex-col gap-2">
-                <p className="text-[13px] font-semibold text-ink">Vos prénoms</p>
+                <p className="text-[13px] font-semibold text-ink">{t('espace.personnalisation.blockNamesLabel')}</p>
                 <ColorSwatches value={chapter2Color} onChange={setChapter2Color} />
                 <PositionSelect value={chapter2Position} onChange={setChapter2Position} />
               </div>
@@ -326,7 +337,7 @@ export default function Personnalisation() {
             {dateCard && (
               <div className="grid gap-4 border-t border-neutral-200 pt-6 lg:grid-cols-[1fr_260px]">
                 <div className="flex flex-col gap-2">
-                  <p className="text-[13px] font-semibold text-ink">La date</p>
+                  <p className="text-[13px] font-semibold text-ink">{t('espace.personnalisation.blockDateLabel')}</p>
                   <ColorSwatches value={dateColor} onChange={setDateColor} />
                   <PositionSelect value={datePosition} onChange={setDatePosition} />
                 </div>
@@ -336,17 +347,17 @@ export default function Personnalisation() {
           </SectionCard>
 
           <SectionCard className="flex flex-col gap-4">
-            <h3 className="font-display text-xl font-medium text-ink">Police &amp; animation</h3>
-            <p className="text-[13px] text-neutral-500">Un seul réglage pour l'ensemble de votre montage.</p>
+            <h3 className="font-display text-xl font-medium text-ink">{t('espace.personnalisation.fontAnimTitle')}</h3>
+            <p className="text-[13px] text-neutral-500">{t('espace.personnalisation.fontAnimHint')}</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5 text-[13px] font-medium text-neutral-500">
-                Police du titre
+                {t('espace.personnalisation.fontLabel')}
                 <select
                   value={fontId}
                   onChange={(e) => setFontId(e.target.value)}
                   className="rounded-xl border border-neutral-200 px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-terracotta-500"
                 >
-                  <option value="">Police du modèle (défaut)</option>
+                  <option value="">{t('espace.personnalisation.fontDefaultOption')}</option>
                   {Object.entries(
                     HERO_FONTS.reduce<Record<string, typeof HERO_FONTS>>((acc, f) => {
                       ;(acc[f.category] ??= []).push(f)
@@ -364,13 +375,13 @@ export default function Personnalisation() {
                 </select>
               </label>
               <label className="flex flex-col gap-1.5 text-[13px] font-medium text-neutral-500">
-                Animation d'apparition
+                {t('espace.personnalisation.animLabel')}
                 <select
                   value={textAnimation}
                   onChange={(e) => setTextAnimation(e.target.value)}
                   className="rounded-xl border border-neutral-200 px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-terracotta-500"
                 >
-                  <option value="">Fondu (défaut)</option>
+                  <option value="">{t('espace.personnalisation.animDefaultOption')}</option>
                   {HERO_TEXT_ANIMATIONS.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.label}
@@ -388,7 +399,7 @@ export default function Personnalisation() {
               onClick={handleSave}
               className="inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-6 py-3 text-[13.5px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97] disabled:opacity-60"
             >
-              <Save size={15} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+              <Save size={15} /> {saving ? t('espace.personnalisation.saving') : t('espace.personnalisation.save')}
             </button>
             <a
               href={`/faire-part/${project.slug}`}
@@ -396,7 +407,7 @@ export default function Personnalisation() {
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 text-[13px] font-medium text-neutral-500 hover:text-ink"
             >
-              Voir mon Save the Date <ExternalLink size={13} />
+              {t('espace.personnalisation.viewLink')} <ExternalLink size={13} />
             </a>
           </div>
         </>

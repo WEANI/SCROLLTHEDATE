@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/i18n/LanguageContext'
 import { SectionCard } from '@/components/espace/shared'
 
 /**
@@ -33,11 +34,12 @@ import { SectionCard } from '@/components/espace/shared'
  * que cette page corrige.
  */
 export default function Parametres() {
+  const { t } = useLanguage()
   const { user, isLoading: authLoading } = useAuth()
 
   useEffect(() => {
-    document.title = 'Scroll The Date — Paramètres'
-  }, [])
+    document.title = `Scroll The Date — ${t('espace.parametres.title')}`
+  }, [t])
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,16 +50,16 @@ export default function Parametres() {
           transition={{ duration: 0.5 }}
           className="font-display text-3xl font-medium tracking-[-0.01em] text-ink sm:text-4xl"
         >
-          Paramètres
+          {t('espace.parametres.title')}
         </motion.h2>
         <p className="mt-2 text-[15px] text-neutral-500">
-          Vos coordonnées et votre mot de passe de connexion.
+          {t('espace.parametres.subtitle')}
         </p>
       </div>
 
       {authLoading ? (
         <SectionCard>
-          <p className="text-[14px] text-neutral-500">Chargement…</p>
+          <p className="text-[14px] text-neutral-500">{t('espace.parametres.loading')}</p>
         </SectionCard>
       ) : (
         <>
@@ -70,6 +72,7 @@ export default function Parametres() {
 }
 
 function ProfileCard({ name: initialName, email: initialEmail }: { name: string; email: string }) {
+  const { t } = useLanguage()
   const [name, setName] = useState(initialName)
   const [email, setEmail] = useState(initialEmail)
   const [loading, setLoading] = useState(false)
@@ -92,11 +95,11 @@ function ProfileCard({ name: initialName, email: initialEmail }: { name: string;
       if (error) throw error
       setInfo(
         emailChanged
-          ? `Nom mis à jour. Un email de confirmation a été envoyé à ${email.trim()} — le changement d'adresse ne prendra effet qu'après confirmation.`
-          : 'Vos informations ont été mises à jour.',
+          ? `${t('espace.parametres.emailChangedInfoPrefix')} ${email.trim()} ${t('espace.parametres.emailChangedInfoSuffix')}`
+          : t('espace.parametres.profileUpdated'),
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
+      setError(err instanceof Error ? err.message : t('espace.parametres.genericError'))
     } finally {
       setLoading(false)
     }
@@ -104,20 +107,20 @@ function ProfileCard({ name: initialName, email: initialEmail }: { name: string;
 
   return (
     <SectionCard>
-      <h3 className="font-display text-xl font-medium text-ink">Vos informations</h3>
+      <h3 className="font-display text-xl font-medium text-ink">{t('espace.parametres.profileTitle')}</h3>
       <form className="mt-5 flex max-w-md flex-col gap-4" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="settings-name">Nom</Label>
+          <Label htmlFor="settings-name">{t('espace.parametres.nameLabel')}</Label>
           <Input
             id="settings-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Anna & Théo"
+            placeholder={t('espace.parametres.namePlaceholder')}
             autoComplete="name"
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="settings-email">Email</Label>
+          <Label htmlFor="settings-email">{t('espace.parametres.emailLabel')}</Label>
           <Input
             id="settings-email"
             type="email"
@@ -127,8 +130,7 @@ function ProfileCard({ name: initialName, email: initialEmail }: { name: string;
             autoComplete="email"
           />
           <p className="text-[12px] text-neutral-500">
-            Changer votre email nécessite une confirmation via un lien envoyé à la nouvelle
-            adresse.
+            {t('espace.parametres.emailHint')}
           </p>
         </div>
 
@@ -141,7 +143,7 @@ function ProfileCard({ name: initialName, email: initialEmail }: { name: string;
         )}
 
         <Button type="submit" className="w-fit" disabled={loading || !dirty}>
-          {loading ? 'Enregistrement…' : 'Enregistrer'}
+          {loading ? t('espace.parametres.saving') : t('espace.parametres.save')}
         </Button>
       </form>
     </SectionCard>
@@ -149,6 +151,7 @@ function ProfileCard({ name: initialName, email: initialEmail }: { name: string;
 }
 
 function PasswordCard() {
+  const { t } = useLanguage()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
@@ -160,18 +163,18 @@ function PasswordCard() {
     setError(null)
     setInfo(null)
     if (password !== confirm) {
-      setError('Les deux mots de passe ne correspondent pas.')
+      setError(t('espace.parametres.passwordMismatch'))
       return
     }
     setLoading(true)
     try {
       const { error } = await supabase.auth.updateUser({ password })
       if (error) throw error
-      setInfo('Mot de passe mis à jour.')
+      setInfo(t('espace.parametres.passwordUpdated'))
       setPassword('')
       setConfirm('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
+      setError(err instanceof Error ? err.message : t('espace.parametres.genericError'))
     } finally {
       setLoading(false)
     }
@@ -179,10 +182,10 @@ function PasswordCard() {
 
   return (
     <SectionCard>
-      <h3 className="font-display text-xl font-medium text-ink">Mot de passe</h3>
+      <h3 className="font-display text-xl font-medium text-ink">{t('espace.parametres.passwordTitle')}</h3>
       <form className="mt-5 flex max-w-md flex-col gap-4" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="settings-password">Nouveau mot de passe</Label>
+          <Label htmlFor="settings-password">{t('espace.parametres.newPasswordLabel')}</Label>
           <Input
             id="settings-password"
             type="password"
@@ -194,7 +197,7 @@ function PasswordCard() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="settings-password-confirm">Confirmer le mot de passe</Label>
+          <Label htmlFor="settings-password-confirm">{t('espace.parametres.confirmPasswordLabel')}</Label>
           <Input
             id="settings-password-confirm"
             type="password"
@@ -215,7 +218,7 @@ function PasswordCard() {
         )}
 
         <Button type="submit" className="w-fit" disabled={loading || !password}>
-          {loading ? 'Enregistrement…' : 'Changer le mot de passe'}
+          {loading ? t('espace.parametres.saving') : t('espace.parametres.changePassword')}
         </Button>
       </form>
     </SectionCard>

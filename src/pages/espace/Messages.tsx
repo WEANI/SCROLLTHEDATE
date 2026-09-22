@@ -4,6 +4,7 @@ import { Loader2, Mic, Paperclip, Send, Smile, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
+import { useLanguage, type Lang } from '@/i18n/LanguageContext'
 import {
   ErrorState,
   PageSkeleton,
@@ -19,14 +20,14 @@ import { useSelectedProject } from '@/components/espace/ProjectSelection'
 // Groupage par jour
 // ---------------------------------------------------------------------------
 
-function dayLabel(d: Date): string {
+function dayLabel(d: Date, t: (key: string) => string, lang: Lang): string {
   const today = new Date()
   const yesterday = new Date()
   yesterday.setDate(today.getDate() - 1)
   const same = (a: Date, b: Date) => a.toDateString() === b.toDateString()
-  if (same(d, today)) return "Aujourd'hui"
-  if (same(d, yesterday)) return 'Hier'
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+  if (same(d, today)) return t('espace.messages.today')
+  if (same(d, yesterday)) return t('espace.messages.yesterday')
+  return d.toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'long' })
 }
 
 const EMOJIS = ['❤️', '😂', '🥂', '🎉', '😘', '🙏']
@@ -36,6 +37,7 @@ const EMOJIS = ['❤️', '😂', '🥂', '🎉', '😘', '🙏']
 // ---------------------------------------------------------------------------
 
 export default function Messages() {
+  const { t, lang } = useLanguage()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const utils = trpc.useUtils()
   const { projectId } = useSelectedProject()
@@ -101,7 +103,7 @@ export default function Messages() {
     try {
       await sendMutation.mutateAsync({
         projectId,
-        body: body || (pendingAttachment ? '📎 Pièce jointe' : ''),
+        body: body || (pendingAttachment ? t('espace.messages.attachmentBody') : ''),
         attachments: pendingAttachment ? [pendingAttachment] : undefined,
       })
       setDraft('')
@@ -115,7 +117,11 @@ export default function Messages() {
     await voiceSave.mutateAsync({ projectId, url: result.dataUri, durationSec: result.durationSec })
     await sendMutation.mutateAsync({
       projectId,
-      body: `🎙 Note vocale (${result.durationSec} s)`,
+      body: `${t('espace.messages.voiceNoteBodyPrefix')}${result.durationSec} ${t('espace.messages.voiceNoteBodySuffix')}`,
+      // 'note-vocale' — marqueur technique utilisé pour détecter l'icône
+      // audio à l'affichage (cf. plus bas `a.filename === 'note-vocale'`),
+      // pas un texte affiché : ne JAMAIS le traduire, ça casserait la
+      // détection des notes vocales déjà enregistrées dans l'autre langue.
       attachments: [{ url: result.dataUri, filename: 'note-vocale', mimeType: result.mimeType }],
     })
     setShowVoice(false)
@@ -139,7 +145,7 @@ export default function Messages() {
   // Groupes par jour
   const groups: { label: string; items: typeof messages }[] = []
   for (const m of messages) {
-    const label = dayLabel(new Date(m.createdAt))
+    const label = dayLabel(new Date(m.createdAt), t, lang)
     const last = groups[groups.length - 1]
     if (last && last.label === label) last.items.push(m)
     else groups.push({ label, items: [m] })
@@ -153,12 +159,12 @@ export default function Messages() {
           E·F
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[14.5px] font-semibold text-ink">Élise — Scroll The Date</p>
-          <p className="text-[12px] text-neutral-500">Répond en général sous 24 h</p>
+          <p className="text-[14.5px] font-semibold text-ink">{t('espace.messages.adminName')}</p>
+          <p className="text-[12px] text-neutral-500">{t('espace.messages.adminReplyHint')}</p>
         </div>
         {project && (
           <span className="hidden rounded-full bg-anthracite-800 px-3.5 py-1.5 text-[11.5px] font-medium text-white sm:block">
-            Projet : Faire-part {names}
+            {t('espace.messages.projectBadgePrefix')} {names}
           </span>
         )}
       </div>
@@ -169,14 +175,14 @@ export default function Messages() {
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <span className="font-display text-4xl font-light italic text-terracotta-500">S.</span>
             <p className="font-display text-xl font-medium text-ink">
-              Dites bonjour à Élise — elle adore les détails croustillants.
+              {t('espace.messages.emptyTitle')}
             </p>
             <button
               type="button"
               onClick={() => inputRef.current?.focus()}
               className="mt-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400"
             >
-              Écrire un message
+              {t('espace.messages.emptyCta')}
             </button>
           </div>
         ) : (
@@ -219,7 +225,7 @@ export default function Messages() {
                             <img
                               key={i}
                               src={a.url}
-                              alt={a.filename ?? 'pièce jointe'}
+                              alt={a.filename ?? t('espace.messages.attachmentFallback')}
                               className="mt-2 max-h-48 rounded-lg object-cover"
                             />
                           ) : (
@@ -229,7 +235,7 @@ export default function Messages() {
                               download={a.filename}
                               className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-medium underline-offset-2 hover:underline"
                             >
-                              <Paperclip size={12} /> {a.filename ?? 'Pièce jointe'}
+                              <Paperclip size={12} /> {a.filename ?? t('espace.messages.attachmentFallback')}
                             </a>
                           ),
                         )}
@@ -239,7 +245,7 @@ export default function Messages() {
                             fromAdmin ? 'text-white/50' : 'text-neutral-500',
                           )}
                         >
-                          {formatTime(m.createdAt)}
+                          {formatTime(m.createdAt, lang)}
                         </p>
                       </div>
                     </motion.div>
@@ -262,10 +268,10 @@ export default function Messages() {
             className="border-t border-neutral-200 bg-neutral-100/60 px-5 py-4"
           >
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-[13px] font-semibold text-ink">Note vocale</p>
+              <p className="text-[13px] font-semibold text-ink">{t('espace.messages.voiceNoteTitle')}</p>
               <button
                 type="button"
-                aria-label="Fermer"
+                aria-label={t('espace.messages.closeAria')}
                 onClick={() => setShowVoice(false)}
                 className="text-neutral-500 hover:text-ink"
               >
@@ -285,7 +291,7 @@ export default function Messages() {
             <span className="min-w-0 flex-1 truncate">{pendingAttachment.filename}</span>
             <button
               type="button"
-              aria-label="Retirer la pièce jointe"
+              aria-label={t('espace.messages.removeAttachmentAria')}
               onClick={() => setPendingAttachment(null)}
               className="text-neutral-500 hover:text-error"
             >
@@ -296,7 +302,7 @@ export default function Messages() {
         <div className="flex items-end gap-2">
           <button
             type="button"
-            aria-label="Joindre un fichier"
+            aria-label={t('espace.messages.attachFileAria')}
             onClick={() => fileRef.current?.click()}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-ink"
           >
@@ -311,7 +317,7 @@ export default function Messages() {
           />
           <button
             type="button"
-            aria-label="Note vocale"
+            aria-label={t('espace.messages.voiceNoteAria')}
             onClick={() => setShowVoice((v) => !v)}
             className={cn(
               'flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors',
@@ -323,7 +329,7 @@ export default function Messages() {
           <div className="relative">
             <button
               type="button"
-              aria-label="Emoji"
+              aria-label={t('espace.messages.emojiAria')}
               onClick={() => setShowEmoji((v) => !v)}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-ink"
             >
@@ -365,13 +371,13 @@ export default function Messages() {
                 void send()
               }
             }}
-            placeholder="Écrivez à Élise…"
+            placeholder={t('espace.messages.composerPlaceholder')}
             rows={1}
             className="max-h-[140px] min-h-[40px] flex-1 resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-2.5 text-[14px] text-ink outline-none transition-colors placeholder:text-neutral-500 focus:border-terracotta-500"
           />
           <button
             type="button"
-            aria-label="Envoyer"
+            aria-label={t('espace.messages.sendAria')}
             disabled={(!draft.trim() && !pendingAttachment) || sending}
             onClick={() => void send()}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-terracotta-500 text-white transition-all hover:bg-terracotta-400 active:scale-95 disabled:opacity-40"
@@ -380,7 +386,7 @@ export default function Messages() {
           </button>
         </div>
         <p className="mt-2 text-[11.5px] text-neutral-500">
-          Pour les messages vocaux longs, WhatsApp reste dispo : 06 00 00 00 00.
+          {t('espace.messages.whatsappHint')}
         </p>
       </div>
     </div>

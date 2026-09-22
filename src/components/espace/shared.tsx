@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 // ---------------------------------------------------------------------------
 // Petits composants partagés de l'espace client
@@ -144,10 +145,11 @@ export function PageSkeleton() {
 }
 
 export function ErrorState({ onRetry }: { onRetry?: () => void }) {
+  const { t } = useLanguage()
   return (
     <EmptyState
-      title="Une erreur est survenue"
-      description="Impossible de charger vos données pour le moment. Réessayez dans un instant."
+      title={t('espace.emptyState.errorTitle')}
+      description={t('espace.emptyState.errorDescription')}
       action={
         onRetry ? (
           <button
@@ -155,7 +157,7 @@ export function ErrorState({ onRetry }: { onRetry?: () => void }) {
             onClick={onRetry}
             className="mt-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
           >
-            Réessayer
+            {t('espace.emptyState.retry')}
           </button>
         ) : undefined
       }

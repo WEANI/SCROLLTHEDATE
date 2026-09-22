@@ -20,6 +20,8 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
+import { useLanguage } from '@/i18n/LanguageContext'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 import {
   ProgressRing,
 } from '@/components/espace/shared'
@@ -39,7 +41,8 @@ import {
 // ---------------------------------------------------------------------------
 
 interface NavItem {
-  label: string
+  labelKey: string
+  crumbKey: string
   to: string
   icon: typeof LayoutDashboard
   end?: boolean
@@ -49,34 +52,35 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Tableau de bord', to: '/espace', icon: LayoutDashboard, end: true },
-  { label: 'Questionnaire', to: '/espace/questionnaire', icon: ClipboardList },
-  { label: 'Médias', to: '/espace/questionnaire#medias', icon: Images },
-  { label: 'Projet & scénarios', to: '/espace/projet', icon: Clapperboard },
+  { labelKey: 'espace.shell.navDashboard', crumbKey: 'espace.shell.crumbHome', to: '/espace', icon: LayoutDashboard, end: true },
+  { labelKey: 'espace.shell.navQuestionnaire', crumbKey: 'espace.shell.navQuestionnaire', to: '/espace/questionnaire', icon: ClipboardList },
+  { labelKey: 'espace.shell.navMedia', crumbKey: 'espace.shell.navMedia', to: '/espace/questionnaire#medias', icon: Images },
+  { labelKey: 'espace.shell.navProject', crumbKey: 'espace.shell.navProject', to: '/espace/projet', icon: Clapperboard },
   // Save the Date "sur un modèle" uniquement (cf. échange du 21/09/2026) —
   // rien à personnaliser ici pour un faire-part bespoke (scénarios/montage
   // sur mesure, déjà couvert par "Projet & scénarios" ci-dessus).
-  { label: 'Personnalisation', to: '/espace/personnalisation', icon: Sparkles, product: 'SAVE_THE_DATE' },
-  { label: 'Commandes', to: '/espace/commandes', icon: ShoppingBag },
-  { label: 'RSVP', to: '/espace/rsvp', icon: Users },
-  { label: 'Messages', to: '/espace/messages', icon: MessageCircle },
-  { label: 'Paramètres', to: '/espace/parametres', icon: Settings },
+  { labelKey: 'espace.shell.navPersonalization', crumbKey: 'espace.shell.navPersonalization', to: '/espace/personnalisation', icon: Sparkles, product: 'SAVE_THE_DATE' },
+  { labelKey: 'espace.shell.navOrders', crumbKey: 'espace.shell.navOrders', to: '/espace/commandes', icon: ShoppingBag },
+  { labelKey: 'espace.shell.navRsvp', crumbKey: 'espace.shell.navRsvp', to: '/espace/rsvp', icon: Users },
+  { labelKey: 'espace.shell.navMessages', crumbKey: 'espace.shell.navMessages', to: '/espace/messages', icon: MessageCircle },
+  { labelKey: 'espace.shell.navSettings', crumbKey: 'espace.shell.navSettings', to: '/espace/parametres', icon: Settings },
 ]
 
-const CRUMB_LABEL: Record<string, string> = {
-  espace: 'Espace client',
-  questionnaire: 'Questionnaire',
-  projet: 'Projet & scénarios',
-  personnalisation: 'Personnalisation',
-  commandes: 'Commandes',
-  rsvp: 'RSVP',
-  messages: 'Messages',
-  parametres: 'Paramètres',
+/** Segment de chemin → clé de libellé du fil d'Ariane (repli : le segment brut). */
+const CRUMB_KEY_BY_PATH: Record<string, string> = {
+  espace: 'espace.shell.crumbHome',
+  questionnaire: 'espace.shell.navQuestionnaire',
+  projet: 'espace.shell.navProject',
+  personnalisation: 'espace.shell.navPersonalization',
+  commandes: 'espace.shell.navOrders',
+  rsvp: 'espace.shell.navRsvp',
+  messages: 'espace.shell.navMessages',
+  parametres: 'espace.shell.navSettings',
 }
 
-function breadcrumb(pathname: string): string[] {
+function breadcrumb(pathname: string, t: (key: string) => string): string[] {
   const parts = pathname.split('/').filter(Boolean)
-  return parts.map((p) => CRUMB_LABEL[p] ?? p)
+  return parts.map((p) => (CRUMB_KEY_BY_PATH[p] ? t(CRUMB_KEY_BY_PATH[p]) : p))
 }
 
 // ---------------------------------------------------------------------------
@@ -84,6 +88,7 @@ function breadcrumb(pathname: string): string[] {
 // ---------------------------------------------------------------------------
 
 function NotificationsBell() {
+  const { t, lang } = useLanguage()
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const utils = trpc.useUtils()
@@ -104,7 +109,7 @@ function NotificationsBell() {
     <div className="relative">
       <button
         type="button"
-        aria-label="Notifications"
+        aria-label={t('espace.shell.notificationsAria')}
         onClick={() => setOpen((v) => !v)}
         className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink transition-colors hover:bg-neutral-100"
       >
@@ -120,7 +125,7 @@ function NotificationsBell() {
           <>
             <button
               type="button"
-              aria-label="Fermer"
+              aria-label={t('espace.shell.closeAria')}
               className="fixed inset-0 z-30 cursor-default"
               onClick={() => setOpen(false)}
             />
@@ -139,18 +144,18 @@ function NotificationsBell() {
                     onClick={() => markAllRead.mutate()}
                     className="text-[12px] font-medium text-terracotta-500 hover:text-terracotta-400"
                   >
-                    Tout marquer lu
+                    {t('espace.shell.markAllRead')}
                   </button>
                 )}
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {(notifications ?? []).length === 0 ? (
                   <p className="px-4 py-8 text-center text-[13px] text-neutral-500">
-                    Rien de nouveau pour le moment.
+                    {t('espace.shell.noNotifications')}
                   </p>
                 ) : (
                   (notifications ?? []).slice(0, 12).map((n) => {
-                    const label = notificationLabel(n.type)
+                    const label = notificationLabel(n.type, t)
                     const href = notificationHref(n.type)
                     return (
                       <button
@@ -182,7 +187,7 @@ function NotificationsBell() {
                             <p className="truncate text-[12px] text-neutral-500">{label.detail}</p>
                           )}
                           <p className="mt-0.5 text-[11px] text-neutral-500">
-                            {formatTime(n.createdAt)}
+                            {formatTime(n.createdAt, lang)}
                           </p>
                         </div>
                       </button>
@@ -203,6 +208,7 @@ function NotificationsBell() {
 // ---------------------------------------------------------------------------
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useLanguage()
   const location = useLocation()
   const { user, logout, isAuthenticated } = useAuth()
   const { projectId } = useSelectedProject()
@@ -232,7 +238,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-20 items-center border-b border-neutral-200 px-6">
-        <Link to="/" aria-label="Scroll The Date — accueil" onClick={onNavigate} className="flex items-baseline gap-2">
+        <Link to="/" aria-label={t('espace.shell.homeAria')} onClick={onNavigate} className="flex items-baseline gap-2">
           <span className="font-display text-2xl font-medium italic text-ink">Scroll The Date</span>
           <span className="rounded-full bg-terracotta-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white">
             S.
@@ -252,12 +258,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             const Icon = item.icon
             if (item.disabled) {
               return (
-                <li key={item.label}>
+                <li key={item.labelKey}>
                   <span className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium text-neutral-500/60">
                     <Icon size={18} />
-                    {item.label}
+                    {t(item.labelKey)}
                     <span className="ml-auto rounded-full bg-neutral-200/70 px-2 py-0.5 text-[10px] font-medium text-neutral-500">
-                      bientôt
+                      {t('espace.shell.soon')}
                     </span>
                   </span>
                 </li>
@@ -268,7 +274,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               ? location.pathname === target
               : location.pathname.startsWith(target)
             return (
-              <li key={item.label}>
+              <li key={item.labelKey}>
                 <NavLink
                   to={item.to}
                   end={item.end}
@@ -281,8 +287,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   )}
                 >
                   <Icon size={18} className={isActive ? 'text-terracotta-500' : 'text-neutral-500 group-hover:text-ink'} />
-                  {item.label}
-                  {item.label === 'Messages' && unreadMessages > 0 && (
+                  {t(item.labelKey)}
+                  {item.labelKey === 'espace.shell.navMessages' && unreadMessages > 0 && (
                     <motion.span
                       animate={{ scale: [1, 1.15, 1] }}
                       transition={{ duration: 1.6, repeat: Infinity }}
@@ -308,22 +314,25 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             </span>
           </div>
           <div className="min-w-0">
-            <p className="text-[12.5px] font-semibold text-ink">Votre projet</p>
+            <p className="text-[12.5px] font-semibold text-ink">{t('espace.shell.yourProject')}</p>
             <p className="text-[11.5px] leading-snug text-neutral-500">
-              {progress >= 100 ? 'Félicitations, tout est livré !' : 'avance bien, continuez !'}
+              {progress >= 100 ? t('espace.shell.progressDone') : t('espace.shell.progressOngoing')}
             </p>
           </div>
         </div>
-        {user && (
-          <button
-            type="button"
-            onClick={() => logout()}
-            className="mt-3 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] font-medium text-neutral-500 transition-colors hover:text-error"
-          >
-            <LogOut size={14} />
-            Se déconnecter
-          </button>
-        )}
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <LanguageSwitcher variant="light" />
+          {user && (
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-[12px] font-medium text-neutral-500 transition-colors hover:text-error"
+            >
+              <LogOut size={14} />
+              {t('espace.shell.logout')}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -334,10 +343,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 // ---------------------------------------------------------------------------
 
 export default function ClientShell() {
+  const { t } = useLanguage()
   const { user, isLoading, isAuthenticated } = useAuth({ redirectOnUnauthenticated: true })
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const crumbs = breadcrumb(location.pathname)
+  const crumbs = breadcrumb(location.pathname, t)
 
   // Ferme le drawer mobile à chaque navigation
   const locKey = location.pathname + location.hash
@@ -348,8 +358,8 @@ export default function ClientShell() {
   }
 
   useEffect(() => {
-    document.title = `Scroll The Date — ${crumbs[crumbs.length - 1] ?? 'Espace client'}`
-  }, [crumbs])
+    document.title = `Scroll The Date — ${crumbs[crumbs.length - 1] ?? t('espace.shell.crumbHome')}`
+  }, [crumbs, t])
 
   const initials = user?.name
     ? user.name
@@ -364,7 +374,7 @@ export default function ClientShell() {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-neutral-100">
         <span className="font-display animate-pulse text-3xl font-light italic text-terracotta-500">
-          Scroll The Date
+          {t('espace.shell.loadingBrand')}
         </span>
       </div>
     )
@@ -399,7 +409,7 @@ export default function ClientShell() {
             >
               <button
                 type="button"
-                aria-label="Fermer le menu"
+                aria-label={t('espace.shell.closeMenuAria')}
                 onClick={() => setMobileOpen(false)}
                 className="absolute right-3 top-5 flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100"
               >
@@ -417,7 +427,7 @@ export default function ClientShell() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-neutral-200 bg-white/85 px-4 backdrop-blur-md sm:px-6">
           <button
             type="button"
-            aria-label="Ouvrir le menu"
+            aria-label={t('espace.shell.openMenuAria')}
             onClick={() => setMobileOpen(true)}
             className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-neutral-100 lg:hidden"
           >
@@ -425,7 +435,7 @@ export default function ClientShell() {
           </button>
 
           {/* Fil d'Ariane */}
-          <nav aria-label="Fil d'Ariane" className="flex min-w-0 items-center gap-1 text-[13px]">
+          <nav aria-label={t('espace.shell.breadcrumbAria')} className="flex min-w-0 items-center gap-1 text-[13px]">
             {crumbs.map((c, i) => (
               <span key={`${c}-${i}`} className="flex items-center gap-1">
                 {i > 0 && <ChevronRight size={13} className="text-neutral-500" />}
@@ -452,7 +462,7 @@ export default function ClientShell() {
                 </span>
               )}
               <span className="hidden max-w-40 truncate text-[13px] font-medium text-ink sm:block">
-                {user?.name ?? 'Mon compte'}
+                {user?.name ?? t('espace.shell.defaultAccountName')}
               </span>
             </div>
           </div>

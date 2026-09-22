@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Mic, Pause, Play, RotateCcw, Send, Square } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { formatDuration, WHATSAPP_URL } from '@/components/espace/utils'
+import { useLanguage } from '@/i18n/LanguageContext'
+import { formatDuration, voiceNoteWhatsappUrl } from '@/components/espace/utils'
 
 // ---------------------------------------------------------------------------
 // VoiceRecorder — enregistrement navigateur (MediaRecorder) avec waveform
@@ -33,6 +34,7 @@ export default function VoiceRecorder({
   /** Version compacte (popover du composer messages). */
   compact?: boolean
 }) {
+  const { t, lang } = useLanguage()
   const [phase, setPhase] = useState<Phase>('idle')
   const [elapsed, setElapsed] = useState(0)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
@@ -203,7 +205,7 @@ export default function VoiceRecorder({
       await onSend(result)
       setPhase('sent')
     } catch {
-      setError("L'envoi a échoué — réessayez ou passez par WhatsApp.")
+      setError(t('espace.voiceRecorder.sendError'))
       setPhase('review')
     }
   }
@@ -248,7 +250,7 @@ export default function VoiceRecorder({
           <button
             type="button"
             onClick={() => void start()}
-            aria-label="Démarrer l'enregistrement"
+            aria-label={t('espace.voiceRecorder.startAria')}
             className={cn(
               'flex items-center justify-center rounded-full bg-terracotta-500 text-white transition-all hover:bg-terracotta-400 active:scale-95',
               compact ? 'h-11 w-11' : 'h-16 w-16',
@@ -263,7 +265,7 @@ export default function VoiceRecorder({
               animate={{ scale: phase === 'recording' ? [1, 1.08, 1] : 1 }}
               transition={{ duration: 1, repeat: phase === 'recording' ? Infinity : 0 }}
               onClick={stop}
-              aria-label="Arrêter"
+              aria-label={t('espace.voiceRecorder.stopAria')}
               className={cn(
                 'flex items-center justify-center rounded-full bg-terracotta-500 text-white',
                 compact ? 'h-11 w-11' : 'h-16 w-16',
@@ -274,7 +276,7 @@ export default function VoiceRecorder({
             <button
               type="button"
               onClick={phase === 'recording' ? pause : resume}
-              aria-label={phase === 'recording' ? 'Pause' : 'Reprendre'}
+              aria-label={phase === 'recording' ? t('espace.voiceRecorder.pauseAria') : t('espace.voiceRecorder.resumeAria')}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 text-ink transition-colors hover:bg-neutral-100"
             >
               {phase === 'recording' ? <Pause size={16} /> : <Play size={16} />}
@@ -291,7 +293,7 @@ export default function VoiceRecorder({
 
         {phase === 'idle' && !compact && (
           <p className="text-[13px] text-neutral-500">
-            Appuyez pour enregistrer — 2 à 5 minutes, parlez comme à un ami.
+            {t('espace.voiceRecorder.idleHint')}
           </p>
         )}
       </div>
@@ -309,7 +311,7 @@ export default function VoiceRecorder({
               <button
                 type="button"
                 onClick={togglePlay}
-                aria-label={playing ? 'Pause' : 'Réécouter'}
+                aria-label={playing ? t('espace.voiceRecorder.pauseAria') : t('espace.voiceRecorder.replayAria')}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-anthracite-800 text-white transition-colors hover:bg-anthracite-700"
               >
                 {playing ? <Pause size={14} /> : <Play size={14} />}
@@ -323,7 +325,7 @@ export default function VoiceRecorder({
                 className="hidden"
               />
               <span className="text-[13px] text-neutral-500">
-                Réécoutez votre message avant l'envoi
+                {t('espace.voiceRecorder.replayHint')}
               </span>
             </div>
 
@@ -334,7 +336,7 @@ export default function VoiceRecorder({
                 className="inline-flex items-center gap-2 text-[13px] font-medium text-[#4d7a62]"
               >
                 <Check size={16} />
-                Note vocale envoyée — merci !
+                {t('espace.voiceRecorder.sentConfirm')}
               </motion.p>
             ) : (
               <div className="flex flex-wrap gap-2.5">
@@ -344,7 +346,7 @@ export default function VoiceRecorder({
                   className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-100"
                 >
                   <RotateCcw size={14} />
-                  Ré-enregistrer
+                  {t('espace.voiceRecorder.rerecord')}
                 </button>
                 <button
                   type="button"
@@ -355,12 +357,12 @@ export default function VoiceRecorder({
                   {phase === 'sending' ? (
                     <>
                       <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                      Envoi…
+                      {t('espace.voiceRecorder.sending')}
                     </>
                   ) : (
                     <>
                       <Send size={14} />
-                      Envoyer
+                      {t('espace.voiceRecorder.send')}
                     </>
                   )}
                 </button>
@@ -374,17 +376,17 @@ export default function VoiceRecorder({
       {/* Fallback WhatsApp (micro refusé / non supporté) */}
       {phase === 'denied' && (
         <div className="rounded-xl border border-neutral-200 bg-neutral-100/60 p-4 text-[13px] text-neutral-500">
-          <p className="font-medium text-ink">Le micro n'est pas accessible.</p>
+          <p className="font-medium text-ink">{t('espace.voiceRecorder.micUnavailableTitle')}</p>
           <p className="mt-1">
-            Autorisez le micro dans votre navigateur, ou envoyez votre vocal via WhatsApp :
+            {t('espace.voiceRecorder.micUnavailableBody')}
           </p>
           <a
-            href={WHATSAPP_URL}
+            href={voiceNoteWhatsappUrl(lang)}
             target="_blank"
             rel="noreferrer"
             className="mt-3 inline-flex items-center gap-2 rounded-full bg-anthracite-800 px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-anthracite-700"
           >
-            Ouvrir WhatsApp
+            {t('espace.voiceRecorder.openWhatsapp')}
           </a>
         </div>
       )}

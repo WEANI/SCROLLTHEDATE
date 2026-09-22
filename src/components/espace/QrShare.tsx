@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react'
 import { Check, Copy, Download, Mail, MessageCircle, Phone } from 'lucide-react'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 // ---------------------------------------------------------------------------
 // QrShare — QR du faire-part + copie du lien + kit de partage
@@ -17,6 +18,7 @@ export default function QrShare({
   shareMessage: string
   onMessageChange?: (value: string) => void
 }) {
+  const { t } = useLanguage()
   const [copied, setCopied] = useState(false)
   const canvasWrapRef = useRef<HTMLDivElement>(null)
   const svgWrapRef = useRef<HTMLDivElement>(null)
@@ -61,7 +63,7 @@ export default function QrShare({
   const encoded = encodeURIComponent(shareMessage)
   const whatsappHref = `https://wa.me/?text=${encoded}`
   const smsHref = `sms:?&body=${encoded}`
-  const mailHref = `mailto:?subject=${encodeURIComponent('Notre faire-part')}&body=${encoded}`
+  const mailHref = `mailto:?subject=${encodeURIComponent(t('espace.qrShare.mailSubject'))}&body=${encoded}`
 
   return (
     <div className="flex flex-col gap-5">
@@ -74,7 +76,7 @@ export default function QrShare({
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-anthracite-800 px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-anthracite-700"
         >
           {copied ? <Check size={13} /> : <Copy size={13} />}
-          {copied ? 'Lien copié' : 'Copier'}
+          {copied ? t('espace.qrShare.copied') : t('espace.qrShare.copy')}
         </button>
       </div>
 
@@ -114,7 +116,7 @@ export default function QrShare({
         {/* Kit de partage */}
         <div className="flex min-w-56 flex-1 flex-col gap-3">
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-            Kit de partage
+            {t('espace.qrShare.shareKit')}
           </p>
           {onMessageChange ? (
             <textarea
