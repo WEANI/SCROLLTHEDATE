@@ -3,8 +3,17 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
+
+interface Panel {
+  image: string
+  mobileImage?: string
+  title: string[]
+  accentLast: boolean
+  tagline: string
+}
 
 /**
  * `mobileImage` optionnel — recadrage portrait (1080×1920, 9:16) dédié pour
@@ -14,57 +23,56 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
  * rogné. Tant qu'aucun visuel mobile n'est fourni pour un panneau, on
  * retombe simplement sur `image` (comportement identique à avant ce
  * changement — aucune régression tant que `mobileImage` n'est pas renseigné).
+ *
+ * `title`/`tagline` construits à partir de `t()`/`tArray()` (cf. échange du
+ * 22/09/2026) — fonction plutôt que constante de module.
  */
-const PANELS: {
-  image: string
-  mobileImage?: string
-  title: string[]
-  accentLast: boolean
-  tagline: string
-}[] = [
-  {
-    // Triptyque (13/09/2026, régénéré en 3000×1680 le même jour pour avoir
-    // la marge nécessaire à la parallaxe — cf. doc de PARALLAX dans le
-    // composant) : le sujet (le voile) traverse visuellement les 3
-    // panneaux — sensation de continuité pendant le glissement horizontal.
-    // `gallery-1.jpg`/`gallery-*-mobile.jpg` (partagés avec Gallery.tsx plus
-    // bas) ne sont plus utilisés ici, mais pas supprimés.
-    //
-    // Chaque recadrage (`image` ET `mobileImage`) est plus LARGE que ce qui
-    // est effectivement visible à l'écran : `scale-110`/`scale-125` (cf. plus
-    // bas) zoome pour absorber la parallaxe sans exposer le fond, ce qui
-    // réduit d'autant la largeur réellement montrée. Erreur commise au 1er
-    // essai (13/09/2026) : centrer les tiers en espaçant leurs centres de la
-    // largeur du FICHIER recadré — après le zoom, la largeur VISIBLE est
-    // plus étroite que ça, laissant un morceau de la photo jamais affiché
-    // entre deux panneaux (saut visible signalé le 13/09/2026). Correctif :
-    // l'espacement entre centres doit être la largeur VISIBLE après zoom
-    // (desktop : 1150px de fichier pour 920px visibles, espacés de 920px ;
-    // mobile : 704px de fichier pour 640px visibles, espacés de 640px) —
-    // ratio mobile (704/1680 ≈ 0,419) toujours plus étroit que n'importe
-    // quel écran de téléphone courant, pour qu'`object-cover` ne rogne
-    // jamais la largeur non plus (seulement la hauteur).
-    image: '/advantages-1.jpg',
-    mobileImage: '/advantages-1-mobile.jpg',
-    title: ['La', 'surprise'],
-    accentLast: false,
-    tagline: "Vos invités s'attendent à du papier. Ils reçoivent un film.",
-  },
-  {
-    image: '/advantages-2.jpg',
-    mobileImage: '/advantages-2-mobile.jpg',
-    title: ["L'originalité"],
-    accentLast: false,
-    tagline: 'Votre histoire, votre ton, vos images. Rien de générique.',
-  },
-  {
-    image: '/advantages-3.jpg',
-    mobileImage: '/advantages-3-mobile.jpg',
-    title: ["L'unique"],
-    accentLast: true,
-    tagline: 'Chaque faire-part est créé à la main, pour un seul couple : vous.',
-  },
-]
+function buildPanels(t: (key: string) => string, tArray: (key: string) => string[]): Panel[] {
+  return [
+    {
+      // Triptyque (13/09/2026, régénéré en 3000×1680 le même jour pour avoir
+      // la marge nécessaire à la parallaxe — cf. doc de PARALLAX dans le
+      // composant) : le sujet (le voile) traverse visuellement les 3
+      // panneaux — sensation de continuité pendant le glissement horizontal.
+      // `gallery-1.jpg`/`gallery-*-mobile.jpg` (partagés avec Gallery.tsx plus
+      // bas) ne sont plus utilisés ici, mais pas supprimés.
+      //
+      // Chaque recadrage (`image` ET `mobileImage`) est plus LARGE que ce qui
+      // est effectivement visible à l'écran : `scale-110`/`scale-125` (cf. plus
+      // bas) zoome pour absorber la parallaxe sans exposer le fond, ce qui
+      // réduit d'autant la largeur réellement montrée. Erreur commise au 1er
+      // essai (13/09/2026) : centrer les tiers en espaçant leurs centres de la
+      // largeur du FICHIER recadré — après le zoom, la largeur VISIBLE est
+      // plus étroite que ça, laissant un morceau de la photo jamais affiché
+      // entre deux panneaux (saut visible signalé le 13/09/2026). Correctif :
+      // l'espacement entre centres doit être la largeur VISIBLE après zoom
+      // (desktop : 1150px de fichier pour 920px visibles, espacés de 920px ;
+      // mobile : 704px de fichier pour 640px visibles, espacés de 640px) —
+      // ratio mobile (704/1680 ≈ 0,419) toujours plus étroit que n'importe
+      // quel écran de téléphone courant, pour qu'`object-cover` ne rogne
+      // jamais la largeur non plus (seulement la hauteur).
+      image: '/advantages-1.jpg',
+      mobileImage: '/advantages-1-mobile.jpg',
+      title: tArray('home.advantages.panel1Title'),
+      accentLast: false,
+      tagline: t('home.advantages.panel1Tagline'),
+    },
+    {
+      image: '/advantages-2.jpg',
+      mobileImage: '/advantages-2-mobile.jpg',
+      title: tArray('home.advantages.panel2Title'),
+      accentLast: false,
+      tagline: t('home.advantages.panel2Tagline'),
+    },
+    {
+      image: '/advantages-3.jpg',
+      mobileImage: '/advantages-3-mobile.jpg',
+      title: tArray('home.advantages.panel3Title'),
+      accentLast: true,
+      tagline: t('home.advantages.panel3Tagline'),
+    },
+  ]
+}
 
 /** Avantages — 3 panneaux horizontaux pleine hauteur, section épinglée 250vh. */
 // Même seuil que le reste du site (ScrubHero.tsx) — choisit `mobileImage`
@@ -85,9 +93,11 @@ function getIsMobileSnapshot() {
 }
 
 export default function Advantages() {
+  const { t, tArray } = useLanguage()
   const rootRef = useRef<HTMLElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const isMobile = useSyncExternalStore(subscribeToMobileBreakpoint, getIsMobileSnapshot, () => false)
+  const PANELS = buildPanels(t, tArray)
 
   useGSAP(
     () => {
@@ -207,7 +217,7 @@ export default function Advantages() {
       <div style={{ height: '100dvh' }} className="overflow-hidden">
         <div ref={trackRef} className="flex h-full will-change-transform" style={{ width: `${PANELS.length * 100}vw` }}>
           {PANELS.map((panel, i) => (
-            <article key={panel.tagline} className={cn(`panel-${i} relative h-full w-screen shrink-0 overflow-hidden`)}>
+            <article key={i} className={cn(`panel-${i} relative h-full w-screen shrink-0 overflow-hidden`)}>
               <img
                 src={isMobile && panel.mobileImage ? panel.mobileImage : panel.image}
                 alt=""

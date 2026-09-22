@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router'
 import ScrubHero from '@/components/ScrubHero'
 import type { ScrubHeroBeat } from '@/components/ScrubHero'
 import { useSeo } from '@/hooks/useSeo'
+import { useLanguage } from '@/i18n/LanguageContext'
 import SocialProof from '@/components/home/SocialProof'
 import Concept from '@/components/home/Concept'
 import Included from '@/components/home/Included'
@@ -25,29 +26,39 @@ import FinalCta from '@/components/home/FinalCta'
  *  - transition (zoom continu)  0.69 → 0.75
  *  - 0.75 → 1   : silhouette, échange d'alliance sur fond blanc (plan fixe,
  *    le plus calme du clip — CTA révélé ici, cf. persistentFrom)
+ *
+ * Construit à partir de `t()` (cf. échange du 22/09/2026 — site bilingue) :
+ * fonction plutôt que constante de module, appelée dans le composant une
+ * fois `t` disponible.
  */
-const HERO_BEATS: ScrubHeroBeat[] = [
-  {
-    from: 0,
-    to: 0.08,
-    kicker: 'Scroll The Date — Faire-parts digitaux cinématiques',
-  },
-  {
-    from: 0.08,
-    to: 0.24,
-    segments: [{ text: 'Votre histoire.', ink: true }],
-  },
-  {
-    from: 0.37,
-    to: 0.65,
-    segments: [{ text: 'Racontée en' }, { text: 'images.', accent: true }],
-  },
-  {
-    from: 0.78,
-    to: 0.95,
-    segments: [{ text: 'Un' }, { text: 'faire-part', brand: true }, { text: "que personne n'oublie." }],
-  },
-]
+function buildHeroBeats(t: (key: string) => string): ScrubHeroBeat[] {
+  return [
+    {
+      from: 0,
+      to: 0.08,
+      kicker: t('home.hero.kicker'),
+    },
+    {
+      from: 0.08,
+      to: 0.24,
+      segments: [{ text: t('home.hero.beat1'), ink: true }],
+    },
+    {
+      from: 0.37,
+      to: 0.65,
+      segments: [{ text: t('home.hero.beat2Lead') }, { text: t('home.hero.beat2Accent'), accent: true }],
+    },
+    {
+      from: 0.78,
+      to: 0.95,
+      segments: [
+        { text: t('home.hero.beat3Lead') },
+        { text: t('home.hero.beat3Brand'), brand: true },
+        { text: t('home.hero.beat3Tail') },
+      ],
+    },
+  ]
+}
 
 /**
  * Même découpage sur home-hero-mobile.mp4 (12,13 s) — un montage différent,
@@ -58,47 +69,56 @@ const HERO_BEATS: ScrubHeroBeat[] = [
  *  - 0.45 → 0.79 : bouquet
  *  - transition  0.79 → 0.85
  *  - 0.85 → 1   : silhouette
+ *
+ * Même texte que `buildHeroBeats` ci-dessus (seuls les timings diffèrent) —
+ * mêmes clés de traduction, jamais dupliquées.
  */
-const HERO_BEATS_MOBILE: ScrubHeroBeat[] = [
-  {
-    from: 0,
-    to: 0.08,
-    kicker: 'Scroll The Date — Faire-parts digitaux cinématiques',
-  },
-  {
-    from: 0.08,
-    to: 0.3,
-    segments: [{ text: 'Votre histoire.', ink: true }],
-  },
-  {
-    from: 0.48,
-    to: 0.75,
-    segments: [{ text: 'Racontée en' }, { text: 'images.', accent: true }],
-  },
-  {
-    from: 0.87,
-    to: 0.97,
-    segments: [{ text: 'Un' }, { text: 'faire-part', brand: true }, { text: "que personne n'oublie." }],
-  },
-]
+function buildHeroBeatsMobile(t: (key: string) => string): ScrubHeroBeat[] {
+  return [
+    {
+      from: 0,
+      to: 0.08,
+      kicker: t('home.hero.kicker'),
+    },
+    {
+      from: 0.08,
+      to: 0.3,
+      segments: [{ text: t('home.hero.beat1'), ink: true }],
+    },
+    {
+      from: 0.48,
+      to: 0.75,
+      segments: [{ text: t('home.hero.beat2Lead') }, { text: t('home.hero.beat2Accent'), accent: true }],
+    },
+    {
+      from: 0.87,
+      to: 0.97,
+      segments: [
+        { text: t('home.hero.beat3Lead') },
+        { text: t('home.hero.beat3Brand'), brand: true },
+        { text: t('home.hero.beat3Tail') },
+      ],
+    },
+  ]
+}
 
 /** CTA persistant du héros (révélé à 87 % de progression) — dans le plan
  * silhouette pour les deux montages (desktop : 0.75→1 ; mobile, plus
  * court : 0.85→1), le plus calme des deux, cf. commentaires ci-dessus. */
-function HeroCta() {
+function HeroCta({ t }: { t: (key: string) => string }) {
   return (
     <div className="flex flex-wrap items-center justify-center gap-5">
       <Link
         to="/offres"
         className="rounded-full bg-terracotta-500 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
       >
-        Créer notre faire-part
+        {t('home.hero.ctaCreate')}
       </Link>
       <Link
         to="/demofairepart"
         className="rounded-full border border-white/25 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white/85 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-white/60 hover:text-white"
       >
-        Voir la démo
+        {t('home.hero.ctaDemo')}
       </Link>
     </div>
   )
@@ -106,11 +126,11 @@ function HeroCta() {
 
 export default function Home() {
   const location = useLocation()
+  const { t } = useLanguage()
 
   useSeo({
-    title: 'Scroll The Date — Faire-parts de mariage digitaux cinématiques',
-    description:
-      'Scroll The Date — faire-parts de mariage digitaux cinématiques. Racontez votre histoire dans une vidéo personnalisée qui ouvre votre faire-part.',
+    title: t('home.seo.title'),
+    description: t('home.seo.description'),
     path: '/',
   })
 
@@ -152,10 +172,10 @@ export default function Home() {
           // nouvelles scènes.
           frames={{ baseUrl: '/home-hero-desktop-frames/', count: 162, fps: 12 }}
           mobileFrames={{ baseUrl: '/home-hero-mobile-frames/', count: 206, fps: 12 }}
-          heading="Votre histoire, racontée en images — le faire-part de mariage digital que vos invités n'oublieront pas"
-          beats={HERO_BEATS}
-          mobileBeats={HERO_BEATS_MOBILE}
-          persistent={<HeroCta />}
+          heading={t('home.hero.heading')}
+          beats={buildHeroBeats(t)}
+          mobileBeats={buildHeroBeatsMobile(t)}
+          persistent={<HeroCta t={t} />}
           persistentFrom={0.87}
           durationVh={280}
         />

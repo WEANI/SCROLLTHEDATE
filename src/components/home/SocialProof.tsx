@@ -3,26 +3,28 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
-const COUNTERS = [
-  { value: 128, label: 'mariages racontés', format: (v: number) => String(Math.round(v)) },
-  { value: 4.9, label: 'note moyenne', format: (v: number) => `${v.toFixed(1).replace('.', ',')}/5` },
-  { value: 21, label: 'jours — délai moyen de production', format: (v: number) => String(Math.round(v)) },
-]
-
-const REVIEWS = [
-  { quote: 'Nos invités nous en parlent encore.', author: 'Camille & Romain', date: 'juin 2025', avatar: '/avatar-1.jpg' },
-  { quote: 'On a pleuré en découvrant la vidéo. Nos familles aussi.', author: 'Inès & Mathis', date: 'septembre 2025', avatar: '/avatar-2.jpg' },
-  { quote: 'Le faire-part le plus original que nos amis aient jamais reçu.', author: 'Léa & Hugo', date: 'mai 2025', avatar: '/avatar-3.jpg' },
-]
-
 /** Bandeau preuve sociale : compteurs count-up + avis rotatif. */
 export default function SocialProof() {
+  const { t } = useLanguage()
   const rootRef = useRef<HTMLElement>(null)
   const valueRefs = useRef<HTMLSpanElement[]>([])
   const [reviewIndex, setReviewIndex] = useState(0)
+
+  const COUNTERS = [
+    { key: 'weddings', value: 128, label: t('home.socialProof.counterWeddings'), format: (v: number) => String(Math.round(v)) },
+    { key: 'rating', value: 4.9, label: t('home.socialProof.counterRating'), format: (v: number) => `${v.toFixed(1).replace('.', ',')}/5` },
+    { key: 'delay', value: 21, label: t('home.socialProof.counterDelay'), format: (v: number) => String(Math.round(v)) },
+  ]
+
+  const REVIEWS = [
+    { key: 'review1', quote: t('home.socialProof.review1Quote'), author: t('home.socialProof.review1Author'), date: t('home.socialProof.review1Date'), avatar: '/avatar-1.jpg' },
+    { key: 'review2', quote: t('home.socialProof.review2Quote'), author: t('home.socialProof.review2Author'), date: t('home.socialProof.review2Date'), avatar: '/avatar-2.jpg' },
+    { key: 'review3', quote: t('home.socialProof.review3Quote'), author: t('home.socialProof.review3Author'), date: t('home.socialProof.review3Date'), avatar: '/avatar-3.jpg' },
+  ]
 
   // Compteurs — GSAP count-up, trigger 30 % viewport, stagger 0.15s
   useGSAP(
@@ -46,9 +48,13 @@ export default function SocialProof() {
     { scope: rootRef },
   )
 
-  // Avis rotatif — crossfade toutes les 5 s
+  // Avis rotatif — crossfade toutes les 5 s. `% 3` en dur (pas
+  // `REVIEWS.length`) : REVIEWS est reconstruit à chaque rendu depuis `t()`
+  // (cf. plus haut) — une nouvelle référence à chaque rendu aurait forcé
+  // soit un lint `exhaustive-deps`, soit un effet relancé à chaque langue
+  // changée. Le nombre d'avis, lui, ne varie jamais avec la langue.
   useEffect(() => {
-    const id = window.setInterval(() => setReviewIndex((i) => (i + 1) % REVIEWS.length), 5000)
+    const id = window.setInterval(() => setReviewIndex((i) => (i + 1) % 3), 5000)
     return () => window.clearInterval(id)
   }, [])
 
@@ -58,7 +64,7 @@ export default function SocialProof() {
     <section ref={rootRef} className="bg-anthracite-900 py-16">
       <div className="mx-auto grid max-w-[1440px] gap-12 px-6 sm:grid-cols-2 lg:grid-cols-4 lg:px-12">
         {COUNTERS.map((counter, i) => (
-          <div key={counter.label} className="flex flex-col gap-2">
+          <div key={counter.key} className="flex flex-col gap-2">
             <span
               ref={(el) => {
                 if (el) valueRefs.current[i] = el

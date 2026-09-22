@@ -4,10 +4,9 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { ArrowRight } from 'lucide-react'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
-
-const TITLE = 'Racontons votre histoire.'
 
 /** Halo radial terracotta qui respire — micro-composant mémoïsé (animation perpétuelle). */
 const Halo = memo(function Halo() {
@@ -24,7 +23,9 @@ const Halo = memo(function Halo() {
 
 /** CTA final plein viewport. */
 export default function FinalCta() {
+  const { t } = useLanguage()
   const rootRef = useRef<HTMLElement>(null)
+  const TITLE = t('home.finalCta.title')
 
   useGSAP(
     () => {
@@ -65,7 +66,7 @@ export default function FinalCta() {
       <Halo />
       <div className="relative z-10 flex flex-col items-center px-6 text-center">
         <p className="mb-8 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-          Prêts ?
+          {t('home.finalCta.kicker')}
         </p>
         <h2 className="font-display max-w-5xl text-[clamp(3rem,8vw,7.5rem)] font-light leading-[1.02] tracking-[-0.02em] text-white [perspective:800px]">
           {TITLE.split(' ').map((word, wi, arr) => (
@@ -74,7 +75,11 @@ export default function FinalCta() {
                 <span
                   key={ci}
                   className={
-                    word === 'histoire.'
+                    // Dernier mot du titre accentué — position plutôt que
+                    // correspondance littérale au mot français ("histoire."),
+                    // pour rester valable quelle que soit la langue/traduction
+                    // (cf. échange du 22/09/2026, site bilingue).
+                    wi === arr.length - 1
                       ? 'final-char inline-block italic text-terracotta-300 will-change-transform'
                       : 'final-char inline-block will-change-transform'
                   }
@@ -91,13 +96,13 @@ export default function FinalCta() {
             to="/offres"
             className="rounded-full bg-terracotta-500 px-12 py-5 text-base font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
           >
-            Créer notre faire-part
+            {t('home.finalCta.ctaCreate')}
           </Link>
           <Link
             to="/demofairepart"
             className="group inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-white/70 transition-colors hover:text-white"
           >
-            Voir la démo
+            {t('home.finalCta.ctaDemo')}
             <ArrowRight size={16} className="text-terracotta-500 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>

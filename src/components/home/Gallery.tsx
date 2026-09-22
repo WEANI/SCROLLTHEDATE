@@ -5,9 +5,11 @@ import { useGSAP } from '@gsap/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Play, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
+// Prénoms des couples — noms propres, jamais traduits.
 const ITEMS = [
   { src: '/gallery-1.jpg', couple: 'Camille & Romain', large: true },
   { src: '/gallery-2.jpg', couple: 'Inès & Mathis', large: false },
@@ -17,6 +19,7 @@ const ITEMS = [
 
 /** Galerie / showreel — grille asymétrique + lightbox vidéo (Framer Motion). */
 export default function Gallery() {
+  const { t } = useLanguage()
   const rootRef = useRef<HTMLElement>(null)
   const [lightbox, setLightbox] = useState<string | null>(null)
 
@@ -44,10 +47,10 @@ export default function Gallery() {
     <section ref={rootRef} className="grain bg-anthracite-950 py-32 lg:py-44">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-12">
         <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-          Ils l'ont fait
+          {t('home.gallery.kicker')}
         </p>
         <h2 className="font-display max-w-3xl text-[clamp(2.4rem,5vw,4.5rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-          Des histoires <em className="italic text-terracotta-300">vraies</em>.
+          {t('home.gallery.titleLead')} <em className="italic text-terracotta-300">{t('home.gallery.titleEm')}</em>.
         </h2>
 
         {/* Grille asymétrique : 2 grandes + 2 petites */}
@@ -64,7 +67,7 @@ export default function Gallery() {
             >
               <img
                 src={item.src}
-                alt={`Extrait du faire-part de ${item.couple}`}
+                alt={`${t('home.gallery.extractAltPrefix')} ${item.couple}`}
                 loading="lazy"
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
@@ -75,7 +78,7 @@ export default function Gallery() {
                 </span>
                 <span className="font-display text-2xl font-light italic text-white">{item.couple}</span>
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-                  Regarder l'extrait
+                  {t('home.gallery.watchExtract')}
                 </span>
               </div>
             </button>
@@ -115,7 +118,7 @@ export default function Gallery() {
                 <p className="font-display text-xl font-light italic text-white">{active.couple}</p>
                 <button
                   type="button"
-                  aria-label="Fermer"
+                  aria-label={t('home.gallery.close')}
                   onClick={() => setLightbox(null)}
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-anthracite-700 text-white/70 transition-colors hover:border-terracotta-500 hover:text-white"
                 >

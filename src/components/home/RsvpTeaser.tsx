@@ -1,30 +1,24 @@
 import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
-
-const RECEIVED = [
-  { label: 'Présence', text: 'oui, non — précisée par invités.' },
-  { label: 'Adultes et enfants', text: 'le nombre exact, pour adapter tables et plan de salle.' },
-  { label: 'Allergies et régimes', text: 'un champ libre, rempli par chaque invité lui-même.' },
-  { label: 'Un mot pour vous', text: 'félicitations et petits messages reçus avec chaque réponse.' },
-]
-
-const AFTER = [
-  {
-    title: 'Un tableau de bord toujours à jour',
-    text: 'Les réponses s’y rangent en direct. Vous le consultez quand vous voulez, sans rien faire.',
-  },
-  {
-    title: 'Un export en un clic',
-    text: 'Le tableau complet, prêt à transmettre à votre traiteur ou à votre lieu de réception.',
-  },
-  {
-    title: 'Des relances écrites pour vous',
-    text: 'Les invités sans réponse reçoivent un rappel par email. Vous n’avez rien à rédiger.',
-  },
-]
+import { useLanguage } from '@/i18n/LanguageContext'
 
 /** RSVP — argument différenciant, juste au-dessus de « Nos offres ». */
 export default function RsvpTeaser() {
+  const { t } = useLanguage()
+
+  const RECEIVED = [
+    { key: 'presence', label: t('home.rsvpTeaser.received1Label'), text: t('home.rsvpTeaser.received1Text') },
+    { key: 'guests', label: t('home.rsvpTeaser.received2Label'), text: t('home.rsvpTeaser.received2Text') },
+    { key: 'allergies', label: t('home.rsvpTeaser.received3Label'), text: t('home.rsvpTeaser.received3Text') },
+    { key: 'note', label: t('home.rsvpTeaser.received4Label'), text: t('home.rsvpTeaser.received4Text') },
+  ]
+
+  const AFTER = [
+    { key: 'dashboard', title: t('home.rsvpTeaser.after1Title'), text: t('home.rsvpTeaser.after1Text') },
+    { key: 'export', title: t('home.rsvpTeaser.after2Title'), text: t('home.rsvpTeaser.after2Text') },
+    { key: 'reminders', title: t('home.rsvpTeaser.after3Title'), text: t('home.rsvpTeaser.after3Text') },
+  ]
+
   return (
     <section className="grain bg-anthracite-950 py-32 lg:py-44">
       <motion.div
@@ -38,20 +32,19 @@ export default function RsvpTeaser() {
           variants={{ hidden: { y: 16, opacity: 0 }, show: { y: 0, opacity: 1, transition: { duration: 0.6 } } }}
           className="mb-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300"
         >
-          RSVP
+          {t('home.rsvpTeaser.kicker')}
         </motion.p>
         <motion.h2
           variants={{ hidden: { y: 24, opacity: 0 }, show: { y: 0, opacity: 1, transition: { duration: 0.7 } } }}
           className="font-display max-w-2xl text-[clamp(2.4rem,5vw,4.5rem)] font-light leading-[1.05] tracking-[-0.015em] text-white"
         >
-          Gestion <em className="italic text-terracotta-300">rapide</em> des réponses des invités
+          {t('home.rsvpTeaser.titleLead')} <em className="italic text-terracotta-300">{t('home.rsvpTeaser.titleEm')}</em> {t('home.rsvpTeaser.titleTail')}
         </motion.h2>
         <motion.p
           variants={{ hidden: { y: 16, opacity: 0 }, show: { y: 0, opacity: 1, transition: { duration: 0.7 } } }}
           className="mt-6 max-w-xl text-[15px] leading-[1.65] text-white/60"
         >
-          Vos invités répondent depuis votre lien, en deux clics. Vous recevez le tableau à jour,
-          réponse après réponse, tout se range au fur et à mesure.
+          {t('home.rsvpTeaser.intro')}
         </motion.p>
 
         <div className="mt-14 grid gap-6 lg:grid-cols-2">
@@ -63,11 +56,11 @@ export default function RsvpTeaser() {
             className="rounded-lg bg-anthracite-800 p-8 lg:p-10"
           >
             <p className="font-display text-2xl font-medium text-white">
-              Les informations pour chaque invité
+              {t('home.rsvpTeaser.receivedTitle')}
             </p>
             <ul className="mt-6 flex flex-col gap-4">
               {RECEIVED.map((item) => (
-                <li key={item.label} className="flex items-start gap-3 text-[14.5px] leading-[1.6] text-white/70">
+                <li key={item.key} className="flex items-start gap-3 text-[14.5px] leading-[1.6] text-white/70">
                   <Check size={16} className="mt-1 shrink-0 text-terracotta-500" />
                   <span>
                     <span className="font-semibold text-white">{item.label}</span> — {item.text}
@@ -84,10 +77,10 @@ export default function RsvpTeaser() {
             }}
             className="rounded-lg bg-anthracite-800 p-8 lg:p-10"
           >
-            <p className="font-display text-2xl font-medium text-white">Depuis votre tableau de bord</p>
+            <p className="font-display text-2xl font-medium text-white">{t('home.rsvpTeaser.afterTitle')}</p>
             <div className="mt-6 flex flex-col gap-6">
               {AFTER.map((item) => (
-                <div key={item.title}>
+                <div key={item.key}>
                   <p className="text-[15px] font-semibold text-white">{item.title}</p>
                   <p className="mt-1 text-[14.5px] leading-[1.6] text-white/60">{item.text}</p>
                 </div>

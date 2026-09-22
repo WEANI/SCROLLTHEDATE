@@ -2,31 +2,9 @@ import { useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
-
-const STEPS = [
-  {
-    num: '01',
-    title: 'Commandez',
-    text: 'Choisissez votre formule, en quelques minutes. Paiement sécurisé.',
-  },
-  {
-    num: '02',
-    title: 'Racontez',
-    text: "Questionnaire guidé, note vocale, vos photos. C'est vous la matière première du film.",
-  },
-  {
-    num: '03',
-    title: 'Validez',
-    text: 'Des propositions de scénario, vous choisissez. Puis une vidéo en filigrane avant la version finale.',
-  },
-  {
-    num: '04',
-    title: 'Recevez & partagez',
-    text: 'Faire-part en ligne, lien illimité, QR code et RSVP intégré. Vos invités répondent en un clic.',
-  },
-]
 
 // Offset du 1er panneau — juste sous la navbar fixe (h-20 = 80px, cf.
 // Navbar.tsx) + un peu de respiration. Chaque carte suivante ajoute
@@ -49,7 +27,15 @@ const STICKY_STEP = 18
  * la profondeur d'une carte au moment où la suivante la recouvre.
  */
 export default function HowItWorks() {
+  const { t } = useLanguage()
   const rootRef = useRef<HTMLElement>(null)
+
+  const STEPS = [
+    { key: '01', num: '01', title: t('home.howItWorks.step1Title'), text: t('home.howItWorks.step1Text') },
+    { key: '02', num: '02', title: t('home.howItWorks.step2Title'), text: t('home.howItWorks.step2Text') },
+    { key: '03', num: '03', title: t('home.howItWorks.step3Title'), text: t('home.howItWorks.step3Text') },
+    { key: '04', num: '04', title: t('home.howItWorks.step4Title'), text: t('home.howItWorks.step4Text') },
+  ]
 
   useGSAP(
     () => {
@@ -76,16 +62,16 @@ export default function HowItWorks() {
   return (
     <section ref={rootRef} id="comment-ca-marche" className="relative bg-anthracite-950 px-6 py-32 lg:px-12 lg:py-44">
       <div className="mx-auto max-w-[660px] text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">Comment ça marche</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">{t('home.howItWorks.kicker')}</p>
         <h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.2rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-          4 étapes, <em className="italic text-terracotta-300">sans complications</em>.
+          {t('home.howItWorks.titleLead')} <em className="italic text-terracotta-300">{t('home.howItWorks.titleEm')}</em>.
         </h2>
       </div>
 
       <div className="relative mx-auto mt-16 max-w-[660px] pb-[20vh]">
         {STEPS.map((step, i) => (
           <article
-            key={step.num}
+            key={step.key}
             className="stack-card sticky mb-7 rounded-xl border border-anthracite-700 bg-anthracite-800 p-10 shadow-[0_-20px_40px_-30px_rgba(0,0,0,0.8)] lg:p-11"
             style={{ top: `${STICKY_TOP + i * STICKY_STEP}px`, zIndex: i + 1 }}
           >

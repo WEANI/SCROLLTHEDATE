@@ -2,33 +2,20 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { MessageCircle, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const FAQ_ITEMS = [
-  {
-    q: 'Combien de temps pour recevoir notre faire-part ?',
-    a: "Comptez environ 21 jours entre votre questionnaire complété et la livraison. Vous validez un scénario, puis une version filigrane de la vidéo avant la version finale — rien ne part sans votre accord.",
-  },
-  {
-    q: 'Et si la vidéo ne me plaît pas ?',
-    a: "C'est justement pour ça que vous validez d'abord un scénario parmi plusieurs propositions, puis une version filigrane. Des retouches sont incluses. Nous ajustons jusqu'à ce que ce soit vous.",
-  },
-  {
-    q: "Combien d'invités peuvent recevoir le faire-part ?",
-    a: "Autant que vous voulez. Le lien est illimité et le prix est unique, que vous invitiez 20 ou 300 personnes. Partagez-le par WhatsApp, SMS, email ou QR code sur vos supports papier.",
-  },
-  {
-    q: 'Puis-je modifier le faire-part après livraison ?',
-    a: "Oui. Date, lieu, programme, hébergements : les informations pratiques restent modifiables depuis votre espace client jusqu'au jour J. Les changements sont en ligne instantanément.",
-  },
-  {
-    q: 'Comment se passent les RSVP ?',
-    a: "Vos invités répondent directement sur le faire-part : présence, accompagnants, allergies, même leur chanson pour la soirée. Vous suivez les réponses en temps réel dans votre espace client.",
-  },
-]
+import { useLanguage } from '@/i18n/LanguageContext'
 
 /** FAQ — 2 colonnes : titre + CTA WhatsApp / accordéon 6 questions. */
 export default function Faq() {
+  const { t } = useLanguage()
   const [openIndex, setOpenIndex] = useState<number | null>(0)
+
+  const FAQ_ITEMS = [
+    { key: 'q1', q: t('home.faq.q1'), a: t('home.faq.a1') },
+    { key: 'q2', q: t('home.faq.q2'), a: t('home.faq.a2') },
+    { key: 'q3', q: t('home.faq.q3'), a: t('home.faq.a3') },
+    { key: 'q4', q: t('home.faq.q4'), a: t('home.faq.a4') },
+    { key: 'q5', q: t('home.faq.q5'), a: t('home.faq.a5') },
+  ]
 
   return (
     <section id="faq" className="bg-anthracite-900 py-32 lg:py-44">
@@ -38,11 +25,10 @@ export default function Faq() {
             FAQ
           </p>
           <h2 className="font-display text-[clamp(2.4rem,5vw,4.5rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-            Vos <em className="italic text-terracotta-300">questions</em>.
+            {t('home.faq.titleLead')} <em className="italic text-terracotta-300">{t('home.faq.titleEm')}</em>.
           </h2>
           <p className="mt-6 max-w-sm text-[15px] leading-[1.65] text-white/60">
-            Une question plus précise sur votre projet ? Notre équipe répond en personne,
-            généralement dans l'heure.
+            {t('home.faq.intro')}
           </p>
           <a
             href="https://wa.me/33600000000"
@@ -51,7 +37,7 @@ export default function Faq() {
             className="mt-8 inline-flex items-center gap-2 rounded-full border border-anthracite-700 px-6 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:border-terracotta-500 hover:text-terracotta-300"
           >
             <MessageCircle size={16} className="text-terracotta-500" />
-            Discuter sur WhatsApp
+            {t('home.faq.whatsapp')}
           </a>
         </div>
 
@@ -66,7 +52,7 @@ export default function Faq() {
             const open = openIndex === i
             return (
               <motion.li
-                key={item.q}
+                key={item.key}
                 variants={{
                   hidden: { y: 24, opacity: 0 },
                   show: { y: 0, opacity: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },

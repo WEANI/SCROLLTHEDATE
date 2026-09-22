@@ -1,27 +1,30 @@
 import { Link } from 'react-router'
 import { Flag, HeartHandshake, Infinity as InfinityIcon, MessageCircle, ShieldCheck } from 'lucide-react'
-
-const NAVIGATION = [
-  { label: 'Concept', href: '/#concept' },
-  { label: 'Comment ça marche', href: '/#comment-ca-marche' },
-  { label: 'FAQ', href: '/#faq' },
-  { label: 'Se connecter', href: '/login' },
-]
-
-const OFFRES = [
-  { label: 'Faire-part digital', href: '/faire-part-digital' },
-  { label: 'Save the Date digital', href: '/save-the-date-digital' },
-  { label: 'Voir la démo', href: '/demofairepart' },
-]
-
-const REASSURANCE = [
-  { icon: ShieldCheck, label: 'Paiement sécurisé' },
-  { icon: InfinityIcon, label: 'Lien illimité' },
-  { icon: HeartHandshake, label: 'Accompagnement humain' },
-  { icon: Flag, label: 'Fabriqué en France' },
-]
+import { useLanguage } from '@/i18n/LanguageContext'
 
 export default function Footer() {
+  const { t } = useLanguage()
+
+  const NAVIGATION = [
+    { key: 'concept', label: t('nav.concept'), href: '/#concept' },
+    { key: 'howItWorks', label: t('nav.howItWorks'), href: '/#comment-ca-marche' },
+    { key: 'faq', label: t('nav.faq'), href: '/#faq' },
+    { key: 'login', label: t('nav.login'), href: '/login' },
+  ]
+
+  const OFFRES = [
+    { key: 'fairePart', label: t('footer.offerFairePart'), href: '/faire-part-digital' },
+    { key: 'saveTheDate', label: t('footer.offerSaveTheDate'), href: '/save-the-date-digital' },
+    { key: 'demo', label: t('footer.seeDemo'), href: '/demofairepart' },
+  ]
+
+  const REASSURANCE = [
+    { key: 'payment', icon: ShieldCheck, label: t('footer.reassurancePayment') },
+    { key: 'link', icon: InfinityIcon, label: t('footer.reassuranceLink') },
+    { key: 'human', icon: HeartHandshake, label: t('footer.reassuranceHuman') },
+    { key: 'made', icon: Flag, label: t('footer.reassuranceMade') },
+  ]
+
   return (
     <footer className="grain bg-anthracite-950">
       <div className="mx-auto grid max-w-[1440px] gap-12 px-6 py-20 sm:grid-cols-2 lg:grid-cols-4 lg:px-12">
@@ -31,7 +34,7 @@ export default function Footer() {
             <img src="/logo.png" alt="Scroll The Date" className="h-[72px] w-auto" />
           </Link>
           <p className="font-display text-lg font-light italic text-white/70">
-            Votre histoire, racontée en images.
+            {t('footer.tagline')}
           </p>
           <a
             href="https://wa.me/33600000000"
@@ -40,18 +43,18 @@ export default function Footer() {
             className="inline-flex w-fit items-center gap-2 rounded-full border border-anthracite-700 px-4 py-2 text-xs font-medium uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-terracotta-500 hover:text-terracotta-300"
           >
             <MessageCircle size={14} className="text-terracotta-500" />
-            Nous écrire sur WhatsApp
+            {t('footer.whatsapp')}
           </a>
         </div>
 
         {/* Navigation */}
         <nav aria-label="Navigation pied de page">
           <h3 className="mb-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-            Navigation
+            {t('footer.navigation')}
           </h3>
           <ul className="flex flex-col gap-3">
             {NAVIGATION.map((item) => (
-              <li key={item.label}>
+              <li key={item.key}>
                 <Link
                   to={item.href}
                   className="text-sm text-white/70 transition-colors hover:text-white"
@@ -66,11 +69,11 @@ export default function Footer() {
         {/* Offres */}
         <nav aria-label="Nos offres">
           <h3 className="mb-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-            Offres
+            {t('footer.offers')}
           </h3>
           <ul className="flex flex-col gap-3">
             {OFFRES.map((item) => (
-              <li key={item.label}>
+              <li key={item.key}>
                 <Link
                   to={item.href}
                   className="text-sm text-white/70 transition-colors hover:text-white"
@@ -85,11 +88,11 @@ export default function Footer() {
         {/* Réassurance */}
         <div>
           <h3 className="mb-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-            Réassurance
+            {t('footer.reassurance')}
           </h3>
           <ul className="flex flex-col gap-3">
             {REASSURANCE.map((item) => (
-              <li key={item.label} className="flex items-center gap-3 text-sm text-white/70">
+              <li key={item.key} className="flex items-center gap-3 text-sm text-white/70">
                 <item.icon size={16} className="shrink-0 text-terracotta-500" />
                 {item.label}
               </li>
@@ -103,13 +106,13 @@ export default function Footer() {
           <p>© {new Date().getFullYear()} Scroll The Date — scrollthedate.fr</p>
           <div className="flex gap-6">
             <Link to="/mentions-legales" className="transition-colors hover:text-white/80">
-              Mentions légales
+              {t('footer.legal')}
             </Link>
             <Link to="/cgv" className="transition-colors hover:text-white/80">
-              CGV
+              {t('footer.cgv')}
             </Link>
             <Link to="/confidentialite" className="transition-colors hover:text-white/80">
-              Confidentialité
+              {t('footer.privacy')}
             </Link>
           </div>
         </div>

@@ -5,19 +5,14 @@ import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { LOGIN_PATH } from '@/const'
+import { useLanguage } from '@/i18n/LanguageContext'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 interface NavLink {
+  key: string
   label: string
   href: string // '/route' ou '#ancre' (ancre de la home)
 }
-
-const NAV_LINKS: NavLink[] = [
-  { label: 'Concept', href: '#concept' },
-  { label: 'Comment ça marche', href: '#comment-ca-marche' },
-  { label: 'Offres', href: '/offres' },
-  { label: 'Démo', href: '/demofairepart' },
-  { label: 'FAQ', href: '#faq' },
-]
 
 const listVariants = {
   hidden: {},
@@ -34,6 +29,15 @@ export default function Navbar() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, isLoading, isAuthenticated, logout } = useAuth()
+  const { t } = useLanguage()
+
+  const NAV_LINKS: NavLink[] = [
+    { key: 'concept', label: t('nav.concept'), href: '#concept' },
+    { key: 'howItWorks', label: t('nav.howItWorks'), href: '#comment-ca-marche' },
+    { key: 'offers', label: t('nav.offers'), href: '/offres' },
+    { key: 'demo', label: t('nav.demo'), href: '/demofairepart' },
+    { key: 'faq', label: t('nav.faq'), href: '#faq' },
+  ]
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80)
@@ -89,7 +93,7 @@ export default function Navbar() {
         {/* Liens centre — desktop */}
         <ul className="hidden items-center gap-8 lg:flex">
           {NAV_LINKS.map((link) => (
-            <motion.li key={link.label} variants={itemVariants}>
+            <motion.li key={link.key} variants={itemVariants}>
               <button
                 type="button"
                 onClick={() => go(link.href)}
@@ -120,14 +124,14 @@ export default function Navbar() {
                     {(user.name ?? '?').slice(0, 1).toUpperCase()}
                   </span>
                 )}
-                Mon espace
+                {t('nav.mySpace')}
               </Link>
               <button
                 type="button"
                 onClick={() => logout()}
                 className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50 transition-colors hover:text-white"
               >
-                Déconnexion
+                {t('nav.logout')}
               </button>
             </span>
           ) : (
@@ -135,15 +139,16 @@ export default function Navbar() {
               to={LOGIN_PATH}
               className="text-[13px] font-medium uppercase tracking-[0.14em] text-white/80 transition-colors hover:text-white"
             >
-              Se connecter
+              {t('nav.login')}
             </Link>
           )}
           <Link
             to="/offres"
             className="rounded-full bg-terracotta-500 px-6 py-2.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
           >
-            Créer notre faire-part
+            {t('nav.createInvite')}
           </Link>
+          <LanguageSwitcher variant="dark" />
         </motion.div>
 
         {/* Burger — mobile */}
@@ -184,7 +189,7 @@ export default function Navbar() {
             >
               {NAV_LINKS.map((link) => (
                 <motion.li
-                  key={link.label}
+                  key={link.key}
                   variants={{
                     hidden: { y: 24, opacity: 0 },
                     show: { y: 0, opacity: 1, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
@@ -207,6 +212,7 @@ export default function Navbar() {
               transition={{ delay: 0.35 }}
               className="flex flex-col gap-4"
             >
+              <LanguageSwitcher variant="dark" className="mx-auto" />
               {/* AUTH-SLOT: rewired to useAuth() */}
               {isLoading ? (
                 <span className="mx-auto block h-5 w-24 animate-pulse rounded bg-white/10" aria-hidden="true" />
@@ -216,14 +222,14 @@ export default function Navbar() {
                     to={user.role === 'admin' ? '/admin' : '/espace'}
                     className="text-center text-sm font-medium uppercase tracking-[0.14em] text-white/80"
                   >
-                    Mon espace{user.name ? ` — ${user.name}` : ''}
+                    {t('nav.mySpace')}{user.name ? ` — ${user.name}` : ''}
                   </Link>
                   <button
                     type="button"
                     onClick={() => logout()}
                     className="text-center text-[11px] font-medium uppercase tracking-[0.14em] text-white/50 transition-colors hover:text-white"
                   >
-                    Déconnexion
+                    {t('nav.logout')}
                   </button>
                 </>
               ) : (
@@ -231,14 +237,14 @@ export default function Navbar() {
                   to={LOGIN_PATH}
                   className="text-center text-sm font-medium uppercase tracking-[0.14em] text-white/70"
                 >
-                  Se connecter
+                  {t('nav.login')}
                 </Link>
               )}
               <Link
                 to="/offres"
                 className="rounded-full bg-terracotta-500 px-6 py-4 text-center text-sm font-semibold uppercase tracking-[0.1em] text-white"
               >
-                Créer notre faire-part
+                {t('nav.createInvite')}
               </Link>
             </motion.div>
           </motion.div>

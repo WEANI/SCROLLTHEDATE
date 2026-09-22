@@ -2,14 +2,15 @@ import { useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
-const TITLE_WORDS = ['Un', 'faire-part', 'unique', 'qui', 'raconte', 'votre', 'histoire.']
-
 /** Section concept — split éditorial 55/45, reveal mot-par-mot + parallaxe. */
 export default function Concept() {
+  const { t, tArray } = useLanguage()
   const rootRef = useRef<HTMLElement>(null)
+  const TITLE_WORDS = tArray('home.concept.titleWords')
 
   useGSAP(
     () => {
@@ -58,7 +59,7 @@ export default function Concept() {
       <div className="mx-auto grid max-w-[1440px] items-center gap-16 px-6 lg:grid-cols-[55fr_45fr] lg:px-12">
         <div>
           <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-            Le concept
+            {t('home.concept.kicker')}
           </p>
           <h2 className="concept-title font-display text-[clamp(2.4rem,5vw,4.5rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
             {TITLE_WORDS.map((word, i) => (
@@ -70,17 +71,14 @@ export default function Concept() {
           </h2>
           <div className="concept-copy-wrap mt-10 flex max-w-xl flex-col gap-6">
             <p className="concept-copy text-[16px] leading-[1.65] text-white/70">
-              Scroll The Date crée des faire-parts de mariage digitaux uniques. Vous racontez votre
-              histoire dans un questionnaire guidé et une note vocale — vos mots, vos photos,
-              votre ton.
+              {t('home.concept.copy1')}
             </p>
             <p className="concept-copy text-[16px] leading-[1.65] text-white/70">
-              Nous en faisons une <em className="font-display italic text-terracotta-300">vidéo cinématique</em> qui
-              ouvre votre faire-part : un film court, écrit et monté pour vous, que vos invités
-              découvrent en scrollant.
+              {t('home.concept.copy2Lead')} <em className="font-display italic text-terracotta-300">{t('home.concept.copy2Em')}</em>{' '}
+              {t('home.concept.copy2Tail')}
             </p>
             <p className="concept-copy border-l-2 border-terracotta-500 pl-5 text-[15px] font-medium leading-relaxed text-white">
-              Accompagnement humain de A à Z — une vraie équipe, pas un générateur.
+              {t('home.concept.copy3')}
             </p>
           </div>
         </div>
@@ -91,7 +89,7 @@ export default function Concept() {
           <div className="relative overflow-hidden rounded-md">
             <img
               src="/gallery-2.jpg"
-              alt="Silhouette d'un couple face à la mer au crépuscule"
+              alt={t('home.concept.imgAlt')}
               className="concept-img aspect-[16/10] w-full scale-110 object-cover will-change-transform"
               loading="lazy"
             />
