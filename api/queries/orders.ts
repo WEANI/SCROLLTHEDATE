@@ -105,9 +105,16 @@ export async function findOrderById(orderId: number) {
   });
 }
 
-/** Retrouve une commande à partir de l'id du PaymentIntent Stripe qui lui est associé (stripeRef) — utilisé par le webhook. */
-export async function findOrderByStripeRef(stripeRef: string) {
-  return getDb().query.orders.findFirst({
+/**
+ * Retrouve TOUTES les commandes associées à un même PaymentIntent Stripe
+ * (stripeRef) — utilisé par le webhook. Pluriel à dessein : un paiement
+ * panier (plusieurs produits payés en une fois, cf.
+ * ordersRouter::createCheckout) crée plusieurs lignes `orders` partageant
+ * le même `stripeRef` ; un paiement à un seul produit reste le cas
+ * particulier "tableau à un élément", sans traitement spécial nécessaire.
+ */
+export async function findOrdersByStripeRef(stripeRef: string) {
+  return getDb().query.orders.findMany({
     where: eq(orders.stripeRef, stripeRef),
     with: { projects: true },
   });

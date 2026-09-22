@@ -128,8 +128,16 @@ export default function Merci() {
   const { texts } = usePricing()
   const reduceMotion = useReducedMotion()
 
+  // `?orders=FL-...,FL-...` (pluriel, panier — cf. échange du 22/09/2026) et
+  // l'historique `?order=FL-...` (singulier) cohabitent : un paiement à un
+  // seul produit peut encore arriver par l'un ou l'autre selon le point
+  // d'entrée, les deux sont acceptés.
+  const ordersRef = searchParams.get('orders')
   const orderRef = searchParams.get('order')
-  const parsedId = useMemo(() => parseOrderNumber(orderRef), [orderRef])
+  const parsedIds = useMemo(() => {
+    const refs = ordersRef ? ordersRef.split(',') : orderRef ? [orderRef] : []
+    return refs.map((r) => parseOrderNumber(r)).filter((id): id is number => id != null)
+  }, [ordersRef, orderRef])
 
   // Vérification côté serveur : le n° de commande ne doit pas venir que de l'URL.
   const ordersQuery = trpc.orders.myOrders.useQuery(undefined, {
@@ -137,11 +145,12 @@ export default function Merci() {
     retry: false,
   })
 
-  const matchedOrder = useMemo(() => {
+  const matchedOrders = useMemo(() => {
     const list = ordersQuery.data ?? []
-    if (parsedId != null) return list.find((o) => o.id === parsedId) ?? null
-    return list[0] ?? null
-  }, [ordersQuery.data, parsedId])
+    if (parsedIds.length > 0) return list.filter((o) => parsedIds.includes(o.id))
+    return list[0] ? [list[0]] : []
+  }, [ordersQuery.data, parsedIds])
+  const matchedOrder = matchedOrders[0] ?? null
 
   // Redirections : aucune commande valide → retour à l'accueil.
   //
@@ -160,7 +169,7 @@ export default function Merci() {
   // sans query string → il faut être connecté et avoir au moins une commande).
   useEffect(() => {
     if (authLoading) return
-    if (parsedId != null) return
+    if (parsedIds.length > 0) return
     if (!isAuthenticated) {
       navigate('/', { replace: true })
       return
@@ -169,11 +178,14 @@ export default function Merci() {
     if ((ordersQuery.data ?? []).length === 0) {
       navigate('/', { replace: true })
     }
-  }, [authLoading, isAuthenticated, ordersQuery.isSuccess, ordersQuery.data, parsedId, navigate])
+  }, [authLoading, isAuthenticated, ordersQuery.isSuccess, ordersQuery.data, parsedIds, navigate])
 
-  const displayRef = matchedOrder
-    ? formatOrderNumber(matchedOrder.id, new Date(matchedOrder.createdAt))
-    : orderRef
+  // Une ou plusieurs références affichées ("FL-2026-0012, FL-2026-0013")
+  // selon le nombre de commandes du paiement (panier ou produit unique).
+  const displayRef =
+    matchedOrders.length > 0
+      ? matchedOrders.map((o) => formatOrderNumber(o.id, new Date(o.createdAt))).join(', ')
+      : (ordersRef ?? orderRef)
 
   const baseDate = matchedOrder ? new Date(matchedOrder.createdAt) : new Date()
   const timeline = [

@@ -141,7 +141,17 @@ export const orders = pgTable(
     paymentStatus: orderPaymentStatusEnum("paymentStatus")
       .default("pending")
       .notNull(),
+    // `stripeRef` n'est PAS unique : un paiement panier (plusieurs produits
+    // payés en une fois, cf. api/ordersRouter.ts::createCheckout) crée
+    // plusieurs lignes `orders` partageant le même PaymentIntent Stripe.
     stripeRef: varchar("stripeRef", { length: 255 }),
+    // Commande "sur un modèle" (cf. contracts/saveTheDateTemplates.ts) —
+    // vit ICI, sur la ligne de commande, plutôt que dans les métadonnées du
+    // PaymentIntent Stripe (repli d'origine, `pi.metadata.templateSlug`) :
+    // un paiement panier associe plusieurs commandes à un même PaymentIntent,
+    // chacune pouvant avoir SON propre modèle (ou aucun) — un seul champ de
+    // metadata au niveau du paiement ne suffit plus à porter cette info.
+    templateSlug: varchar("templateSlug", { length: 100 }),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),

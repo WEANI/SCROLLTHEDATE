@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -17,41 +17,44 @@ import {
   Loader2,
   Lock,
   LogIn,
+  Plus,
   ShieldCheck,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/providers/trpc'
 import { useAuth } from '@/hooks/useAuth'
 import { LOGIN_PATH } from '@/const'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { useCart } from '@/cart/CartContext'
 import { stripePromise } from '@/lib/stripeClient'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
 import AnimatedAmount from '@/components/commerce/AnimatedAmount'
-import CheckDraw, { CheckboxMark } from '@/components/commerce/CheckDraw'
+import { CheckboxMark } from '@/components/commerce/CheckDraw'
 import FloatingField from '@/components/commerce/FloatingField'
 import OptionToggle from '@/components/commerce/OptionToggle'
 import {
   formatEuros,
   formatOrderNumber,
   getProduct,
+  lineAmountCents,
   productIdFromSlug,
+  TEMPLATE_PRICE_CENTS,
   usePricing,
   type ProductId,
 } from '@/components/commerce/pricing'
-import { parseTemplateOverrides, resolveSaveTheDateTemplate } from '@contracts/saveTheDateTemplates'
-
-/** Prix fixe "sur un modèle", cf. TEMPLATE_PRICE_CENTS (api/ordersRouter.ts) — dupliqué à dessein, ce fichier reste pur frontend et ne peut pas importer de code serveur. */
-const TEMPLATE_PRICE_CENTS = 9900
+import { getSaveTheDateTemplate, parseTemplateOverrides, resolveSaveTheDateTemplate } from '@contracts/saveTheDateTemplates'
 
 /* -------------------------------------------------------------------------- */
 /* Brouillon de commande (conservé si redirection vers la connexion)          */
 /* -------------------------------------------------------------------------- */
+/* Le panier lui-même (produits/options/modèle) persiste déjà tout seul via
+   CartContext (localStorage) — ce brouillon n'a plus besoin de le porter,
+   seulement les champs de contact du formulaire "Informations". */
 
 const DRAFT_KEY = 'scrollthedate:checkout:draft'
 
 interface CheckoutDraft {
-  productId: ProductId
-  optionIds: string[]
   prenom1: string
   prenom2: string
   email: string
@@ -93,33 +96,47 @@ export default function Commander() {
   // aller vers /merci une fois le paiement confirmé.
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { products, options } = usePricing()
+  const cart = useCart()
 
   const [draft] = useState<CheckoutDraft | null>(() => loadDraft())
 
-  // Commande "sur un modèle" (?modele=red-door, cf. SaveTheDateTemplatePreview.tsx
-  // → doc de contracts/saveTheDateTemplates.ts) — un slug absent ou inconnu est
-  // silencieusement ignoré, comportement actuel inchangé (jamais d'erreur pour
-  // une URL malformée).
-  const templateSlug = searchParams.get('modele')
+  // Replie les query params legacy (`?produit=`/`?options=`/`?modele=`) dans
+  // le panier AU MONTAGE, une seule fois — compat avec tout lien externe déjà
+  // en circulation (pages produit historiques, favoris…). La page rend
+  // ensuite TOUJOURS depuis `cart.items`, jamais depuis ces paramètres
+  // directement.
+  const foldedParams = useRef(false)
+  useEffect(() => {
+    if (foldedParams.current) return
+    foldedParams.current = true
+    const modeleParam = searchParams.get('modele')
+    const produitParam = searchParams.get('produit')
+    if (!modeleParam && !produitParam) return
+    if (modeleParam) {
+      if (getSaveTheDateTemplate(modeleParam)) {
+        cart.addOrReplace({ product: 'SAVE_THE_DATE', optionIds: [], templateSlug: modeleParam })
+      }
+      return
+    }
+    const fromSlug = productIdFromSlug(produitParam)
+    if (!fromSlug) return
+    const optionIds = (searchParams.get('options') ?? '').split(',').filter(Boolean)
+    cart.addOrReplace({ product: fromSlug, optionIds })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Modèles ("sur un modèle") éventuellement présents dans le panier — un
+  // seul appel de settings pour toutes les lignes concernées, plutôt qu'un
+  // par ligne.
+  const hasTemplateLine = cart.items.some((l) => !!l.templateSlug)
   const templateOverridesQ = trpc.settings.get.useQuery(
     { key: 'saveTheDateTemplates' },
-    { enabled: !!templateSlug },
+    { enabled: hasTemplateLine },
   )
-  const template = templateSlug
-    ? resolveSaveTheDateTemplate(templateSlug, parseTemplateOverrides(templateOverridesQ.data?.value))
-    : undefined
+  const templateOverrides = parseTemplateOverrides(templateOverridesQ.data?.value)
+  const resolveLineTemplate = (slug: string | undefined) =>
+    slug ? resolveSaveTheDateTemplate(slug, templateOverrides) : undefined
 
-  const [productId, setProductId] = useState<ProductId>(
-    () =>
-      (template ? 'SAVE_THE_DATE' : undefined) ??
-      productIdFromSlug(searchParams.get('produit')) ??
-      draft?.productId ??
-      'FAIRE_PART',
-  )
-  const [optionIds, setOptionIds] = useState<string[]>(() => {
-    const fromUrl = (searchParams.get('options') ?? '').split(',').filter(Boolean)
-    return fromUrl.length > 0 ? fromUrl : (draft?.optionIds ?? [])
-  })
   const [prenom1, setPrenom1] = useState(draft?.prenom1 ?? '')
   const [prenom2, setPrenom2] = useState(draft?.prenom2 ?? '')
   const [email, setEmail] = useState(draft?.email ?? '')
@@ -139,24 +156,19 @@ export default function Commander() {
   // Rempli une fois orders.createCheckout appelé : fait apparaître le
   // Payment Element Stripe pour la saisie réelle de la carte. `null` tant
   // que le client n'a pas validé le bloc "Vos informations" (cf.
-  // handlePrepare) — le PaymentIntent Stripe (et la commande "pending"
-  // associée, cf. api/ordersRouter.ts) n'est créé qu'à ce moment-là, pas
-  // avant.
+  // handlePrepare) — le PaymentIntent Stripe (et les commandes "pending"
+  // associées, une par ligne du panier, cf. api/ordersRouter.ts) n'est créé
+  // qu'à ce moment-là, pas avant.
   const [checkoutResult, setCheckoutResult] = useState<{
-    orderId: number
+    orderIds: number[]
     clientSecret: string
   } | null>(null)
 
-  const product = getProduct(products, productId)
-  // "Sur un modèle" : prix fixe, aucune option — cf. doc de TEMPLATE_PRICE_CENTS.
-  const selectedOptions = template ? [] : options.filter((o) => optionIds.includes(o.id))
-  const totalCents = template
-    ? TEMPLATE_PRICE_CENTS
-    : product.priceCents + selectedOptions.reduce((sum, o) => sum + o.priceCents, 0)
+  const totalCents = cart.items.reduce((sum, line) => sum + lineAmountCents(line, products, options), 0)
 
   const checkout = trpc.orders.createCheckout.useMutation()
 
-  // Le montant peut changer après coup (formule/options modifiées) — si un
+  // Le montant peut changer après coup (lignes/options modifiées) — si un
   // PaymentIntent existe déjà pour un montant désormais périmé, on
   // réinitialise plutôt que de laisser confirmer un paiement pour le
   // mauvais montant. L'ancienne commande "pending" reste en base
@@ -165,9 +177,6 @@ export default function Commander() {
   useEffect(() => {
     setCheckoutResult(null)
   }, [totalCents])
-
-  const toggleOption = (id: string) =>
-    setOptionIds((prev) => (prev.includes(id) ? prev.filter((o) => o !== id) : [...prev, id]))
 
   function validate(): Errors {
     const errs: Errors = {}
@@ -185,8 +194,6 @@ export default function Commander() {
 
   function saveDraft() {
     const data: CheckoutDraft = {
-      productId,
-      optionIds,
       prenom1,
       prenom2,
       email,
@@ -201,13 +208,13 @@ export default function Commander() {
     }
   }
 
-  // Phase 1 — valide les informations, crée le PaymentIntent Stripe + la
-  // commande "pending" côté serveur, fait apparaître le Payment Element.
-  // Ne débite rien : c'est StripePaymentForm (phase 2, plus bas) qui
-  // confirme réellement le paiement avec Stripe.
+  // Phase 1 — valide les informations, crée le PaymentIntent Stripe + une
+  // commande "pending" par ligne du panier côté serveur, fait apparaître le
+  // Payment Element. Ne débite rien : c'est StripePaymentForm (phase 2, plus
+  // bas) qui confirme réellement le paiement avec Stripe.
   async function handlePrepare(e: FormEvent) {
     e.preventDefault()
-    if (preparing || checkoutResult) return
+    if (preparing || checkoutResult || cart.items.length === 0) return
     const errs = validate()
     setErrors(errs)
     if (Object.keys(errs).length > 0) {
@@ -223,19 +230,27 @@ export default function Commander() {
     setAccountExists(false)
     try {
       const result = await checkout.mutateAsync({
-        product: productId,
-        optionIds: template ? [] : optionIds,
+        items: cart.items.map((line) => ({
+          product: line.product,
+          optionIds: line.templateSlug ? [] : line.optionIds,
+          templateSlug: line.templateSlug,
+        })),
         names: `${prenom1.trim()} & ${prenom2.trim()}`,
         weddingDate: weddingDate ? new Date(`${weddingDate}T12:00:00`) : undefined,
         venue: venue.trim() || undefined,
         email: email.trim(),
-        templateSlug: template?.slug,
       })
       window.sessionStorage.removeItem(DRAFT_KEY)
       if (!result.clientSecret) {
         throw new Error(t('commander.errPaymentInit'))
       }
-      setCheckoutResult({ orderId: result.orderId, clientSecret: result.clientSecret })
+      // Le panier n'est vidé qu'une fois le PAIEMENT confirmé (cf.
+      // StripePaymentForm.handleConfirm plus bas) — pas ici : à ce stade,
+      // les commandes "pending" existent déjà côté serveur mais rien n'est
+      // payé. Vider le panier maintenant ferait perdre le rappel du
+      // contenu de la commande si le client recharge la page avant de
+      // payer (ex. carte refusée, onglet fermé par erreur).
+      setCheckoutResult({ orderIds: result.orderIds, clientSecret: result.clientSecret })
     } catch (err) {
       // CONFLICT = un compte existe déjà pour cet email. On ne peut pas
       // commander en invité sur une adresse déjà rattachée à un compte, sinon
@@ -254,9 +269,19 @@ export default function Commander() {
     }
   }
 
-  const summaryThumb = template ? template.posterSrc : productId === 'FAIRE_PART' ? '/template-editorial.jpg' : '/template-minimal.jpg'
-  const displayProductName = template ? `${t('commander.templateNamePrefix')} ${template.name}` : product.name
-  const displayProductPriceCents = template ? TEMPLATE_PRICE_CENTS : product.priceCents
+  // Une entrée de récapitulatif par ligne du panier — remplace le calcul
+  // "un seul produit" d'origine (`summaryThumb`/`displayProductName`…).
+  const summaryLines = cart.items.map((line) => {
+    const lineTemplate = resolveLineTemplate(line.templateSlug)
+    const lineProduct = getProduct(products, line.product)
+    return {
+      key: line.product,
+      thumb: lineTemplate ? lineTemplate.posterSrc : line.product === 'FAIRE_PART' ? '/template-editorial.jpg' : '/template-minimal.jpg',
+      name: lineTemplate ? `${t('commander.templateNamePrefix')} ${lineTemplate.name}` : lineProduct.name,
+      priceCents: lineTemplate ? TEMPLATE_PRICE_CENTS : lineProduct.priceCents,
+      selectedOptions: lineTemplate ? [] : options.filter((o) => line.optionIds.includes(o.id)),
+    }
+  })
 
   const elementsOptions: StripeElementsOptions | undefined = checkoutResult
     ? {
@@ -354,13 +379,7 @@ export default function Commander() {
                 className="overflow-hidden"
               >
                 <div className="mt-2">
-                  <SummaryCard
-                    thumb={summaryThumb}
-                    productName={displayProductName}
-                    productPriceCents={displayProductPriceCents}
-                    selectedOptions={selectedOptions}
-                    totalCents={totalCents}
-                  />
+                  <SummaryCard items={summaryLines} totalCents={totalCents} />
                 </div>
               </motion.div>
             )}
@@ -372,103 +391,135 @@ export default function Commander() {
           {/* Formulaire                                                  */}
           {/* ---------------------------------------------------------- */}
           <form onSubmit={handlePrepare} noValidate className="flex flex-col gap-12">
-            {/* Bloc 1 — Formule : encart fixe (non éditable) pour une commande
-                "sur un modèle" (?modele=…) — changer de produit reviendrait à
-                quitter ce modèle, cf. lien "Changer de modèle" plus bas.
-                Sinon, le choix habituel entre les 2 formules. */}
-            <section aria-labelledby="bloc-formule">
-              <BlockTitle id="bloc-formule" index="01" title={t('commander.block1Title')} />
-              {template ? (
-                <div className="mt-5 flex items-center gap-4 rounded-2xl border-2 border-terracotta-500 bg-white p-6 shadow-[0_8px_32px_rgba(27,27,30,.08)]">
-                  <img
-                    src={template.posterSrc}
-                    alt=""
-                    className="h-16 w-12 shrink-0 rounded-lg border border-neutral-200 object-cover"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-terracotta-500">
-                      {t('commander.templateBadge')}
-                    </p>
-                    <p className="mt-1 text-[15px] font-semibold text-ink">{template.name}</p>
-                    <p className="mt-0.5 text-[13px] leading-[1.4] text-neutral-500">{template.tagline}</p>
-                  </div>
+            {/* Bloc 1 — Panier : une carte par ligne (produit + ses propres
+                options, verrouillées pour une commande "sur un modèle" —
+                changer de produit reviendrait à quitter ce modèle, cf. lien
+                "Changer" sur cette ligne). Plusieurs lignes possibles depuis
+                le 22/09/2026 ("un vrai panier") : chaque produit du
+                catalogue garde SA propre carte, éditable indépendamment. */}
+            <section aria-labelledby="bloc-panier">
+              <BlockTitle id="bloc-panier" index="01" title={t('commander.block1Title')} />
+
+              {cart.items.length === 0 ? (
+                <div className="mt-5 rounded-2xl border border-dashed border-neutral-200 bg-white px-6 py-10 text-center">
+                  <p className="text-[15px] font-semibold text-ink">{t('commander.emptyCartTitle')}</p>
+                  <p className="mt-1.5 text-[13px] text-neutral-500">{t('commander.emptyCartDesc')}</p>
                   <Link
-                    to="/save-the-date-modeles"
-                    className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.1em] text-neutral-500 underline-offset-4 hover:text-terracotta-500 hover:underline"
+                    to="/offres"
+                    className="mt-5 inline-flex items-center rounded-full bg-terracotta-500 px-6 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400"
                   >
-                    {t('commander.templateChange')}
+                    {t('commander.emptyCartCta')}
                   </Link>
                 </div>
               ) : (
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  {(['SAVE_THE_DATE', 'FAIRE_PART'] as ProductId[]).map((id) => {
-                    const p = getProduct(products, id)
-                    const active = productId === id
+                <div className="mt-5 flex flex-col gap-6">
+                  {cart.items.map((line) => {
+                    const lineTemplate = resolveLineTemplate(line.templateSlug)
+                    const lineProduct = getProduct(products, line.product)
                     return (
-                      <motion.button
-                        key={id}
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        onClick={() => setProductId(id)}
-                        whileTap={{ scale: 0.97 }}
-                        className={cn(
-                          'rounded-2xl border-2 bg-white p-6 text-left transition-colors duration-300',
-                          active
-                            ? 'border-terracotta-500 shadow-[0_8px_32px_rgba(27,27,30,.08)]'
-                            : 'border-neutral-200 hover:border-neutral-500/50',
-                        )}
+                      <div
+                        key={line.product}
+                        className="rounded-2xl border-2 border-terracotta-500/40 bg-white p-6 shadow-[0_8px_32px_rgba(27,27,30,.08)]"
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-[15px] font-semibold text-ink">{p.name}</p>
-                            <p className="mt-1 text-[13px] leading-[1.5] text-neutral-500">
-                              {id === 'FAIRE_PART' ? t('commander.fairePartDesc') : t('commander.saveTheDateDesc')}
-                            </p>
+                        {lineTemplate ? (
+                          <div className="flex items-center gap-4">
+                            <img
+                              src={lineTemplate.posterSrc}
+                              alt=""
+                              className="h-16 w-12 shrink-0 rounded-lg border border-neutral-200 object-cover"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-terracotta-500">
+                                {t('commander.templateBadge')}
+                              </p>
+                              <p className="mt-1 text-[15px] font-semibold text-ink">{lineTemplate.name}</p>
+                              <p className="mt-0.5 text-[13px] leading-[1.4] text-neutral-500">{lineTemplate.tagline}</p>
+                            </div>
+                            <Link
+                              to="/save-the-date-modeles"
+                              className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.1em] text-neutral-500 underline-offset-4 hover:text-terracotta-500 hover:underline"
+                            >
+                              {t('commander.templateChange')}
+                            </Link>
                           </div>
-                          <span
-                            aria-hidden
-                            className={cn(
-                              'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-300',
-                              active ? 'border-terracotta-500 bg-terracotta-500 text-white' : 'border-neutral-200 text-transparent',
+                        ) : (
+                          <>
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="text-[15px] font-semibold text-ink">{lineProduct.name}</p>
+                                <p className="mt-1 text-[13px] leading-[1.5] text-neutral-500">
+                                  {line.product === 'FAIRE_PART' ? t('commander.fairePartDesc') : t('commander.saveTheDateDesc')}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => cart.removeProduct(line.product)}
+                                aria-label={t('commander.removeLine')}
+                                className="shrink-0 rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-error/10 hover:text-error"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                            <p className="font-display tabular mt-3 text-2xl font-light text-terracotta-500">
+                              {formatEuros(lineProduct.priceCents)}
+                            </p>
+                            {options.length > 0 && (
+                              <div className="mt-5 flex flex-col gap-3 border-t border-neutral-200 pt-5">
+                                {options.map((option) => (
+                                  <OptionToggle
+                                    key={option.id}
+                                    option={option}
+                                    tone="light"
+                                    checked={line.optionIds.includes(option.id)}
+                                    onToggle={() =>
+                                      cart.updateOptions(
+                                        line.product,
+                                        line.optionIds.includes(option.id)
+                                          ? line.optionIds.filter((o) => o !== option.id)
+                                          : [...line.optionIds, option.id],
+                                      )
+                                    }
+                                  />
+                                ))}
+                              </div>
                             )}
+                          </>
+                        )}
+                        {lineTemplate && (
+                          <button
+                            type="button"
+                            onClick={() => cart.removeProduct(line.product)}
+                            className="mt-3 text-[12px] font-medium text-neutral-500 underline-offset-4 hover:text-error hover:underline"
                           >
-                            <CheckDraw checked={active} className="h-3.5 w-3.5" />
-                          </span>
-                        </div>
-                        <p className="font-display tabular mt-4 text-2xl font-light text-terracotta-500">
-                          {formatEuros(p.priceCents)}
-                        </p>
-                      </motion.button>
+                            {t('commander.removeLine')}
+                          </button>
+                        )}
+                      </div>
                     )
                   })}
+
+                  {/* Ajouter l'autre produit du catalogue s'il n'est pas déjà
+                      dans le panier — chaque produit a sa propre page dédiée
+                      où configurer ses options avant de rejoindre le panier. */}
+                  {(['SAVE_THE_DATE', 'FAIRE_PART'] as ProductId[])
+                    .filter((id) => !cart.items.some((l) => l.product === id))
+                    .map((id) => (
+                      <Link
+                        key={id}
+                        to={id === 'FAIRE_PART' ? '/faire-part-digital' : '/save-the-date-digital'}
+                        className="inline-flex w-fit items-center gap-2 rounded-full border border-dashed border-neutral-300 px-5 py-2.5 text-[13px] font-medium text-neutral-500 transition-colors hover:border-terracotta-500 hover:text-terracotta-500"
+                      >
+                        <Plus size={14} />
+                        {t('commander.addAnotherProduct')} — {getProduct(products, id).name}
+                      </Link>
+                    ))}
                 </div>
               )}
             </section>
 
-            {/* Bloc 2 — Options : masqué pour "sur un modèle" (cf. doc de
-                TEMPLATE_PRICE_CENTS — révisions/sous-titres n'ont pas de sens
-                sur un montage déjà figé livré instantanément). */}
-            {!template && (
-              <section aria-labelledby="bloc-options">
-                <BlockTitle id="bloc-options" index="02" title={t('commander.block2Title')} />
-                <div className="mt-5 flex flex-col gap-3">
-                  {options.map((option) => (
-                    <OptionToggle
-                      key={option.id}
-                      option={option}
-                      tone="light"
-                      checked={optionIds.includes(option.id)}
-                      onToggle={() => toggleOption(option.id)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Bloc 3 — Informations */}
+            {/* Bloc 2 — Informations */}
             <section aria-labelledby="bloc-infos">
-              <BlockTitle id="bloc-infos" index={template ? '02' : '03'} title={t('commander.block3Title')} />
+              <BlockTitle id="bloc-infos" index="02" title={t('commander.block3Title')} />
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <FloatingField
                   label={t('commander.fieldPrenom1')}
@@ -539,7 +590,7 @@ export default function Commander() {
 
             {/* Bloc 4 — Paiement */}
             <section aria-labelledby="bloc-paiement">
-              <BlockTitle id="bloc-paiement" index={template ? '03' : '04'} title={t('commander.block4Title')} />
+              <BlockTitle id="bloc-paiement" index="03" title={t('commander.block4Title')} />
 
               {!checkoutResult ? (
                 <>
@@ -599,12 +650,13 @@ export default function Commander() {
                     // Supabase) a rendu ce bouton inerte avec un curseur
                     // d'attente — un client ne pouvait plus payer du tout, pour
                     // une requête dont le paiement n'a pas besoin.
-                    disabled={preparing}
+                    disabled={preparing || cart.items.length === 0}
                     whileHover={preparing ? undefined : { y: -2 }}
                     whileTap={preparing ? undefined : { scale: 0.98 }}
                     className={cn(
                       'mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-terracotta-500 text-[15px] font-semibold text-white transition-colors hover:bg-terracotta-400',
                       preparing && 'cursor-wait opacity-80',
+                      !preparing && cart.items.length === 0 && 'cursor-not-allowed opacity-60',
                     )}
                   >
                     {preparing ? (
@@ -619,7 +671,7 @@ export default function Commander() {
                 </>
               ) : stripePromise ? (
                 <Elements stripe={stripePromise} options={elementsOptions}>
-                  <StripePaymentForm orderId={checkoutResult.orderId} totalCents={totalCents} />
+                  <StripePaymentForm orderIds={checkoutResult.orderIds} totalCents={totalCents} onPaid={cart.clear} />
                 </Elements>
               ) : (
                 <p className="mt-4 rounded-xl border border-error/30 bg-error/5 px-5 py-4 text-[14px] font-medium text-error">
@@ -639,13 +691,7 @@ export default function Commander() {
           {/* ---------------------------------------------------------- */}
           <aside className="hidden lg:block">
             <div className="sticky top-28">
-              <SummaryCard
-                thumb={summaryThumb}
-                productName={displayProductName}
-                productPriceCents={displayProductPriceCents}
-                selectedOptions={selectedOptions}
-                totalCents={totalCents}
-              />
+              <SummaryCard items={summaryLines} totalCents={totalCents} />
             </div>
           </aside>
         </div>
@@ -669,7 +715,16 @@ export default function Commander() {
  * que ce ne soit tout à fait le cas ; Merci.tsx affiche la commande dès
  * qu'elle existe (statut "pending" ou "paid"), pas seulement une fois payée.
  */
-function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCents: number }) {
+function StripePaymentForm({
+  orderIds,
+  totalCents,
+  onPaid,
+}: {
+  orderIds: number[]
+  totalCents: number
+  /** Vide le panier — appelé une fois le paiement réellement confirmé, pas avant. */
+  onPaid: () => void
+}) {
   const { t } = useLanguage()
   const stripe = useStripe()
   const elements = useElements()
@@ -682,7 +737,9 @@ function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCent
     setSubmitting(true)
     setError(null)
 
-    const returnUrl = `${window.location.origin}/merci?order=${formatOrderNumber(orderId)}`
+    // Plusieurs références possibles (une par ligne du panier payée
+    // ensemble) — `?orders=` au pluriel, Merci.tsx les affiche toutes.
+    const returnUrl = `${window.location.origin}/merci?orders=${orderIds.map((id) => formatOrderNumber(id)).join(',')}`
 
     // `elements.submit()` valide le Payment Element côté client avant
     // confirmation — requis par l'API Stripe actuelle en amont de
@@ -709,6 +766,7 @@ function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCent
       return
     }
 
+    onPaid()
     navigate(returnUrl.replace(window.location.origin, ''))
   }
 
@@ -786,50 +844,56 @@ function BlockTitle({ id, index, title }: { id: string; index: string; title: st
   )
 }
 
-function SummaryCard({
-  thumb,
-  productName,
-  productPriceCents,
-  selectedOptions,
-  totalCents,
-}: {
+interface SummaryLine {
+  key: string
   thumb: string
-  productName: string
-  productPriceCents: number
+  name: string
+  priceCents: number
   selectedOptions: { id: string; label: string; priceCents: number }[]
-  totalCents: number
-}) {
+}
+
+function SummaryCard({ items, totalCents }: { items: SummaryLine[]; totalCents: number }) {
   const { t } = useLanguage()
   return (
     <div className="rounded-2xl bg-white p-6 shadow-[0_8px_32px_rgba(27,27,30,.08)]">
-      <img
-        src={thumb}
-        alt={`${t('commander.summaryAltPrefix')} ${productName}`}
-        className="aspect-[16/10] w-full rounded-xl border border-neutral-200 object-cover object-top"
-      />
-      <div className="mt-5 flex items-baseline justify-between gap-4">
-        <p className="text-[15px] font-semibold text-ink">{productName}</p>
-        <p className="tabular text-[14px] font-medium text-ink">{formatEuros(productPriceCents)}</p>
-      </div>
+      {items.length === 0 ? (
+        <p className="text-[13px] text-neutral-500">{t('commander.emptyCartTitle')}</p>
+      ) : (
+        <div className="flex flex-col gap-6">
+          {items.map((item) => (
+            <div key={item.key}>
+              <img
+                src={item.thumb}
+                alt={`${t('commander.summaryAltPrefix')} ${item.name}`}
+                className="aspect-[16/10] w-full rounded-xl border border-neutral-200 object-cover object-top"
+              />
+              <div className="mt-5 flex items-baseline justify-between gap-4">
+                <p className="text-[15px] font-semibold text-ink">{item.name}</p>
+                <p className="tabular text-[14px] font-medium text-ink">{formatEuros(item.priceCents)}</p>
+              </div>
 
-      <AnimatePresence initial={false}>
-        {selectedOptions.map((option) => (
-          <motion.div
-            key={option.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={{ duration: 0.25, ease: EASE_EDITORIAL }}
-            className="mt-2 flex items-baseline justify-between gap-4"
-          >
-            <p className="flex items-center gap-2 text-[13px] text-neutral-500">
-              <CheckboxMark checked tone="light" />
-              {option.label}
-            </p>
-            <p className="tabular text-[13px] font-medium text-ink">+{formatEuros(option.priceCents)}</p>
-          </motion.div>
-        ))}
-      </AnimatePresence>
+              <AnimatePresence initial={false}>
+                {item.selectedOptions.map((option) => (
+                  <motion.div
+                    key={option.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    transition={{ duration: 0.25, ease: EASE_EDITORIAL }}
+                    className="mt-2 flex items-baseline justify-between gap-4"
+                  >
+                    <p className="flex items-center gap-2 text-[13px] text-neutral-500">
+                      <CheckboxMark checked tone="light" />
+                      {option.label}
+                    </p>
+                    <p className="tabular text-[13px] font-medium text-ink">+{formatEuros(option.priceCents)}</p>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-5 border-t border-neutral-200 pt-5">
         <div className="flex items-baseline justify-between gap-4">

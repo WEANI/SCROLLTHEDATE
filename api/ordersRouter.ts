@@ -48,18 +48,39 @@ function slugify(text: string) {
 
 export const ordersRouter = createRouter({
   // Crée un PaymentIntent Stripe RÉEL (mode test tant que STRIPE_SECRET_KEY
-  // est une clé sk_test_) + une commande "pending" + le projet associé.
-  // Le paiement n'est confirmé — commande → "paid", email de confirmation —
-  // que par le webhook Stripe (api/webhooks/stripe.ts), jamais ici : cette
-  // mutation ne fait que PRÉPARER le paiement, elle ne l'exécute pas.
-  // `clientSecret` sert au frontend à monter Stripe Elements et à confirmer
-  // le paiement directement avec Stripe, sans jamais faire transiter les
-  // données de carte par nos serveurs.
+  // est une clé sk_test_) + UNE commande "pending" + UN projet associé PAR
+  // LIGNE DU PANIER (`items`, cf. src/cart/CartContext.tsx côté frontend) —
+  // un panier à 2 produits crée donc 2 `orders` + 2 `projects`, partageant
+  // un seul PaymentIntent (cf. doc de `orders.stripeRef`, db/schema.ts) :
+  // aucune nouvelle table "panier" nécessaire, le panier n'existe QUE côté
+  // frontend, jamais persisté tant qu'il n'est pas payé.
+  // Le paiement n'est confirmé — commandes → "paid", email(s) de
+  // confirmation — que par le webhook Stripe (api/webhooks/stripe.ts),
+  // jamais ici : cette mutation ne fait que PRÉPARER le paiement, elle ne
+  // l'exécute pas. `clientSecret` sert au frontend à monter Stripe Elements
+  // et à confirmer le paiement directement avec Stripe, sans jamais faire
+  // transiter les données de carte par nos serveurs.
   createCheckout: publicQuery
     .input(
       z.object({
-        product: productEnum,
-        optionIds: z.array(z.string()).default([]),
+        items: z
+          .array(
+            z.object({
+              product: productEnum,
+              optionIds: z.array(z.string()).default([]),
+              // Commande "sur un modèle" (cf. contracts/saveTheDateTemplates.ts)
+              // plutôt que "sur mesure" — le webhook Stripe s'en sert pour
+              // livrer CE projet instantanément une fois le paiement
+              // confirmé (cf. api/webhooks/stripe.ts), indépendamment des
+              // autres lignes du même panier.
+              templateSlug: z.string().min(1).max(100).optional(),
+            }),
+          )
+          .min(1)
+          .max(4),
+        // Informations partagées par tout le panier — un seul couple, un
+        // seul mariage, quel que soit le nombre de produits achetés en même
+        // temps.
         names: z.string().max(255).optional(), // ex. "Anna & Théo"
         weddingDate: z.coerce.date().optional(),
         venue: z.string().max(500).optional(),
@@ -67,11 +88,6 @@ export const ordersRouter = createRouter({
         // c'est l'adresse à laquelle le compte sera créé après paiement.
         // Ignoré si l'appelant est déjà authentifié — son compte fait foi.
         email: z.string().email().max(320).optional(),
-        // Commande "sur un modèle" (cf. contracts/saveTheDateTemplates.ts)
-        // plutôt que "sur mesure" — le webhook Stripe s'en sert pour livrer
-        // le projet instantanément une fois le paiement confirmé (cf.
-        // api/webhooks/stripe.ts).
-        templateSlug: z.string().min(1).max(100).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -83,9 +99,11 @@ export const ordersRouter = createRouter({
         });
       }
 
-      if (input.templateSlug) {
-        if (input.product !== "SAVE_THE_DATE" || !getSaveTheDateTemplate(input.templateSlug)) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Ce modèle n'existe pas." });
+      for (const item of input.items) {
+        if (item.templateSlug) {
+          if (item.product !== "SAVE_THE_DATE" || !getSaveTheDateTemplate(item.templateSlug)) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Ce modèle n'existe pas." });
+          }
         }
       }
 
@@ -101,6 +119,7 @@ export const ordersRouter = createRouter({
       // Utilisateur de la commande : le compte connecté, ou une ligne `users`
       // créée à la volée pour l'invité (sans compte Supabase Auth — celui-ci
       // n'est créé qu'après paiement confirmé, cf. webhooks/stripe.ts).
+      // Résolu UNE fois pour tout le panier, pas par ligne.
       let user = ctx.user;
       let createdGuest = false;
       if (!user) {
@@ -128,15 +147,22 @@ export const ordersRouter = createRouter({
         createdGuest = !existing;
       }
 
-      // "Sur un modèle" : prix fixe, aucune option — cf. doc de
-      // TEMPLATE_PRICE_CENTS. Sinon, prix/options habituels pilotés depuis
-      // Réglages → Produits & prix.
-      const { amountCents, options } = input.templateSlug
-        ? { amountCents: TEMPLATE_PRICE_CENTS, options: [] }
-        : await computeAmount(input.product, input.optionIds);
+      // Montant de chaque ligne : "sur un modèle" = prix fixe, aucune option
+      // — cf. doc de TEMPLATE_PRICE_CENTS. Sinon, prix/options habituels
+      // pilotés depuis Réglages → Produits & prix. Le montant du
+      // PaymentIntent est la somme de toutes les lignes.
+      const resolvedItems = await Promise.all(
+        input.items.map(async (item) => {
+          const { amountCents, options } = item.templateSlug
+            ? { amountCents: TEMPLATE_PRICE_CENTS, options: [] }
+            : await computeAmount(item.product, item.optionIds);
+          return { ...item, amountCents, options };
+        }),
+      );
+      const totalAmountCents = resolvedItems.reduce((sum, i) => sum + i.amountCents, 0);
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: amountCents,
+        amount: totalAmountCents,
         currency: "eur",
         // Carte uniquement : `automatic_payment_methods: { enabled: true }`
         // faisait apparaître tous les moyens de paiement activés sur le
@@ -148,49 +174,54 @@ export const ordersRouter = createRouter({
         payment_method_types: ["card"],
         metadata: {
           userId: String(user.id),
-          product: input.product,
           names: input.names ?? "",
-          // Lu par le webhook (payment_intent.succeeded) pour savoir s'il
-          // doit livrer le projet instantanément — cf. api/webhooks/stripe.ts.
-          templateSlug: input.templateSlug ?? "",
+          itemCount: String(resolvedItems.length),
         },
       });
 
-      const orderId = await createOrder({
-        userId: user.id,
-        product: input.product,
-        options,
-        amountCents,
-        paymentStatus: "pending",
-        stripeRef: paymentIntent.id,
-      });
-      const slugBase = slugify(input.names ?? user.name ?? "projet") || "projet";
-      const projectId = await createProject({
-        orderId,
-        userId: user.id,
-        status: "ONBOARDING",
-        slug: `${slugBase}-${nanoid(6).toLowerCase()}`,
-        weddingDate: input.weddingDate ?? null,
-        venue: input.venue ?? null,
-        progress: 5,
-      });
-      if (createdGuest) {
-        await logAudit(projectId, "system", "user.guest_created", {
+      const orderIds: number[] = [];
+      const projectIds: number[] = [];
+      for (const item of resolvedItems) {
+        const orderId = await createOrder({
           userId: user.id,
+          product: item.product,
+          options: item.options,
+          amountCents: item.amountCents,
+          paymentStatus: "pending",
+          stripeRef: paymentIntent.id,
+          templateSlug: item.templateSlug ?? null,
         });
+        const slugBase = slugify(input.names ?? user.name ?? "projet") || "projet";
+        const projectId = await createProject({
+          orderId,
+          userId: user.id,
+          status: "ONBOARDING",
+          slug: `${slugBase}-${nanoid(6).toLowerCase()}`,
+          weddingDate: input.weddingDate ?? null,
+          venue: input.venue ?? null,
+          progress: 5,
+        });
+        if (createdGuest) {
+          await logAudit(projectId, "system", "user.guest_created", {
+            userId: user.id,
+          });
+          createdGuest = false; // une seule fois, pas par ligne de panier
+        }
+        await logAudit(projectId, actorOf(user), "order.created", {
+          orderId,
+          product: item.product,
+          amountCents: item.amountCents,
+          options: item.optionIds,
+        });
+        await logAudit(projectId, "system", "project.created", { orderId });
+        orderIds.push(orderId);
+        projectIds.push(projectId);
       }
-      await logAudit(projectId, actorOf(user), "order.created", {
-        orderId,
-        product: input.product,
-        amountCents,
-        options: input.optionIds,
-      });
-      await logAudit(projectId, "system", "project.created", { orderId });
 
       return {
-        orderId,
-        projectId,
-        amountCents,
+        orderIds,
+        projectIds,
+        amountCents: totalAmountCents,
         clientSecret: paymentIntent.client_secret,
       };
     }),

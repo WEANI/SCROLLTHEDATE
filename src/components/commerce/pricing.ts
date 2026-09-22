@@ -46,6 +46,16 @@ export const FALLBACK_TEXTS: Required<SiteTexts> = {
   deliveryEstimateDays: 3,
 }
 
+/**
+ * Commande "sur un modèle" (Red Door…) — prix fixe, aucune option add-on,
+ * cf. échange du 12/09/2026. Doit rester identique à `TEMPLATE_PRICE_CENTS`
+ * dans `api/ordersRouter.ts` (dupliqué à dessein : ce fichier reste pur
+ * frontend et ne peut pas importer de code serveur). Centralisé ICI côté
+ * client — Commander.tsx et le panier (cart/CartContext.tsx-consumers) s'en
+ * servent tous les deux, pas de 2e duplication locale.
+ */
+export const TEMPLATE_PRICE_CENTS = 9900
+
 /** "349 €" / "49,67 €" (décimales uniquement si nécessaire). */
 export function formatEuros(cents: number, forceDecimals = false): string {
   const hasDecimals = forceDecimals || cents % 100 !== 0
@@ -139,6 +149,23 @@ export function usePricing() {
 
 export function getProduct(products: ProductSetting[], id: ProductId): ProductSetting {
   return products.find((p) => p.id === id) ?? FALLBACK_PRODUCTS.find((p) => p.id === id) ?? FALLBACK_PRODUCTS[0]
+}
+
+/**
+ * Montant d'une ligne de panier (produit + ses options, ou prix fixe "sur
+ * un modèle") — utilisé par le panier (CartMenu) et Commander.tsx, mêmes
+ * règles de calcul que le serveur (`computeAmount`, api/queries/orders.ts) ;
+ * uniquement indicatif côté client, le serveur recalcule indépendamment.
+ */
+export function lineAmountCents(
+  line: { product: ProductId; optionIds: string[]; templateSlug?: string },
+  products: ProductSetting[],
+  options: CheckoutOption[],
+): number {
+  if (line.templateSlug) return TEMPLATE_PRICE_CENTS
+  const product = getProduct(products, line.product)
+  const selected = options.filter((o) => line.optionIds.includes(o.id))
+  return product.priceCents + selected.reduce((sum, o) => sum + o.priceCents, 0)
 }
 
 /** Slug URL ↔ id produit (`?produit=faire-part|save-the-date`). */

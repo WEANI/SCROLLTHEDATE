@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { LOGIN_PATH } from '@/const'
 import { useLanguage } from '@/i18n/LanguageContext'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import CartMenu from '@/components/CartMenu'
 
 interface NavLink {
   key: string
@@ -148,6 +149,7 @@ export default function Navbar() {
           >
             {t('nav.createInvite')}
           </Link>
+          <CartMenu variant="dark" />
           <LanguageSwitcher variant="dark" />
         </motion.div>
 
@@ -212,7 +214,10 @@ export default function Navbar() {
               transition={{ delay: 0.35 }}
               className="flex flex-col gap-4"
             >
-              <LanguageSwitcher variant="dark" className="mx-auto" />
+              <div className="mx-auto flex items-center gap-4">
+                <CartMenu variant="dark" />
+                <LanguageSwitcher variant="dark" />
+              </div>
               {/* AUTH-SLOT: rewired to useAuth() */}
               {isLoading ? (
                 <span className="mx-auto block h-5 w-24 animate-pulse rounded bg-white/10" aria-hidden="true" />
