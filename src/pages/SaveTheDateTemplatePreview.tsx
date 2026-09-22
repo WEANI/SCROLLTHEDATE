@@ -6,6 +6,7 @@ import { trpc } from '@/providers/trpc'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { getHeroFont, useGoogleFont } from '@/components/hero-scrub/heroDecor'
 import { useSeo } from '@/hooks/useSeo'
+import { useLanguage } from '@/i18n/LanguageContext'
 import { formatEuros } from '@/components/commerce/pricing'
 import { parseTemplateOverrides, resolveSaveTheDateTemplate } from '@contracts/saveTheDateTemplates'
 
@@ -22,6 +23,7 @@ const TEMPLATE_PRICE_CENTS = 9900
  * revient perturber la lecture plus bas dans la vidéo.
  */
 function ScrollHint() {
+  const { t } = useLanguage()
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
@@ -41,7 +43,7 @@ function ScrollHint() {
       aria-hidden
     >
       <span className="rounded-full bg-black/30 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-sm">
-        Scrollez pour découvrir
+        {t('saveTheDateTemplatePreview.scrollHint')}
       </span>
       <ChevronDown size={20} className="motion-safe:animate-bounce text-white/80" />
     </div>
@@ -61,6 +63,7 @@ function ScrollHint() {
  * composant.
  */
 export default function SaveTheDateTemplatePreview() {
+  const { t } = useLanguage()
   const { slug } = useParams<{ slug: string }>()
   // Textes/timings pilotables depuis Réglages → Modèles Save the Date, cf.
   // doc de contracts/saveTheDateTemplates.ts.
@@ -73,7 +76,7 @@ export default function SaveTheDateTemplatePreview() {
   useGoogleFont(template?.fontId)
 
   useSeo({
-    title: template ? `Modèle ${template.name} — Save the Date · Scroll The Date` : 'Modèle introuvable · Scroll The Date',
+    title: template ? `Modèle ${template.name} — Save the Date · Scroll The Date` : t('saveTheDateTemplatePreview.notFoundSeoTitle'),
     description: template?.description ?? '',
     path: `/save-the-date-modeles/${slug ?? ''}`,
   })
@@ -81,13 +84,13 @@ export default function SaveTheDateTemplatePreview() {
   if (!template) {
     return (
       <section className="mx-auto max-w-lg px-6 py-32 text-center">
-        <p className="font-display text-[26px] italic">Ce modèle n'existe pas (plus).</p>
+        <p className="font-display text-[26px] italic">{t('saveTheDateTemplatePreview.notFoundTitle')}</p>
         <Link
           to="/save-the-date-modeles"
           className="mt-6 inline-flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-terracotta-500 hover:text-terracotta-400"
         >
           <ArrowLeft size={14} />
-          Retour aux modèles
+          {t('saveTheDateTemplatePreview.backToTemplates')}
         </Link>
       </section>
     )
@@ -101,7 +104,7 @@ export default function SaveTheDateTemplatePreview() {
           className="inline-flex items-center gap-2 rounded-full bg-black/25 px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm transition-colors hover:bg-black/40"
         >
           <ArrowLeft size={13} />
-          Modèles
+          {t('saveTheDateTemplatePreview.headerBack')}
         </Link>
         <Link to="/" aria-label="Scroll The Date — accueil" className="rounded-full bg-black/25 px-4 py-2 backdrop-blur-sm">
           <img src="/logo.svg" alt="Scroll The Date" className="h-6 w-auto brightness-0 invert" />
@@ -127,15 +130,14 @@ export default function SaveTheDateTemplatePreview() {
         <p className="font-display text-[26px] italic text-white sm:text-[32px]">{template.name}</p>
         <p className="mx-auto mt-3 max-w-md text-[14px] leading-[1.6] text-white/55">{template.description}</p>
         <p className="mx-auto mt-6 max-w-md text-[13px] leading-[1.6] text-white/40">
-          Prix unique, quel que soit le nombre d'invités. Vos prénoms et votre date remplacent ceux de l'exemple —
-          votre page est prête en quelques minutes.
+          {t('saveTheDateTemplatePreview.priceLine')}
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <Link
             to={`/commander?produit=save-the-date&modele=${template.slug}`}
             className="inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
           >
-            Commander ce modèle — {formatEuros(TEMPLATE_PRICE_CENTS)}
+            {t('saveTheDateTemplatePreview.orderPrefix')} {formatEuros(TEMPLATE_PRICE_CENTS)}
           </Link>
           <a
             href="https://wa.me/33600000000"
@@ -144,14 +146,14 @@ export default function SaveTheDateTemplatePreview() {
             className="inline-flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.1em] text-white/70 transition-colors hover:text-white"
           >
             <MessageCircle size={15} />
-            Une question ?
+            {t('saveTheDateTemplatePreview.question')}
           </a>
         </div>
         <Link
           to="/save-the-date-modeles"
           className="mt-6 inline-block text-[12px] font-medium text-white/40 transition-colors hover:text-white/70"
         >
-          Voir les autres modèles
+          {t('saveTheDateTemplatePreview.seeOthers')}
         </Link>
       </footer>
     </div>

@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils'
 import { trpc } from '@/providers/trpc'
 import { useAuth } from '@/hooks/useAuth'
 import { LOGIN_PATH } from '@/const'
+import { useLanguage } from '@/i18n/LanguageContext'
 import { stripePromise } from '@/lib/stripeClient'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
 import AnimatedAmount from '@/components/commerce/AnimatedAmount'
@@ -85,6 +86,7 @@ const PHONE_RE = /^[+0-9 ().-]{8,}$/
 /* -------------------------------------------------------------------------- */
 
 export default function Commander() {
+  const { t } = useLanguage()
   const [searchParams] = useSearchParams()
   // Plus de useNavigate ici : la redirection vers /login au moment de payer a
   // disparu avec le checkout invité. StripePaymentForm garde le sien pour
@@ -169,15 +171,15 @@ export default function Commander() {
 
   function validate(): Errors {
     const errs: Errors = {}
-    if (!prenom1.trim()) errs.prenom1 = 'Le prénom du premier marié·e est requis.'
-    if (!prenom2.trim()) errs.prenom2 = 'Le prénom du second marié·e est requis.'
-    if (!email.trim()) errs.email = "L'email est requis."
-    else if (!EMAIL_RE.test(email.trim())) errs.email = 'Cet email semble invalide.'
+    if (!prenom1.trim()) errs.prenom1 = t('commander.errPrenom1')
+    if (!prenom2.trim()) errs.prenom2 = t('commander.errPrenom2')
+    if (!email.trim()) errs.email = t('commander.errEmailRequired')
+    else if (!EMAIL_RE.test(email.trim())) errs.email = t('commander.errEmailInvalid')
     if (phone.trim() && !PHONE_RE.test(phone.trim()))
-      errs.phone = 'Ce numéro semble invalide.'
-    if (!weddingDate) errs.weddingDate = 'Une date prévisionnelle nous aide à planifier.'
+      errs.phone = t('commander.errPhoneInvalid')
+    if (!weddingDate) errs.weddingDate = t('commander.errDateRequired')
     else if (new Date(weddingDate).getTime() < Date.now() - 24 * 3600 * 1000)
-      errs.weddingDate = 'Cette date semble être déjà passée.'
+      errs.weddingDate = t('commander.errDatePast')
     return errs
   }
 
@@ -231,7 +233,7 @@ export default function Commander() {
       })
       window.sessionStorage.removeItem(DRAFT_KEY)
       if (!result.clientSecret) {
-        throw new Error("Le paiement n'a pas pu être initialisé. Réessayez dans un instant.")
+        throw new Error(t('commander.errPaymentInit'))
       }
       setCheckoutResult({ orderId: result.orderId, clientSecret: result.clientSecret })
     } catch (err) {
@@ -253,7 +255,7 @@ export default function Commander() {
   }
 
   const summaryThumb = template ? template.posterSrc : productId === 'FAIRE_PART' ? '/template-editorial.jpg' : '/template-minimal.jpg'
-  const displayProductName = template ? `Save the Date — ${template.name}` : product.name
+  const displayProductName = template ? `${t('commander.templateNamePrefix')} ${template.name}` : product.name
   const displayProductPriceCents = template ? TEMPLATE_PRICE_CENTS : product.priceCents
 
   const elementsOptions: StripeElementsOptions | undefined = checkoutResult
@@ -283,16 +285,16 @@ export default function Commander() {
             className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-neutral-500 transition-colors hover:text-terracotta-500"
           >
             <ArrowLeft size={14} />
-            Retour aux offres
+            {t('commander.backToOffers')}
           </Link>
           <span className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink">
             <Lock size={14} className="text-terracotta-500" />
-            Paiement sécurisé
+            {t('commander.securePayment')}
           </span>
         </div>
 
         <h1 className="font-display text-[clamp(2rem,4vw,3rem)] font-light leading-[1.05] tracking-[-0.015em]">
-          Finaliser votre <em className="italic text-terracotta-500">commande</em>.
+          {t('commander.title')} <em className="italic text-terracotta-500">{t('commander.titleAccent')}</em>
         </h1>
 
         {/* Bandeau invité */}
@@ -305,10 +307,9 @@ export default function Commander() {
           >
             <LogIn size={18} className="mt-0.5 shrink-0 text-terracotta-500" />
             <p>
-              Aucun compte à créer : votre espace est activé après le paiement, avec le mot de
-              passe de votre choix.{' '}
+              {t('commander.guestBanner')}{' '}
               <Link to={LOGIN_PATH} className="font-semibold text-terracotta-500 underline-offset-4 hover:underline">
-                Déjà client ? Se connecter
+                {t('commander.guestBannerLogin')}
               </Link>
             </p>
           </motion.div>
@@ -323,7 +324,7 @@ export default function Commander() {
             className="mt-6 flex items-start gap-3 rounded-xl border border-terracotta-500/30 bg-terracotta-500/5 px-5 py-4 text-[14px] leading-[1.55] text-ink"
           >
             <Check size={18} className="mt-0.5 shrink-0 text-terracotta-500" />
-            <p>Bon retour — votre commande a été restaurée.</p>
+            <p>{t('commander.returningBanner')}</p>
           </motion.div>
         )}
 
@@ -336,7 +337,7 @@ export default function Commander() {
             className="flex w-full items-center justify-between rounded-2xl bg-white px-5 py-4 shadow-[0_8px_32px_rgba(27,27,30,.08)]"
           >
             <span className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-              Récapitulatif
+              {t('commander.summaryLabel')}
               <motion.span animate={{ rotate: recapOpen ? 180 : 0 }} transition={{ duration: 0.25 }}>
                 <ChevronDown size={16} />
               </motion.span>
@@ -376,7 +377,7 @@ export default function Commander() {
                 quitter ce modèle, cf. lien "Changer de modèle" plus bas.
                 Sinon, le choix habituel entre les 2 formules. */}
             <section aria-labelledby="bloc-formule">
-              <BlockTitle id="bloc-formule" index="01" title="Votre formule" />
+              <BlockTitle id="bloc-formule" index="01" title={t('commander.block1Title')} />
               {template ? (
                 <div className="mt-5 flex items-center gap-4 rounded-2xl border-2 border-terracotta-500 bg-white p-6 shadow-[0_8px_32px_rgba(27,27,30,.08)]">
                   <img
@@ -386,7 +387,7 @@ export default function Commander() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-terracotta-500">
-                      Save the Date · Sur un modèle
+                      {t('commander.templateBadge')}
                     </p>
                     <p className="mt-1 text-[15px] font-semibold text-ink">{template.name}</p>
                     <p className="mt-0.5 text-[13px] leading-[1.4] text-neutral-500">{template.tagline}</p>
@@ -395,7 +396,7 @@ export default function Commander() {
                     to="/save-the-date-modeles"
                     className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.1em] text-neutral-500 underline-offset-4 hover:text-terracotta-500 hover:underline"
                   >
-                    Changer
+                    {t('commander.templateChange')}
                   </Link>
                 </div>
               ) : (
@@ -422,9 +423,7 @@ export default function Commander() {
                           <div>
                             <p className="text-[15px] font-semibold text-ink">{p.name}</p>
                             <p className="mt-1 text-[13px] leading-[1.5] text-neutral-500">
-                              {id === 'FAIRE_PART'
-                                ? 'Vidéo 60 s, page complète + RSVP, scénarios personnalisés.'
-                                : "Vidéo 40 s, page d'annonce, lien illimité."}
+                              {id === 'FAIRE_PART' ? t('commander.fairePartDesc') : t('commander.saveTheDateDesc')}
                             </p>
                           </div>
                           <span
@@ -452,7 +451,7 @@ export default function Commander() {
                 sur un montage déjà figé livré instantanément). */}
             {!template && (
               <section aria-labelledby="bloc-options">
-                <BlockTitle id="bloc-options" index="02" title="Options" />
+                <BlockTitle id="bloc-options" index="02" title={t('commander.block2Title')} />
                 <div className="mt-5 flex flex-col gap-3">
                   {options.map((option) => (
                     <OptionToggle
@@ -469,10 +468,10 @@ export default function Commander() {
 
             {/* Bloc 3 — Informations */}
             <section aria-labelledby="bloc-infos">
-              <BlockTitle id="bloc-infos" index={template ? '02' : '03'} title="Vos informations" />
+              <BlockTitle id="bloc-infos" index={template ? '02' : '03'} title={t('commander.block3Title')} />
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <FloatingField
-                  label="Prénom du marié / de la mariée"
+                  label={t('commander.fieldPrenom1')}
                   name="prenom1"
                   autoComplete="given-name"
                   value={prenom1}
@@ -482,7 +481,7 @@ export default function Commander() {
                   disabled={!!checkoutResult}
                 />
                 <FloatingField
-                  label="Prénom de votre moitié"
+                  label={t('commander.fieldPrenom2')}
                   name="prenom2"
                   value={prenom2}
                   onChange={(e) => setPrenom2(e.target.value)}
@@ -491,7 +490,7 @@ export default function Commander() {
                   disabled={!!checkoutResult}
                 />
                 <FloatingField
-                  label="Email"
+                  label={t('commander.fieldEmail')}
                   name="email"
                   type="email"
                   autoComplete="email"
@@ -499,12 +498,12 @@ export default function Commander() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   error={errors.email}
-                  helper="Pour vous contacter au sujet de votre projet."
+                  helper={t('commander.fieldEmailHelper')}
                   bump={bump}
                   disabled={!!checkoutResult}
                 />
                 <FloatingField
-                  label="Téléphone (optionnel, pour WhatsApp)"
+                  label={t('commander.fieldPhone')}
                   name="phone"
                   type="tel"
                   autoComplete="tel"
@@ -515,7 +514,7 @@ export default function Commander() {
                   disabled={!!checkoutResult}
                 />
                 <FloatingField
-                  label="Date prévisionnelle du mariage"
+                  label={t('commander.fieldWeddingDate')}
                   name="weddingDate"
                   type="date"
                   alwaysFloat
@@ -526,7 +525,7 @@ export default function Commander() {
                   disabled={!!checkoutResult}
                 />
                 <FloatingField
-                  label="Ville / lieu envisagé (optionnel)"
+                  label={t('commander.fieldVenue')}
                   name="venue"
                   className="sm:col-span-2"
                   value={venue}
@@ -540,21 +539,20 @@ export default function Commander() {
 
             {/* Bloc 4 — Paiement */}
             <section aria-labelledby="bloc-paiement">
-              <BlockTitle id="bloc-paiement" index={template ? '03' : '04'} title="Paiement" />
+              <BlockTitle id="bloc-paiement" index={template ? '03' : '04'} title={t('commander.block4Title')} />
 
               {!checkoutResult ? (
                 <>
                   <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-5">
                     <p className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       <CreditCard size={16} className="text-terracotta-500" />
-                      Carte bancaire
+                      {t('commander.cardTitle')}
                       <span className="ml-auto rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
-                        Mode test
+                        {t('commander.testMode')}
                       </span>
                     </p>
                     <p className="mt-3 text-[13px] leading-[1.6] text-neutral-500">
-                      Les coordonnées de carte se saisissent à l'étape suivante, directement
-                      auprès de Stripe.
+                      {t('commander.cardHelper')}
                     </p>
                   </div>
 
@@ -568,15 +566,14 @@ export default function Commander() {
                       >
                         <LogIn size={18} className="mt-0.5 shrink-0 text-terracotta-500" />
                         <p>
-                          Un compte existe déjà avec l'adresse <strong>{email.trim()}</strong>.
-                          Connectez-vous pour finaliser cette commande — votre panier est
-                          conservé.{' '}
+                          {t('commander.accountExistsPrefix')} <strong>{email.trim()}</strong>.{' '}
+                          {t('commander.accountExistsSuffix')}{' '}
                           <Link
                             to={LOGIN_PATH}
                             state={{ from: '/commander' }}
                             className="font-semibold text-terracotta-500 underline-offset-4 hover:underline"
                           >
-                            Se connecter
+                            {t('commander.login')}
                           </Link>
                         </p>
                       </motion.div>
@@ -613,10 +610,10 @@ export default function Commander() {
                     {preparing ? (
                       <>
                         <Loader2 size={18} className="animate-spin" />
-                        Un instant…
+                        {t('commander.preparing')}
                       </>
                     ) : (
-                      <>Continuer vers le paiement — {formatEuros(totalCents)}</>
+                      <>{t('commander.continueToPayment')} {formatEuros(totalCents)}</>
                     )}
                   </motion.button>
                 </>
@@ -626,14 +623,13 @@ export default function Commander() {
                 </Elements>
               ) : (
                 <p className="mt-4 rounded-xl border border-error/30 bg-error/5 px-5 py-4 text-[14px] font-medium text-error">
-                  Le paiement en ligne n'est pas configuré sur cet environnement.
+                  {t('commander.paymentNotConfigured')}
                 </p>
               )}
 
               <p className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[12px] text-neutral-500">
                 <ShieldCheck size={14} className="text-terracotta-500" />
-                Paiement sécurisé par Stripe · 3D Secure · Mode test — carte 4242 4242 4242 4242,
-                toute date future, tout CVC.
+                {t('commander.stripeFooter')}
               </p>
             </section>
           </form>
@@ -674,6 +670,7 @@ export default function Commander() {
  * qu'elle existe (statut "pending" ou "paid"), pas seulement une fois payée.
  */
 function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCents: number }) {
+  const { t } = useLanguage()
   const stripe = useStripe()
   const elements = useElements()
   const navigate = useNavigate()
@@ -692,7 +689,7 @@ function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCent
     // `confirmPayment`.
     const submitResult = await elements.submit()
     if (submitResult.error) {
-      setError(submitResult.error.message ?? 'Vérifiez les informations de votre carte.')
+      setError(submitResult.error.message ?? t('commander.errCardCheck'))
       setSubmitting(false)
       return
     }
@@ -707,7 +704,7 @@ function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCent
     })
 
     if (confirmError) {
-      setError(confirmError.message ?? 'Le paiement a été refusé. Réessayez avec une autre carte.')
+      setError(confirmError.message ?? t('commander.errPaymentRefused'))
       setSubmitting(false)
       return
     }
@@ -728,9 +725,9 @@ function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCent
       <div className="rounded-2xl border border-neutral-200 bg-white p-5">
         <p className="mb-4 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
           <CreditCard size={16} className="text-terracotta-500" />
-          Carte bancaire
+          {t('commander.cardTitle')}
           <span className="ml-auto rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
-            Mode test
+            {t('commander.testMode')}
           </span>
         </p>
         <PaymentElement />
@@ -763,10 +760,10 @@ function StripePaymentForm({ orderId, totalCents }: { orderId: number; totalCent
         {submitting ? (
           <>
             <Loader2 size={18} className="animate-spin" />
-            Paiement en cours…
+            {t('commander.payingInProgress')}
           </>
         ) : (
-          <>Payer {formatEuros(totalCents)}</>
+          <>{t('commander.payButton')} {formatEuros(totalCents)}</>
         )}
       </motion.button>
     </div>
@@ -802,11 +799,12 @@ function SummaryCard({
   selectedOptions: { id: string; label: string; priceCents: number }[]
   totalCents: number
 }) {
+  const { t } = useLanguage()
   return (
     <div className="rounded-2xl bg-white p-6 shadow-[0_8px_32px_rgba(27,27,30,.08)]">
       <img
         src={thumb}
-        alt={`Aperçu du template — ${productName}`}
+        alt={`${t('commander.summaryAltPrefix')} ${productName}`}
         className="aspect-[16/10] w-full rounded-xl border border-neutral-200 object-cover object-top"
       />
       <div className="mt-5 flex items-baseline justify-between gap-4">
@@ -836,7 +834,7 @@ function SummaryCard({
       <div className="mt-5 border-t border-neutral-200 pt-5">
         <div className="flex items-baseline justify-between gap-4">
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-            Total TTC
+            {t('commander.totalTtc')}
           </p>
           <AnimatedAmount
             cents={totalCents}
@@ -845,7 +843,7 @@ function SummaryCard({
         </div>
         <p className="mt-3 flex items-center gap-2 text-[12px] text-neutral-500">
           <ShieldCheck size={13} className="shrink-0 text-terracotta-500" />
-          Lien illimité — quel que soit le nombre d'invités.
+          {t('commander.summaryFooter')}
         </p>
       </div>
     </div>

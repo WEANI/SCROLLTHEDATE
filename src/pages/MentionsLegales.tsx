@@ -1,5 +1,6 @@
 import LegalLayout, { TodoBlock } from '@/components/legal/LegalLayout'
 import { useSeo } from '@/hooks/useSeo'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 /**
  * Mentions légales — obligatoires (art. 6-III de la LCEN) pour tout site
@@ -10,71 +11,63 @@ import { useSeo } from '@/hooks/useSeo'
  * contact) est vérifiable depuis le projet lui-même.
  */
 export default function MentionsLegales() {
+  const { t } = useLanguage()
+
   useSeo({
-    title: 'Mentions légales — Scroll The Date',
-    description: 'Mentions légales de Scroll The Date : éditeur, hébergement, propriété intellectuelle, contact.',
+    title: t('mentionsLegales.seoTitle'),
+    description: t('mentionsLegales.seoDescription'),
     path: '/mentions-legales',
   })
 
   return (
-    <LegalLayout kicker="Informations légales" title="Mentions légales" lastUpdated="18 septembre 2026">
+    <LegalLayout kicker={t('legal.kickerInfo')} title={t('mentionsLegales.title')} lastUpdated={t('mentionsLegales.lastUpdated')}>
       <section>
-        <h2>Éditeur du site</h2>
+        <h2>{t('mentionsLegales.s1Title')}</h2>
         <p>
-          Le site scrollthedate.com est édité par <strong>WEANI</strong>, société par actions
-          simplifiée (SAS) au capital social de 1 000 €, immatriculée au Registre du commerce et
-          des sociétés de Bordeaux sous le numéro <strong>904 049 301</strong>, dont le siège
-          social est situé 9 rue de Condé, 33000 Bordeaux. Numéro de TVA intracommunautaire :{' '}
-          <strong>FR76 904049301</strong>.
+          {t('mentionsLegales.s1Prefix')} <strong>{t('mentionsLegales.s1Bold')}</strong>,{' '}
+          {t('mentionsLegales.s1Mid')} <strong>{t('mentionsLegales.s1Rcs')}</strong>
+          {t('mentionsLegales.s1Suffix')} <strong>{t('mentionsLegales.s1Vat')}</strong>.
         </p>
-        <TodoBlock>
-          Nom du directeur de la publication (dirigeant de WEANI) à compléter.
-        </TodoBlock>
+        <TodoBlock>{t('mentionsLegales.s1Todo')}</TodoBlock>
         <p>
-          Contact :{' '}
+          {t('mentionsLegales.s1Contact')}{' '}
           <a href="mailto:contact@scrollthedate.com">contact@scrollthedate.com</a>
         </p>
       </section>
 
       <section>
-        <h2>Hébergement</h2>
+        <h2>{t('mentionsLegales.s2Title')}</h2>
         <p>
-          Le site est hébergé par <strong>Railway Corporation</strong> (San Francisco,
-          États-Unis) — <a href="https://railway.com" target="_blank" rel="noreferrer">railway.com</a>.
+          {t('mentionsLegales.s2Body1Prefix')} <strong>{t('mentionsLegales.s2Body1Bold')}</strong>{' '}
+          {t('mentionsLegales.s2Body1Mid')}{' '}
+          <a href="https://railway.com" target="_blank" rel="noreferrer">railway.com</a>.
         </p>
         <p>
-          Les données de production, y compris les fichiers médias transmis par les clients
-          (photos, vidéos, notes vocales), sont hébergées via <strong>Supabase</strong> (base de
-          données et authentification).
-        </p>
-      </section>
-
-      <section>
-        <h2>Propriété intellectuelle</h2>
-        <p>
-          L'ensemble des éléments du site (textes, mises en page, graphismes, logo, vidéos de
-          démonstration) est la propriété de Scroll The Date, sauf mention contraire, et protégé
-          par le droit de la propriété intellectuelle. Toute reproduction, même partielle, sans
-          autorisation préalable est interdite.
-        </p>
-        <p>
-          Le régime de propriété applicable aux créations réalisées pour un client (vidéo,
-          faire-part) est précisé dans les{' '}
-          <a href="/cgv">Conditions générales de vente</a>.
+          {t('mentionsLegales.s2Body2Prefix')} <strong>{t('mentionsLegales.s2Body2Bold')}</strong>{' '}
+          {t('mentionsLegales.s2Body2Suffix')}
         </p>
       </section>
 
       <section>
-        <h2>Données personnelles</h2>
+        <h2>{t('mentionsLegales.s3Title')}</h2>
+        <p>{t('mentionsLegales.s3Body1')}</p>
         <p>
-          Le traitement des données personnelles des utilisateurs et clients du site est détaillé
-          dans notre <a href="/confidentialite">Politique de confidentialité</a>.
+          {t('mentionsLegales.s3Body2Prefix')} <a href="/cgv">{t('mentionsLegales.s3Body2Link')}</a>
+          {t('mentionsLegales.s3Body2Suffix')}
         </p>
       </section>
 
       <section>
-        <h2>Crédits</h2>
-        <p>Conception et réalisation : Scroll The Date.</p>
+        <h2>{t('mentionsLegales.s4Title')}</h2>
+        <p>
+          {t('mentionsLegales.s4Prefix')} <a href="/confidentialite">{t('mentionsLegales.s4Link')}</a>
+          {t('mentionsLegales.s4Suffix')}
+        </p>
+      </section>
+
+      <section>
+        <h2>{t('mentionsLegales.s5Title')}</h2>
+        <p>{t('mentionsLegales.s5Body')}</p>
       </section>
     </LegalLayout>
   )

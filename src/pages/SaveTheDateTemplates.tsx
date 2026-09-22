@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { Play } from 'lucide-react'
 import { trpc } from '@/providers/trpc'
 import { useSeo } from '@/hooks/useSeo'
+import { useLanguage } from '@/i18n/LanguageContext'
 import { parseTemplateOverrides, resolveSaveTheDateTemplates } from '@contracts/saveTheDateTemplates'
 
 /**
@@ -27,10 +28,11 @@ const CARD_PREVIEW_SECONDS = 5
  * câblée dans /commander.
  */
 export default function SaveTheDateTemplates() {
+  const { t } = useLanguage()
+
   useSeo({
-    title: 'Modèles Save the Date — Scroll The Date',
-    description:
-      "La bibliothèque de modèles Save the Date Scroll The Date : des montages déjà prêts, où seuls vos prénoms et votre date changent.",
+    title: t('saveTheDateTemplates.seo.title'),
+    description: t('saveTheDateTemplates.seo.description'),
     path: '/save-the-date-modeles',
   })
 
@@ -43,13 +45,12 @@ export default function SaveTheDateTemplates() {
 
   return (
     <section className="mx-auto max-w-[1100px] px-6 pb-32 pt-16 sm:pt-20">
-      <p className="text-center text-[12px] uppercase tracking-[0.18em] text-terracotta-300">Sur un modèle</p>
+      <p className="text-center text-[12px] uppercase tracking-[0.18em] text-terracotta-300">{t('saveTheDateTemplates.kicker')}</p>
       <h1 className="mt-4 text-center font-display text-[34px] italic leading-[1.1] sm:text-[54px]">
-        Les modèles Save the Date
+        {t('saveTheDateTemplates.title')}
       </h1>
       <p className="mx-auto mt-4 max-w-[520px] text-center text-[15px] leading-[1.6] text-neutral-500">
-        Un montage déjà prêt, où seuls vos prénoms et votre date changent — parcourez-les comme le feraient vos
-        invités. D'autres modèles arrivent régulièrement.
+        {t('saveTheDateTemplates.intro')}
       </p>
 
       <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -59,8 +60,8 @@ export default function SaveTheDateTemplates() {
 
         {/* Case vide — annonce explicitement que la bibliothèque grandit, plutôt que de laisser une grille qui semble juste incomplète. */}
         <div className="flex flex-col items-center justify-center gap-2 rounded-[20px] border border-dashed border-anthracite-700 p-8 text-center">
-          <p className="font-display text-[15px] italic text-neutral-500">D'autres modèles bientôt</p>
-          <p className="text-[13px] text-neutral-500">Écrivez-nous si vous avez une ambiance en tête.</p>
+          <p className="font-display text-[15px] italic text-neutral-500">{t('saveTheDateTemplates.emptyTitle')}</p>
+          <p className="text-[13px] text-neutral-500">{t('saveTheDateTemplates.emptyText')}</p>
         </div>
       </div>
     </section>
@@ -82,6 +83,7 @@ function TemplateCard({
   posterSrc: string
   videoSrc: string
 }) {
+  const { t } = useLanguage()
   const [failed, setFailed] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -136,7 +138,7 @@ function TemplateCard({
             <Play size={16} className="ml-0.5 text-white" fill="currentColor" />
           </span>
           <span className="mt-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/90">
-            Voir le modèle en entier
+            {t('saveTheDateTemplates.cardPreviewLabel')}
           </span>
         </div>
       </div>
@@ -144,7 +146,7 @@ function TemplateCard({
         <p className="font-display text-[22px] italic leading-[1.15]">{name}</p>
         <p className="mt-1.5 text-[13px] text-neutral-500">{tagline}</p>
         <span className="mt-5 inline-flex items-center gap-2 text-[13px] font-medium">
-          Voir le modèle
+          {t('saveTheDateTemplates.cardCta')}
           <span
             className="transition-transform duration-300 group-hover:translate-x-1"
             style={{ color: accent }}

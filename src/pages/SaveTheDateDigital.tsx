@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { motion } from 'framer-motion'
 import { Check, Clapperboard, Layout, MessageCircle, PenLine, QrCode, Sparkles } from 'lucide-react'
 import { useSeo } from '@/hooks/useSeo'
+import { useLanguage } from '@/i18n/LanguageContext'
 import { FadeUp, WordReveal } from '@/components/commerce/Reveal'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
 import { formatEuros, getProduct, productSlug, usePricing } from '@/components/commerce/pricing'
@@ -108,10 +109,11 @@ function OfferPreviewCard({
 }
 
 export default function SaveTheDateDigital() {
+  const { t } = useLanguage()
+
   useSeo({
-    title: 'Save the Date digital 149 € — Annoncez la date en vidéo · Scroll The Date',
-    description:
-      "Le Save the Date digital Scroll The Date : une vidéo courte de 45 s issue de votre histoire, et une page d'annonce avec votre date et votre lieu. 149 €, prix unique.",
+    title: t('saveTheDateDigital.seo.title'),
+    description: t('saveTheDateDigital.seo.description'),
     path: '/save-the-date-digital',
   })
 
@@ -136,10 +138,10 @@ export default function SaveTheDateDigital() {
             transition={{ duration: 0.4 }}
             className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300"
           >
-            Save the Date digital
+            {t('saveTheDateDigital.hero.kicker')}
           </motion.p>
           <h1 className="font-display mx-auto mt-6 max-w-2xl text-[clamp(2.6rem,6vw,4.6rem)] font-light leading-[1.05] tracking-[-0.02em] text-white">
-            <WordReveal segments={[{ text: 'Annoncez la date' }, { text: 'comme au cinéma.', accent: true }]} />
+            <WordReveal segments={[{ text: t('saveTheDateDigital.hero.titleLead') }, { text: t('saveTheDateDigital.hero.titleAccent'), accent: true }]} />
           </h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }}
@@ -147,8 +149,7 @@ export default function SaveTheDateDigital() {
             transition={{ duration: 0.7, delay: 0.4, ease: EASE_EDITORIAL }}
             className="mx-auto mt-8 max-w-xl text-[16px] leading-[1.65] text-white/60"
           >
-            Une page d'annonce personnalisée, une vidéo courte et élégante — personnalisée ou choisie dans la
-            bibliothèque —, des mois avant le jour J. De quoi faire patienter vos invités avec style.
+            {t('saveTheDateDigital.hero.intro')}
           </motion.p>
         </div>
 
@@ -159,22 +160,22 @@ export default function SaveTheDateDigital() {
           className="relative mx-auto mt-14 grid max-w-[820px] gap-6 sm:grid-cols-2"
         >
           <OfferPreviewCard
-            eyebrow="Sur mesure"
+            eyebrow={t('saveTheDateDigital.preview.customEyebrow')}
             price={formatEuros(saveTheDate.priceCents)}
-            tagline="Votre histoire, en 45 secondes."
+            tagline={t('saveTheDateDigital.preview.customTagline')}
             videoSrc="/save-the-date-sur-mesure-demo.mp4"
             posterSrc="/save-the-date-sur-mesure-demo-poster.jpg"
-            ctaLabel="Commander"
+            ctaLabel={t('saveTheDateDigital.preview.order')}
             ctaHref={checkoutHref}
             featured
           />
           <OfferPreviewCard
-            eyebrow="Sur un modèle"
+            eyebrow={t('saveTheDateDigital.preview.templateEyebrow')}
             price={formatEuros(9900)}
-            tagline="Prêt en quelques minutes."
+            tagline={t('saveTheDateDigital.preview.templateTagline')}
             videoSrc="/red-door.mp4"
             posterSrc="/red-door-frames/00001.jpg"
-            ctaLabel="Voir les modèles"
+            ctaLabel={t('saveTheDateDigital.preview.seeTemplates')}
             ctaHref="/save-the-date-modeles"
             featured={false}
           />
@@ -187,9 +188,9 @@ export default function SaveTheDateDigital() {
       <section className="bg-anthracite-900 px-6 py-24 lg:px-12 lg:py-32">
         <div className="mx-auto max-w-[1440px]">
           <FadeUp>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">2 façons de l'annoncer</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">{t('saveTheDateDigital.formulas.kicker')}</p>
             <h2 className="font-display mt-4 max-w-2xl text-[clamp(2rem,4vw,3.2rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-              À votre image, ou <em className="italic text-terracotta-300">prêt en un clin d'œil</em>.
+              {t('saveTheDateDigital.formulas.titleLead')} <em className="italic text-terracotta-300">{t('saveTheDateDigital.formulas.titleEm')}</em>.
             </h2>
           </FadeUp>
 
@@ -197,23 +198,23 @@ export default function SaveTheDateDigital() {
             {/* Formule sur mesure — 149 €, live */}
             <FadeUp className="relative rounded-2xl border border-terracotta-500/40 bg-anthracite-800/40 p-8 lg:p-10">
               <span className="absolute -top-3.5 left-8 rounded-full bg-terracotta-500 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
-                Disponible aujourd'hui
+                {t('saveTheDateDigital.formulas.availableBadge')}
               </span>
-              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">Sur mesure</p>
+              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">{t('saveTheDateDigital.formulas.customKicker')}</p>
               <p className="font-display tabular mt-3 text-[2.2rem] font-light text-terracotta-300">
                 {formatEuros(saveTheDate.priceCents)}
               </p>
               <p className="font-display mt-2 text-lg font-normal italic text-white/85">
-                Votre histoire, en 45 secondes.
+                {t('saveTheDateDigital.formulas.customTagline')}
               </p>
               <ul className="mt-7 flex flex-col gap-3.5">
                 {[
-                  { icon: PenLine, text: 'Vous répondez à un court questionnaire — le fil conducteur de votre histoire' },
-                  { icon: Clapperboard, text: 'Une vidéo personnalisée de 45 s, montée à partir de vos réponses' },
-                  { icon: Sparkles, text: "Une page d'annonce avec vos prénoms, la date et le lieu" },
-                  { icon: QrCode, text: 'Lien illimité + QR code pour vos faire-part papier' },
+                  { key: 'q', icon: PenLine, text: t('saveTheDateDigital.formulas.customFeature1') },
+                  { key: 'video', icon: Clapperboard, text: t('saveTheDateDigital.formulas.customFeature2') },
+                  { key: 'page', icon: Sparkles, text: t('saveTheDateDigital.formulas.customFeature3') },
+                  { key: 'qr', icon: QrCode, text: t('saveTheDateDigital.formulas.customFeature4') },
                 ].map((f) => (
-                  <li key={f.text} className="flex items-start gap-3 text-[14px] leading-[1.55] text-white/75">
+                  <li key={f.key} className="flex items-start gap-3 text-[14px] leading-[1.55] text-white/75">
                     <f.icon size={17} className="mt-0.5 shrink-0 text-terracotta-500" aria-hidden />
                     {f.text}
                   </li>
@@ -223,7 +224,7 @@ export default function SaveTheDateDigital() {
                 to={checkoutHref}
                 className="mt-9 inline-flex items-center rounded-full bg-terracotta-500 px-7 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
               >
-                Commander
+                {t('saveTheDateDigital.formulas.customCta')}
               </Link>
             </FadeUp>
 
@@ -233,20 +234,20 @@ export default function SaveTheDateDigital() {
                 contracts/saveTheDateTemplates.ts. Plus de badge "bientôt" :
                 le parcours est live, au même titre que "Sur mesure". */}
             <FadeUp delay={0.1} className="relative rounded-2xl border border-anthracite-700/60 bg-anthracite-800/40 p-8 lg:p-10">
-              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">Sur un modèle</p>
+              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">{t('saveTheDateDigital.formulas.templateKicker')}</p>
               <p className="font-display tabular mt-3 text-[2.2rem] font-light text-terracotta-300">
                 {formatEuros(9900)}
               </p>
               <p className="font-display mt-2 text-lg font-normal italic text-white/85">
-                Un modèle qui vous plaît, prêt en quelques minutes.
+                {t('saveTheDateDigital.formulas.templateTagline')}
               </p>
               <ul className="mt-7 flex flex-col gap-3.5">
                 {[
-                  { icon: Layout, text: 'Vous choisissez parmi une sélection de modèles déjà montés' },
-                  { icon: PenLine, text: 'Vous renseignez vos prénoms et votre date' },
-                  { icon: Sparkles, text: 'Votre page est en ligne dès le paiement confirmé, sans questionnaire' },
+                  { key: 'choose', icon: Layout, text: t('saveTheDateDigital.formulas.templateFeature1') },
+                  { key: 'names', icon: PenLine, text: t('saveTheDateDigital.formulas.templateFeature2') },
+                  { key: 'live', icon: Sparkles, text: t('saveTheDateDigital.formulas.templateFeature3') },
                 ].map((f) => (
-                  <li key={f.text} className="flex items-start gap-3 text-[14px] leading-[1.55] text-white/75">
+                  <li key={f.key} className="flex items-start gap-3 text-[14px] leading-[1.55] text-white/75">
                     <f.icon size={17} className="mt-0.5 shrink-0 text-terracotta-500" aria-hidden />
                     {f.text}
                   </li>
@@ -256,7 +257,7 @@ export default function SaveTheDateDigital() {
                 to="/save-the-date-modeles"
                 className="mt-9 inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-7 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
               >
-                Voir les modèles
+                {t('saveTheDateDigital.formulas.templateCta')}
                 <span aria-hidden>→</span>
               </Link>
             </FadeUp>
@@ -276,10 +277,10 @@ export default function SaveTheDateDigital() {
                 className="pointer-events-none absolute left-1/2 top-1/2 h-[380px] w-[680px] -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(50%_50%_at_50%_50%,rgba(201,111,90,0.12),transparent_70%)]"
               />
               <h2 className="font-display relative text-[clamp(2.2rem,5vw,4rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-                <WordReveal segments={[{ text: 'Prévenez vos invités,' }, { text: 'en beauté.', accent: true }]} />
+                <WordReveal segments={[{ text: t('saveTheDateDigital.finalCta.titleLead') }, { text: t('saveTheDateDigital.finalCta.titleAccent'), accent: true }]} />
               </h2>
               <p className="relative mx-auto mt-6 max-w-md text-[15px] leading-[1.65] text-white/60">
-                Livraison en ~72 h après votre questionnaire complété. Paiement sécurisé, en une fois.
+                {t('saveTheDateDigital.finalCta.intro')}
               </p>
               <div className="relative mt-10 flex flex-wrap items-center justify-center gap-4">
                 <Link
@@ -287,7 +288,7 @@ export default function SaveTheDateDigital() {
                   className="inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-10 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
                 >
                   <Check size={16} aria-hidden />
-                  Commander — {formatEuros(saveTheDate.priceCents)}
+                  {t('saveTheDateDigital.finalCta.orderPrefix')} {formatEuros(saveTheDate.priceCents)}
                 </Link>
                 <a
                   href="https://wa.me/33600000000"
@@ -296,7 +297,7 @@ export default function SaveTheDateDigital() {
                   className="inline-flex items-center gap-2 rounded-full border border-anthracite-700 px-8 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white/80 transition-colors hover:border-terracotta-500 hover:text-terracotta-300"
                 >
                   <MessageCircle size={16} className="text-terracotta-500" aria-hidden />
-                  Une question ?
+                  {t('saveTheDateDigital.finalCta.question')}
                 </a>
               </div>
             </div>

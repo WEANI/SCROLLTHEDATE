@@ -14,6 +14,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { trpc } from '@/providers/trpc'
 import { useAuth } from '@/hooks/useAuth'
 import { LOGIN_PATH } from '@/const'
+import { useLanguage } from '@/i18n/LanguageContext'
 import { FadeUp, WordReveal } from '@/components/commerce/Reveal'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
 import {
@@ -120,6 +121,7 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long'
 /* -------------------------------------------------------------------------- */
 
 export default function Merci() {
+  const { t } = useLanguage()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -175,21 +177,19 @@ export default function Merci() {
 
   const baseDate = matchedOrder ? new Date(matchedOrder.createdAt) : new Date()
   const timeline = [
-    { label: 'Questionnaire', detail: 'Votre histoire, vos mots', date: "Aujourd'hui" },
-    { label: 'Scénarios', detail: 'Des propositions à choisir', date: dateFmt.format(addDays(baseDate, 5)) },
-    { label: 'Vidéo en filigrane', detail: 'Vous validez avant la finale', date: dateFmt.format(addDays(baseDate, 14)) },
+    { key: 'questionnaire', label: t('merci.timeline1Label'), detail: t('merci.timeline1Detail'), date: t('merci.timelineToday') },
+    { key: 'scenarios', label: t('merci.timeline2Label'), detail: t('merci.timeline2Detail'), date: dateFmt.format(addDays(baseDate, 5)) },
+    { key: 'watermark', label: t('merci.timeline3Label'), detail: t('merci.timeline3Detail'), date: dateFmt.format(addDays(baseDate, 14)) },
     {
-      label: 'Faire-part en ligne',
-      detail: 'Lien, QR & kit de partage',
+      key: 'delivery',
+      label: t('merci.timeline4Label'),
+      detail: t('merci.timeline4Detail'),
       date: dateFmt.format(addDays(baseDate, texts.deliveryEstimateDays)),
     },
   ]
 
   const waNumber = formatPhoneFr(texts.contactWhatsApp)
-  const waLink = whatsappHref(
-    texts.contactWhatsApp,
-    "Bonjour Scroll The Date ! Voici notre note vocale pour raconter notre histoire",
-  )
+  const waLink = whatsappHref(texts.contactWhatsApp, t('merci.whatsappVoiceMessage'))
 
   // Pendant la vérification serveur d'un utilisateur connecté : écran d'attente.
   if (isAuthenticated && ordersQuery.isLoading) {
@@ -224,12 +224,12 @@ export default function Merci() {
             transition={{ duration: 0.4, delay: 0.35 }}
             className="mt-8 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300"
           >
-            Commande confirmée{displayRef ? ` — ${displayRef}` : ''}
+            {t('merci.confirmed')}{displayRef ? ` — ${displayRef}` : ''}
           </motion.p>
 
           <h1 className="font-display mt-6 text-[clamp(2.6rem,6vw,4.6rem)] font-light leading-[1.05] tracking-[-0.02em] text-white">
             <WordReveal
-              segments={[{ text: 'Merci. Maintenant,' }, { text: 'racontez-nous tout.', accent: true }]}
+              segments={[{ text: t('merci.titleLead') }, { text: t('merci.titleAccent'), accent: true }]}
               delay={0.2}
             />
           </h1>
@@ -240,11 +240,8 @@ export default function Merci() {
             transition={{ duration: 0.7, delay: 0.55, ease: EASE_EDITORIAL }}
             className="mx-auto mt-8 max-w-lg text-[16px] leading-[1.65] text-white/60"
           >
-            Votre place est réservée dans notre planning de production. Un email de confirmation
-            vient de vous être envoyé avec le récapitulatif de votre commande
-            {isAuthenticated
-              ? ' — votre espace est accessible dès maintenant ci-dessous.'
-              : " — il contient le lien pour activer votre espace en choisissant votre mot de passe."}
+            {t('merci.introBase')}{' '}
+            {isAuthenticated ? t('merci.introSuffixAuth') : t('merci.introSuffixGuest')}
           </motion.p>
         </div>
       </section>
@@ -264,22 +261,18 @@ export default function Merci() {
           <StepCard
             number="1"
             icon={<UserRound size={20} className="text-terracotta-300" aria-hidden />}
-            title="Activez votre espace"
-            text={
-              isAuthenticated
-                ? 'Votre espace est actif : questionnaire, scénarios, RSVP, tout est centralisé ici.'
-                : "Ouvrez l'email de confirmation et cliquez sur « Activer mon espace » pour choisir votre mot de passe. Vous y retrouverez questionnaire, scénarios et RSVP."
-            }
+            title={t('merci.step1Title')}
+            text={isAuthenticated ? t('merci.step1TextAuth') : t('merci.step1TextGuest')}
           >
             {isAuthenticated ? (
               <span className="inline-flex items-center gap-2 rounded-full border border-success/40 bg-success/10 px-5 py-2.5 text-[13px] font-semibold text-success">
                 <Check size={15} aria-hidden />
-                Espace actif{user?.name ? ` — ${user.name}` : ''}
+                {t('merci.step1BadgeActive')}{user?.name ? ` — ${user.name}` : ''}
               </span>
             ) : (
               <span className="inline-flex items-center gap-2 rounded-full border border-anthracite-700 px-5 py-2.5 text-[13px] font-semibold text-white/70">
                 <Mail size={15} className="text-terracotta-500" aria-hidden />
-                Lien envoyé par email
+                {t('merci.step1BadgeSent')}
               </span>
             )}
           </StepCard>
@@ -288,14 +281,14 @@ export default function Merci() {
           <StepCard
             number="2"
             icon={<PenLine size={20} className="text-terracotta-300" aria-hidden />}
-            title="Remplissez le questionnaire"
-            text="Votre rencontre, vos moments, les infos pratiques du jour J. 10 minutes, à votre rythme."
+            title={t('merci.step2Title')}
+            text={t('merci.step2Text')}
           >
             <Link
               to={isAuthenticated ? '/espace/questionnaire' : LOGIN_PATH}
               className="inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-6 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
             >
-              Commencer le questionnaire
+              {t('merci.step2Cta')}
               <ArrowRight size={14} aria-hidden />
             </Link>
           </StepCard>
@@ -304,8 +297,8 @@ export default function Merci() {
           <StepCard
             number="3"
             icon={<Mic size={20} className="text-terracotta-300" aria-hidden />}
-            title="Laissez une note vocale"
-            text={`Sur WhatsApp au ${waNumber} : racontez votre histoire avec vos mots, vos rires, vos hésitations. C'est notre matière première.`}
+            title={t('merci.step3Title')}
+            text={`${t('merci.step3TextPrefix')} ${waNumber} ${t('merci.step3TextSuffix')}`}
           >
             <div className="flex items-center gap-4">
               <span className="rounded-xl bg-white p-2">
@@ -318,7 +311,7 @@ export default function Merci() {
                 className="inline-flex items-center gap-2 rounded-full border border-anthracite-700 px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:border-terracotta-500 hover:text-terracotta-300"
               >
                 <MessageCircle size={14} className="text-terracotta-500" aria-hidden />
-                Ouvrir WhatsApp
+                {t('merci.step3Cta')}
               </a>
             </div>
           </StepCard>
@@ -332,10 +325,10 @@ export default function Merci() {
         <div className="mx-auto max-w-6xl">
           <FadeUp>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-              Ce qui se passe ensuite
+              {t('merci.timelineKicker')}
             </p>
             <h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.2rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-              4 étapes, <em className="italic text-terracotta-300">72 h</em>.
+              {t('merci.timelineTitleLead')} <em className="italic text-terracotta-300">{t('merci.timelineTitleAccent')}</em>
             </h2>
           </FadeUp>
 
@@ -361,7 +354,7 @@ export default function Merci() {
             >
               {timeline.map((step) => (
                 <motion.li
-                  key={step.label}
+                  key={step.key}
                   variants={{
                     hidden: { opacity: 0 },
                     show: { opacity: 1, transition: { duration: 0.5 } },
@@ -399,7 +392,7 @@ export default function Merci() {
       {/* ------------------------------------------------------------ */}
       <section className="px-6 py-20 lg:py-24">
         <FadeUp className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
-          <p className="text-[15px] text-white/60">Une question, un doute, une impatience ?</p>
+          <p className="text-[15px] text-white/60">{t('merci.helpQuestion')}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <a
               href={waLink}
@@ -408,7 +401,7 @@ export default function Merci() {
               className="inline-flex items-center gap-2 rounded-full border border-anthracite-700 px-6 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:border-terracotta-500 hover:text-terracotta-300"
             >
               <MessageCircle size={15} className="text-terracotta-500" aria-hidden />
-              Écrivez-nous sur WhatsApp
+              {t('merci.helpWhatsapp')}
             </a>
             <a
               href="mailto:contact@scrollthedate.com"

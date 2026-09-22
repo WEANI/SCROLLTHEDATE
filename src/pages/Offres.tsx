@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSeo } from '@/hooks/useSeo'
+import { useLanguage } from '@/i18n/LanguageContext'
 import { FadeUp, WordReveal } from '@/components/commerce/Reveal'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
 import OptionToggle from '@/components/commerce/OptionToggle'
@@ -164,59 +165,28 @@ function CompareCell({ cell, highlight }: { cell: Cell; highlight?: boolean }) {
 /* Page                                                                       */
 /* -------------------------------------------------------------------------- */
 
-const OPTION_DESCRIPTIONS: Record<string, string> = {
-  revisions: "On ajuste jusqu'à ce que ce soit parfait.",
-  'sous-titres': 'Pour vos invités anglophones (et les oreilles fatiguées).',
-  'version-courte': 'Un format vertical de 15 s prêt pour Instagram & TikTok.',
-  'page-infos':
-    'Programme, lieu, dress code, hébergements — une page dédiée, accessible depuis le bouton RSVP.',
-}
-
-const GARANTIES = [
-  {
-    icon: HeartHandshake,
-    title: 'Accompagnement humain',
-    text: 'Une vraie personne suit votre projet, pas un algorithme.',
-  },
-  {
-    icon: Stamp,
-    title: 'Filigrane avant finale',
-    text: 'Vous validez la vidéo en filigrane avant toute livraison.',
-  },
-  {
-    icon: InfinityIcon,
-    title: 'Lien illimité à vie',
-    text: 'Partagez à 20 ou 300 invités, le lien ne expire jamais.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Paiement sécurisé Stripe',
-    text: 'Transactions chiffrées, authentification 3D Secure.',
-  },
-]
-
-const FAQ_ITEMS = [
-  {
-    q: 'Quelle différence entre les deux formules ?',
-    a: "Le Save the Date annonce votre date des mois à l'avance : une courte vidéo et une page d'annonce élégante. Le faire-part est l'invitation complète : vidéo cinématique en héros, programme, lieu, hébergements et RSVP intégré. Beaucoup de couples commandent les deux.",
-  },
-  {
-    q: 'Quels sont les délais de livraison ?',
-    a: "Comptez environ 72 h pour le faire-part comme pour le Save the Date, à partir de votre questionnaire complété. Un besoin encore plus urgent ? Écrivez-nous sur WhatsApp, on trouve toujours une solution.",
-  },
-  {
-    q: 'Peut-on personnaliser après la livraison ?',
-    a: "Oui. Date, lieu, programme, hébergements : les informations pratiques restent modifiables depuis votre espace client jusqu'au jour J. Les changements sont en ligne instantanément, sans frais.",
-  },
-]
-
 export default function Offres() {
+  const { t } = useLanguage()
+
   useSeo({
-    title: 'Nos offres — Save the Date & Faire-part digital · Scroll The Date',
-    description:
-      'Save the Date digital (149 €) et Faire-part digital (299 €) : vidéo cinématique personnalisée, page complète, RSVP intégré. Prix unique, quel que soit le nombre d\'invités.',
+    title: t('offres.seo.title'),
+    description: t('offres.seo.description'),
     path: '/offres',
   })
+
+  const OPTION_DESCRIPTIONS: Record<string, string> = {
+    revisions: t('offres.options.descRevisions'),
+    'sous-titres': t('offres.options.descSousTitres'),
+    'version-courte': t('offres.options.descVersionCourte'),
+    'page-infos': t('offres.options.descPageInfos'),
+  }
+
+  const GARANTIES = [
+    { key: 'human', icon: HeartHandshake, title: t('offres.garanties.title1'), text: t('offres.garanties.text1') },
+    { key: 'watermark', icon: Stamp, title: t('offres.garanties.title2'), text: t('offres.garanties.text2') },
+    { key: 'link', icon: InfinityIcon, title: t('offres.garanties.title3'), text: t('offres.garanties.text3') },
+    { key: 'payment', icon: ShieldCheck, title: t('offres.garanties.title4'), text: t('offres.garanties.text4') },
+  ]
 
   const { products, options } = usePricing()
   const fairePart = getProduct(products, 'FAIRE_PART')
@@ -231,16 +201,16 @@ export default function Offres() {
       selectedOptions.length ? `&options=${selectedOptions.join(',')}` : ''
     }`
 
-  const compareRows: { label: string; std: Cell; fp: Cell }[] = [
-    { label: 'Vidéo personnalisée', std: ck, fp: ck },
-    { label: 'Durée de la vidéo', std: tx('40 s'), fp: tx('60 s') },
-    { label: 'Page web', std: tx("Page d'annonce"), fp: tx('Page complète') },
-    { label: 'RSVP intégré', std: da, fp: ck },
-    { label: 'Scénarios au choix', std: da, fp: ck },
-    { label: 'Révisions incluses', std: tx('Incluses'), fp: tx('Incluses') },
-    { label: 'Lien illimité + QR code', std: ck, fp: ck },
-    { label: 'Délai de livraison', std: tx('~72 h'), fp: tx('~72 h') },
-    { label: 'Prix', std: tx(formatEuros(saveTheDate.priceCents)), fp: tx(formatEuros(fairePart.priceCents)) },
+  const compareRows: { key: string; label: string; std: Cell; fp: Cell }[] = [
+    { key: 'video', label: t('offres.compare.row1'), std: ck, fp: ck },
+    { key: 'duration', label: t('offres.compare.row2'), std: tx('40 s'), fp: tx('60 s') },
+    { key: 'page', label: t('offres.compare.row3'), std: tx(t('offres.compare.row3Std')), fp: tx(t('offres.compare.row3Fp')) },
+    { key: 'rsvp', label: t('offres.compare.row4'), std: da, fp: ck },
+    { key: 'scenarios', label: t('offres.compare.row5'), std: da, fp: ck },
+    { key: 'revisions', label: t('offres.compare.row6'), std: tx(t('offres.compare.row6Value')), fp: tx(t('offres.compare.row6Value')) },
+    { key: 'link', label: t('offres.compare.row7'), std: ck, fp: ck },
+    { key: 'delay', label: t('offres.compare.row8'), std: tx('~72 h'), fp: tx('~72 h') },
+    { key: 'price', label: t('offres.compare.row9'), std: tx(formatEuros(saveTheDate.priceCents)), fp: tx(formatEuros(fairePart.priceCents)) },
   ]
 
   return (
@@ -260,11 +230,11 @@ export default function Offres() {
             transition={{ duration: 0.4 }}
             className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300"
           >
-            Nos offres
+            {t('offres.hero.kicker')}
           </motion.p>
           <h1 className="font-display mt-6 max-w-4xl text-[clamp(3rem,7vw,6rem)] font-light leading-[1.02] tracking-[-0.02em] text-white">
             <WordReveal
-              segments={[{ text: 'Deux objets, une même' }, { text: 'exigence.', accent: true }]}
+              segments={[{ text: t('offres.hero.titleLead') }, { text: t('offres.hero.titleAccent'), accent: true }]}
             />
           </h1>
           <motion.p
@@ -273,8 +243,7 @@ export default function Offres() {
             transition={{ duration: 0.7, delay: 0.4, ease: EASE_EDITORIAL }}
             className="mt-8 max-w-xl text-[16px] leading-[1.65] text-white/60"
           >
-            Prix unique, nombre d'invités illimité, accompagnement humain inclus.
-            Vous choisissez l'objet — nous mettons la même exigence de cinéma.
+            {t('offres.hero.intro')}
           </motion.p>
         </div>
       </section>
@@ -292,18 +261,18 @@ export default function Offres() {
         >
           {/* Card A — Save the Date */}
           <FormulaCard
-            kicker="Pour annoncer"
+            kicker={t('offres.saveTheDate.kicker')}
             name={saveTheDate.name}
             priceCents={saveTheDate.priceCents}
-            tagline="Annoncez la date comme au cinéma."
+            tagline={t('offres.saveTheDate.tagline')}
             features={[
-              'Vidéo personnalisée 40 s, issue de votre questionnaire',
-              "Page d'annonce : vos noms, la date, le lieu",
-              'Lien illimité + QR code pour vos supports papier',
-              'Retouche incluse',
-              'Livraison en ~72 h',
+              t('offres.saveTheDate.feature1'),
+              t('offres.saveTheDate.feature2'),
+              t('offres.saveTheDate.feature3'),
+              t('offres.saveTheDate.feature4'),
+              t('offres.saveTheDate.feature5'),
             ]}
-            ctaLabel="Commander le Save the Date"
+            ctaLabel={t('offres.saveTheDate.ctaLabel')}
             // Vers la page produit dédiée plutôt que directement
             // /commander — cf. échange du 13/09/2026 : cette carte de
             // comparaison ne suffit pas à elle seule pour commander (pas
@@ -314,7 +283,7 @@ export default function Offres() {
               <div className="mx-auto max-w-sm transition-transform duration-500 hover:scale-[1.03]">
                 <BrowserFrame
                   src="/template-minimal.jpg"
-                  alt="Aperçu du Save the Date digital — template minimal"
+                  alt={t('offres.saveTheDate.visualAlt')}
                   url="scrollthedate.fr/s/anna-theo"
                 />
               </div>
@@ -323,22 +292,22 @@ export default function Offres() {
 
           {/* Card B — Faire-part */}
           <FormulaCard
-            kicker="Pour inviter"
+            kicker={t('offres.fairePart.kicker')}
             name={fairePart.name}
             priceCents={fairePart.priceCents}
-            badge="Le plus choisi"
-            tagline="L'invitation complète, racontée en images."
+            badge={t('offres.fairePart.badge')}
+            tagline={t('offres.fairePart.tagline')}
             reversed
             features={[
-              'Vidéo cinématique 60 s en héros scrub-scroll de votre faire-part',
-              'Page complète : votre histoire, programme, lieu & hébergements, dress code',
-              'RSVP intégré — réponses en temps réel, export CSV',
-              'Propositions de scénario à choisir, retouches incluses',
-              'Suivi de production dans votre espace client',
-              'Lien illimité + QR + kit de partage WhatsApp/SMS/email',
-              'Livraison en ~72 h',
+              t('offres.fairePart.feature1'),
+              t('offres.fairePart.feature2'),
+              t('offres.fairePart.feature3'),
+              t('offres.fairePart.feature4'),
+              t('offres.fairePart.feature5'),
+              t('offres.fairePart.feature6'),
+              t('offres.fairePart.feature7'),
             ]}
-            ctaLabel="Commander le faire-part"
+            ctaLabel={t('offres.fairePart.ctaLabel')}
             // Vers la page produit dédiée plutôt que directement
             // /commander — même correction que la carte Save the Date
             // ci-dessus (cf. échange du 13/09/2026).
@@ -347,13 +316,13 @@ export default function Offres() {
               <div className="group relative mx-auto h-[420px] max-w-md sm:h-[480px]">
                 <img
                   src="/template-cinema.jpg"
-                  alt="Aperçu du faire-part digital — template cinéma"
+                  alt={t('offres.fairePart.visualAltCinema')}
                   loading="lazy"
                   className="absolute bottom-0 right-0 w-[58%] rotate-[5deg] rounded-lg border border-anthracite-700 object-cover shadow-[0_24px_80px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-[1.03]"
                 />
                 <img
                   src="/template-editorial.jpg"
-                  alt="Aperçu du faire-part digital — template éditorial"
+                  alt={t('offres.fairePart.visualAltEditorial')}
                   loading="lazy"
                   className="absolute left-0 top-0 w-[58%] -rotate-[4deg] rounded-lg border border-anthracite-700 object-cover shadow-[0_24px_80px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-[1.03]"
                 />
@@ -370,10 +339,10 @@ export default function Offres() {
         <div className="mx-auto max-w-5xl">
           <FadeUp>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-              Comparatif
+              {t('offres.compare.kicker')}
             </p>
             <h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.2rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-              Tout, <em className="italic text-terracotta-300">noir sur blanc</em>.
+              {t('offres.compare.titleLead')} <em className="italic text-terracotta-300">{t('offres.compare.titleEm')}</em>.
             </h2>
           </FadeUp>
 
@@ -384,16 +353,16 @@ export default function Offres() {
                 aria-hidden
                 className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/4 rounded-2xl bg-[radial-gradient(70%_60%_at_50%_40%,rgba(201,111,90,0.08),transparent_75%)] sm:block"
               />
-              <div role="table" aria-label="Comparatif des deux formules" className="relative">
+              <div role="table" aria-label={t('offres.compare.kicker')} className="relative">
                 <div role="row" className="grid grid-cols-[1.4fr_1fr_1fr] items-end gap-2 border-b border-anthracite-700 pb-5 sm:grid-cols-[2fr_1fr_1fr]">
                   <span role="columnheader" className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
                     &nbsp;
                   </span>
                   <span role="columnheader" className="text-center text-[12px] font-semibold uppercase tracking-[0.14em] text-white/70">
-                    Save the Date
+                    {t('offres.compare.colStd')}
                   </span>
                   <span role="columnheader" className="text-center text-[12px] font-semibold uppercase tracking-[0.14em] text-terracotta-300">
-                    Faire-part
+                    {t('offres.compare.colFp')}
                   </span>
                 </div>
                 <motion.ul
@@ -404,7 +373,7 @@ export default function Offres() {
                 >
                   {compareRows.map((row, i) => (
                     <motion.li
-                      key={row.label}
+                      key={row.key}
                       role="row"
                       variants={{
                         hidden: { opacity: 0, x: -12 },
@@ -428,7 +397,7 @@ export default function Offres() {
                   ))}
                 </motion.ul>
                 <p className="mt-6 text-center text-[13px] text-white/50">
-                  Paiement sécurisé, en une fois, au moment de la commande.
+                  {t('offres.compare.footer')}
                 </p>
               </div>
             </div>
@@ -443,10 +412,10 @@ export default function Offres() {
         <div className="mx-auto max-w-5xl">
           <FadeUp>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-              Options
+              {t('offres.options.kicker')}
             </p>
             <h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.2rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-              Pour aller <em className="italic text-terracotta-300">un peu plus loin</em>.
+              {t('offres.options.titleLead')} <em className="italic text-terracotta-300">{t('offres.options.titleEm')}</em>.
             </h2>
           </FadeUp>
 
@@ -477,12 +446,12 @@ export default function Offres() {
           </motion.div>
           <FadeUp delay={0.2}>
             <p className="mt-6 text-[13px] text-white/50">
-              Ces options sont aussi sélectionnables au moment du checkout
+              {t('offres.options.footerPrefix')}
               {selectedOptions.length > 0 && (
                 <>
-                  {' '}— votre sélection sera{' '}
+                  {' '}{t('offres.options.footerLinkPrefix')}{' '}
                   <Link to={checkoutHref('FAIRE_PART')} className="text-terracotta-300 underline-offset-4 hover:underline">
-                    reportée dans votre commande
+                    {t('offres.options.footerLink')}
                   </Link>
                   .
                 </>
@@ -506,7 +475,7 @@ export default function Offres() {
           >
             {GARANTIES.map((garantie) => (
               <motion.li
-                key={garantie.title}
+                key={garantie.key}
                 variants={{
                   hidden: { opacity: 0 },
                   show: { opacity: 1, transition: { duration: 0.5 } },
@@ -542,17 +511,24 @@ export default function Offres() {
 }
 
 function MiniFaq({ checkoutHref }: { checkoutHref: string }) {
+  const { t } = useLanguage()
   const [openIndex, setOpenIndex] = useState<number | null>(0)
+
+  const FAQ_ITEMS = [
+    { key: 'q1', q: t('offres.miniFaq.q1'), a: t('offres.miniFaq.a1') },
+    { key: 'q2', q: t('offres.miniFaq.q2'), a: t('offres.miniFaq.a2') },
+    { key: 'q3', q: t('offres.miniFaq.q3'), a: t('offres.miniFaq.a3') },
+  ]
 
   return (
     <section className="px-6 py-24 lg:px-12 lg:py-36">
       <div className="mx-auto max-w-5xl">
         <FadeUp>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-            Questions fréquentes
+            {t('offres.miniFaq.kicker')}
           </p>
           <h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.2rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-            Avant de <em className="italic text-terracotta-300">vous lancer</em>.
+            {t('offres.miniFaq.titleLead')} <em className="italic text-terracotta-300">{t('offres.miniFaq.titleEm')}</em>.
           </h2>
         </FadeUp>
 
@@ -567,7 +543,7 @@ function MiniFaq({ checkoutHref }: { checkoutHref: string }) {
             const open = openIndex === i
             return (
               <motion.li
-                key={item.q}
+                key={item.key}
                 variants={{
                   hidden: { y: 24, opacity: 0 },
                   show: { y: 0, opacity: 1, transition: { duration: 0.6, ease: EASE_EDITORIAL } },
@@ -622,7 +598,7 @@ function MiniFaq({ checkoutHref }: { checkoutHref: string }) {
               className="pointer-events-none absolute left-1/2 top-1/2 h-[380px] w-[680px] -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(50%_50%_at_50%_50%,rgba(201,111,90,0.12),transparent_70%)]"
             />
             <h2 className="font-display relative text-[clamp(2.2rem,5vw,4rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-              <WordReveal segments={[{ text: 'On commence' }, { text: 'quand vous voulez.', accent: true }]} />
+              <WordReveal segments={[{ text: t('offres.finalBanner.titleLead') }, { text: t('offres.finalBanner.titleAccent'), accent: true }]} />
             </h2>
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -635,7 +611,7 @@ function MiniFaq({ checkoutHref }: { checkoutHref: string }) {
                 to={checkoutHref}
                 className="inline-flex items-center rounded-full bg-terracotta-500 px-10 py-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
               >
-                Créer notre faire-part
+                {t('offres.finalBanner.cta')}
               </Link>
             </motion.div>
           </div>

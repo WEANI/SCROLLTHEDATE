@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 /**
  * Habillage commun aux 3 pages légales (Mentions légales, CGV,
@@ -21,6 +22,7 @@ export default function LegalLayout({
   lastUpdated: string
   children: ReactNode
 }) {
+  const { t } = useLanguage()
   return (
     <div className="grain bg-anthracite-950">
       <div className="mx-auto max-w-[720px] px-6 py-20 lg:px-0 lg:py-28">
@@ -29,7 +31,7 @@ export default function LegalLayout({
           className="inline-flex items-center gap-2 text-[13px] font-medium text-white/50 transition-colors hover:text-terracotta-300"
         >
           <ArrowLeft size={14} aria-hidden />
-          Retour à l'accueil
+          {t('legal.backHome')}
         </Link>
 
         <p className="mt-10 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
