@@ -205,20 +205,97 @@ export interface HeroDateFormatOption {
 
 const capitalizeFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 
+// ---- nombres en toutes lettres (français) — jour (1-31) + reste de
+// l'année (0-99), cf. `yearWordsFr`/format 'spelled-out' plus bas. Couvre
+// les 100 cas 0-99 (irrégularités "soixante-dix"/"quatre-vingt(s)"
+// incluses) ; limité à ce dont un jour/une année de mariage a besoin.
+const UNITS_FR = [
+  'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix',
+  'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize',
+]
+const TENS_FR: Record<number, string> = { 20: 'vingt', 30: 'trente', 40: 'quarante', 50: 'cinquante', 60: 'soixante' }
+
+function numberWordsFr(n: number): string {
+  if (n <= 16) return UNITS_FR[n]
+  if (n < 20) return `dix-${UNITS_FR[n - 10]}`
+  if (n < 70) {
+    const tensBase = Math.floor(n / 10) * 10
+    const unit = n % 10
+    const tensWord = TENS_FR[tensBase]
+    if (unit === 0) return tensWord
+    if (unit === 1) return `${tensWord} et un`
+    return `${tensWord}-${UNITS_FR[unit]}`
+  }
+  if (n < 80) {
+    // 70-79 : "soixante" + dix..dix-neuf (pas de mot dédié pour 70+).
+    const unit = n - 60
+    return unit === 11 ? 'soixante et onze' : `soixante-${numberWordsFr(unit)}`
+  }
+  if (n === 80) return 'quatre-vingts'
+  if (n < 90) return `quatre-vingt-${UNITS_FR[n - 80]}`
+  // 90-99 : "quatre-vingt" + dix..dix-neuf, même irrégularité que 70-79.
+  return `quatre-vingt-${numberWordsFr(n - 80)}`
+}
+
+/** Vide (mariage réaliste : 2000-2099) — repli numérique au-delà plutôt qu'un algorithme non couvert. */
+function yearWordsFr(year: number): string {
+  if (year < 2000 || year > 2099) return String(year)
+  const rest = year - 2000
+  return rest === 0 ? 'deux mille' : `deux mille ${numberWordsFr(rest)}`
+}
+
+// ---- chiffres romains (jour/mois/année) — cf. formats 'roman-numerals'/
+// 'roman-year' plus bas.
+const ROMAN_VALUES: [number, string][] = [
+  [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'],
+  [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+]
+function toRoman(n: number): string {
+  let out = ''
+  let rest = n
+  for (const [value, symbol] of ROMAN_VALUES) {
+    while (rest >= value) {
+      out += symbol
+      rest -= value
+    }
+  }
+  return out
+}
+
+function ordinalSuffixEn(n: number): string {
+  const mod100 = n % 100
+  if (mod100 >= 11 && mod100 <= 13) return 'th'
+  switch (n % 10) {
+    case 1: return 'st'
+    case 2: return 'nd'
+    case 3: return 'rd'
+    default: return 'th'
+  }
+}
+
 /**
  * Styles d'affichage de la date du mariage dans le hero d'un Save the Date
  * "sur un modèle" — bibliothèque ajoutée le 23/09/2026 (cf. échange
  * "bibliothèque des formats de date"), même principe que HERO_FONTS/
  * HERO_CARD_FRAMES/etc. ci-dessus : id vide/inconnu = format historique
  * inchangé (repli codé en dur dans FairePart.tsx — cf. `getHeroDateFormat`
- * plus bas — jamais dupliqué ici). Toujours en français ('fr-FR') : la date
- * d'un Save the Date est du contenu vidéo figé, pas une chaîne relue par
- * l'i18n du site, même convention que les autres textes de la bibliothèque
- * de modèles.
+ * plus bas — jamais dupliqué ici). Reprend les formats de date du fichier
+ * de référence `polices-overlay.html` (sections "Dates mariage"/"Dates
+ * format américain"/"Dates XXL", fourni le 23/09/2026) — chaque entrée
+ * ci-dessous cite la classe CSS d'origine dont elle reprend le texte, à
+ * l'exception des traitements purement typographiques/décoratifs
+ * (calligraphie géante, ornements, multi-lignes) déjà couverts par les
+ * réglages Police/Cadre/Taille de chaque bloc, pas par un "format" de
+ * texte. Volontairement mêlé français/anglais (le fichier de référence
+ * propose les deux, cf. sa section "Annonces de mariage — versions
+ * anglaises") — jamais lié à la langue de l'interface (`useLanguage`),
+ * choisi une fois pour toutes par l'admin comme les autres réglages de ce
+ * modèle.
  */
 export const HERO_DATE_FORMATS: HeroDateFormatOption[] = [
   {
-    id: 'weekday-long',
+    // .a-date / .date-wed-lines (jour de la semaine complet)
+    id: 'weekday-full',
     label: 'Jour complet',
     example: 'Samedi 12 juin 2027',
     format: (d) =>
@@ -227,18 +304,41 @@ export const HERO_DATE_FORMATS: HeroDateFormatOption[] = [
       ),
   },
   {
-    id: 'le-prefix',
-    label: 'Avec « Le »',
-    example: 'Le 12 juin 2027',
-    format: (d) => `Le ${new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(d)}`,
+    // .date-wed-lines / .a-letdate / .a-mots ("douze juin deux mille vingt-sept")
+    id: 'spelled-out',
+    label: 'En toutes lettres',
+    example: 'Samedi douze juin deux mille vingt-sept',
+    format: (d) => {
+      const weekday = capitalizeFirst(new Intl.DateTimeFormat('fr-FR', { weekday: 'long' }).format(d))
+      const day = numberWordsFr(d.getDate())
+      const month = new Intl.DateTimeFormat('fr-FR', { month: 'long' }).format(d)
+      const year = yearWordsFr(d.getFullYear())
+      return `${weekday} ${day} ${month} ${year}`
+    },
   },
   {
+    // "date romaine mixte" (XII · VI) — année en romain plutôt qu'en toutes lettres, pour rester sur une seule ligne.
+    id: 'roman-numerals',
+    label: 'Chiffres romains',
+    example: 'XII · VI · MMXXVII',
+    format: (d) => `${toRoman(d.getDate())} · ${toRoman(d.getMonth() + 1)} · ${toRoman(d.getFullYear())}`,
+  },
+  {
+    // .date-roman ("MMXXVI") — année seule, en romain.
+    id: 'roman-year',
+    label: 'Année en chiffres romains',
+    example: 'MMXXVII',
+    format: (d) => toRoman(d.getFullYear()),
+  },
+  {
+    // .ticket .t-date ("12 JUIN 2027")
     id: 'caps-month',
     label: 'Mois en majuscules',
     example: '12 JUIN 2027',
     format: (d) => new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(d).toUpperCase(),
   },
   {
+    // .stamp .s-date / .date-wed-spaced (esprit "12 · JUIN · 2027")
     id: 'spaced-caps',
     label: 'Espacé & majuscules',
     example: '12 · JUIN · 2027',
@@ -250,12 +350,7 @@ export const HERO_DATE_FORMATS: HeroDateFormatOption[] = [
     },
   },
   {
-    id: 'numeric-slash',
-    label: 'Numérique (/)',
-    example: '12/06/2027',
-    format: (d) => new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d),
-  },
-  {
+    // .date-serif ("12.10.26"), ici sur 4 chiffres — cf. 'compact-year2' pour la variante courte.
     id: 'numeric-dot',
     label: 'Numérique (.)',
     example: '12.06.2027',
@@ -263,18 +358,37 @@ export const HERO_DATE_FORMATS: HeroDateFormatOption[] = [
       new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d).replace(/\//g, '.'),
   },
   {
-    id: 'numeric-dash',
-    label: 'Numérique (-)',
-    example: '12-06-2027',
-    format: (d) =>
-      new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d).replace(/\//g, '-'),
-  },
-  {
+    // .date-serif ("12.10.26") — année sur 2 chiffres, forme la plus compacte du fichier de référence.
     id: 'compact-year2',
     label: 'Compact, année courte',
     example: '12.06.27',
     format: (d) =>
       new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }).format(d).replace(/\//g, '.'),
+  },
+  {
+    // Ordre français (jour/mois/année) — le fichier de référence ne montre que l'ordre américain (cf. 'us-slash'), ajouté pour l'ordre attendu en France.
+    id: 'numeric-slash-fr',
+    label: 'Numérique (/), ordre FR',
+    example: '12/06/2027',
+    format: (d) => new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d),
+  },
+  {
+    // .date-us-serif ("June 12th, 2027")
+    id: 'us-ordinal',
+    label: 'Anglais, avec ordinal',
+    example: 'June 12th, 2027',
+    format: (d) => {
+      const month = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(d)
+      const day = d.getDate()
+      return `${month} ${day}${ordinalSuffixEn(day)}, ${d.getFullYear()}`
+    },
+  },
+  {
+    // .date-us-slash ("06/12/2027") — ordre américain (mois/jour/année).
+    id: 'us-slash',
+    label: 'Numérique (/), ordre US',
+    example: '06/12/2027',
+    format: (d) => `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`,
   },
 ]
 

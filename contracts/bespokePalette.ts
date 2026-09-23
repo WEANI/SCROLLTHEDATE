@@ -103,6 +103,10 @@ export const bespokePaletteSchema = z.object({
   stdSaveTheDateTitleSize: z.string().default(""),
   stdNamesDateTextColor: z.string().default(""),
   stdNamesDateCardBg: z.string().default(""),
+  // Même champ que stdSaveTheDateTitleSize ci-dessus, pour le bloc
+  // "prénoms" — vide = 'md' (comportement historique, jamais réglé avant
+  // le 23/09/2026 : ce bloc n'avait jusqu'ici aucun contrôle de taille).
+  stdNamesDateTitleSize: z.string().default(""),
   // Couleur du "&"/"et" entre les 2 prénoms (segment `accent`) — vide =
   // couleur d'accent du thème (comportement historique). Ajouté le
   // 21/09/2026, même raisonnement que les champs stdNamesDate* ci-dessus.
@@ -234,6 +238,16 @@ export const heroCustomCardSchema = z.object({
   fontId: z.string().default(""),
   textAnimation: z.string().default(""),
   bold: z.boolean().default(false),
+  // Taille de police / cadre décoratif / fond de carte propres à CETTE
+  // carte — mêmes champs que sur HeroChapter (titleSize/cardFrame/
+  // cardBgOverride, cf. types.ts), sous des noms distincts ici car
+  // HeroCustomCard ne les a jamais eus avant. Vide = comportement
+  // historique inchangé (taille 'md' via `chapter.lead`, aucun cadre,
+  // fond du thème). Ajoutés le 23/09/2026 : "les blocs supplémentaires...
+  // pouvoir tout gérer comme pour les autres blocs".
+  titleSize: z.string().default(""),
+  cardFrame: z.string().default(""),
+  cardBg: z.string().default(""),
 });
 /** Plafonné à 10 : au-delà, plus un outil de personnalisation qu'un risque réel côté produit — évite un payload sans limite. */
 export const heroCustomCardsSchema = z.array(heroCustomCardSchema).max(10);

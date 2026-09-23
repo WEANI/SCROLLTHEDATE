@@ -28,6 +28,7 @@ import {
   HERO_CARD_FRAMES,
   HERO_DATE_FORMATS,
   getHeroFont,
+  getHeroDateFormat,
   useGoogleFont,
 } from "@/components/hero-scrub/heroDecor";
 import { HeroOverlayGraphic, HeroFilterLayer, ChapterContent } from "@/components/hero-scrub/HeroScrub";
@@ -95,6 +96,9 @@ function ColorField({
     </label>
   );
 }
+
+/** Date fixe de référence pour l'aperçu du réglage "Format de la date" — même date que EXAMPLE_DATE (contracts/saveTheDateTemplates.ts, "12 juin 2027"), jamais la date en cours d'édition du template. */
+const DATE_FORMAT_PREVIEW_DATE = new Date(2027, 5, 12);
 
 function fmtTimecode(sec: number) {
   const m = Math.floor(sec / 60);
@@ -206,7 +210,7 @@ export default function ModeleStdDetail() {
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false },
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "" },
       ],
     });
   const removeExtraCard = (id: string) => update({ extraCards: (o?.extraCards ?? []).filter((c) => c.id !== id) });
@@ -286,14 +290,19 @@ export default function ModeleStdDetail() {
   // Aperçus des cadres — texte d'exemple fixe (indépendant du champ texte
   // libre ci-dessus) pour rester lisible quel que soit ce qui est tapé,
   // cf. la maquette "Cadres & Animations Texte" (mêmes libellés d'exemple).
+  // `titleSize` reprend le VRAI réglage du bloc (repli "sm" seulement s'il
+  // est vide) plutôt qu'une valeur figée — avant le 23/09/2026 cet aperçu
+  // affichait toujours "sm" quoi que l'admin choisisse, rendant le réglage
+  // "Taille de police" invisible ici (cf. échange du même jour).
   const chapter1FramePreview: HeroChapter = {
     id: 0,
     kind: "text",
     from: 0,
     to: 1,
     segments: [{ text: "Save the date" }],
-    titleSize: "sm",
+    titleSize: (o.chapter1TitleSize || "sm") as HeroChapter["titleSize"],
     cardFrame: o.chapter1CardFrame || undefined,
+    cardBgOverride: o.chapter1CardBg || undefined,
     fontId: o.chapter1FontId || undefined,
     textAnimation: o.chapter1TextAnimation || undefined,
     bold: o.chapter1Bold,
@@ -304,9 +313,10 @@ export default function ModeleStdDetail() {
     from: 0,
     to: 1,
     segments: [{ text: "Anna" }, { text: "&", accent: true }, { text: "Théo" }],
-    titleSize: "sm",
+    titleSize: (o.chapter2TitleSize || "sm") as HeroChapter["titleSize"],
     fitOneLine: true,
     cardFrame: o.chapter2CardFrame || undefined,
+    cardBgOverride: o.chapter2CardBg || undefined,
     fontId: o.chapter2FontId || undefined,
     textAnimation: o.chapter2TextAnimation || undefined,
     bold: o.chapter2Bold,
@@ -319,8 +329,10 @@ export default function ModeleStdDetail() {
     from: 0,
     to: 1,
     segments: [{ text: o.exampleDate || "12 juin 2027" }],
-    titleSize: "sm",
+    titleSize: (o.dateBlockTitleSize || "sm") as HeroChapter["titleSize"],
     textColorOverride: o.dateBlockTextColor || undefined,
+    cardFrame: o.dateBlockCardFrame || undefined,
+    cardBgOverride: o.dateBlockCardBg || undefined,
     fontId: o.dateBlockFontId || undefined,
     textAnimation: o.dateBlockTextAnimation || undefined,
     bold: o.dateBlockBold,
@@ -593,7 +605,20 @@ export default function ModeleStdDetail() {
                 </label>
               </div>
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-7">
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Taille de police
+                  <select
+                    value={o.chapter2TitleSize}
+                    onChange={(e) => update({ chapter2TitleSize: e.target.value })}
+                    className={inputClass}
+                  >
+                    <option value="">Moyenne (défaut)</option>
+                    <option value="sm">Petite</option>
+                    <option value="md">Moyenne</option>
+                    <option value="lg">Grande</option>
+                  </select>
+                </label>
                 <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                   Police — ce bloc
                   <FontSelect value={o.chapter2FontId} onChange={(v) => update({ chapter2FontId: v })} defaultLabel="Police du hero" />
@@ -683,7 +708,20 @@ export default function ModeleStdDetail() {
                     </label>
                   </div>
 
-                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                      Taille de police
+                      <select
+                        value={o.dateBlockTitleSize}
+                        onChange={(e) => update({ dateBlockTitleSize: e.target.value })}
+                        className={inputClass}
+                      >
+                        <option value="">Moyenne (défaut)</option>
+                        <option value="sm">Petite</option>
+                        <option value="md">Moyenne</option>
+                        <option value="lg">Grande</option>
+                      </select>
+                    </label>
                     <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                       Police — ce bloc
                       <FontSelect value={o.dateBlockFontId} onChange={(v) => update({ dateBlockFontId: v })} defaultLabel="Police du hero" />
@@ -693,6 +731,16 @@ export default function ModeleStdDetail() {
                       <AnimSelect value={o.dateBlockTextAnimation} onChange={(v) => update({ dateBlockTextAnimation: v })} defaultLabel="Animation du hero" />
                     </label>
                     <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.dateBlockTextColor} onChange={(v) => update({ dateBlockTextColor: v })} />
+                    <ColorField label="Fond de carte" hint="Vide = fond du thème" value={o.dateBlockCardBg} onChange={(v) => update({ dateBlockCardBg: v })} noneOption />
+                    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                      Cadre (décor)
+                      <select value={o.dateBlockCardFrame} onChange={(e) => update({ dateBlockCardFrame: e.target.value })} className={inputClass}>
+                        <option value="">Aucun</option>
+                        {HERO_CARD_FRAMES.map((f) => (
+                          <option key={f.id} value={f.id}>{f.label}</option>
+                        ))}
+                      </select>
+                    </label>
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
@@ -770,12 +818,25 @@ export default function ModeleStdDetail() {
                     </select>
                   </label>
                 </div>
-                {/* Police/animation/gras propres à CE bloc — vide = réglage
-                    hero-wide (cf. échange du 21/09/2026, "pour les blocs
-                    ajoutés, je dois pouvoir choisir la police et les
-                    animations"). */}
-                <div className="mt-2 grid grid-cols-4 gap-3">
-                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
+                {/* Police/taille/couleur/cadre/animation/gras propres à CE
+                    bloc — vide = réglage hero-wide (cf. échanges des
+                    21/09/2026 et 23/09/2026, "pouvoir tout gérer comme pour
+                    les autres blocs") : même jeu complet de réglages que les
+                    3 blocs fixes ci-dessus, aperçu compris. */}
+                <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Taille de police
+                    <select
+                      value={card.titleSize}
+                      onChange={(e) => updateExtraCard(card.id, { titleSize: e.target.value })}
+                      className={inputClass}
+                    >
+                      <option value="">Moyenne (défaut)</option>
+                      <option value="sm">Petite</option>
+                      <option value="md">Moyenne</option>
+                      <option value="lg">Grande</option>
+                    </select>
+                  </label>
                   <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                     Police — ce bloc
                     <FontSelect value={card.fontId} onChange={(v) => updateExtraCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
@@ -784,7 +845,44 @@ export default function ModeleStdDetail() {
                     Animation — ce bloc
                     <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
                   </label>
+                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
+                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateExtraCard(card.id, { cardBg: v })} noneOption />
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Cadre (décor)
+                    <select value={card.cardFrame} onChange={(e) => updateExtraCard(card.id, { cardFrame: e.target.value })} className={inputClass}>
+                      <option value="">Aucun</option>
+                      {HERO_CARD_FRAMES.map((f) => (
+                        <option key={f.id} value={f.id}>{f.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
                   <BoldField checked={card.bold} onChange={(v) => updateExtraCard(card.id, { bold: v })} />
+                </div>
+
+                <div className="mt-2 flex flex-col gap-1">
+                  <span className="text-xs font-medium text-neutral-500">Aperçu</span>
+                  <PreviewStage themeVars={themeVars}>
+                    <ChapterContent
+                      chapter={{
+                        id: 2000,
+                        kind: "text",
+                        from: 0,
+                        to: 1,
+                        lead: card.text || "Votre texte…",
+                        titleSize: (card.titleSize || undefined) as HeroChapter["titleSize"],
+                        textColorOverride: card.textColor || undefined,
+                        cardBgOverride: card.cardBg || undefined,
+                        cardFrame: card.cardFrame || undefined,
+                        fontId: card.fontId || undefined,
+                        bold: card.bold,
+                      }}
+                      textAnimation={card.textAnimation || o.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", (card.textAnimation || o.textAnimation) && `hs-anim-${card.textAnimation || o.textAnimation}`)}
+                    />
+                  </PreviewStage>
                 </div>
               </div>
             ))}
@@ -875,6 +973,14 @@ export default function ModeleStdDetail() {
                   ))}
                 </select>
               </label>
+              <PreviewStage themeVars={themeVars}>
+                <p
+                  className="px-4 text-center text-[22px] font-light"
+                  style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)", fontStyle: fontPreview?.italic ? "italic" : undefined }}
+                >
+                  {getHeroDateFormat(o.dateFormat)?.format(DATE_FORMAT_PREVIEW_DATE) ?? "12 juin 2027"}
+                </p>
+              </PreviewStage>
               <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
                 S'applique à la vraie date du client sur une commande passée sur ce modèle (sous les prénoms, ou dans le 3e bloc si activé) — pas à cette page d'aperçu, qui garde la date d'exemple tapée plus haut.
               </p>

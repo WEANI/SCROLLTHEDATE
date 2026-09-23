@@ -285,6 +285,7 @@ export const CA_PALETTE: BespokePalette = {
   stdNamesDateFontId: '',
   stdNamesDateTextAnimation: '',
   stdNamesDateBold: false,
+  stdNamesDateTitleSize: '',
   heroOverlayGraphic: '',
   heroFontId: '',
   heroTextAnimation: '',

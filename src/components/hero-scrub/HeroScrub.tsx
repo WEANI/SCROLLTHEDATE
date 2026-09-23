@@ -960,7 +960,22 @@ export function ChapterContent({
         {chapter.cardFrame === 'draw-in' && <i className="hs-frame-draw-edge" aria-hidden />}
         {chapter.lead && (
           <p
-            className={cn('mb-4 text-center text-[15px] leading-relaxed', chapter.bold ? 'font-semibold' : 'font-light')}
+            className={cn(
+              'mb-4 text-center leading-relaxed',
+              chapter.bold ? 'font-semibold' : 'font-light',
+              // `titleSize` (échange du 23/09/2026, "blocs supplémentaires...
+              // pouvoir tout gérer comme pour les autres blocs") — même
+              // réglage que pour `chapter.segments` ci-dessous, mais une
+              // échelle plus discrète (`lead` reste un texte SECONDAIRE par
+              // nature) : `undefined`/'md' = `text-[15px]` inchangé, seul
+              // comportement possible avant ce champ — aucune régression sur
+              // un bloc déjà en production qui ne le règle pas.
+              chapter.titleSize === 'lg'
+                ? 'text-[clamp(19px,11cqw,32px)]'
+                : chapter.titleSize === 'sm'
+                  ? 'text-[clamp(12px,8cqw,20px)]'
+                  : 'text-[15px]',
+            )}
             style={{
               color: 'var(--hs-text-secondary)',
               // `lead` reste dans la police du site par défaut (jamais

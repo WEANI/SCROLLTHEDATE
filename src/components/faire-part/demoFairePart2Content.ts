@@ -237,6 +237,7 @@ export const LAO_PALETTE: BespokePalette = {
   stdNamesDateFontId: '',
   stdNamesDateTextAnimation: '',
   stdNamesDateBold: false,
+  stdNamesDateTitleSize: '',
   heroOverlayGraphic: '',
   heroFontId: '',
   heroTextAnimation: '',

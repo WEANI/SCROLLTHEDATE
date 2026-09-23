@@ -422,6 +422,7 @@ export default function FairePart() {
             fontId: palette.stdNamesDateFontId || undefined,
             textAnimation: palette.stdNamesDateTextAnimation || undefined,
             bold: palette.stdNamesDateBold,
+            titleSize: (palette.stdNamesDateTitleSize || undefined) as HeroChapter['titleSize'],
           },
         ]
       : [
@@ -474,6 +475,7 @@ export default function FairePart() {
             fontId: palette.stdNamesDateFontId || undefined,
             textAnimation: palette.stdNamesDateTextAnimation || undefined,
             bold: palette.stdNamesDateBold,
+            titleSize: (palette.stdNamesDateTitleSize || undefined) as HeroChapter['titleSize'],
           },
         ]
     : studioChapters && videoDuration
@@ -565,9 +567,11 @@ export default function FairePart() {
               from: card.fromSec / videoDuration,
               to: card.toSec / videoDuration,
               segments: [{ text: weddingDateShort ?? '' }],
-              titleSize: 'md' as const,
+              titleSize: (card.titleSize || 'md') as HeroChapter['titleSize'],
               verticalAlign: card.position,
               textColorOverride: card.textColor || undefined,
+              cardBgOverride: card.cardBg || undefined,
+              cardFrame: card.cardFrame || undefined,
               fontId: card.fontId || undefined,
               textAnimation: card.textAnimation || undefined,
               bold: card.bold,
@@ -579,6 +583,16 @@ export default function FairePart() {
               to: card.toSec / videoDuration,
               lead: card.text,
               verticalAlign: card.position,
+              // `textColorOverride`/`titleSize`/`cardFrame`/`cardBgOverride`
+              // manquaient ici avant le 23/09/2026 : les réglages "Couleur
+              // du texte"/"Taille de police"/"Cadre"/"Fond de carte" de
+              // l'admin n'avaient jamais d'effet réel sur une carte
+              // ordinaire (kind:'text') — corrigé au passage, même
+              // raisonnement que la carte "date" ci-dessus.
+              textColorOverride: card.textColor || undefined,
+              titleSize: (card.titleSize || undefined) as HeroChapter['titleSize'],
+              cardFrame: card.cardFrame || undefined,
+              cardBgOverride: card.cardBg || undefined,
               fontId: card.fontId || undefined,
               textAnimation: card.textAnimation || undefined,
               bold: card.bold,

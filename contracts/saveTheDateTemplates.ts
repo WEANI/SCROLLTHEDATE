@@ -206,6 +206,8 @@ export interface SaveTheDateTemplateOverride {
   chapter2FontId: string
   chapter2TextAnimation: string
   chapter2Bold: boolean
+  /** cf. doc de TemplateHeroChapter.titleSize — vide = 'md' (ce bloc n'avait aucun contrôle de taille avant le 23/09/2026). */
+  chapter2TitleSize: string
   /** cf. doc de SaveTheDateTemplate.overlayGraphic — vide = comportement par défaut. */
   overlayGraphic: string
   fontId: string
@@ -253,6 +255,10 @@ export interface SaveTheDateTemplateOverride {
   dateBlockFontId: string
   dateBlockTextAnimation: string
   dateBlockBold: boolean
+  /** cf. doc de TemplateHeroChapter.titleSize/cardFrame/cardBgOverride — vide = 'md'/aucun cadre/fond du thème. Ajoutés le 23/09/2026, mêmes champs que chapter1/chapter2. */
+  dateBlockTitleSize: string
+  dateBlockCardFrame: string
+  dateBlockCardBg: string
   /**
    * Style d'affichage de la date du mariage (jour de la semaine, majuscules,
    * numérique avec points...) — bibliothèque HERO_DATE_FORMATS (cf.
@@ -431,6 +437,15 @@ function extraCardsToChapters(cards: HeroCustomCard[], duration: number): Templa
     fontId: card.fontId || undefined,
     textAnimation: card.textAnimation || undefined,
     bold: card.bold,
+    // Couleur/taille/cadre/fond propres à CETTE carte — mêmes champs que
+    // chapter1/chapter2/dateBlock (cf. échange du 23/09/2026, "pouvoir tout
+    // gérer comme pour les autres blocs"). `textColorOverride` manquait ici
+    // avant cette date : la couleur réglée dans l'admin n'avait jamais
+    // d'effet sur cette page d'aperçu générique — corrigé au passage.
+    textColorOverride: card.textColor || undefined,
+    titleSize: (card.titleSize || undefined) as TemplateHeroChapter['titleSize'],
+    cardFrame: card.cardFrame || undefined,
+    cardBgOverride: card.cardBg || undefined,
   }))
 }
 
@@ -466,6 +481,7 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     chapter2FontId: ch2?.fontId ?? '',
     chapter2TextAnimation: ch2?.textAnimation ?? '',
     chapter2Bold: ch2?.bold ?? false,
+    chapter2TitleSize: ch2?.titleSize ?? '',
     overlayGraphic: template.overlayGraphic ?? '',
     fontId: template.fontId ?? '',
     textAnimation: template.textAnimation ?? '',
@@ -480,6 +496,9 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     dateBlockFontId: '',
     dateBlockTextAnimation: '',
     dateBlockBold: false,
+    dateBlockTitleSize: '',
+    dateBlockCardFrame: '',
+    dateBlockCardBg: '',
     dateFormat: '',
   }
 }
@@ -535,6 +554,7 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         fontId: override.chapter2FontId || undefined,
         textAnimation: override.chapter2TextAnimation || undefined,
         bold: override.chapter2Bold,
+        titleSize: (override.chapter2TitleSize || undefined) as TemplateHeroChapter['titleSize'],
       },
       ...(override.dateBlockEnabled
         ? [
@@ -544,9 +564,11 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
               from: ratio(override.dateBlockFromSec),
               to: ratio(override.dateBlockToSec),
               segments: [{ text: override.exampleDate || EXAMPLE_DATE }],
-              titleSize: 'md' as const,
+              titleSize: (override.dateBlockTitleSize || 'md') as TemplateHeroChapter['titleSize'],
               verticalAlign: override.dateBlockPosition,
               textColorOverride: override.dateBlockTextColor || undefined,
+              cardBgOverride: override.dateBlockCardBg || undefined,
+              cardFrame: override.dateBlockCardFrame || undefined,
               fontId: override.dateBlockFontId || undefined,
               textAnimation: override.dateBlockTextAnimation || undefined,
               bold: override.dateBlockBold,
@@ -627,6 +649,7 @@ export function buildFulfillmentData(
       stdNamesDateFontId: o.chapter2FontId || '',
       stdNamesDateTextAnimation: o.chapter2TextAnimation || '',
       stdNamesDateBold: o.chapter2Bold,
+      stdNamesDateTitleSize: o.chapter2TitleSize || '',
       heroOverlayGraphic: o.overlayGraphic || '',
       heroFontId: o.fontId || '',
       heroTextAnimation: o.textAnimation || '',
@@ -658,6 +681,9 @@ export function buildFulfillmentData(
               fontId: o.dateBlockFontId || '',
               textAnimation: o.dateBlockTextAnimation || '',
               bold: o.dateBlockBold,
+              titleSize: o.dateBlockTitleSize || '',
+              cardFrame: o.dateBlockCardFrame || '',
+              cardBg: o.dateBlockCardBg || '',
             },
           ]
         : []),
