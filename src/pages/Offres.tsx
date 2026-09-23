@@ -203,7 +203,7 @@ export default function Offres() {
 
   const compareRows: { key: string; label: string; std: Cell; fp: Cell }[] = [
     { key: 'video', label: t('offres.compare.row1'), std: ck, fp: ck },
-    { key: 'duration', label: t('offres.compare.row2'), std: tx('40 s'), fp: tx('60 s') },
+    { key: 'duration', label: t('offres.compare.row2'), std: tx('30 s'), fp: tx('60 s') },
     { key: 'page', label: t('offres.compare.row3'), std: tx(t('offres.compare.row3Std')), fp: tx(t('offres.compare.row3Fp')) },
     { key: 'rsvp', label: t('offres.compare.row4'), std: da, fp: ck },
     { key: 'scenarios', label: t('offres.compare.row5'), std: da, fp: ck },

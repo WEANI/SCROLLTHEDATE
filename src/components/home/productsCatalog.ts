@@ -17,7 +17,7 @@ export const PRODUCTS = [
   {
     id: 'SAVE_THE_DATE' as const,
     name: 'Save the Date digital',
-    price: '149 €',
+    price: 'À partir de 99 €',
     tagline: 'Pour annoncer, des mois avant.',
     // Vers la page produit dédiée plutôt que directement /commander — cf.
     // échange du 13/09/2026 (même correction que la carte de comparaison
@@ -27,7 +27,7 @@ export const PRODUCTS = [
     cta: '/save-the-date-digital',
     recommended: false,
     features: [
-      { icon: Clapperboard, label: 'Vidéo courte personnalisée (40 s)' },
+      { icon: Clapperboard, label: 'Vidéo courte personnalisée (30 s)' },
       { icon: CalendarHeart, label: 'Votre page personnalisée' },
       { icon: CalendarHeart, label: "Page d'annonce avec date & lieu" },
       { icon: InfinityIcon, label: 'Lien illimité, partageable partout' },
