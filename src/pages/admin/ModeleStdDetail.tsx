@@ -426,9 +426,9 @@ export default function ModeleStdDetail() {
           </div>
         </Panel>
 
-        {/* ---- Textes ---- */}
+        {/* ---- Réglages généraux ---- */}
         <Panel>
-          <PanelTitle title="Contenu" hint="Nom, accroche et description affichés dans la bibliothèque de modèles." />
+          <PanelTitle title="Réglages généraux" hint="Nom, accroche et description affichés dans la bibliothèque de modèles." />
           <div className="grid gap-4 p-6 md:grid-cols-2">
             <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
               Nom du modèle
@@ -448,36 +448,44 @@ export default function ModeleStdDetail() {
               />
             </label>
           </div>
+        </Panel>
 
-          <div className="border-t border-neutral-200 p-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-              1er texte affiché (ex. « Save the date »)
-            </p>
-            <div className="grid gap-3 md:grid-cols-5">
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 md:col-span-2">
-                Texte — une ligne par retour à la ligne (1 à 3 lignes)
-                <textarea
-                  rows={2}
-                  value={o.chapter1Text}
-                  onChange={(e) => update({ chapter1Text: e.target.value })}
-                  className={textareaClass}
+        {/* ---- Blocs de texte — un espace par bloc, tous ses réglages regroupés (échange du 23/09/2026) ---- */}
+        <Panel>
+          <PanelTitle
+            title="Blocs de texte"
+            hint="Un espace par bloc : texte, timing, position, police, taille, couleur, gras, cadre et animation regroupés au même endroit."
+          />
+          <div className="flex flex-col gap-4 p-6">
+            {/* ---- Bloc 1 — "Save the date" ---- */}
+            <div className="rounded-xl border border-neutral-200 bg-white p-5">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                1er bloc — texte affiché (ex. « Save the date »)
+              </p>
+              <div className="grid gap-3 md:grid-cols-5">
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 md:col-span-2">
+                  Texte — une ligne par retour à la ligne (1 à 3 lignes)
+                  <textarea
+                    rows={2}
+                    value={o.chapter1Text}
+                    onChange={(e) => update({ chapter1Text: e.target.value })}
+                    className={textareaClass}
+                  />
+                </label>
+                <TimecodeField
+                  label="Apparaît à (s)"
+                  value={o.chapter1FromSec}
+                  max={duration}
+                  onChange={(v) => update({ chapter1FromSec: v })}
+                  onCaler={() => update({ chapter1FromSec: Math.round(currentTime * 10) / 10 })}
                 />
-              </label>
-              <TimecodeField
-                label="Apparaît à (s)"
-                value={o.chapter1FromSec}
-                max={duration}
-                onChange={(v) => update({ chapter1FromSec: v })}
-                onCaler={() => update({ chapter1FromSec: Math.round(currentTime * 10) / 10 })}
-              />
-              <TimecodeField
-                label="Disparaît à (s)"
-                value={o.chapter1ToSec}
-                max={duration}
-                onChange={(v) => update({ chapter1ToSec: v })}
-                onCaler={() => update({ chapter1ToSec: Math.round(currentTime * 10) / 10 })}
-              />
-              <div className="flex flex-col gap-3">
+                <TimecodeField
+                  label="Disparaît à (s)"
+                  value={o.chapter1ToSec}
+                  max={duration}
+                  onChange={(v) => update({ chapter1ToSec: v })}
+                  onCaler={() => update({ chapter1ToSec: Math.round(currentTime * 10) / 10 })}
+                />
                 <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                   Position verticale
                   <select
@@ -490,6 +498,9 @@ export default function ModeleStdDetail() {
                     <option value="bottom">Bas</option>
                   </select>
                 </label>
+              </div>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                   Taille de police
                   <select
@@ -502,142 +513,18 @@ export default function ModeleStdDetail() {
                     <option value="lg">Grande</option>
                   </select>
                 </label>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-neutral-200 p-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-              2e texte — prénoms &amp; date d'exemple (un vrai client verra les siens à la place)
-            </p>
-            <div className="grid gap-3 md:grid-cols-5">
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Prénoms d'exemple
-                <input value={o.exampleNames} onChange={(e) => update({ exampleNames: e.target.value })} className={inputClass} />
-              </label>
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Date d'exemple
-                <input value={o.exampleDate} onChange={(e) => update({ exampleDate: e.target.value })} className={inputClass} />
-              </label>
-              <TimecodeField
-                label="Apparaît à (s)"
-                value={o.chapter2FromSec}
-                max={duration}
-                onChange={(v) => update({ chapter2FromSec: v })}
-                onCaler={() => update({ chapter2FromSec: Math.round(currentTime * 10) / 10 })}
-              />
-              <TimecodeField
-                label="Disparaît à (s)"
-                value={o.chapter2ToSec}
-                max={duration}
-                onChange={(v) => update({ chapter2ToSec: v })}
-                onCaler={() => update({ chapter2ToSec: Math.round(currentTime * 10) / 10 })}
-              />
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Position verticale
-                <select
-                  value={o.chapter2Position}
-                  onChange={(e) => update({ chapter2Position: e.target.value as SaveTheDateTemplateOverride["chapter2Position"] })}
-                  className={inputClass}
-                >
-                  <option value="top">Haut</option>
-                  <option value="middle">Milieu</option>
-                  <option value="bottom">Bas</option>
-                </select>
-              </label>
-            </div>
-          </div>
-
-          <div className="border-t border-neutral-200 p-6">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                3e bloc — la date, indépendant des prénoms
-              </p>
-              <label className="flex items-center gap-2 text-[12.5px] font-medium text-neutral-500">
-                <input
-                  type="checkbox"
-                  checked={o.dateBlockEnabled}
-                  onChange={(e) => update({ dateBlockEnabled: e.target.checked })}
-                  className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
-                />
-                Bloc activé
-              </label>
-            </div>
-            {!o.dateBlockEnabled ? (
-              <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
-                Désactivé — la date reste affichée sous les prénoms, comme aujourd'hui (comportement historique).
-              </p>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-5">
-                <TimecodeField
-                  label="Apparaît à (s)"
-                  value={o.dateBlockFromSec}
-                  max={duration}
-                  onChange={(v) => update({ dateBlockFromSec: v })}
-                  onCaler={() => update({ dateBlockFromSec: Math.round(currentTime * 10) / 10 })}
-                />
-                <TimecodeField
-                  label="Disparaît à (s)"
-                  value={o.dateBlockToSec}
-                  max={duration}
-                  onChange={(v) => update({ dateBlockToSec: v })}
-                  onCaler={() => update({ dateBlockToSec: Math.round(currentTime * 10) / 10 })}
-                />
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Position verticale
-                  <select
-                    value={o.dateBlockPosition}
-                    onChange={(e) => update({ dateBlockPosition: e.target.value as SaveTheDateTemplateOverride["dateBlockPosition"] })}
-                    className={inputClass}
-                  >
-                    <option value="top">Haut</option>
-                    <option value="middle">Milieu</option>
-                    <option value="bottom">Bas</option>
-                  </select>
-                </label>
-                <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.dateBlockTextColor} onChange={(v) => update({ dateBlockTextColor: v })} />
                 <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                   Police — ce bloc
-                  <FontSelect value={o.dateBlockFontId} onChange={(v) => update({ dateBlockFontId: v })} defaultLabel="Police du hero" />
+                  <FontSelect value={o.chapter1FontId} onChange={(v) => update({ chapter1FontId: v })} defaultLabel="Police du hero" />
                 </label>
                 <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                   Animation — ce bloc
-                  <AnimSelect value={o.dateBlockTextAnimation} onChange={(v) => update({ dateBlockTextAnimation: v })} defaultLabel="Animation du hero" />
+                  <AnimSelect value={o.chapter1TextAnimation} onChange={(v) => update({ chapter1TextAnimation: v })} defaultLabel="Animation du hero" />
                 </label>
-                <BoldField checked={o.dateBlockBold} onChange={(v) => update({ dateBlockBold: v })} />
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-medium text-neutral-500">Aperçu</span>
-                  <PreviewStage themeVars={themeVars}>
-                    <ChapterContent
-                      chapter={dateBlockPreview}
-                      textAnimation={dateBlockPreview.textAnimation || o.textAnimation || undefined}
-                      className={cn("hs-overlay", animShow && "show", (dateBlockPreview.textAnimation || o.textAnimation) && `hs-anim-${dateBlockPreview.textAnimation || o.textAnimation}`)}
-                    />
-                  </PreviewStage>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-neutral-200 p-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Couleurs des 2 textes</p>
-            <div className="grid gap-4 md:grid-cols-4">
-              <ColorField label="Texte — 1er bloc" hint="Vide = couleur du thème" value={o.chapter1TextColor} onChange={(v) => update({ chapter1TextColor: v })} />
-              <ColorField label="Fond de carte — 1er bloc" hint="Vide = fond du thème" value={o.chapter1CardBg} onChange={(v) => update({ chapter1CardBg: v })} noneOption />
-              <ColorField label="Texte — 2e bloc" hint="Vide = couleur du thème" value={o.chapter2TextColor} onChange={(v) => update({ chapter2TextColor: v })} />
-              <ColorField label="Fond de carte — 2e bloc" hint="Vide = fond du thème" value={o.chapter2CardBg} onChange={(v) => update({ chapter2CardBg: v })} noneOption />
-              <ColorField label={'Couleur du "&" — 2e bloc'} hint="Vide = accent du thème" value={o.chapter2AccentColor} onChange={(v) => update({ chapter2AccentColor: v })} />
-            </div>
-          </div>
-
-          <div className="border-t border-neutral-200 p-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-              Style par bloc — cadre, police, animation, gras
-            </p>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="flex flex-col gap-2">
+                <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.chapter1TextColor} onChange={(v) => update({ chapter1TextColor: v })} />
+                <ColorField label="Fond de carte" hint="Vide = fond du thème" value={o.chapter1CardBg} onChange={(v) => update({ chapter1CardBg: v })} noneOption />
                 <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Cadre — 1er bloc
+                  Cadre (décor)
                   <select value={o.chapter1CardFrame} onChange={(e) => update({ chapter1CardFrame: e.target.value })} className={inputClass}>
                     <option value="">Aucun</option>
                     {HERO_CARD_FRAMES.map((f) => (
@@ -645,17 +532,14 @@ export default function ModeleStdDetail() {
                     ))}
                   </select>
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Police — ce bloc
-                    <FontSelect value={o.chapter1FontId} onChange={(v) => update({ chapter1FontId: v })} defaultLabel="Police du hero" />
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Animation — ce bloc
-                    <AnimSelect value={o.chapter1TextAnimation} onChange={(v) => update({ chapter1TextAnimation: v })} defaultLabel="Animation du hero" />
-                  </label>
-                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
                 <BoldField checked={o.chapter1Bold} onChange={(v) => update({ chapter1Bold: v })} />
+              </div>
+
+              <div className="mt-3 flex flex-col gap-1">
+                <span className="text-xs font-medium text-neutral-500">Aperçu</span>
                 <PreviewStage themeVars={themeVars}>
                   <ChapterContent
                     chapter={chapter1FramePreview}
@@ -664,9 +548,64 @@ export default function ModeleStdDetail() {
                   />
                 </PreviewStage>
               </div>
-              <div className="flex flex-col gap-2">
+            </div>
+
+            {/* ---- Bloc 2 — prénoms & date d'exemple ---- */}
+            <div className="rounded-xl border border-neutral-200 bg-white p-5">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                2e bloc — prénoms &amp; date d'exemple (un vrai client verra les siens à la place)
+              </p>
+              <div className="grid gap-3 md:grid-cols-5">
                 <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Cadre — 2e bloc
+                  Prénoms d'exemple
+                  <input value={o.exampleNames} onChange={(e) => update({ exampleNames: e.target.value })} className={inputClass} />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Date d'exemple
+                  <input value={o.exampleDate} onChange={(e) => update({ exampleDate: e.target.value })} className={inputClass} />
+                </label>
+                <TimecodeField
+                  label="Apparaît à (s)"
+                  value={o.chapter2FromSec}
+                  max={duration}
+                  onChange={(v) => update({ chapter2FromSec: v })}
+                  onCaler={() => update({ chapter2FromSec: Math.round(currentTime * 10) / 10 })}
+                />
+                <TimecodeField
+                  label="Disparaît à (s)"
+                  value={o.chapter2ToSec}
+                  max={duration}
+                  onChange={(v) => update({ chapter2ToSec: v })}
+                  onCaler={() => update({ chapter2ToSec: Math.round(currentTime * 10) / 10 })}
+                />
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Position verticale
+                  <select
+                    value={o.chapter2Position}
+                    onChange={(e) => update({ chapter2Position: e.target.value as SaveTheDateTemplateOverride["chapter2Position"] })}
+                    className={inputClass}
+                  >
+                    <option value="top">Haut</option>
+                    <option value="middle">Milieu</option>
+                    <option value="bottom">Bas</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Police — ce bloc
+                  <FontSelect value={o.chapter2FontId} onChange={(v) => update({ chapter2FontId: v })} defaultLabel="Police du hero" />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Animation — ce bloc
+                  <AnimSelect value={o.chapter2TextAnimation} onChange={(v) => update({ chapter2TextAnimation: v })} defaultLabel="Animation du hero" />
+                </label>
+                <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.chapter2TextColor} onChange={(v) => update({ chapter2TextColor: v })} />
+                <ColorField label="Fond de carte" hint="Vide = fond du thème" value={o.chapter2CardBg} onChange={(v) => update({ chapter2CardBg: v })} noneOption />
+                <ColorField label='Couleur du "&"' hint="Vide = accent du thème" value={o.chapter2AccentColor} onChange={(v) => update({ chapter2AccentColor: v })} />
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Cadre (décor)
                   <select value={o.chapter2CardFrame} onChange={(e) => update({ chapter2CardFrame: e.target.value })} className={inputClass}>
                     <option value="">Aucun</option>
                     {HERO_CARD_FRAMES.map((f) => (
@@ -674,17 +613,14 @@ export default function ModeleStdDetail() {
                     ))}
                   </select>
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Police — ce bloc
-                    <FontSelect value={o.chapter2FontId} onChange={(v) => update({ chapter2FontId: v })} defaultLabel="Police du hero" />
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Animation — ce bloc
-                    <AnimSelect value={o.chapter2TextAnimation} onChange={(v) => update({ chapter2TextAnimation: v })} defaultLabel="Animation du hero" />
-                  </label>
-                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
                 <BoldField checked={o.chapter2Bold} onChange={(v) => update({ chapter2Bold: v })} />
+              </div>
+
+              <div className="mt-3 flex flex-col gap-1">
+                <span className="text-xs font-medium text-neutral-500">Aperçu</span>
                 <PreviewStage themeVars={themeVars}>
                   <ChapterContent
                     chapter={chapter2FramePreview}
@@ -693,6 +629,87 @@ export default function ModeleStdDetail() {
                   />
                 </PreviewStage>
               </div>
+            </div>
+
+            {/* ---- Bloc 3 — la date, indépendant des prénoms ---- */}
+            <div className="rounded-xl border border-neutral-200 bg-white p-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                  3e bloc — la date, indépendant des prénoms
+                </p>
+                <label className="flex items-center gap-2 text-[12.5px] font-medium text-neutral-500">
+                  <input
+                    type="checkbox"
+                    checked={o.dateBlockEnabled}
+                    onChange={(e) => update({ dateBlockEnabled: e.target.checked })}
+                    className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
+                  />
+                  Bloc activé
+                </label>
+              </div>
+              {!o.dateBlockEnabled ? (
+                <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
+                  Désactivé — la date reste affichée sous les prénoms, comme aujourd'hui (comportement historique).
+                </p>
+              ) : (
+                <>
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <TimecodeField
+                      label="Apparaît à (s)"
+                      value={o.dateBlockFromSec}
+                      max={duration}
+                      onChange={(v) => update({ dateBlockFromSec: v })}
+                      onCaler={() => update({ dateBlockFromSec: Math.round(currentTime * 10) / 10 })}
+                    />
+                    <TimecodeField
+                      label="Disparaît à (s)"
+                      value={o.dateBlockToSec}
+                      max={duration}
+                      onChange={(v) => update({ dateBlockToSec: v })}
+                      onCaler={() => update({ dateBlockToSec: Math.round(currentTime * 10) / 10 })}
+                    />
+                    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                      Position verticale
+                      <select
+                        value={o.dateBlockPosition}
+                        onChange={(e) => update({ dateBlockPosition: e.target.value as SaveTheDateTemplateOverride["dateBlockPosition"] })}
+                        className={inputClass}
+                      >
+                        <option value="top">Haut</option>
+                        <option value="middle">Milieu</option>
+                        <option value="bottom">Bas</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                      Police — ce bloc
+                      <FontSelect value={o.dateBlockFontId} onChange={(v) => update({ dateBlockFontId: v })} defaultLabel="Police du hero" />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                      Animation — ce bloc
+                      <AnimSelect value={o.dateBlockTextAnimation} onChange={(v) => update({ dateBlockTextAnimation: v })} defaultLabel="Animation du hero" />
+                    </label>
+                    <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.dateBlockTextColor} onChange={(v) => update({ dateBlockTextColor: v })} />
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+                    <BoldField checked={o.dateBlockBold} onChange={(v) => update({ dateBlockBold: v })} />
+                  </div>
+
+                  <div className="mt-3 flex flex-col gap-1">
+                    <span className="text-xs font-medium text-neutral-500">Aperçu</span>
+                    <PreviewStage themeVars={themeVars}>
+                      <ChapterContent
+                        chapter={dateBlockPreview}
+                        textAnimation={dateBlockPreview.textAnimation || o.textAnimation || undefined}
+                        className={cn("hs-overlay", animShow && "show", (dateBlockPreview.textAnimation || o.textAnimation) && `hs-anim-${dateBlockPreview.textAnimation || o.textAnimation}`)}
+                      />
+                    </PreviewStage>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </Panel>
@@ -783,7 +800,10 @@ export default function ModeleStdDetail() {
 
         {/* ---- Décor & style, avec aperçu réactif ---- */}
         <Panel>
-          <PanelTitle title="Décor & style" hint="Bibliothèque — l'aperçu se met à jour dès que vous changez un réglage." />
+          <PanelTitle
+            title="Décor & style — réglages par défaut du hero"
+            hint="S'appliquent à toute la vidéo, sauf si un bloc ci-dessus a son propre réglage (qui prend alors le dessus). L'aperçu se met à jour dès que vous changez un réglage."
+          />
           <div className="grid gap-6 p-6 md:grid-cols-2">
             <div className="flex flex-col gap-2">
               <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
