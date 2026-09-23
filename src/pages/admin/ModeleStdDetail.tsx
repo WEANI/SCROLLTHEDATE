@@ -175,7 +175,20 @@ export default function ModeleStdDetail() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (loaded || !template) return;
+    // `q.data === undefined` tant que la requête n'a pas encore résolu (au
+    // moins un aller-retour réseau, donc TOUJOURS après ce premier rendu) —
+    // sans cette garde, l'effet se déclenchait dès le premier rendu avec
+    // `q.data` encore `undefined`, `parseTemplateOverrides(undefined)`
+    // retombant sur `{}` : `allOverrides` ET `o` partaient des valeurs par
+    // défaut, `loaded` passait à `true` immédiatement, et la VRAIE réponse
+    // du serveur (arrivée juste après) était silencieusement ignorée — bug
+    // confirmé le 23/09/2026 (modifications d'un modèle "sur un modèle",
+    // ex. texte du hero réparti sur plusieurs lignes, qui semblaient
+    // annulées après déconnexion/reconnexion : uniquement le cache
+    // react-query froid d'une nouvelle session masquait le repli aux
+    // valeurs par défaut). Même garde que `TabFairePartDemo`
+    // (Parametres.tsx) — pattern déjà correct là-bas.
+    if (loaded || !template || q.data === undefined) return;
     const saved = parseTemplateOverrides(q.data?.value);
     setAllOverrides(saved);
     setO(saved[template.slug] ?? defaultOverrideFor(template));

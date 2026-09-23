@@ -260,7 +260,13 @@ function TabProfil({ push }: { push: Push }) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (loaded) return;
+    // `q.data === undefined` tant que la requête n'a pas résolu — sans
+    // cette garde, l'effet se déclenchait dès le premier rendu et figeait
+    // les champs sur leurs valeurs de repli avant même d'avoir vu la
+    // réponse du serveur, "loaded" passant à `true` trop tôt pour que la
+    // vraie valeur enregistrée soit jamais prise en compte (bug confirmé
+    // le 23/09/2026, cf. même correctif sur ModeleStdDetail.tsx).
+    if (loaded || q.data === undefined) return;
     const v = q.data?.value as
       | { displayName?: string; signature?: string; bio?: string }
       | null
@@ -344,7 +350,9 @@ function TabProduits({ push }: { push: Push }) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (loaded) return;
+    // Attend les DEUX requêtes — cf. doc du même correctif sur TabProfil
+    // ci-dessus (bug confirmé le 23/09/2026).
+    if (loaded || productsQ.data === undefined || optionsQ.data === undefined) return;
     const pv = productsQ.data?.value as ProductSetting[] | null | undefined;
     const ov = optionsQ.data?.value as OptionSetting[] | null | undefined;
     if (Array.isArray(pv) && pv.length > 0) {
@@ -763,7 +771,8 @@ function TabEmails({ push }: { push: Push }) {
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (loaded) return;
+    // Cf. doc du même correctif sur TabProfil ci-dessus (bug confirmé le 23/09/2026).
+    if (loaded || q.data === undefined) return;
     const v = q.data?.value as EmailTemplateDraft[] | null | undefined;
     if (Array.isArray(v) && v.length > 0) setTemplates(v);
     setLoaded(true);
@@ -970,7 +979,9 @@ function TabNotifications({ push }: { push: Push }) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (loaded) return;
+    // Attend les DEUX requêtes — cf. doc du même correctif sur TabProfil
+    // ci-dessus (bug confirmé le 23/09/2026).
+    if (loaded || notifQ.data === undefined || quickQ.data === undefined) return;
     const nv = notifQ.data?.value as
       | { events?: NotifPrefs; recap?: boolean; recapHour?: string }
       | null
@@ -1229,7 +1240,8 @@ function TabSecurite({ push }: { push: Push }) {
   const [confirmDelete, setConfirmDelete] = useState(0);
 
   useEffect(() => {
-    if (loaded) return;
+    // Cf. doc du même correctif sur TabProfil ci-dessus (bug confirmé le 23/09/2026).
+    if (loaded || secQ.data === undefined) return;
     const v = secQ.data?.value as { twoFactor?: boolean } | null | undefined;
     if (typeof v?.twoFactor === "boolean") setTwoFactor(v.twoFactor);
     setLoaded(true);
