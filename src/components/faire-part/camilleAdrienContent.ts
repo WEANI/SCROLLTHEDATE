@@ -289,6 +289,7 @@ export const CA_PALETTE: BespokePalette = {
   heroFontId: '',
   heroTextAnimation: '',
   heroFilter: '',
+  stdDateFormat: '',
 }
 
 /**

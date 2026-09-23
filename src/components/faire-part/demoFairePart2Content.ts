@@ -241,6 +241,7 @@ export const LAO_PALETTE: BespokePalette = {
   heroFontId: '',
   heroTextAnimation: '',
   heroFilter: '',
+  stdDateFormat: '',
 }
 
 export const LAO_HISTOIRE_TEXT =

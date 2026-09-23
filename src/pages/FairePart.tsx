@@ -10,7 +10,7 @@ import DetailsSombre, { parseFaqItem, parseProgrammeItem } from '@/components/fa
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { HERO_THEMES } from '@/components/hero-scrub/themes'
 import type { HeroChapter } from '@/components/hero-scrub/types'
-import { getHeroFont, useGoogleFont, useGoogleFonts } from '@/components/hero-scrub/heroDecor'
+import { getHeroDateFormat, getHeroFont, useGoogleFont, useGoogleFonts } from '@/components/hero-scrub/heroDecor'
 import type { HeroChapterTiming } from '@contracts/bespokePalette'
 import {
   BespokePaletteProvider,
@@ -292,8 +292,16 @@ export default function FairePart() {
   // retomberait sur son défaut d'origine "É · W" (Edwige & Wilfried).
   const sealInitials = nameParts.length === 3 ? `${nameParts[0][0]} · ${nameParts[2][0]}` : coupleNames.slice(0, 1).toUpperCase()
 
+  // Style d'affichage (Studio Save the Date → bibliothèque HERO_DATE_FORMATS,
+  // cf. heroDecor.ts) — vide/id inconnu = format historique inchangé.
+  // `palette.stdDateFormat` n'est jamais posé pour un faire-part sur mesure
+  // (aucun contrôle admin dans StudioPanel), donc ce projet garde toujours
+  // le format par défaut ci-dessous sans branchement explicite sur `isStd`.
+  const dateFormat = getHeroDateFormat(palette.stdDateFormat)
   const weddingDateShort = invite.weddingDate
-    ? new Date(invite.weddingDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    ? dateFormat
+      ? dateFormat.format(new Date(invite.weddingDate))
+      : new Date(invite.weddingDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : undefined
   // Bloc "date" indépendant (cf. échange du 21/09/2026, HeroCustomCard.kind
   // dans bespokePalette.ts) : quand une carte `kind: 'date'` est présente,

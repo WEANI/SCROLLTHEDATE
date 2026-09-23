@@ -26,6 +26,7 @@ import {
   HERO_TEXT_ANIMATIONS,
   HERO_FILTERS,
   HERO_CARD_FRAMES,
+  HERO_DATE_FORMATS,
   getHeroFont,
   useGoogleFont,
 } from "@/components/hero-scrub/heroDecor";
@@ -861,6 +862,21 @@ export default function ModeleStdDetail() {
               </label>
               <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
                 Déjà visible en direct sur la vidéo tout en haut de la page.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                Format de la date
+                <select value={o.dateFormat} onChange={(e) => update({ dateFormat: e.target.value })} className={inputClass}>
+                  <option value="">12 juin 2027 (défaut)</option>
+                  {HERO_DATE_FORMATS.map((f) => (
+                    <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
+                  ))}
+                </select>
+              </label>
+              <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
+                S'applique à la vraie date du client sur une commande passée sur ce modèle (sous les prénoms, ou dans le 3e bloc si activé) — pas à cette page d'aperçu, qui garde la date d'exemple tapée plus haut.
               </p>
             </div>
           </div>

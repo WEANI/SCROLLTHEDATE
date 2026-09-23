@@ -955,6 +955,7 @@ const BLANK_PALETTE: BespokePaletteInput = {
   heroFontId: "",
   heroTextAnimation: "",
   heroFilter: "",
+  stdDateFormat: "",
 };
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;

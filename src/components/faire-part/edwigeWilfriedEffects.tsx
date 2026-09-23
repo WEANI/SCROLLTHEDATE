@@ -158,6 +158,12 @@ export type BespokePalette = {
    */
   heroTextAnimation: string
   heroFilter: string
+  /**
+   * Style d'affichage de la date d'un Save the Date "sur un modèle" — cf.
+   * heroDecor.ts::HERO_DATE_FORMATS. Chaîne vide = format historique
+   * inchangé ("12 juin 2027").
+   */
+  stdDateFormat: string
 }
 
 export const EW_PALETTE: BespokePalette = {
@@ -212,6 +218,7 @@ export const EW_PALETTE: BespokePalette = {
   heroFontId: '',
   heroTextAnimation: '',
   heroFilter: '',
+  stdDateFormat: '',
 }
 
 function darken(hex: string, amount: number): string {

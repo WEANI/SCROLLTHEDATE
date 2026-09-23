@@ -253,6 +253,19 @@ export interface SaveTheDateTemplateOverride {
   dateBlockFontId: string
   dateBlockTextAnimation: string
   dateBlockBold: boolean
+  /**
+   * Style d'affichage de la date du mariage (jour de la semaine, majuscules,
+   * numérique avec points...) — bibliothèque HERO_DATE_FORMATS (cf.
+   * src/components/hero-scrub/heroDecor.ts), ajoutée le 23/09/2026. Vide/id
+   * inconnu = format historique inchangé ("12 juin 2027"). Un seul réglage
+   * par modèle (pas par bloc) : s'applique partout où la vraie date du
+   * client est affichée pour une commande passée sur ce modèle (sous les
+   * prénoms par défaut, ou dans le 3e bloc si `dateBlockEnabled`) — cf.
+   * `buildFulfillmentData` plus bas, qui le pose sur `palette.stdDateFormat`.
+   * N'affecte PAS la page d'aperçu générique (`applyOverride`), qui reste
+   * pilotée par `exampleDate` en texte libre.
+   */
+  dateFormat: string
 }
 
 // Couple d'exemple repris à l'identique du reste du site (récap /commander,
@@ -467,6 +480,7 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     dateBlockFontId: '',
     dateBlockTextAnimation: '',
     dateBlockBold: false,
+    dateFormat: '',
   }
 }
 
@@ -617,6 +631,7 @@ export function buildFulfillmentData(
       heroFontId: o.fontId || '',
       heroTextAnimation: o.textAnimation || '',
       heroFilter: o.filter || '',
+      stdDateFormat: o.dateFormat || '',
     },
     heroChapters: [
       { fromSec: o.chapter1FromSec, toSec: o.chapter1ToSec, position: o.chapter1Position },

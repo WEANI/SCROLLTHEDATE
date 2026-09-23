@@ -195,6 +195,94 @@ export const HERO_CARD_FRAMES: { id: string; label: string }[] = [
   { id: 'pulse-glow', label: 'Halo de cadre pulsant' },
 ]
 
+export interface HeroDateFormatOption {
+  id: string
+  label: string
+  /** Exemple affiché dans le sélecteur admin — date fixe (12 juin 2027, même convention que EXAMPLE_DATE dans contracts/saveTheDateTemplates.ts), indépendante de la date réellement en cours d'édition. */
+  example: string
+  format: (d: Date) => string
+}
+
+const capitalizeFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
+
+/**
+ * Styles d'affichage de la date du mariage dans le hero d'un Save the Date
+ * "sur un modèle" — bibliothèque ajoutée le 23/09/2026 (cf. échange
+ * "bibliothèque des formats de date"), même principe que HERO_FONTS/
+ * HERO_CARD_FRAMES/etc. ci-dessus : id vide/inconnu = format historique
+ * inchangé (repli codé en dur dans FairePart.tsx — cf. `getHeroDateFormat`
+ * plus bas — jamais dupliqué ici). Toujours en français ('fr-FR') : la date
+ * d'un Save the Date est du contenu vidéo figé, pas une chaîne relue par
+ * l'i18n du site, même convention que les autres textes de la bibliothèque
+ * de modèles.
+ */
+export const HERO_DATE_FORMATS: HeroDateFormatOption[] = [
+  {
+    id: 'weekday-long',
+    label: 'Jour complet',
+    example: 'Samedi 12 juin 2027',
+    format: (d) =>
+      capitalizeFirst(
+        new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(d),
+      ),
+  },
+  {
+    id: 'le-prefix',
+    label: 'Avec « Le »',
+    example: 'Le 12 juin 2027',
+    format: (d) => `Le ${new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(d)}`,
+  },
+  {
+    id: 'caps-month',
+    label: 'Mois en majuscules',
+    example: '12 JUIN 2027',
+    format: (d) => new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(d).toUpperCase(),
+  },
+  {
+    id: 'spaced-caps',
+    label: 'Espacé & majuscules',
+    example: '12 · JUIN · 2027',
+    format: (d) => {
+      const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric' }).format(d)
+      const month = new Intl.DateTimeFormat('fr-FR', { month: 'long' }).format(d).toUpperCase()
+      const year = new Intl.DateTimeFormat('fr-FR', { year: 'numeric' }).format(d)
+      return `${day} · ${month} · ${year}`
+    },
+  },
+  {
+    id: 'numeric-slash',
+    label: 'Numérique (/)',
+    example: '12/06/2027',
+    format: (d) => new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d),
+  },
+  {
+    id: 'numeric-dot',
+    label: 'Numérique (.)',
+    example: '12.06.2027',
+    format: (d) =>
+      new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d).replace(/\//g, '.'),
+  },
+  {
+    id: 'numeric-dash',
+    label: 'Numérique (-)',
+    example: '12-06-2027',
+    format: (d) =>
+      new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d).replace(/\//g, '-'),
+  },
+  {
+    id: 'compact-year2',
+    label: 'Compact, année courte',
+    example: '12.06.27',
+    format: (d) =>
+      new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }).format(d).replace(/\//g, '.'),
+  },
+]
+
+export function getHeroDateFormat(id: string | undefined): HeroDateFormatOption | null {
+  if (!id) return null
+  return HERO_DATE_FORMATS.find((f) => f.id === id) ?? null
+}
+
 /**
  * Cadres pour une PHOTO CLIENT (9:16) — ajoutée le 22/09/2026, cf. CSS
  * `.hs-photo-frame-*` dans hero-scrub.css pour le détail de chaque classe.

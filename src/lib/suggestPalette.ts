@@ -162,6 +162,7 @@ export function suggestPaletteFromColors(
     // Idem : animation de texte / filtre vidéo, jamais suggérés.
     heroTextAnimation: "",
     heroFilter: "",
+    stdDateFormat: "",
   };
 }
 

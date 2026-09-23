@@ -126,6 +126,15 @@ export const bespokePaletteSchema = z.object({
   stdNamesDateFontId: z.string().default(""),
   stdNamesDateTextAnimation: z.string().default(""),
   stdNamesDateBold: z.boolean().default(false),
+  // Style d'affichage de la date (jour de la semaine, majuscules, numérique
+  // avec points...) — bibliothèque HERO_DATE_FORMATS (heroDecor.ts), ajoutée
+  // le 23/09/2026. Vide/id inconnu = format historique inchangé ("12 juin
+  // 2027", codé en dur dans FairePart.tsx). S'applique à `weddingDateShort`
+  // partout où il est utilisé pour ce projet (sous les prénoms, bloc date
+  // indépendant) — un seul réglage, pas par-bloc (la date reste la même
+  // information affichée à plusieurs endroits, contrairement à la
+  // couleur/police qui peuvent légitimement différer d'un bloc à l'autre).
+  stdDateFormat: z.string().default(""),
   // Décor du hero — cf. src/components/hero-scrub/heroDecor.ts (bibliothèque
   // ajoutée le 10/09/2026). Chaîne vide = aucun décor / police du site
   // (Fraunces), comportement inchangé. `heroFontId` ne change QUE le titre
