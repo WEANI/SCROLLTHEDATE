@@ -104,7 +104,7 @@ export function coupleNamesFromSlug(slug: string) {
   return names.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ") || slug;
 }
 
-export function productLabel(product: AdminOrder["product"]) {
+export function productLabel(product: "FAIRE_PART" | "SAVE_THE_DATE") {
   return product === "FAIRE_PART" ? "Faire-part" : "Save the Date";
 }
 

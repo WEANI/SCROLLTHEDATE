@@ -37,14 +37,23 @@ import { useSelectedProject } from '@/components/espace/ProjectSelection'
 // Facture (fenêtre d'impression → PDF)
 // ---------------------------------------------------------------------------
 
-interface OrderLike {
+interface OrderProjectLike {
   id: number
+  status: string
+  slug: string
   product: string
   options: unknown
+  amountCents: number
+}
+
+interface OrderLike {
+  id: number
+  /** Montant TOTAL de la commande (somme de tous ses projets) — le produit/les options vivent sur `projects`, pas ici (panier, cf. échange du 23/09/2026). */
   amountCents: number
   paymentStatus: string
   stripeRef: string | null
   createdAt: Date | string
+  projects: OrderProjectLike[]
 }
 
 function orderNumber(o: OrderLike) {
@@ -93,17 +102,23 @@ const FR_PRODUCT_LABEL: Record<string, string> = {
 }
 
 function openInvoice(o: OrderLike, customerName: string, customerEmail: string) {
-  const options = (o.options as { id: string; label: string; priceCents: number }[] | null) ?? []
-  const baseCents = o.amountCents - options.reduce((s, x) => s + x.priceCents, 0)
-
   const lineRow = (label: string, ttcCents: number) => {
     const { ht } = splitTTC(ttcCents)
     return `<tr><td>${label}</td><td class="num">${formatPrice(ht)}</td><td class="num">20 %</td><td class="num">${formatPrice(ttcCents)}</td></tr>`
   }
-  const rows = [
-    lineRow(FR_PRODUCT_LABEL[o.product] ?? o.product, baseCents),
-    ...options.map((opt) => lineRow(`Option — ${opt.label}`, opt.priceCents)),
-  ].join('')
+  // Une commande peut couvrir plusieurs produits (panier, cf. échange du
+  // 23/09/2026) — une ligne de facture par projet, plus une par option de
+  // CE projet, `o.amountCents` restant le total TTC de toute la commande.
+  const rows = o.projects
+    .flatMap((p) => {
+      const options = (p.options as { id: string; label: string; priceCents: number }[] | null) ?? []
+      const baseCents = p.amountCents - options.reduce((s, x) => s + x.priceCents, 0)
+      return [
+        lineRow(FR_PRODUCT_LABEL[p.product] ?? p.product, baseCents),
+        ...options.map((opt) => lineRow(`Option — ${opt.label}`, opt.priceCents)),
+      ]
+    })
+    .join('')
 
   const { ht: totalHt, tva: totalTva } = splitTTC(o.amountCents)
   const issueDate = formatDate(o.createdAt, { day: '2-digit', month: 'long', year: 'numeric' })
@@ -226,7 +241,7 @@ export default function Commandes() {
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [rsvpFilter, setRsvpFilter] = useState<'all' | 'yes' | 'no' | 'maybe'>('all')
 
-  const orders = useMemo(() => (ordersQuery.data ?? []) as (OrderLike & { projects: { id: number; status: string; slug: string }[] })[], [ordersQuery.data])
+  const orders = useMemo(() => (ordersQuery.data ?? []) as OrderLike[], [ordersQuery.data])
   const rsvp = rsvpQuery.data ?? null
   const responses = useMemo(() => rsvp?.responses ?? [], [rsvp])
 
@@ -326,7 +341,6 @@ export default function Commandes() {
               </thead>
               <tbody>
                 {orders.map((o, i) => {
-                  const project = o.projects[0] ?? null
                   const expanded = expandedId === o.id
                   return (
                     <motion.tr
@@ -350,7 +364,7 @@ export default function Commandes() {
                             {orderNumber(o)}
                           </span>
                           <span className="px-6 py-1 text-[13.5px] text-ink md:px-4 md:py-4">
-                            {productLabel(o.product, t)}
+                            {o.projects.map((p) => productLabel(p.product, t)).join(' + ') || '—'}
                           </span>
                           <span className="px-6 py-1 text-[13px] text-neutral-500 md:px-4 md:py-4">
                             {formatDate(o.createdAt, undefined, lang)}
@@ -363,11 +377,13 @@ export default function Commandes() {
                               {o.paymentStatus === 'paid' ? t('espace.commandes.statusPaid') : t('espace.commandes.statusPending')}
                             </StatusBadge>
                           </span>
-                          <span className="px-6 py-1 md:px-4 md:py-4">
-                            {project ? (
-                              <StatusBadge tone={project.status === 'DELIVERED' ? 'success' : 'terracotta'}>
-                                {projectStatusLabel(project.status, t)}
-                              </StatusBadge>
+                          <span className="flex flex-wrap gap-1 px-6 py-1 md:px-4 md:py-4">
+                            {o.projects.length > 0 ? (
+                              o.projects.map((p) => (
+                                <StatusBadge key={p.id} tone={p.status === 'DELIVERED' ? 'success' : 'terracotta'}>
+                                  {projectStatusLabel(p.status, t)}
+                                </StatusBadge>
+                              ))
                             ) : (
                               <span className="text-[12.5px] text-neutral-500">—</span>
                             )}
@@ -386,7 +402,12 @@ export default function Commandes() {
                             >
                               <Download size={16} />
                             </span>
-                            {project && (
+                            {/* Lien direct vers /espace/projet seulement si la
+                                commande ne couvre qu'UN projet — ce lien vise
+                                le projet actuellement sélectionné dans le
+                                switcher de la sidebar, pas un projet précis :
+                                ambigu dès qu'une commande en porte plusieurs. */}
+                            {o.projects.length === 1 && (
                               <Link
                                 to="/espace/projet"
                                 onClick={(e) => e.stopPropagation()}
@@ -416,18 +437,31 @@ export default function Commandes() {
                                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
                                     {t('espace.commandes.optionsChosenTitle')}
                                   </p>
-                                  {((o.options as { label: string; priceCents: number }[] | null) ?? []).length === 0 ? (
-                                    <p className="text-[13px] text-neutral-500">{t('espace.commandes.formulaOnly')}</p>
-                                  ) : (
-                                    <ul className="flex flex-col gap-1">
-                                      {((o.options as { label: string; priceCents: number }[] | null) ?? []).map((opt, j) => (
-                                        <li key={j} className="flex justify-between gap-4 text-[13px]">
-                                          <span className="text-ink">{opt.label}</span>
-                                          <span className="tabular-nums text-neutral-500">{formatPrice(opt.priceCents, lang)}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  )}
+                                  <div className="flex flex-col gap-3">
+                                    {o.projects.map((p) => {
+                                      const projectOptions = (p.options as { label: string; priceCents: number }[] | null) ?? []
+                                      return (
+                                        <div key={p.id}>
+                                          {/* Nom du produit affiché seulement à partir de 2 projets — inutile de le répéter pour une commande à un seul produit. */}
+                                          {o.projects.length > 1 && (
+                                            <p className="mb-1 text-[12.5px] font-semibold text-ink">{productLabel(p.product, t)}</p>
+                                          )}
+                                          {projectOptions.length === 0 ? (
+                                            <p className="text-[13px] text-neutral-500">{t('espace.commandes.formulaOnly')}</p>
+                                          ) : (
+                                            <ul className="flex flex-col gap-1">
+                                              {projectOptions.map((opt, j) => (
+                                                <li key={j} className="flex justify-between gap-4 text-[13px]">
+                                                  <span className="text-ink">{opt.label}</span>
+                                                  <span className="tabular-nums text-neutral-500">{formatPrice(opt.priceCents, lang)}</span>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
                                 </div>
                                 <div>
                                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">

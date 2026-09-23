@@ -56,12 +56,35 @@ function button(label: string, href: string): string {
 
 const espaceUrl = () => `${env.appUrl}/espace`;
 
-/** Confirmation de commande — envoyée juste après le paiement (simulé). N'invente PAS de "lien pour créer votre espace" : le compte existe déjà (auth requise avant paiement, cf. Commander.tsx). */
+function euro(cents: number): string {
+  return (cents / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+}
+
+export interface OrderConfirmationItem {
+  /** Libellé affiché — ex. "Faire-part digital" ou "Save the Date digital — Sur un modèle". */
+  label: string;
+  amountCents: number;
+  /** Présent seulement si CE produit est livré instantanément ("sur un modèle"). */
+  publicUrl?: string;
+}
+
+/**
+ * Confirmation de commande — envoyée juste après le paiement. N'invente PAS
+ * de "lien pour créer votre espace" : le compte existe déjà (auth requise
+ * avant paiement, cf. Commander.tsx).
+ *
+ * UN seul email par commande, quel que soit le nombre de produits achetés
+ * ensemble (panier, cf. échange du 23/09/2026) — `items` porte une ligne
+ * par produit, `amountCents` le total payé. Avec un seul item, le rendu
+ * reste identique à l'email "un seul produit" d'avant (pas de liste
+ * visible pour ne rien alourdir dans le cas courant).
+ */
 export function orderConfirmationEmail(params: {
   to: string;
   coupleNames: string;
   orderRef: string;
   amountCents: number;
+  items: OrderConfirmationItem[];
   /**
    * Checkout invité : lien à usage unique pour choisir son mot de passe et
    * activer son espace (cf. api/lib/guestAccount.ts). Null/absent quand le
@@ -69,39 +92,52 @@ export function orderConfirmationEmail(params: {
    * alors simplement le lien vers l'espace.
    */
   setPasswordUrl?: string | null;
-  /**
-   * Commande "sur un modèle" (cf. contracts/saveTheDateTemplates.ts) livrée
-   * instantanément par le webhook Stripe, plutôt qu'un projet "sur mesure"
-   * qui démarre par le questionnaire — présent seulement dans ce cas.
-   * Change le corps du message ("votre page est prête", pas "prochaine
-   * étape : le questionnaire") et ajoute un bouton direct vers la page,
-   * en plus de l'activation d'espace habituelle.
-   */
-  publicUrl?: string;
 }): EmailMessage {
-  const amount = (params.amountCents / 100).toLocaleString("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-  });
+  const amount = euro(params.amountCents);
   const isGuest = Boolean(params.setPasswordUrl);
-  const isTemplate = Boolean(params.publicUrl);
   const ctaUrl = params.setPasswordUrl ?? espaceUrl();
   const ctaLabel = isGuest ? "Activer mon espace" : "Accéder à mon espace";
-  const subject = isTemplate ? `Votre page est prête — ${params.orderRef}` : `Commande confirmée — ${params.orderRef}`;
-  const bodyCopy = isTemplate
-    ? "Votre page Save the Date est déjà prête, avec vos prénoms et votre date — plus rien à faire de votre côté."
+  const readyItems = params.items.filter((i) => i.publicUrl);
+  const pendingCount = params.items.length - readyItems.length;
+  // "Prête" seulement si TOUT le panier est livré instantanément ("sur un
+  // modèle") — dès qu'un seul produit démarre par le questionnaire, le
+  // sujet/l'intro générale restent "Commande confirmée".
+  const allReady = readyItems.length > 0 && pendingCount === 0;
+  const subject = allReady ? `Votre page est prête — ${params.orderRef}` : `Commande confirmée — ${params.orderRef}`;
+  const bodyCopy = allReady
+    ? params.items.length > 1
+      ? "Vos pages sont déjà prêtes, avec vos prénoms et votre date — plus rien à faire de votre côté."
+      : "Votre page Save the Date est déjà prête, avec vos prénoms et votre date — plus rien à faire de votre côté."
     : isGuest
       ? "Votre place est réservée dans notre planning de production. Dernière étape pour activer votre espace : choisissez votre mot de passe. Vous pourrez ensuite remplir le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J."
       : "Votre place est réservée dans notre planning de production. Prochaine étape : le questionnaire, pour nous raconter votre histoire et les infos pratiques du jour J.";
+  // Détail des produits — visible seulement à partir de 2 lignes (un seul
+  // produit se lit déjà dans le corps du message, pas besoin de le répéter
+  // dans une liste).
+  const itemsListHtml =
+    params.items.length > 1
+      ? `<table role="presentation" width="100%" style="margin:0 0 16px;border-top:1px solid ${BRAND.border};">
+          ${params.items
+            .map(
+              (i) =>
+                `<tr><td style="padding:8px 0;font-size:13px;color:${BRAND.ink};border-bottom:1px solid ${BRAND.border};">${i.label}</td><td align="right" style="padding:8px 0;font-size:13px;color:${BRAND.inkSoft};border-bottom:1px solid ${BRAND.border};">${euro(i.amountCents)}</td></tr>`,
+            )
+            .join("")}
+        </table>`
+      : "";
+  const readyButtonsHtml = readyItems
+    .map((i) => button(params.items.length > 1 ? `Voir « ${i.label} »` : "Voir ma page", i.publicUrl!))
+    .join('<div style="height:8px;"></div>');
   const html = wrap({
     preheader: `Votre commande ${params.orderRef} est confirmée (${amount}).`,
     bodyHtml: `
-      <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.accent};">${isTemplate ? "Page prête" : "Commande confirmée"}</p>
+      <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.accent};">${allReady ? "Page prête" : "Commande confirmée"}</p>
       <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:400;font-size:26px;line-height:1.2;color:${BRAND.ink};">Merci${params.coupleNames ? `, ${params.coupleNames}` : ""} !</h1>
       <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:${BRAND.inkSoft};">Référence : <strong style="color:${BRAND.ink};">${params.orderRef}</strong> — ${amount}</p>
+      ${itemsListHtml}
       <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:${BRAND.inkSoft};">${bodyCopy}</p>
-      ${params.publicUrl ? button("Voir ma page", params.publicUrl) : ""}
-      ${isTemplate ? `<div style="height:12px;"></div>` : ""}
+      ${readyButtonsHtml}
+      ${readyItems.length > 0 ? `<div style="height:12px;"></div>` : ""}
       ${button(ctaLabel, ctaUrl)}
       ${
         isGuest
@@ -110,12 +146,14 @@ export function orderConfirmationEmail(params: {
       }
     `,
   });
+  const itemsListText = params.items.length > 1 ? params.items.map((i) => `- ${i.label} : ${euro(i.amountCents)}`).join("\n") + "\n\n" : "";
+  const readyLinksText = readyItems.map((i) => `${params.items.length > 1 ? `Voir « ${i.label} »` : "Voir ma page"} : ${i.publicUrl}`).join("\n");
   const text = `Merci${params.coupleNames ? `, ${params.coupleNames}` : ""} !
 
-${isTemplate ? "Page prête" : "Commande confirmée"} — ${params.orderRef} (${amount}).
+${allReady ? "Page prête" : "Commande confirmée"} — ${params.orderRef} (${amount}).
 
-${bodyCopy}
-${params.publicUrl ? `\nVoir ma page : ${params.publicUrl}\n` : ""}
+${itemsListText}${bodyCopy}
+${readyLinksText ? `\n${readyLinksText}\n` : ""}
 ${ctaLabel} : ${ctaUrl}
 ${isGuest ? "\nCe lien est personnel et à usage unique. S'il a expiré, utilisez « Mot de passe oublié » depuis la page de connexion avec cette même adresse email.\n" : ""}
 — Scroll The Date`;

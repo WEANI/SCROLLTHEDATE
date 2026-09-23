@@ -496,7 +496,10 @@ export default function TableauDeBord() {
           />
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-semibold text-ink">
-              {productLabel(firstOrder.product, t)} — {formatPrice(firstOrder.amountCents, lang)}
+              {/* Le produit/les options vivent sur chaque projet, pas sur la
+                  commande (panier, cf. échange du 23/09/2026) — plusieurs
+                  produits achetés ensemble s'affichent ici combinés. */}
+              {firstOrder.projects.map((p) => productLabel(p.product, t)).join(' + ')} — {formatPrice(firstOrder.amountCents, lang)}
             </p>
             <p className="mt-0.5 text-[13px] text-neutral-500">
               {t('espace.tableauDeBord.orderNumberPrefix')} FL-{new Date(firstOrder.createdAt).getFullYear()}-{String(firstOrder.id).padStart(4, '0')} {t('espace.tableauDeBord.orderDateConnector')}{' '}

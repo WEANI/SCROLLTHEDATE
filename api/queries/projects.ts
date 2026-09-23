@@ -24,10 +24,9 @@ export async function findProjectById(projectId: number) {
 export async function findProjectProduct(projectId: number) {
   const row = await getDb().query.projects.findFirst({
     where: eq(projects.id, projectId),
-    columns: { id: true },
-    with: { order: { columns: { product: true } } },
+    columns: { product: true },
   });
-  return row?.order?.product ?? null;
+  return row?.product ?? null;
 }
 
 export async function findProjectBySlug(slug: string) {
@@ -37,11 +36,6 @@ export async function findProjectBySlug(slug: string) {
       user: true,
       questionnaire: true,
       rsvpConfig: true,
-      // `order` : sert à distinguer FAIRE_PART / SAVE_THE_DATE côté page
-      // publique (cf. projectsRouter.getPublicInvite → champ `product`,
-      // FairePart.tsx qui rend une page très différente pour un save the
-      // date — hero + footer, sans les sections du corps).
-      order: { columns: { product: true } },
     },
   });
 }
@@ -80,16 +74,15 @@ export async function findCurrentProjectFull(userId: number, projectId?: number)
 /**
  * Résumé de TOUS les projets d'un client, du plus récent au plus ancien —
  * pour le sélecteur de projet (espace client), affiché seulement quand un
- * compte en a plusieurs (ex. plusieurs commandes au fil du temps). Couple/
- * produit dérivés d'`order`/`questionnaire` (pas de colonne dédiée sur
- * `projects`), même source que `findAllProjects` (Kanban admin).
+ * compte en a plusieurs (ex. plusieurs commandes/produits au fil du temps).
+ * Couple dérivé de `questionnaire` ; produit natif sur `projects` (plus
+ * besoin de rejoindre `order`).
  */
 export async function findProjectsSummaryByUser(userId: number) {
   const rows = await getDb().query.projects.findMany({
     where: eq(projects.userId, userId),
     orderBy: desc(projects.createdAt),
     with: {
-      order: { columns: { product: true } },
       questionnaire: { columns: { answers: true } },
     },
   });
@@ -97,7 +90,7 @@ export async function findProjectsSummaryByUser(userId: number) {
     id: p.id,
     slug: p.slug,
     status: p.status,
-    product: p.order?.product ?? null,
+    product: p.product,
     coupleNames:
       (p.questionnaire?.answers as Record<string, unknown> | null)?.[
         "couple.prenoms"

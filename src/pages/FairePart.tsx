@@ -139,9 +139,8 @@ export default function FairePart() {
   ])
   // Save the date : page dédiée bien plus courte — hero + footer
   // uniquement, pas de corps (programme/lieu/RSVP/menu/FAQ…), cf. échange
-  // du 07/09/2026. `product` vient de orders.product (getPublicInvite),
-  // pas d'une colonne dédiée sur `projects` : un projet est toujours l'un
-  // ou l'autre, jamais les deux.
+  // du 07/09/2026. `product` vient de projects.product (getPublicInvite) —
+  // un projet est toujours l'un ou l'autre, jamais les deux.
   const isStd = invite?.product === 'SAVE_THE_DATE'
 
   // Détecte si la palette bespoke définit un fond sombre : luminance < 40 %

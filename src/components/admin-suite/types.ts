@@ -24,8 +24,10 @@ export interface AdminUser {
 export interface AdminOrder {
   id: number;
   userId: number;
-  product: ProductId;
-  options: { id: string; label: string; priceCents: number }[] | null;
+  // Le produit/les options achetés vivent sur `AdminProject` (ci-dessous),
+  // pas ici — une commande peut couvrir plusieurs produits différents
+  // (panier, cf. échange du 23/09/2026). `amountCents` reste le montant
+  // TOTAL payé (somme de tous les projets de cette commande).
   amountCents: number;
   paymentStatus: PaymentStatus;
   stripeRef: string | null;
@@ -57,6 +59,13 @@ export interface AdminProject {
   id: number;
   orderId: number;
   userId: number;
+  // Produit/options/montant/modèle propres à CE projet (cf. doc de
+  // AdminOrder ci-dessus) — plusieurs projets peuvent partager une même
+  // commande (`orderId`) avec des valeurs différentes ici.
+  product: ProductId;
+  options: { id: string; label: string; priceCents: number }[] | null;
+  amountCents: number;
+  templateSlug: string | null;
   status: ProjectStatus;
   weddingDate: string | Date | null;
   venue: string | null;

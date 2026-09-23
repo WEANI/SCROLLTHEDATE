@@ -102,7 +102,7 @@ function actorLabel(actor: string) {
 // Onglet Résumé
 // ---------------------------------------------------------------------------
 function TabResume({ project }: { project: Project360 }) {
-  const options = (project.order.options as { label?: string }[] | null) ?? [];
+  const options = (project.options as { label?: string }[] | null) ?? [];
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="rounded-xl border border-neutral-200 bg-white p-5">
@@ -146,7 +146,7 @@ function TabResume({ project }: { project: Project360 }) {
         <dl className="space-y-3 text-[13px]">
           <div className="flex justify-between gap-4">
             <dt className="text-neutral-500">Produit</dt>
-            <dd className="font-medium">{productLabel(project.order.product)}</dd>
+            <dd className="font-medium">{productLabel(project.product)}</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-neutral-500">Options</dt>
@@ -156,7 +156,7 @@ function TabResume({ project }: { project: Project360 }) {
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-neutral-500">Montant</dt>
-            <dd className="tabular font-semibold">{formatEuro(project.order.amountCents)}</dd>
+            <dd className="tabular font-semibold">{formatEuro(project.amountCents)}</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-neutral-500">Paiement</dt>
@@ -835,7 +835,7 @@ export default function ProjectDrawer({ projectId, onClose, studio, initialTab }
                       {coupleNamesFromSlug(project.slug)}
                     </h2>
                     <p className="tabular text-[11px] uppercase tracking-[0.14em] text-neutral-500">
-                      {orderRef(project.orderId)} · {productLabel(project.order.product)}
+                      {orderRef(project.orderId)} · {productLabel(project.product)}
                     </p>
                   </div>
                   <div className="ml-auto flex flex-wrap items-center gap-3">

@@ -179,19 +179,21 @@ export const ordersRouter = createRouter({
         },
       });
 
-      const orderIds: number[] = [];
+      // UNE seule commande pour tout le panier (cf. échange du 23/09/2026 —
+      // "1 seule commande avec 2 projets") : le produit/les options ne
+      // vivent plus sur `orders`, juste le montant total et l'état du
+      // paiement. Chaque ligne du panier devient SON PROPRE projet,
+      // rattaché à cette même commande.
+      const orderId = await createOrder({
+        userId: user.id,
+        amountCents: totalAmountCents,
+        paymentStatus: "pending",
+        stripeRef: paymentIntent.id,
+      });
+
       const projectIds: number[] = [];
+      const slugBase = slugify(input.names ?? user.name ?? "projet") || "projet";
       for (const item of resolvedItems) {
-        const orderId = await createOrder({
-          userId: user.id,
-          product: item.product,
-          options: item.options,
-          amountCents: item.amountCents,
-          paymentStatus: "pending",
-          stripeRef: paymentIntent.id,
-          templateSlug: item.templateSlug ?? null,
-        });
-        const slugBase = slugify(input.names ?? user.name ?? "projet") || "projet";
         const projectId = await createProject({
           orderId,
           userId: user.id,
@@ -200,6 +202,10 @@ export const ordersRouter = createRouter({
           weddingDate: input.weddingDate ?? null,
           venue: input.venue ?? null,
           progress: 5,
+          product: item.product,
+          options: item.options,
+          amountCents: item.amountCents,
+          templateSlug: item.templateSlug ?? null,
         });
         if (createdGuest) {
           await logAudit(projectId, "system", "user.guest_created", {
@@ -214,12 +220,11 @@ export const ordersRouter = createRouter({
           options: item.optionIds,
         });
         await logAudit(projectId, "system", "project.created", { orderId });
-        orderIds.push(orderId);
         projectIds.push(projectId);
       }
 
       return {
-        orderIds,
+        orderId,
         projectIds,
         amountCents: totalAmountCents,
         clientSecret: paymentIntent.client_secret,

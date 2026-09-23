@@ -1246,7 +1246,7 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
   // Timings du hero — faire-part uniquement (3 chapitres) ; un save the
   // date a son propre onglet dédié, cf. SaveTheDateEditor plus bas (2
   // chapitres, page hero + footer sans corps).
-  const isStd = project.order?.product === "SAVE_THE_DATE";
+  const isStd = project.product === "SAVE_THE_DATE";
   // Vérifie la longueur RÉELLE avant de faire confiance au cast TS
   // (`project.heroChapters` n'est qu'un JSONB, aucune validation à la
   // lecture) — un projet dont les timings ont été réglés avant l'ajout de
@@ -2071,7 +2071,7 @@ export default function StudioPanel({ project }: { project: Project360 }) {
   // Date" (2 timings de hero, cf. SaveTheDateEditor). "Palette & Hero"
   // reste commun aux deux : les couleurs de fond/accent du hero
   // s'appliquent également à un save the date.
-  const isStd = project.order?.product === "SAVE_THE_DATE";
+  const isStd = project.product === "SAVE_THE_DATE";
   const sections = useMemo(
     () => [
       { id: "scenarios", label: "Scénarios" },

@@ -254,7 +254,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-5">
         <ul className="flex flex-col gap-1">
-          {NAV_ITEMS.filter((item) => !item.product || project?.order?.product === item.product).map((item) => {
+          {NAV_ITEMS.filter((item) => !item.product || project?.product === item.product).map((item) => {
             const Icon = item.icon
             if (item.disabled) {
               return (

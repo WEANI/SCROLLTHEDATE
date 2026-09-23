@@ -28,6 +28,7 @@ import {
   PIPELINE,
   productLabel,
   unreadMessages,
+  type AdminOrder,
   type AdminProject,
   type ProjectStatus,
 } from "@/components/admin/shared";
@@ -72,7 +73,7 @@ function KanbanCard({
       <p className="font-display truncate text-[15px] font-medium">{coupleNamesFromSlug(project.slug)}</p>
       <div className="mt-2 flex items-center gap-2 text-[11px] text-neutral-500">
         <span className="rounded-full border border-neutral-200 px-2 py-0.5 font-medium">
-          {productLabel(project.order.product)}
+          {productLabel(project.product)}
         </span>
         {project.weddingDate && (
           <span className="tabular flex items-center gap-1">
@@ -205,11 +206,17 @@ function OrdersTable({ onOpenProject }: { onOpenProject: (projectId: number) => 
   const [productFilter, setProductFilter] = useState<string>("all");
   const [urgentFirst, setUrgentFirst] = useState(false);
 
+  // Une ligne PAR PROJET, pas par commande — une commande panier (cf.
+  // échange du 23/09/2026) peut couvrir plusieurs projets/produits
+  // différents ; `.at(0)` cachait silencieusement le 2e. Une commande sans
+  // aucun projet (cas limite qui ne devrait plus arriver) retombe sur une
+  // ligne unique `project: null`, comportement d'avant conservé pour ce cas.
   const rows = useMemo(() => {
-    let list = (orders ?? []).map((o) => ({
-      order: o,
-      project: o.projects.at(0) ?? null,
-    }));
+    type EmbeddedProject = NonNullable<AdminOrder["projects"]>[number];
+    let list: { order: AdminOrder; project: EmbeddedProject | null }[] = (orders ?? []).flatMap(
+      (o): { order: AdminOrder; project: EmbeddedProject | null }[] =>
+        o.projects && o.projects.length > 0 ? o.projects.map((p) => ({ order: o, project: p })) : [{ order: o, project: null }],
+    );
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
@@ -219,7 +226,7 @@ function OrdersTable({ onOpenProject }: { onOpenProject: (projectId: number) => 
           orderRef(o.id).toLowerCase().includes(q),
       );
     }
-    if (productFilter !== "all") list = list.filter(({ order: o }) => o.product === productFilter);
+    if (productFilter !== "all") list = list.filter(({ project: p }) => p?.product === productFilter);
     if (statusFilter !== "all") list = list.filter(({ project: p }) => p?.status === statusFilter);
     if (urgentFirst) {
       list = [...list].sort(
@@ -236,8 +243,8 @@ function OrdersTable({ onOpenProject }: { onOpenProject: (projectId: number) => 
         orderRef(o.id),
         p ? coupleNamesFromSlug(p.slug) : "",
         o.user.email ?? "",
-        productLabel(o.product),
-        (o.amountCents / 100).toFixed(2).replace(".", ",") + " €",
+        p ? productLabel(p.product) : "",
+        ((p?.amountCents ?? o.amountCents) / 100).toFixed(2).replace(".", ",") + " €",
         formatDate(o.createdAt),
         p?.weddingDate ? formatDate(p.weddingDate) : "",
         p?.status ?? "",
@@ -329,7 +336,7 @@ function OrdersTable({ onOpenProject }: { onOpenProject: (projectId: number) => 
                 const days = p ? daysSince(p.updatedAt) : 0;
                 return (
                   <motion.tr
-                    key={o.id}
+                    key={p ? p.id : o.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.03 }}
@@ -348,10 +355,10 @@ function OrdersTable({ onOpenProject }: { onOpenProject: (projectId: number) => 
                     <td className="px-4 py-3 text-neutral-500">{o.user.email ?? "—"}</td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <span className="rounded-full border border-neutral-200 px-2 py-0.5 text-[11px] font-medium">
-                        {productLabel(o.product)}
+                        {p ? productLabel(p.product) : "—"}
                       </span>
                     </td>
-                    <td className="tabular whitespace-nowrap px-4 py-3 font-semibold">{formatEuro(o.amountCents)}</td>
+                    <td className="tabular whitespace-nowrap px-4 py-3 font-semibold">{formatEuro(p?.amountCents ?? o.amountCents)}</td>
                     <td className="tabular whitespace-nowrap px-4 py-3 text-neutral-500">
                       <span className="mr-2"><PaymentBadge status={o.paymentStatus} /></span>
                       {formatDate(o.createdAt)}

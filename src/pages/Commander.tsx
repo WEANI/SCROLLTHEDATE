@@ -157,10 +157,10 @@ export default function Commander() {
   // Payment Element Stripe pour la saisie réelle de la carte. `null` tant
   // que le client n'a pas validé le bloc "Vos informations" (cf.
   // handlePrepare) — le PaymentIntent Stripe (et les commandes "pending"
-  // associées, une par ligne du panier, cf. api/ordersRouter.ts) n'est créé
-  // qu'à ce moment-là, pas avant.
+  // associée (un projet par ligne du panier, cf. api/ordersRouter.ts) n'est
+  // créée qu'à ce moment-là, pas avant.
   const [checkoutResult, setCheckoutResult] = useState<{
-    orderIds: number[]
+    orderId: number
     clientSecret: string
   } | null>(null)
 
@@ -250,7 +250,7 @@ export default function Commander() {
       // payé. Vider le panier maintenant ferait perdre le rappel du
       // contenu de la commande si le client recharge la page avant de
       // payer (ex. carte refusée, onglet fermé par erreur).
-      setCheckoutResult({ orderIds: result.orderIds, clientSecret: result.clientSecret })
+      setCheckoutResult({ orderId: result.orderId, clientSecret: result.clientSecret })
     } catch (err) {
       // CONFLICT = un compte existe déjà pour cet email. On ne peut pas
       // commander en invité sur une adresse déjà rattachée à un compte, sinon
@@ -671,7 +671,7 @@ export default function Commander() {
                 </>
               ) : stripePromise ? (
                 <Elements stripe={stripePromise} options={elementsOptions}>
-                  <StripePaymentForm orderIds={checkoutResult.orderIds} totalCents={totalCents} onPaid={cart.clear} />
+                  <StripePaymentForm orderId={checkoutResult.orderId} totalCents={totalCents} onPaid={cart.clear} />
                 </Elements>
               ) : (
                 <p className="mt-4 rounded-xl border border-error/30 bg-error/5 px-5 py-4 text-[14px] font-medium text-error">
@@ -716,11 +716,11 @@ export default function Commander() {
  * qu'elle existe (statut "pending" ou "paid"), pas seulement une fois payée.
  */
 function StripePaymentForm({
-  orderIds,
+  orderId,
   totalCents,
   onPaid,
 }: {
-  orderIds: number[]
+  orderId: number
   totalCents: number
   /** Vide le panier — appelé une fois le paiement réellement confirmé, pas avant. */
   onPaid: () => void
@@ -737,9 +737,7 @@ function StripePaymentForm({
     setSubmitting(true)
     setError(null)
 
-    // Plusieurs références possibles (une par ligne du panier payée
-    // ensemble) — `?orders=` au pluriel, Merci.tsx les affiche toutes.
-    const returnUrl = `${window.location.origin}/merci?orders=${orderIds.map((id) => formatOrderNumber(id)).join(',')}`
+    const returnUrl = `${window.location.origin}/merci?order=${formatOrderNumber(orderId)}`
 
     // `elements.submit()` valide le Payment Element côté client avant
     // confirmation — requis par l'API Stripe actuelle en amont de

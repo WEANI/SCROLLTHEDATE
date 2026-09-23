@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { stripe, isStripeConfigured } from "../lib/stripe";
 import { env } from "../lib/env";
 import {
-  findOrdersByStripeRef,
+  findOrderByStripeRef,
   findUserById,
   getSiteSetting,
   updateOrderPaymentStatus,
@@ -30,6 +30,12 @@ import {
 function formatOrderNumber(orderId: number, date: Date): string {
   return `FL-${date.getFullYear()}-${String(orderId).padStart(4, "0")}`;
 }
+
+/** Libellé produit pour l'email de confirmation — toujours en français (email transactionnel, pas de i18n ici, cf. le reste de emailTemplates.ts). */
+const PRODUCT_LABEL: Record<string, string> = {
+  FAIRE_PART: "Faire-part digital",
+  SAVE_THE_DATE: "Save the Date digital",
+};
 
 /**
  * Webhook Stripe (`POST /api/webhooks/stripe`, câblé en dur dans boot.ts —
@@ -66,54 +72,51 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
   switch (event.type) {
     case "payment_intent.succeeded": {
       const pi = event.data.object as Stripe.PaymentIntent;
-      // Pluriel à dessein : un paiement panier (plusieurs produits payés en
-      // une fois, cf. api/ordersRouter.ts::createCheckout) associe plusieurs
-      // `orders` à ce même PaymentIntent — un paiement à un seul produit
-      // reste le cas particulier "tableau à un élément", traité par la même
-      // boucle sans distinction.
-      const paidOrders = await findOrdersByStripeRef(pi.id);
-      if (paidOrders.length === 0) {
+      // Une commande = un paiement, quel que soit le nombre de produits
+      // achetés ensemble (panier, cf. échange du 23/09/2026) — `order.projects`
+      // porte déjà TOUTES les lignes de ce panier, un paiement à un seul
+      // produit restant le cas particulier "un seul projet".
+      const order = await findOrderByStripeRef(pi.id);
+      if (!order) {
         console.warn(`[stripe webhook] payment_intent.succeeded (${pi.id}) sans commande correspondante`);
         break;
       }
+      if (order.paymentStatus === "paid") break; // déjà traitée — idempotence
 
-      // Toutes les commandes d'un même paiement partagent le même acheteur
-      // (résolu UNE fois dans createCheckout) — le compte invité n'est donc
-      // provisionné qu'UNE fois ici aussi, pas par commande, pour ne jamais
-      // régénérer plusieurs liens "choisir mon mot de passe" pour la même
-      // personne.
-      const user = await findUserById(paidOrders[0]!.userId);
+      await updateOrderPaymentStatus(order.id, "paid");
+
+      const user = await findUserById(order.userId);
+      // Checkout invité : le compte n'est créé qu'ici, une fois le paiement
+      // réellement encaissé. `setPasswordUrl` est null pour un client déjà
+      // connecté au moment de la commande. Résolu UNE fois pour toute la
+      // commande (pas par projet), pour ne jamais régénérer plusieurs liens
+      // "choisir mon mot de passe" pour la même personne.
       const setPasswordUrl = user?.email ? await provisionAccountForGuest(user) : null;
 
-      for (const order of paidOrders) {
-        if (order.paymentStatus === "paid") continue; // déjà traitée — idempotence
+      const emailItems: { label: string; amountCents: number; publicUrl?: string }[] = [];
 
-        await updateOrderPaymentStatus(order.id, "paid");
-        const project = order.projects.at(0);
-        if (project) {
-          await logAudit(project.id, "system", "order.paid", {
-            orderId: order.id,
-            amountCents: order.amountCents,
-            stripePaymentIntentId: pi.id,
-          });
-          await notifyUser(order.userId, "order.confirmed", {
-            orderId: order.id,
-            projectId: project.id,
-          });
-        }
+      for (const project of order.projects) {
+        await logAudit(project.id, "system", "order.paid", {
+          orderId: order.id,
+          amountCents: project.amountCents,
+          stripePaymentIntentId: pi.id,
+        });
+        await notifyUser(order.userId, "order.confirmed", {
+          orderId: order.id,
+          projectId: project.id,
+        });
 
         // Commande "sur un modèle" (cf. contracts/saveTheDateTemplates.ts) :
         // livraison instantanée ICI, au paiement confirmé — jamais avant
         // (cf. échange du 12/09/2026, pour ne jamais exposer une page
-        // "prête" pour un paiement abandonné). Une commande "sur mesure"
+        // "prête" pour un paiement abandonné). Un projet "sur mesure"
         // (`templateSlug` absent) n'entre jamais dans ce bloc, comportement
-        // inchangé. Lu depuis LA COMMANDE elle-même (plus depuis
-        // `pi.metadata.templateSlug`, devenu insuffisant dès qu'un même
-        // paiement peut porter plusieurs commandes ayant chacune son propre
-        // modèle — ou aucun).
+        // inchangé. Lu depuis LE PROJET lui-même — un même panier peut
+        // mêler un produit "sur un modèle" et un produit sur-mesure, chacun
+        // avec son propre `templateSlug` (ou aucun).
         let publicUrl: string | undefined;
-        const templateSlug = order.templateSlug;
-        if (project && templateSlug) {
+        const templateSlug = project.templateSlug;
+        if (templateSlug) {
           const template = getSaveTheDateTemplate(templateSlug);
           if (template) {
             const overrides = parseTemplateOverrides(await getSiteSetting<unknown>("saveTheDateTemplates"));
@@ -146,44 +149,46 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
             await logAudit(project.id, "system", "template.delivered", { templateSlug });
             publicUrl = `${env.appUrl}/faire-part/${project.slug}`;
           } else {
-            console.warn(`[stripe webhook] templateSlug "${templateSlug}" inconnu (commande ${order.id}) — projet non livré automatiquement`);
+            console.warn(`[stripe webhook] templateSlug "${templateSlug}" inconnu (projet ${project.id}) — projet non livré automatiquement`);
           }
         }
 
-        // Un email PAR commande (pas un récapitulatif combiné du panier) —
-        // chaque commande a son propre produit/projet/espace de suivi,
-        // limite connue acceptée pour ce chantier : un panier à 2 produits
-        // envoie 2 emails de confirmation plutôt qu'un seul récap.
-        if (user?.email) {
-          await sendEmail(
-            orderConfirmationEmail({
-              to: user.email,
-              coupleNames: pi.metadata?.names ?? "",
-              orderRef: formatOrderNumber(order.id, order.createdAt),
-              amountCents: order.amountCents,
-              setPasswordUrl,
-              publicUrl,
-            }),
-          );
-        }
+        emailItems.push({
+          label: `${PRODUCT_LABEL[project.product]}${templateSlug ? " — Sur un modèle" : ""}`,
+          amountCents: project.amountCents,
+          publicUrl,
+        });
+      }
+
+      // UN SEUL email pour toute la commande, listant chaque produit acheté
+      // (cf. échange du 23/09/2026 — "1 seul mail").
+      if (user?.email) {
+        await sendEmail(
+          orderConfirmationEmail({
+            to: user.email,
+            coupleNames: pi.metadata?.names ?? "",
+            orderRef: formatOrderNumber(order.id, order.createdAt),
+            amountCents: order.amountCents,
+            items: emailItems,
+            setPasswordUrl,
+          }),
+        );
       }
       break;
     }
 
     case "payment_intent.payment_failed": {
       const pi = event.data.object as Stripe.PaymentIntent;
-      const failedOrders = await findOrdersByStripeRef(pi.id);
-      for (const order of failedOrders) {
-        if (order.paymentStatus === "paid") continue; // un succès a déjà été traité, ne pas régresser
-        await updateOrderPaymentStatus(order.id, "failed");
-        const project = order.projects.at(0);
-        if (project) {
-          await logAudit(project.id, "system", "order.payment_failed", {
-            orderId: order.id,
-            stripePaymentIntentId: pi.id,
-            reason: pi.last_payment_error?.message ?? null,
-          });
-        }
+      const order = await findOrderByStripeRef(pi.id);
+      if (!order) break;
+      if (order.paymentStatus === "paid") break; // un succès a déjà été traité, ne pas régresser
+      await updateOrderPaymentStatus(order.id, "failed");
+      for (const project of order.projects) {
+        await logAudit(project.id, "system", "order.payment_failed", {
+          orderId: order.id,
+          stripePaymentIntentId: pi.id,
+          reason: pi.last_payment_error?.message ?? null,
+        });
       }
       break;
     }

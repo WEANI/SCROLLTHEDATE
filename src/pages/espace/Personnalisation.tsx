@@ -283,7 +283,7 @@ export default function Personnalisation() {
         <SectionCard>
           <p className="text-[14px] text-neutral-500">{t('espace.personnalisation.noProjectYet')}</p>
         </SectionCard>
-      ) : project.order?.product !== 'SAVE_THE_DATE' ? (
+      ) : project.product !== 'SAVE_THE_DATE' ? (
         <SectionCard>
           <p className="text-[14px] text-neutral-500">{t('espace.personnalisation.wrongProduct')}</p>
         </SectionCard>

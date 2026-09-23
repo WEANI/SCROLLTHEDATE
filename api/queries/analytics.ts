@@ -53,16 +53,24 @@ async function ordersAgg(from: Date, to: Date) {
   return rows.at(0) ?? { revenueCents: 0, count: 0 };
 }
 
+/**
+ * Répartition par produit — jointe sur `projects` (`product`/`amountCents`
+ * vivent désormais là, pas sur `orders` : une commande panier peut couvrir
+ * plusieurs produits différents, cf. échange du 23/09/2026). `count` compte
+ * des PROJETS, pas des commandes — une commande à 2 produits contribue 2
+ * fois ici (une fois par produit), correctement réparti.
+ */
 async function productAgg(from: Date, to: Date) {
   return getDb()
     .select({
-      product: orders.product,
+      product: projects.product,
       count: sql<number>`count(*)`.as("count"),
-      revenueCents: sql<number>`coalesce(sum(${orders.amountCents}), 0)`.as(
+      revenueCents: sql<number>`coalesce(sum(${projects.amountCents}), 0)`.as(
         "revenueCents",
       ),
     })
-    .from(orders)
+    .from(projects)
+    .innerJoin(orders, eq(projects.orderId, orders.id))
     .where(
       and(
         eq(orders.paymentStatus, "paid"),
@@ -70,7 +78,7 @@ async function productAgg(from: Date, to: Date) {
         lt(orders.createdAt, to),
       ),
     )
-    .groupBy(orders.product);
+    .groupBy(projects.product);
 }
 
 export async function adminOverview(days: number) {

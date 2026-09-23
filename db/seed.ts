@@ -175,10 +175,6 @@ async function seed() {
       .insert(orders)
       .values({
         userId: annaTheo.id,
-        product: "FAIRE_PART",
-        options: [
-          { id: "sous-titres", label: "Sous-titres FR/EN", priceCents: 4000 },
-        ],
         amountCents: 38900,
         paymentStatus: "paid",
         stripeRef: "test_seed_anna_theo",
@@ -191,6 +187,11 @@ async function seed() {
       .values({
         orderId,
         userId: annaTheo.id,
+        product: "FAIRE_PART",
+        options: [
+          { id: "sous-titres", label: "Sous-titres FR/EN", priceCents: 4000 },
+        ],
+        amountCents: 38900,
         status: "DELIVERED",
         weddingDate: new Date("2026-06-20T15:00:00Z"),
         venue: "Domaine de Clairval, 84140 Lourmarin, Provence",
@@ -413,8 +414,6 @@ async function seed() {
       .insert(orders)
       .values({
         userId: mehdiSarah.id,
-        product: "SAVE_THE_DATE",
-        options: [],
         amountCents: 14900,
         paymentStatus: "paid",
         stripeRef: "test_seed_mehdi_sarah",
@@ -426,6 +425,9 @@ async function seed() {
       .values({
         orderId,
         userId: mehdiSarah.id,
+        product: "SAVE_THE_DATE",
+        options: [],
+        amountCents: 14900,
         status: "QUESTIONNAIRE",
         weddingDate: new Date("2026-09-12T16:00:00Z"),
         venue: "Bordeaux",

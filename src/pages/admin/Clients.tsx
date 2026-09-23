@@ -106,11 +106,11 @@ function aggregateClients(
     if (!row.lastContact || max > row.lastContact) row.lastContact = max;
   }
   for (const row of byUser.values()) {
+    // Produit/options vivent sur les PROJETS, pas sur les commandes (panier,
+    // cf. échange du 23/09/2026) — chaque projet du client suffit à
+    // reconstituer l'ensemble de ses produits achetés.
     const products = new Set<string>();
-    for (const o of row.orders) products.add(PRODUCT_LABEL[o.product]);
-    for (const p of row.projects) {
-      if (p.order) products.add(PRODUCT_LABEL[p.order.product]);
-    }
+    for (const p of row.projects) products.add(PRODUCT_LABEL[p.product]);
     row.products = [...products];
     row.projects.sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
@@ -724,54 +724,57 @@ function TabProjets({ client }: { client: ClientRow }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {client.orders.map((o) => {
-        const project = client.projects.find((p) => p.orderId === o.id);
+        // Un panier (cf. échange du 23/09/2026) peut couvrir plusieurs
+        // projets/produits sous UNE même commande — la carte reste groupée
+        // par commande, chaque projet s'affichant comme sa propre ligne.
+        const orderProjects = client.projects.filter((p) => p.orderId === o.id);
         return (
           <Panel key={o.id} className="p-5">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                  Commande #{o.id}
-                </p>
-                <p className="font-display mt-1 text-lg text-ink">
-                  {PRODUCT_LABEL[o.product]}
-                </p>
-              </div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+                Commande #{o.id}
+              </p>
               <PaymentPill status={o.paymentStatus} />
             </div>
-            <div className="tabular mt-3 flex items-baseline justify-between text-sm">
+            <div className="tabular mt-2 flex items-baseline justify-between text-sm">
               <span className="text-neutral-500">{fmtDate(o.createdAt)}</span>
               <span className="text-base font-semibold text-ink">
                 {eur(o.amountCents)}
               </span>
             </div>
-            {o.options && o.options.length > 0 ? (
-              <div className="mt-3 flex flex-wrap gap-1">
-                {o.options.map((opt) => (
-                  <Pill key={opt.id} tone="neutral">
-                    {opt.label} · {eur(opt.priceCents)}
-                  </Pill>
-                ))}
-              </div>
-            ) : null}
-            {project ? (
-              <div className="mt-4 flex items-center justify-between rounded-xl bg-neutral-100 px-4 py-3">
-                <div className="flex flex-col gap-1.5">
-                  <StatusPill status={project.status} />
-                  <MiniStepper status={project.status} />
+            <div className="mt-4 flex flex-col gap-4">
+              {orderProjects.map((project) => (
+                <div key={project.id} className="border-t border-neutral-200 pt-4 first:border-0 first:pt-0">
+                  <p className="font-display text-lg text-ink">{PRODUCT_LABEL[project.product]}</p>
+                  {project.options && project.options.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {project.options.map((opt) => (
+                        <Pill key={opt.id} tone="neutral">
+                          {opt.label} · {eur(opt.priceCents)}
+                        </Pill>
+                      ))}
+                    </div>
+                  ) : null}
+                  <div className="mt-3 flex items-center justify-between rounded-xl bg-neutral-100 px-4 py-3">
+                    <div className="flex flex-col gap-1.5">
+                      <StatusPill status={project.status} />
+                      <MiniStepper status={project.status} />
+                    </div>
+                    <div className="text-right text-xs text-neutral-500">
+                      <p className="tabular">
+                        Questionnaire {project.questionnaire?.completionPct ?? 0} %
+                      </p>
+                      <Link
+                        to="/admin/projets"
+                        className="mt-1 inline-flex items-center gap-1 font-medium text-terracotta-500 hover:text-terracotta-400"
+                      >
+                        Fiche 360° <ArrowUpRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right text-xs text-neutral-500">
-                  <p className="tabular">
-                    Questionnaire {project.questionnaire?.completionPct ?? 0} %
-                  </p>
-                  <Link
-                    to="/admin/projets"
-                    className="mt-1 inline-flex items-center gap-1 font-medium text-terracotta-500 hover:text-terracotta-400"
-                  >
-                    Fiche 360° <ArrowUpRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              </div>
-            ) : null}
+              ))}
+            </div>
           </Panel>
         );
       })}

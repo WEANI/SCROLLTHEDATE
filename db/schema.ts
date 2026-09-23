@@ -134,24 +134,22 @@ export const orders = pgTable(
     userId: bigint("userId", { mode: "number" })
       .notNull()
       .references(() => users.id),
-    product: orderProductEnum("product").notNull(),
-    // Options choisies au checkout : [{ id, label, priceCents }]
-    options: jsonb("options"),
+    // `amountCents` = montant TOTAL payé (somme de tous les projets de cette
+    // commande, cf. `projects.amountCents` ci-dessous) — une commande = UN
+    // paiement Stripe, quel que soit le nombre de produits achetés ensemble
+    // (panier, cf. échange du 23/09/2026 : "1 seule commande avec 2
+    // projets"). Le produit/les options achetés ne vivent PLUS ici : une
+    // commande peut désormais couvrir plusieurs produits différents, un
+    // couple `product`/`options` unique n'aurait plus de sens au niveau de
+    // la commande — cf. `projects.product`/`projects.options` plus bas.
     amountCents: integer("amountCents").notNull(),
     paymentStatus: orderPaymentStatusEnum("paymentStatus")
       .default("pending")
       .notNull(),
-    // `stripeRef` n'est PAS unique : un paiement panier (plusieurs produits
-    // payés en une fois, cf. api/ordersRouter.ts::createCheckout) crée
-    // plusieurs lignes `orders` partageant le même PaymentIntent Stripe.
+    // `stripeRef` : un PaymentIntent Stripe par commande — de nouveau 1:1
+    // depuis que le panier crée UNE seule commande (plusieurs projets),
+    // plutôt qu'une commande par produit comme la version précédente.
     stripeRef: varchar("stripeRef", { length: 255 }),
-    // Commande "sur un modèle" (cf. contracts/saveTheDateTemplates.ts) —
-    // vit ICI, sur la ligne de commande, plutôt que dans les métadonnées du
-    // PaymentIntent Stripe (repli d'origine, `pi.metadata.templateSlug`) :
-    // un paiement panier associe plusieurs commandes à un même PaymentIntent,
-    // chacune pouvant avoir SON propre modèle (ou aucun) — un seul champ de
-    // metadata au niveau du paiement ne suffit plus à porter cette info.
-    templateSlug: varchar("templateSlug", { length: 100 }),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -175,6 +173,22 @@ export const projects = pgTable(
     userId: bigint("userId", { mode: "number" })
       .notNull()
       .references(() => users.id),
+    // Produit commandé pour CE projet (FAIRE_PART / SAVE_THE_DATE) — vit ici
+    // plutôt que sur `orders` : une même commande (paiement panier) peut
+    // couvrir plusieurs projets de produits différents, cf. doc de
+    // `orders.amountCents`.
+    product: orderProductEnum("product").notNull(),
+    // Options choisies pour CE projet : [{ id, label, priceCents }].
+    options: jsonb("options"),
+    // Part du montant total de la commande qui revient à CE projet — permet
+    // de reconstruire une facture/un email détaillé par produit même quand
+    // plusieurs projets partagent la même commande.
+    amountCents: integer("amountCents").notNull(),
+    // Commande "sur un modèle" (cf. contracts/saveTheDateTemplates.ts) —
+    // propre à CE projet : dans un panier mêlant un produit "sur un modèle"
+    // et un produit sur-mesure, seul le premier doit être livré
+    // instantanément par le webhook Stripe (cf. api/webhooks/stripe.ts).
+    templateSlug: varchar("templateSlug", { length: 100 }),
     status: projectStatusEnum("status").default("ONBOARDING").notNull(),
     weddingDate: timestamp("weddingDate", { withTimezone: true }),
     venue: varchar("venue", { length: 500 }),
@@ -191,7 +205,7 @@ export const projects = pgTable(
     // contracts/bespokePalette.ts::bespokePaletteSchema.
     palette: jsonb("palette"),
     // heroChapters : 3 { fromSec, toSec } pour un faire-part, 2 pour un
-    // save the date (cf. orders.product, contracts/bespokePalette.ts::
+    // save the date (cf. le `product` ci-dessus, contracts/bespokePalette.ts::
     // heroChaptersSchema) — timings du hero vidéo repérés à l'image sur le
     // montage livré, le contenu textuel de chaque chapitre étant lui
     // généré depuis le questionnaire (Phase 3) ou fixe ("Save the date").
