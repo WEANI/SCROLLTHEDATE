@@ -48,7 +48,7 @@ interface NavItem {
   end?: boolean
   disabled?: boolean
   /** N'apparaît que pour ce produit — cf. filtre au rendu plus bas. Absent = visible pour tous (comportement historique de tous les autres onglets). */
-  product?: 'SAVE_THE_DATE'
+  product?: 'SAVE_THE_DATE' | 'FAIRE_PART'
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -61,7 +61,10 @@ const NAV_ITEMS: NavItem[] = [
   // sur mesure, déjà couvert par "Projet & scénarios" ci-dessus).
   { labelKey: 'espace.shell.navPersonalization', crumbKey: 'espace.shell.navPersonalization', to: '/espace/personnalisation', icon: Sparkles, product: 'SAVE_THE_DATE' },
   { labelKey: 'espace.shell.navOrders', crumbKey: 'espace.shell.navOrders', to: '/espace/commandes', icon: ShoppingBag },
-  { labelKey: 'espace.shell.navRsvp', crumbKey: 'espace.shell.navRsvp', to: '/espace/rsvp', icon: Users },
+  // Faire-part uniquement (cf. échange du 23/09/2026) — le Save the Date
+  // est une page hero + footer sans formulaire de réponse (cf.
+  // FairePart.tsx), rien à suivre ici pour ce produit.
+  { labelKey: 'espace.shell.navRsvp', crumbKey: 'espace.shell.navRsvp', to: '/espace/rsvp', icon: Users, product: 'FAIRE_PART' },
   { labelKey: 'espace.shell.navMessages', crumbKey: 'espace.shell.navMessages', to: '/espace/messages', icon: MessageCircle },
   { labelKey: 'espace.shell.navSettings', crumbKey: 'espace.shell.navSettings', to: '/espace/parametres', icon: Settings },
 ]
@@ -254,7 +257,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-5">
         <ul className="flex flex-col gap-1">
-          {NAV_ITEMS.filter((item) => !item.product || project?.product === item.product).map((item) => {
+          {NAV_ITEMS.map((item) => {
             const Icon = item.icon
             if (item.disabled) {
               return (
@@ -269,6 +272,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 </li>
               )
             }
+            // Onglet propre à un produit (ex. "Save the Date" — personnaliser
+            // et visualiser son montage) : reste visible même si le projet
+            // actuellement sélectionné ne l'a pas acheté, plutôt que
+            // disparaître complètement (cf. échange du 23/09/2026, "rendre
+            // l'espace client plus intuitif") — grisé + badge, toujours
+            // cliquable : la page cible explique déjà la situation
+            // ("réservé aux commandes Save the Date").
+            const locked = !!item.product && project?.product !== item.product
             const target = item.to.split('#')[0]
             const isActive = item.end
               ? location.pathname === target
@@ -281,14 +292,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   onClick={onNavigate}
                   className={cn(
                     'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium transition-colors',
-                    isActive
-                      ? 'bg-terracotta-500/10 text-terracotta-500'
-                      : 'text-ink/70 hover:bg-neutral-100 hover:text-ink',
+                    locked
+                      ? 'text-neutral-500/70 hover:bg-neutral-100 hover:text-neutral-500'
+                      : isActive
+                        ? 'bg-terracotta-500/10 text-terracotta-500'
+                        : 'text-ink/70 hover:bg-neutral-100 hover:text-ink',
                   )}
                 >
-                  <Icon size={18} className={isActive ? 'text-terracotta-500' : 'text-neutral-500 group-hover:text-ink'} />
+                  <Icon size={18} className={locked ? 'text-neutral-400' : isActive ? 'text-terracotta-500' : 'text-neutral-500 group-hover:text-ink'} />
                   {t(item.labelKey)}
-                  {item.labelKey === 'espace.shell.navMessages' && unreadMessages > 0 && (
+                  {locked && (
+                    <span className="ml-auto rounded-full bg-neutral-200/70 px-2 py-0.5 text-[10px] font-medium text-neutral-500">
+                      {t('espace.shell.navLockedBadge')}
+                    </span>
+                  )}
+                  {!locked && item.labelKey === 'espace.shell.navMessages' && unreadMessages > 0 && (
                     <motion.span
                       animate={{ scale: [1, 1.15, 1] }}
                       transition={{ duration: 1.6, repeat: Infinity }}

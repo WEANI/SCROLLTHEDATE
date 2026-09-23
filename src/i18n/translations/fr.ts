@@ -785,7 +785,8 @@ export const fr = {
       navQuestionnaire: 'Questionnaire',
       navMedia: 'Médias',
       navProject: 'Projet & scénarios',
-      navPersonalization: 'Personnalisation',
+      navPersonalization: 'Save the Date',
+      navLockedBadge: 'Non inclus',
       navOrders: 'Commandes',
       navRsvp: 'RSVP',
       navMessages: 'Messages',
@@ -871,6 +872,9 @@ export const fr = {
     rsvp: {
       title: 'Réponses RSVP',
       subtitle: 'Suivez les réponses de vos invités en temps réel.',
+      wrongProductTitle: 'Réservé au Faire-part digital',
+      wrongProductDescription:
+        "Le RSVP fait partie du Faire-part digital — le Save the Date est une simple page d'annonce, sans formulaire de réponse.",
       countResponses: 'Réponses',
       countPresent: 'Présents',
       countAbsent: 'Absents',
@@ -1039,6 +1043,8 @@ export const fr = {
       statusPending: 'En attente',
       myInvitationTitle: 'Mon faire-part.',
       myInvitationSubtitle: 'Suivez les réponses de vos invités en temps réel.',
+      mySaveTheDateTitle: 'Mon Save the Date.',
+      mySaveTheDateSubtitle: 'Partagez votre annonce avec vos proches.',
       liveStatusBadge: 'En ligne ✓',
       kpiResponses: 'réponses',
       kpiYes: 'oui',

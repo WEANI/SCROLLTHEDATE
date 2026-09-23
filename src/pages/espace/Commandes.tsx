@@ -248,6 +248,11 @@ export default function Commandes() {
   const deliveredProject = orders
     .flatMap((o) => o.projects)
     .find((p) => p.status === 'DELIVERED')
+  // Le Save the Date n'a pas de RSVP — page hero + footer uniquement, sans
+  // formulaire de réponse (cf. FairePart.tsx) — contrairement au Faire-part
+  // digital. Sans cette distinction, un Save the Date livré affichait quand
+  // même tout le suivi RSVP (toujours à 0 réponse, rien à y collecter).
+  const hasRsvp = deliveredProject?.product === 'FAIRE_PART'
 
   const stats = useMemo(() => {
     const yes = responses.filter((r) => r.attending === 'yes')
@@ -505,15 +510,17 @@ export default function Commandes() {
         <SectionCard>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-display text-2xl font-medium italic text-ink">{t('espace.commandes.myInvitationTitle')}</h3>
+              <h3 className="font-display text-2xl font-medium italic text-ink">
+                {hasRsvp ? t('espace.commandes.myInvitationTitle') : t('espace.commandes.mySaveTheDateTitle')}
+              </h3>
               <p className="mt-1 text-[13.5px] text-neutral-500">
-                {t('espace.commandes.myInvitationSubtitle')}
+                {hasRsvp ? t('espace.commandes.myInvitationSubtitle') : t('espace.commandes.mySaveTheDateSubtitle')}
               </p>
             </div>
             <StatusBadge tone="success">{t('espace.commandes.liveStatusBadge')}</StatusBadge>
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-[1fr_1.6fr_1fr]">
+          <div className={cn('grid gap-8', hasRsvp ? 'lg:grid-cols-[1fr_1.6fr_1fr]' : 'sm:grid-cols-1 sm:max-w-sm')}>
             {/* Lien & QR */}
             {inviteUrl && (
               <QrShare
@@ -522,7 +529,9 @@ export default function Commandes() {
               />
             )}
 
-            {/* RSVP live */}
+            {/* RSVP live + graphique — Faire-part uniquement, cf. doc de `hasRsvp` */}
+            {hasRsvp && (
+            <>
             <div>
               <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
@@ -684,6 +693,8 @@ export default function Commandes() {
                 </div>
               )}
             </div>
+            </>
+            )}
           </div>
         </SectionCard>
       )}

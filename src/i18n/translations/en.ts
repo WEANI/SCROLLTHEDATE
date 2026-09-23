@@ -782,7 +782,8 @@ export const en: Translations = {
       navQuestionnaire: 'Questionnaire',
       navMedia: 'Media',
       navProject: 'Project & scenarios',
-      navPersonalization: 'Personalisation',
+      navPersonalization: 'Save the Date',
+      navLockedBadge: 'Not included',
       navOrders: 'Orders',
       navRsvp: 'RSVP',
       navMessages: 'Messages',
@@ -868,6 +869,9 @@ export const en: Translations = {
     rsvp: {
       title: 'RSVP responses',
       subtitle: "Track your guests' responses in real time.",
+      wrongProductTitle: 'Reserved for the digital wedding invitation',
+      wrongProductDescription:
+        'RSVP is part of the digital wedding invitation — the Save the Date is a simple announcement page, with no response form.',
       countResponses: 'Responses',
       countPresent: 'Attending',
       countAbsent: 'Not attending',
@@ -1036,6 +1040,8 @@ export const en: Translations = {
       statusPending: 'Pending',
       myInvitationTitle: 'My invitation.',
       myInvitationSubtitle: "Track your guests' responses in real time.",
+      mySaveTheDateTitle: 'My Save the Date.',
+      mySaveTheDateSubtitle: 'Share your announcement with your loved ones.',
       liveStatusBadge: 'Live ✓',
       kpiResponses: 'responses',
       kpiYes: 'yes',

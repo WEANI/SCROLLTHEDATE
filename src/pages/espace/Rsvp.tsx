@@ -91,6 +91,12 @@ export default function Rsvp() {
   const { t, tArray, lang } = useLanguage()
   const { projectId } = useSelectedProject()
   const { data, isLoading, isError, refetch } = trpc.rsvp.listMine.useQuery({ projectId })
+  // Le RSVP fait partie du Faire-part digital uniquement — le Save the Date
+  // est une page hero + footer sans formulaire de réponse (cf.
+  // FairePart.tsx). L'onglet reste visible (grisé) dans la sidebar pour un
+  // projet Save the Date (cf. ClientShell.tsx) ; cette page explique
+  // pourquoi plutôt que d'afficher un tableau vide sans contexte.
+  const projectQuery = trpc.projects.myProject.useQuery({ projectId })
   const [filter, setFilter] = useState<FilterValue>('all')
   const [expandedId, setExpandedId] = useState<number | null>(null)
 
@@ -114,8 +120,24 @@ export default function Rsvp() {
     [responses, filter],
   )
 
-  if (isLoading) return <PageSkeleton />
+  if (isLoading || projectQuery.isLoading) return <PageSkeleton />
   if (isError) return <ErrorState onRetry={() => refetch()} />
+
+  if (projectQuery.data && projectQuery.data.product !== 'FAIRE_PART') {
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="font-display text-3xl font-medium tracking-[-0.01em] text-ink">
+            {t('espace.rsvp.title')}
+          </h1>
+        </div>
+        <EmptyState
+          title={t('espace.rsvp.wrongProductTitle')}
+          description={t('espace.rsvp.wrongProductDescription')}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">
