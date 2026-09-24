@@ -27,11 +27,13 @@ import {
   HERO_FILTERS,
   HERO_CARD_FRAMES,
   HERO_DATE_FORMATS,
+  HERO_COUNTDOWN_STYLES,
   getHeroFont,
   getHeroDateFormat,
   useGoogleFont,
 } from "@/components/hero-scrub/heroDecor";
 import { HeroOverlayGraphic, HeroFilterLayer, ChapterContent } from "@/components/hero-scrub/HeroScrub";
+import { HeroDateLayoutBlock } from "@/components/hero-scrub/HeroDateBlocks";
 import type { HeroChapter } from "@/components/hero-scrub/types";
 import type { HeroCustomCard } from "@contracts/bespokePalette";
 
@@ -99,6 +101,9 @@ function ColorField({
 
 /** Date fixe de référence pour l'aperçu du réglage "Format de la date" — même date que EXAMPLE_DATE (contracts/saveTheDateTemplates.ts, "12 juin 2027"), jamais la date en cours d'édition du template. */
 const DATE_FORMAT_PREVIEW_DATE = new Date(2027, 5, 12);
+
+/** Cible de l'aperçu du compte à rebours — 100 jours après le chargement de la page (jamais échue, contrairement à une date fixe). */
+const COUNTDOWN_PREVIEW_TARGET = new Date(Date.now() + 100 * 86400000).toISOString();
 
 function fmtTimecode(sec: number) {
   const m = Math.floor(sec / 60);
@@ -210,7 +215,14 @@ export default function ModeleStdDetail() {
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "" },
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "" },
+      ],
+    });
+  const addCountdownCard = () =>
+    update({
+      extraCards: [
+        ...(o?.extraCards ?? []),
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "Compte à rebours", position: "middle", kind: "countdown", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "boxes" },
       ],
     });
   const removeExtraCard = (id: string) => update({ extraCards: (o?.extraCards ?? []).filter((c) => c.id !== id) });
@@ -294,6 +306,7 @@ export default function ModeleStdDetail() {
   // est vide) plutôt qu'une valeur figée — avant le 23/09/2026 cet aperçu
   // affichait toujours "sm" quoi que l'admin choisisse, rendant le réglage
   // "Taille de police" invisible ici (cf. échange du même jour).
+  const selectedDateFormat = getHeroDateFormat(o.dateFormat);
   const chapter1FramePreview: HeroChapter = {
     id: 0,
     kind: "text",
@@ -328,7 +341,10 @@ export default function ModeleStdDetail() {
     kind: "text",
     from: 0,
     to: 1,
-    segments: [{ text: o.exampleDate || "12 juin 2027" }],
+    segments: selectedDateFormat?.layout ? undefined : [{ text: o.exampleDate || "12 juin 2027" }],
+    dateLayout: selectedDateFormat?.layout
+      ? { id: selectedDateFormat.id, fonts: selectedDateFormat.layout.fonts, lines: selectedDateFormat.layout.lines(DATE_FORMAT_PREVIEW_DATE) }
+      : undefined,
     titleSize: (o.dateBlockTitleSize || "sm") as HeroChapter["titleSize"],
     textColorOverride: o.dateBlockTextColor || undefined,
     cardFrame: o.dateBlockCardFrame || undefined,
@@ -770,7 +786,91 @@ export default function ModeleStdDetail() {
             hint={'Généralistes — identiques pour tous les clients de ce modèle (pas de personnalisation), mais bien présents sur la vraie vidéo livrée.'}
           />
           <div className="flex flex-col gap-3 p-6">
-            {(o.extraCards ?? []).map((card) => (
+            {(o.extraCards ?? []).map((card) => card.kind === 'countdown' ? (
+              <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                    Compte à rebours — jusqu'à la date du mariage du client
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => removeExtraCard(card.id)}
+                    aria-label="Retirer ce bloc"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 sm:col-span-2">
+                    Style
+                    <select value={card.countdownStyle || "boxes"} onChange={(e) => updateExtraCard(card.id, { countdownStyle: e.target.value })} className={inputClass}>
+                      {HERO_COUNTDOWN_STYLES.map((st) => (
+                        <option key={st.id} value={st.id}>{st.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <TimecodeField
+                    label="Apparaît à (s)"
+                    value={card.fromSec}
+                    max={duration}
+                    onChange={(v) => updateExtraCard(card.id, { fromSec: v })}
+                    onCaler={() => updateExtraCard(card.id, { fromSec: Math.round(currentTime * 10) / 10 })}
+                  />
+                  <TimecodeField
+                    label="Disparaît à (s)"
+                    value={card.toSec}
+                    max={duration}
+                    onChange={(v) => updateExtraCard(card.id, { toSec: v })}
+                    onCaler={() => updateExtraCard(card.id, { toSec: Math.round(currentTime * 10) / 10 })}
+                  />
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Position verticale
+                    <select value={card.position} onChange={(e) => updateExtraCard(card.id, { position: e.target.value as HeroCustomCard["position"] })} className={inputClass}>
+                      <option value="top">Haut</option>
+                      <option value="middle">Milieu</option>
+                      <option value="bottom">Bas</option>
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Animation — ce bloc
+                    <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                  </label>
+                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
+                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateExtraCard(card.id, { cardBg: v })} noneOption />
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Cadre (décor)
+                    <select value={card.cardFrame} onChange={(e) => updateExtraCard(card.id, { cardFrame: e.target.value })} className={inputClass}>
+                      <option value="">Aucun</option>
+                      {HERO_CARD_FRAMES.map((f) => (
+                        <option key={f.id} value={f.id}>{f.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="mt-2 flex flex-col gap-1">
+                  <span className="text-xs font-medium text-neutral-500">Aperçu (décompte fictif de 100 jours)</span>
+                  <PreviewStage themeVars={themeVars}>
+                    <ChapterContent
+                      chapter={{
+                        id: 3000,
+                        kind: "text",
+                        from: 0,
+                        to: 1,
+                        countdown: { style: card.countdownStyle || "boxes", targetIso: COUNTDOWN_PREVIEW_TARGET },
+                        textColorOverride: card.textColor || undefined,
+                        cardBgOverride: card.cardBg || undefined,
+                        cardFrame: card.cardFrame || undefined,
+                      }}
+                      textAnimation={card.textAnimation || o.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", (card.textAnimation || o.textAnimation) && `hs-anim-${card.textAnimation || o.textAnimation}`)}
+                    />
+                  </PreviewStage>
+                </div>
+              </div>
+            ) : (
               <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
                 <div className="flex items-start gap-3">
                   <textarea
@@ -889,6 +989,14 @@ export default function ModeleStdDetail() {
 
             <button
               type="button"
+              onClick={addCountdownCard}
+              className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
+            >
+              <Plus size={14} /> Ajouter un compte à rebours
+            </button>
+
+            <button
+              type="button"
               onClick={addExtraCard}
               className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
             >
@@ -968,21 +1076,34 @@ export default function ModeleStdDetail() {
                 Format de la date
                 <select value={o.dateFormat} onChange={(e) => update({ dateFormat: e.target.value })} className={inputClass}>
                   <option value="">12 juin 2027 (défaut)</option>
-                  {HERO_DATE_FORMATS.map((f) => (
-                    <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
-                  ))}
+                  <optgroup label="Sur une ligne">
+                    {HERO_DATE_FORMATS.filter((f) => !f.layout).map((f) => (
+                      <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Mises en page multi-lignes (bloc date indépendant)">
+                    {HERO_DATE_FORMATS.filter((f) => f.layout).map((f) => (
+                      <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
+                    ))}
+                  </optgroup>
                 </select>
               </label>
               <PreviewStage themeVars={themeVars}>
-                <p
-                  className="px-4 text-center text-[22px] font-light"
-                  style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)", fontStyle: fontPreview?.italic ? "italic" : undefined }}
-                >
-                  {getHeroDateFormat(o.dateFormat)?.format(DATE_FORMAT_PREVIEW_DATE) ?? "12 juin 2027"}
-                </p>
+                {selectedDateFormat?.layout ? (
+                  <HeroDateLayoutBlock
+                    layout={{ id: selectedDateFormat.id, fonts: selectedDateFormat.layout.fonts, lines: selectedDateFormat.layout.lines(DATE_FORMAT_PREVIEW_DATE) }}
+                  />
+                ) : (
+                  <p
+                    className="px-4 text-center text-[22px] font-light"
+                    style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)", fontStyle: fontPreview?.italic ? "italic" : undefined }}
+                  >
+                    {selectedDateFormat?.format(DATE_FORMAT_PREVIEW_DATE) ?? "12 juin 2027"}
+                  </p>
+                )}
               </PreviewStage>
               <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
-                S'applique à la vraie date du client sur une commande passée sur ce modèle (sous les prénoms, ou dans le 3e bloc si activé) — pas à cette page d'aperçu, qui garde la date d'exemple tapée plus haut.
+                S'applique à la vraie date du client sur une commande passée sur ce modèle (sous les prénoms, ou dans le 3e bloc si activé ; les mises en page multi-lignes ne s'affichent que dans le 3e bloc, sous les prénoms elles retombent sur une ligne) — pas à cette page d'aperçu, qui garde la date d'exemple tapée plus haut.
               </p>
             </div>
           </div>

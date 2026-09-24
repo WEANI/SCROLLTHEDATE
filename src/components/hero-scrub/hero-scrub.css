@@ -2260,3 +2260,76 @@
   box-shadow: inset 0 0 80px 12px var(--hs-accent);
   opacity: 0.35;
 }
+
+/* ==========================================================================
+   Dates multi-lignes (`.hs-dl-*`) et comptes à rebours (`.hs-cd-*`) —
+   repris de polices-overlay.html (Dates XXL / format américain / Mono &
+   technique / Comptes à rebours), 23/09/2026. Couleurs via les variables du
+   thème (--hs-accent, --hs-text-primary, --hs-text-secondary) ; tailles en
+   cqw comme les titres du hero (cf. ChapterContent).
+   ========================================================================== */
+.hs-dl { display: flex; flex-direction: column; align-items: center; line-height: 1; color: var(--hs-text-primary); }
+.hs-dl-line { display: block; }
+
+/* Chiffre géant / empilé */
+.hs-dl-xxl .hs-dl-l1,
+.hs-dl-stack .hs-dl-l1 { font-family: 'Anton', Impact, sans-serif; font-size: clamp(56px, 30cqw, 96px); color: var(--hs-accent); }
+.hs-dl-xxl .hs-dl-l2 { font-family: 'Oswald', sans-serif; font-weight: 300; letter-spacing: 0.5em; margin-right: -0.5em; text-transform: uppercase; font-size: clamp(12px, 5cqw, 18px); margin-top: 8px; }
+.hs-dl-stack .hs-dl-l2 { font-family: 'Anton', Impact, sans-serif; letter-spacing: 0.45em; margin-right: -0.45em; text-transform: uppercase; font-size: clamp(18px, 9cqw, 30px); margin-top: 6px; }
+.hs-dl-xxl .hs-dl-l3,
+.hs-dl-stack .hs-dl-l3,
+.hs-dl-us-stack .hs-dl-l3 { font-family: 'JetBrains Mono', monospace; font-weight: 300; letter-spacing: 0.6em; margin-right: -0.6em; font-size: clamp(10px, 4cqw, 14px); color: var(--hs-text-secondary); margin-top: 10px; }
+
+/* Condensé + année en lettres */
+.hs-dl-bebas .hs-dl-l1 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.08em; font-size: clamp(36px, 20cqw, 64px); }
+.hs-dl-bebas .hs-dl-l2 { font-family: 'Space Mono', monospace; letter-spacing: 0.4em; margin-right: -0.4em; font-size: clamp(9px, 3.6cqw, 12px); color: var(--hs-accent); margin-top: 10px; text-transform: uppercase; }
+
+/* Romain mixte */
+.hs-dl-roman-mixed .hs-dl-l1 { font-family: 'EB Garamond', serif; font-style: italic; font-size: clamp(14px, 6cqw, 20px); color: var(--hs-text-secondary); }
+.hs-dl-roman-mixed .hs-dl-l2 { font-family: 'Cinzel Decorative', serif; letter-spacing: 0.2em; font-size: clamp(24px, 12cqw, 40px); color: var(--hs-accent); margin: 10px 0 8px; }
+.hs-dl-roman-mixed .hs-dl-l3 { font-family: 'Montserrat', sans-serif; font-weight: 300; letter-spacing: 0.4em; margin-right: -0.4em; text-transform: uppercase; font-size: clamp(8px, 3cqw, 11px); color: var(--hs-text-secondary); }
+
+/* Toutes lettres */
+.hs-dl-wed-lines { line-height: 1.45; font-family: 'Cormorant', serif; font-style: italic; font-weight: 300; font-size: clamp(18px, 8cqw, 28px); }
+
+/* Américain empilé */
+.hs-dl-us-stack .hs-dl-l1 { font-family: 'Anton', Impact, sans-serif; font-size: clamp(40px, 22cqw, 68px); color: var(--hs-accent); }
+.hs-dl-us-stack .hs-dl-l2 { font-family: 'Anton', Impact, sans-serif; letter-spacing: 0.5em; margin-right: -0.5em; text-transform: uppercase; font-size: clamp(14px, 6.5cqw, 22px); margin-top: 8px; }
+
+/* Américain carte verticale */
+.hs-dl-us-card { gap: 6px; }
+.hs-dl-us-card .hs-dl-l1 { font-family: 'Montserrat', sans-serif; font-weight: 300; letter-spacing: 0.5em; margin-right: -0.5em; text-transform: uppercase; font-size: clamp(9px, 3.4cqw, 12px); color: var(--hs-accent); }
+.hs-dl-us-card .hs-dl-l2 { font-family: 'Cinzel', serif; letter-spacing: 0.4em; margin-right: -0.4em; font-size: clamp(16px, 7cqw, 24px); }
+.hs-dl-us-card .hs-dl-l3 { font-family: 'Anton', Impact, sans-serif; font-size: clamp(36px, 18cqw, 58px); }
+.hs-dl-us-card .hs-dl-l4 { font-family: 'JetBrains Mono', monospace; font-weight: 300; letter-spacing: 0.6em; margin-right: -0.6em; font-size: clamp(10px, 4cqw, 14px); color: var(--hs-text-secondary); margin-top: 4px; }
+
+/* Américain massif + jour */
+.hs-dl-us-slash-big .hs-dl-l1 { font-family: 'Anton', Impact, sans-serif; letter-spacing: 0.05em; font-size: clamp(26px, 13cqw, 44px); }
+.hs-dl-us-slash-big .hs-dl-l2 { font-family: 'Montserrat', sans-serif; font-weight: 300; letter-spacing: 0.5em; margin-right: -0.5em; text-transform: uppercase; font-size: clamp(8px, 3cqw, 11px); color: var(--hs-accent); margin-top: 10px; }
+
+/* Américain mono / court */
+.hs-dl-us-mono .hs-dl-l1 { font-family: 'Space Mono', monospace; letter-spacing: 0.25em; font-size: clamp(16px, 7cqw, 24px); }
+.hs-dl-us-mini .hs-dl-l1 { font-family: 'Oswald', sans-serif; font-weight: 300; letter-spacing: 0.3em; text-transform: uppercase; font-size: clamp(14px, 6cqw, 20px); }
+
+/* Mono & technique — filet de chaque côté */
+[class*='hs-dl-mono-'] .hs-dl-l1 { display: flex; align-items: center; gap: 14px; font-size: clamp(10px, 4.2cqw, 15px); letter-spacing: 0.32em; text-transform: uppercase; color: var(--hs-accent); white-space: nowrap; }
+[class*='hs-dl-mono-'] .hs-dl-l1::before,
+[class*='hs-dl-mono-'] .hs-dl-l1::after { content: ''; height: 1px; width: 26px; background: currentColor; opacity: 0.7; }
+.hs-dl-mono-space .hs-dl-l1 { font-family: 'Space Mono', monospace; }
+.hs-dl-mono-jb .hs-dl-l1 { font-family: 'JetBrains Mono', monospace; font-weight: 300; }
+.hs-dl-mono-plex .hs-dl-l1 { font-family: 'IBM Plex Mono', monospace; font-weight: 300; }
+.hs-dl-mono-grotesk .hs-dl-l1 { font-family: 'Space Grotesk', sans-serif; font-weight: 300; }
+.hs-dl-mono-outfit .hs-dl-l1 { font-family: 'Outfit', sans-serif; font-weight: 200; }
+.hs-dl-mono-sora .hs-dl-l1 { font-family: 'Sora', sans-serif; font-weight: 200; }
+
+/* Comptes à rebours */
+.hs-cd { display: flex; align-items: flex-start; justify-content: center; color: var(--hs-text-primary); }
+.hs-cd-cell { display: flex; align-items: flex-start; }
+.hs-cd-unit { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.hs-cd-num { font-family: 'JetBrains Mono', monospace; font-weight: 300; font-variant-numeric: tabular-nums; font-size: clamp(20px, 9cqw, 30px); line-height: 1.2; }
+.hs-cd-lab { font-size: clamp(7px, 2.6cqw, 9px); letter-spacing: 0.3em; margin-right: -0.3em; text-transform: uppercase; color: var(--hs-text-secondary); }
+.hs-cd-sep { color: var(--hs-accent); font-size: clamp(16px, 6cqw, 22px); padding: 0 clamp(4px, 1.6cqw, 8px); line-height: 1.5; }
+.hs-cd-boxes .hs-cd-num { background: color-mix(in srgb, var(--hs-text-primary) 8%, transparent); border: 1px solid color-mix(in srgb, var(--hs-text-primary) 22%, transparent); border-radius: 8px; min-width: clamp(38px, 15cqw, 56px); padding: 8px 4px; text-align: center; box-shadow: inset 0 -3px 0 var(--hs-accent); }
+.hs-cd-anton .hs-cd-num { font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: clamp(30px, 14cqw, 46px); color: var(--hs-accent); }
+.hs-cd-serif .hs-cd-num { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; font-size: clamp(24px, 11cqw, 36px); }
+.hs-cd-minimal .hs-cd-sep { padding: 0 clamp(6px, 2.4cqw, 12px); }

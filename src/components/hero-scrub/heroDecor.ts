@@ -200,7 +200,30 @@ export interface HeroDateFormatOption {
   label: string
   /** Exemple affiché dans le sélecteur admin — date fixe (12 juin 2027, même convention que EXAMPLE_DATE dans contracts/saveTheDateTemplates.ts), indépendante de la date réellement en cours d'édition. */
   example: string
+  /** Texte sur UNE ligne — seul rendu possible sous les prénoms (`subLines`) ; sert aussi de repli quand `layout` est défini. */
   format: (d: Date) => string
+  /**
+   * Mise en page multi-lignes (jusqu'à 4 lignes, chacune avec sa
+   * taille/police, cf. `.hs-dl-*` dans hero-scrub.css) — rendue à la place
+   * du texte simple dans un bloc "date" indépendant uniquement. Repris du
+   * fichier de référence polices-overlay.html (Dates XXL, Dates format
+   * américain, Mono & technique), cf. échange du 23/09/2026.
+   */
+  layout?: { fonts: string; lines: (d: Date) => HeroDateLine[] }
+}
+
+/** Une ligne d'une mise en page de date : `cls` = rôle ('l1'…'l4') stylé par `.hs-dl-<id> .hs-dl-<cls>`. */
+export interface HeroDateLine {
+  cls: 'l1' | 'l2' | 'l3' | 'l4'
+  text: string
+}
+
+/** Mise en page de date prête à afficher — cf. `HeroChapter.dateLayout` (types.ts). */
+export interface HeroDateLayout {
+  id: string
+  lines: HeroDateLine[]
+  /** Paramètres `family=` Google Fonts, séparés par `&family=` déjà formatés — chargés à l'affichage par HeroDateBlocks.tsx. */
+  fonts: string
 }
 
 const capitalizeFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
@@ -292,7 +315,7 @@ function ordinalSuffixEn(n: number): string {
  * choisi une fois pour toutes par l'admin comme les autres réglages de ce
  * modèle.
  */
-export const HERO_DATE_FORMATS: HeroDateFormatOption[] = [
+const TEXT_DATE_FORMATS: HeroDateFormatOption[] = [
   {
     // .a-date / .date-wed-lines (jour de la semaine complet)
     id: 'weekday-full',
@@ -391,6 +414,193 @@ export const HERO_DATE_FORMATS: HeroDateFormatOption[] = [
     format: (d) => `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`,
   },
 ]
+
+const pad2 = (n: number) => String(n).padStart(2, '0')
+const monthFr = (d: Date) => new Intl.DateTimeFormat('fr-FR', { month: 'long' }).format(d)
+const weekdayFr = (d: Date) => capitalizeFirst(new Intl.DateTimeFormat('fr-FR', { weekday: 'long' }).format(d))
+const monthEn = (d: Date) => new Intl.DateTimeFormat('en-US', { month: 'long' }).format(d)
+const weekdayEn = (d: Date) => new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(d)
+
+/** Mises en page multi-lignes — ajoutées à HERO_DATE_FORMATS ci-dessous. */
+const DATE_LAYOUT_FORMATS: HeroDateFormatOption[] = [
+  {
+    id: 'xxl',
+    label: 'Chiffre géant (3 lignes)',
+    example: '12 / OCTOBRE / 2026',
+    format: (d) => `${d.getDate()} ${monthFr(d).toUpperCase()} ${d.getFullYear()}`,
+    layout: {
+      fonts: 'Anton&family=Oswald:wght@300&family=JetBrains+Mono:wght@300',
+      lines: (d) => [
+        { cls: 'l1', text: String(d.getDate()) },
+        { cls: 'l2', text: monthFr(d) },
+        { cls: 'l3', text: String(d.getFullYear()) },
+      ],
+    },
+  },
+  {
+    id: 'stack',
+    label: 'Empilé massif (3 lignes)',
+    example: '12 / OCTOBRE / 2026',
+    format: (d) => `${d.getDate()} ${monthFr(d).toUpperCase()} ${d.getFullYear()}`,
+    layout: {
+      fonts: 'Anton&family=JetBrains+Mono:wght@300',
+      lines: (d) => [
+        { cls: 'l1', text: String(d.getDate()) },
+        { cls: 'l2', text: monthFr(d) },
+        { cls: 'l3', text: String(d.getFullYear()) },
+      ],
+    },
+  },
+  {
+    id: 'bebas',
+    label: 'Condensé + année en lettres (2 lignes)',
+    example: '12 Octobre / Deux mille vingt-six',
+    format: (d) => `${d.getDate()} ${capitalizeFirst(monthFr(d))} ${d.getFullYear()}`,
+    layout: {
+      fonts: 'Bebas+Neue&family=Space+Mono',
+      lines: (d) => [
+        { cls: 'l1', text: `${d.getDate()} ${capitalizeFirst(monthFr(d))}` },
+        { cls: 'l2', text: capitalizeFirst(yearWordsFr(d.getFullYear())) },
+      ],
+    },
+  },
+  {
+    id: 'roman-mixed',
+    label: 'Romain mixte (3 lignes)',
+    example: 'Samedi / XII · VI / deux mille vingt-sept',
+    format: (d) => `${toRoman(d.getDate())} · ${toRoman(d.getMonth() + 1)} · ${toRoman(d.getFullYear())}`,
+    layout: {
+      fonts: 'EB+Garamond:ital@1&family=Cinzel+Decorative&family=Montserrat:wght@300',
+      lines: (d) => [
+        { cls: 'l1', text: weekdayFr(d) },
+        { cls: 'l2', text: `${toRoman(d.getDate())} · ${toRoman(d.getMonth() + 1)}` },
+        { cls: 'l3', text: yearWordsFr(d.getFullYear()) },
+      ],
+    },
+  },
+  {
+    id: 'wed-lines',
+    label: 'Toutes lettres, italique (2 lignes)',
+    example: 'Samedi douze juin / deux mille vingt-sept',
+    format: (d) => `${weekdayFr(d)} ${numberWordsFr(d.getDate())} ${monthFr(d)} ${yearWordsFr(d.getFullYear())}`,
+    layout: {
+      fonts: 'Cormorant:ital,wght@1,300',
+      lines: (d) => [
+        { cls: 'l1', text: `${weekdayFr(d)} ${numberWordsFr(d.getDate())} ${monthFr(d)}` },
+        { cls: 'l2', text: yearWordsFr(d.getFullYear()) },
+      ],
+    },
+  },
+  {
+    id: 'us-stack',
+    label: 'Américain empilé (3 lignes)',
+    example: '06 · 12 / JUNE / 2027',
+    format: (d) => `${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}/${d.getFullYear()}`,
+    layout: {
+      fonts: 'Anton&family=JetBrains+Mono:wght@300',
+      lines: (d) => [
+        { cls: 'l1', text: `${pad2(d.getMonth() + 1)} · ${pad2(d.getDate())}` },
+        { cls: 'l2', text: monthEn(d) },
+        { cls: 'l3', text: String(d.getFullYear()) },
+      ],
+    },
+  },
+  {
+    id: 'us-card',
+    label: 'Américain carte verticale (4 lignes)',
+    example: 'Saturday / June / 12th / 2027',
+    format: (d) => `${monthEn(d)} ${d.getDate()}${ordinalSuffixEn(d.getDate())}, ${d.getFullYear()}`,
+    layout: {
+      fonts: 'Montserrat:wght@300&family=Cinzel&family=Anton&family=JetBrains+Mono:wght@300',
+      lines: (d) => [
+        { cls: 'l1', text: weekdayEn(d) },
+        { cls: 'l2', text: monthEn(d) },
+        { cls: 'l3', text: `${d.getDate()}${ordinalSuffixEn(d.getDate())}` },
+        { cls: 'l4', text: String(d.getFullYear()) },
+      ],
+    },
+  },
+  {
+    id: 'us-slash-big',
+    label: 'Américain massif + jour (2 lignes)',
+    example: '06/12/2027 / Saturday',
+    format: (d) => `${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}/${d.getFullYear()}`,
+    layout: {
+      fonts: 'Anton&family=Montserrat:wght@300',
+      lines: (d) => [
+        { cls: 'l1', text: `${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}/${d.getFullYear()}` },
+        { cls: 'l2', text: weekdayEn(d) },
+      ],
+    },
+  },
+  {
+    id: 'us-mono',
+    label: 'Américain mono (1 ligne)',
+    example: '06 · 12 · 2027',
+    format: (d) => `${pad2(d.getMonth() + 1)} · ${pad2(d.getDate())} · ${d.getFullYear()}`,
+    layout: {
+      fonts: 'Space+Mono',
+      lines: (d) => [{ cls: 'l1', text: `${pad2(d.getMonth() + 1)} · ${pad2(d.getDate())} · ${d.getFullYear()}` }],
+    },
+  },
+  {
+    id: 'us-mini',
+    label: 'Américain court, événement (1 ligne)',
+    example: 'SAT · 06 / 12 / 27',
+    format: (d) => `${weekdayEn(d).slice(0, 3)} · ${pad2(d.getMonth() + 1)} / ${pad2(d.getDate())} / ${pad2(d.getFullYear() % 100)}`,
+    layout: {
+      fonts: 'Oswald:wght@300;500',
+      lines: (d) => [
+        { cls: 'l1', text: `${weekdayEn(d).slice(0, 3)} · ${pad2(d.getMonth() + 1)} / ${pad2(d.getDate())} / ${pad2(d.getFullYear() % 100)}` },
+      ],
+    },
+  },
+  // Mono & technique — même date, 6 polices du fichier de référence, avec
+  // filet de chaque côté (eyebrow) — cf. `.hs-dl-mono-*` dans hero-scrub.css.
+  ...(
+    [
+      ['mono-space', 'Mono — Space Mono', 'Space+Mono'],
+      ['mono-jb', 'Mono — JetBrains Mono Light', 'JetBrains+Mono:wght@300'],
+      ['mono-plex', 'Mono — IBM Plex Mono', 'IBM+Plex+Mono:wght@300'],
+      ['mono-grotesk', 'Technique — Space Grotesk Light', 'Space+Grotesk:wght@300'],
+      ['mono-outfit', 'Technique — Outfit ExtraLight', 'Outfit:wght@200'],
+      ['mono-sora', 'Technique — Sora ExtraLight', 'Sora:wght@200'],
+    ] as const
+  ).map(
+    ([id, label, fonts]): HeroDateFormatOption => ({
+      id,
+      label,
+      example: '12 · JUIN · 2027',
+      format: (d) => `${d.getDate()} · ${monthFr(d).toUpperCase()} · ${d.getFullYear()}`,
+      layout: {
+        fonts,
+        lines: (d) => [{ cls: 'l1', text: `${d.getDate()} · ${monthFr(d).toUpperCase()} · ${d.getFullYear()}` }],
+      },
+    }),
+  ),
+]
+
+/** Bibliothèque complète (formats texte sur une ligne + mises en page multi-lignes) — cf. `layout` sur HeroDateFormatOption. */
+export const HERO_DATE_FORMATS: HeroDateFormatOption[] = [...TEXT_DATE_FORMATS, ...DATE_LAYOUT_FORMATS]
+
+/** Styles de compte à rebours du hero — repris du fichier de référence polices-overlay.html ("Comptes à rebours"). */
+export const HERO_COUNTDOWN_STYLES: { id: string; label: string; fonts: string }[] = [
+  { id: 'boxes', label: 'Boîtes avec liseré (le plus lisible)', fonts: 'JetBrains+Mono:wght@300' },
+  { id: 'anton', label: 'Impact maximum', fonts: 'Anton' },
+  { id: 'serif', label: 'Éditorial, sans secondes', fonts: 'Playfair+Display:ital@1' },
+  { id: 'minimal', label: 'Ligne fine, mariage/luxe', fonts: 'JetBrains+Mono:wght@300' },
+]
+
+/** Charge (une seule fois par jeu de familles) des polices Google Fonts — cf. HeroDateBlocks.tsx. */
+export function ensureGoogleFamilies(families: string) {
+  const key = families
+  if (document.querySelector(`link[data-hero-families="${key}"]`)) return
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = `https://fonts.googleapis.com/css2?family=${families}&display=swap`
+  link.dataset.heroFamilies = key
+  document.head.appendChild(link)
+}
 
 export function getHeroDateFormat(id: string | undefined): HeroDateFormatOption | null {
   if (!id) return null

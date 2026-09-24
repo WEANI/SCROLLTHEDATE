@@ -303,6 +303,13 @@ export default function FairePart() {
       ? dateFormat.format(new Date(invite.weddingDate))
       : new Date(invite.weddingDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : undefined
+  // Mise en page multi-lignes de la date (HERO_DATE_FORMATS[].layout) — utilisée
+  // UNIQUEMENT par le bloc "date" indépendant (kind:'date', cf. customChapters),
+  // jamais sous les prénoms (`subLines` ne prend qu'une ligne de texte).
+  const dateLayoutData =
+    dateFormat?.layout && invite.weddingDate
+      ? { id: dateFormat.id, fonts: dateFormat.layout.fonts, lines: dateFormat.layout.lines(new Date(invite.weddingDate)) }
+      : undefined
   // Bloc "date" indépendant (cf. échange du 21/09/2026, HeroCustomCard.kind
   // dans bespokePalette.ts) : quand une carte `kind: 'date'` est présente,
   // la date vit UNIQUEMENT dans ce bloc (rendu par customChapters plus
@@ -560,13 +567,27 @@ export default function FairePart() {
         // calculée plus haut) est rendue en titre plutôt qu'en `lead`
         // (paragraphe libre des cartes texte ordinaires), pour le même
         // poids visuel que les 2 autres blocs fixes.
-        card.kind === 'date'
+        card.kind === 'countdown'
           ? {
               id: 1000 + i,
               kind: 'text' as const,
               from: card.fromSec / videoDuration,
               to: card.toSec / videoDuration,
-              segments: [{ text: weddingDateShort ?? '' }],
+              countdown: { style: card.countdownStyle || 'boxes', targetIso: weddingDateTime },
+              verticalAlign: card.position,
+              textColorOverride: card.textColor || undefined,
+              cardBgOverride: card.cardBg || undefined,
+              cardFrame: card.cardFrame || undefined,
+              textAnimation: card.textAnimation || undefined,
+            }
+          : card.kind === 'date'
+          ? {
+              id: 1000 + i,
+              kind: 'text' as const,
+              from: card.fromSec / videoDuration,
+              to: card.toSec / videoDuration,
+              segments: dateLayoutData ? undefined : [{ text: weddingDateShort ?? '' }],
+              dateLayout: dateLayoutData,
               titleSize: (card.titleSize || 'md') as HeroChapter['titleSize'],
               verticalAlign: card.position,
               textColorOverride: card.textColor || undefined,

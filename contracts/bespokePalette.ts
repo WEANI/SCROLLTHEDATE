@@ -225,7 +225,7 @@ export const heroCustomCardSchema = z.object({
   // date du projet — une carte de ce type reste néanmoins un `HeroCustomCard`
   // ordinaire pour tout le reste (timing/position), donc `text` garde sa
   // contrainte `.min(1)` même si son contenu n'est alors qu'un placeholder.
-  kind: z.enum(["text", "date"]).default("text"),
+  kind: z.enum(["text", "date", "countdown"]).default("text"),
   // Couleur de CETTE carte — vide = couleur du thème (comportement actuel
   // inchangé). Distinct de `textColorOverride` sur HeroChapter (nom
   // différent car HeroCustomCard n'a jamais eu ce champ avant) — permet au
@@ -248,6 +248,10 @@ export const heroCustomCardSchema = z.object({
   titleSize: z.string().default(""),
   cardFrame: z.string().default(""),
   cardBg: z.string().default(""),
+  // Style du compte à rebours (kind "countdown", cf. HERO_COUNTDOWN_STYLES,
+  // heroDecor.ts) — vide = 'boxes'. Ignoré pour les autres kinds. Ajouté le
+  // 23/09/2026 ; `text` reste un placeholder, comme pour kind "date".
+  countdownStyle: z.string().default(""),
 });
 /** Plafonné à 10 : au-delà, plus un outil de personnalisation qu'un risque réel côté produit — évite un payload sans limite. */
 export const heroCustomCardsSchema = z.array(heroCustomCardSchema).max(10);

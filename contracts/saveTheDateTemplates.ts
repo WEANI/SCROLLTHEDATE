@@ -85,6 +85,8 @@ export interface TemplateHeroChapter {
   textAnimation?: string
   bold?: boolean
   verticalAlign?: HeroVerticalAlign
+  /** cf. doc de HeroChapter.countdown (src/components/hero-scrub/types.ts) — ajouté le 23/09/2026. */
+  countdown?: { style: string; targetIso: string }
 }
 
 const RED_DOOR_THEME: HeroTheme = {
@@ -432,7 +434,11 @@ function extraCardsToChapters(cards: HeroCustomCard[], duration: number): Templa
     kind: 'text' as const,
     from: ratio(card.fromSec),
     to: ratio(card.toSec),
-    lead: card.text,
+    // Compte à rebours (cf. HeroCustomCard.kind) : `text` n'est qu'un
+    // placeholder, la date visée est celle du couple d'exemple de cette page
+    // d'aperçu générique (12 juin 2027, cf. EXAMPLE_DATE).
+    lead: card.kind === 'countdown' ? undefined : card.text,
+    countdown: card.kind === 'countdown' ? { style: card.countdownStyle || 'boxes', targetIso: '2027-06-12T00:00:00' } : undefined,
     verticalAlign: card.position,
     fontId: card.fontId || undefined,
     textAnimation: card.textAnimation || undefined,
@@ -684,6 +690,7 @@ export function buildFulfillmentData(
               titleSize: o.dateBlockTitleSize || '',
               cardFrame: o.dateBlockCardFrame || '',
               cardBg: o.dateBlockCardBg || '',
+              countdownStyle: '',
             },
           ]
         : []),

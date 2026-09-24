@@ -4,6 +4,8 @@
  * (cf. src/components/demo/demoContent.ts, .../faire-part/*Content.ts).
  */
 
+import type { HeroDateLayout } from './heroDecor'
+
 export interface HeroChapter {
   id: number
   kind: 'text' | 'list' | 'card'
@@ -85,6 +87,17 @@ export interface HeroChapter {
    * 11/09/2026.
    */
   verticalAlign?: 'top' | 'middle' | 'bottom'
+  /**
+   * Date en plusieurs lignes (bibliothèque HERO_DATE_FORMATS, entrées avec
+   * `layout`) — rendue à la place de `segments`, cf. HeroDateBlocks.tsx.
+   * Ajouté le 23/09/2026.
+   */
+  dateLayout?: HeroDateLayout
+  /**
+   * Compte à rebours en direct jusqu'à `targetIso` (ISO 8601) — style parmi
+   * HERO_COUNTDOWN_STYLES, cf. HeroDateBlocks.tsx. Ajouté le 23/09/2026.
+   */
+  countdown?: { style: string; targetIso: string }
 }
 
 /**
