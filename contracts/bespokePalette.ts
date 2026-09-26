@@ -225,7 +225,7 @@ export const heroCustomCardSchema = z.object({
   // date du projet — une carte de ce type reste néanmoins un `HeroCustomCard`
   // ordinaire pour tout le reste (timing/position), donc `text` garde sa
   // contrainte `.min(1)` même si son contenu n'est alors qu'un placeholder.
-  kind: z.enum(["text", "date", "countdown"]).default("text"),
+  kind: z.enum(["text", "date", "countdown", "monogram"]).default("text"),
   // Couleur de CETTE carte — vide = couleur du thème (comportement actuel
   // inchangé). Distinct de `textColorOverride` sur HeroChapter (nom
   // différent car HeroCustomCard n'a jamais eu ce champ avant) — permet au
@@ -252,6 +252,14 @@ export const heroCustomCardSchema = z.object({
   // heroDecor.ts) — vide = 'boxes'. Ignoré pour les autres kinds. Ajouté le
   // 23/09/2026 ; `text` reste un placeholder, comme pour kind "date".
   countdownStyle: z.string().default(""),
+  // Monogramme des mariés (kind "monogram", cf. HERO_MONOGRAM_LAYOUTS,
+  // heroDecor.ts) : mise en page, couleur des filets/de l'esperluette,
+  // couleur du sceau (mise en page « wax »). Vides = défauts du rendu. Les
+  // initiales viennent des prénoms du projet, jamais saisies ici. Ajoutés le
+  // 26/09/2026 ; `textColor` = couleur des lettres, `fontId` = police.
+  monogramLayout: z.string().default(""),
+  monogramAccent: z.string().default(""),
+  sealColor: z.string().default(""),
 });
 /** Plafonné à 10 : au-delà, plus un outil de personnalisation qu'un risque réel côté produit — évite un payload sans limite. */
 export const heroCustomCardsSchema = z.array(heroCustomCardSchema).max(10);

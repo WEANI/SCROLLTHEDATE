@@ -95,6 +95,9 @@ export const HERO_FONTS: HeroFontOption[] = [
   { id: 'parisienne', label: 'Parisienne', category: 'Calligraphies mariage', fontFamily: "'Parisienne', cursive", googleFontsFamily: 'Parisienne' },
   { id: 'sacramento', label: 'Sacramento', category: 'Calligraphies mariage', fontFamily: "'Sacramento', cursive", googleFontsFamily: 'Sacramento' },
   { id: 'dancing-script', label: 'Dancing Script', category: 'Calligraphies mariage', fontFamily: "'Dancing Script', cursive", googleFontsFamily: 'Dancing+Script' },
+  { id: 'pinyon-script', label: 'Pinyon Script', category: 'Calligraphies mariage', fontFamily: "'Pinyon Script', cursive", googleFontsFamily: 'Pinyon+Script' },
+  { id: 'monsieur-la-doulaise', label: 'Monsieur La Doulaise', category: 'Calligraphies mariage', fontFamily: "'Monsieur La Doulaise', cursive", googleFontsFamily: 'Monsieur+La+Doulaise' },
+  { id: 'bodoni-moda', label: 'Bodoni Moda', category: 'Serifs éditoriaux', fontFamily: "'Bodoni Moda', Georgia, serif", googleFontsFamily: 'Bodoni+Moda:ital@1', italic: true },
   { id: 'cinzel-decorative', label: 'Cinzel Decorative', category: 'Calligraphies mariage', fontFamily: "'Cinzel Decorative', serif", googleFontsFamily: 'Cinzel+Decorative' },
   { id: 'eb-garamond', label: 'EB Garamond', category: 'Serifs formels', fontFamily: "'EB Garamond', Georgia, serif", googleFontsFamily: 'EB+Garamond:ital@1', italic: true },
   { id: 'cormorant', label: 'Cormorant', category: 'Serifs formels', fontFamily: "'Cormorant', Georgia, serif", googleFontsFamily: 'Cormorant:ital@1', italic: true },
@@ -613,6 +616,66 @@ export function resolveDateFormatsInChapters(chapters: TemplateHeroChapter[]): H
     if (ch.dateSlot === 'sub' && ch.subLines) return { ...ch, subLines: [fmt.format(example)] } as HeroChapter
     return ch as HeroChapter
   })
+}
+
+/**
+ * Monogramme des mariés — initiales sous forme de logo (bloc overlay
+ * "Logo"), proposé le 26/09/2026 (maquette « Monogrammes des mariés »),
+ * mises en page conservées par le client : cercle, double cercle,
+ * esperluette, losange, entrelacées, barre verticale, sceau de cire, cadre
+ * orné, tampon circulaire. Rendu : HeroDateBlocks.tsx (`.hs-mono-*`).
+ */
+export const HERO_MONOGRAM_LAYOUTS: { id: string; label: string; desc: string }[] = [
+  { id: 'circle', label: 'Cercle simple', desc: 'Initiales séparées par un point, filet fin' },
+  { id: 'double', label: 'Double cercle', desc: 'Deux filets concentriques, esprit sceau' },
+  { id: 'amp', label: 'Esperluette', desc: "Grand « & » italique entre les initiales" },
+  { id: 'diamond', label: 'Losange', desc: 'Carré posé sur la pointe' },
+  { id: 'overlap', label: 'Entrelacées', desc: "Deux lettres qui se chevauchent, l'une en accent" },
+  { id: 'vline', label: 'Barre verticale', desc: 'Initiales de part et d\'autre d\'un filet, date dessous' },
+  { id: 'wax', label: 'Sceau de cire', desc: 'Cachet en relief — couleur du sceau au choix' },
+  { id: 'frame', label: 'Cadre orné', desc: 'Double filet carré, losanges en pointe' },
+  { id: 'stamp', label: 'Tampon circulaire', desc: 'Texte courbe « Save the date » autour des initiales' },
+]
+
+/** Polices proposées pour les initiales (ids de HERO_FONTS), dans l'ordre de la maquette. */
+export const HERO_MONOGRAM_FONT_IDS = [
+  'great-vibes', 'alex-brush', 'allura', 'parisienne', 'pinyon-script', 'monsieur-la-doulaise',
+  'cinzel-decorative', 'cinzel', 'playfair', 'cormorant-garamond', 'bodoni-moda', 'eb-garamond',
+  'italiana', 'marcellus',
+]
+
+/** Couleurs de sceau suggérées (le champ accepte n'importe quel hex). */
+export const HERO_SEAL_COLORS: { hex: string; label: string }[] = [
+  { hex: '#8c1d24', label: 'Bordeaux' },
+  { hex: '#b8893a', label: 'Or' },
+  { hex: '#1c1c1e', label: 'Noir' },
+  { hex: '#2f5d46', label: 'Vert forêt' },
+  { hex: '#24406b', label: 'Bleu nuit' },
+  { hex: '#c98a94', label: 'Rose' },
+]
+
+/** Données d'un monogramme prêt à afficher — cf. `HeroChapter.monogram` (types.ts). */
+export interface HeroMonogram {
+  layout: string
+  a: string
+  b: string
+  /** Couleur des filets/de l'esperluette — vide = accent du thème. */
+  accent: string
+  /** Couleur du sceau (layout 'wax') — vide = bordeaux. */
+  sealColor: string
+  /** « 12 juin 2027 » — texte courbe du tampon. */
+  dateShort: string
+  /** « 12 · 06 · 2027 » — sous la barre verticale. */
+  dateNumeric: string
+}
+
+/** Initiales d'un « Prénom & Prénom » — repli sur les 2 premiers mots, puis sur la seule initiale. */
+export function monogramInitials(names: string): [string, string] {
+  const up = (s: string | undefined) => (s ? s.trim().charAt(0).toLocaleUpperCase('fr-FR') : '')
+  const parts = names.split(/\s+(?:&|et)\s+/i)
+  if (parts.length >= 2) return [up(parts[0]), up(parts[parts.length - 1])]
+  const words = names.trim().split(/\s+/)
+  return [up(words[0]), up(words[1])]
 }
 
 /** Charge (une seule fois par jeu de familles) des polices Google Fonts — cf. HeroDateBlocks.tsx. */

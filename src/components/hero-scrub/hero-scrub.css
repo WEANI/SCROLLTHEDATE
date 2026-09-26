@@ -2333,3 +2333,35 @@
 .hs-cd-anton .hs-cd-num { font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: clamp(30px, 14cqw, 46px); color: var(--hs-accent); }
 .hs-cd-serif .hs-cd-num { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; font-size: clamp(24px, 11cqw, 36px); }
 .hs-cd-minimal .hs-cd-sep { padding: 0 clamp(6px, 2.4cqw, 12px); }
+
+/* Monogramme des mariés (`.hs-mono-*`) — maquette « Monogrammes des mariés », 26/09/2026. */
+.hs-mono-wrap { display: flex; justify-content: center; }
+.hs-mono { --u: calc(1cqw * 0.72 * var(--ms, 1)); font-family: var(--hs-font-family); color: var(--hs-text-primary); position: relative; display: flex; align-items: center; justify-content: center; line-height: 1; }
+.hs-mono .hs-mono-acc { color: var(--macc); }
+.hs-mono-circle { width: calc(64 * var(--u)); height: calc(64 * var(--u)); border: 1.5px solid var(--macc); border-radius: 50%; gap: calc(2 * var(--u)); font-size: calc(26 * var(--u)); }
+.hs-mono-circle i { font: 300 calc(8 * var(--u)) 'Montserrat', sans-serif; color: var(--macc); font-style: normal; }
+.hs-mono-double { width: calc(66 * var(--u)); height: calc(66 * var(--u)); border-radius: 50%; border: 1px solid var(--macc); box-shadow: 0 0 0 calc(2.4 * var(--u)) transparent, 0 0 0 calc(2.4 * var(--u) + 1px) var(--macc); gap: calc(1 * var(--u)); font-size: calc(26 * var(--u)); }
+.hs-mono-double span:last-child { color: var(--macc); }
+.hs-mono-amp { gap: calc(3 * var(--u)); font-size: calc(30 * var(--u)); }
+.hs-mono-amp em { font: italic 400 calc(24 * var(--u)) 'Playfair Display', serif; color: var(--macc); }
+.hs-mono-diamond { width: calc(50 * var(--u)); height: calc(50 * var(--u)); border: 1.5px solid var(--macc); transform: rotate(45deg); margin: calc(8 * var(--u)) 0; }
+.hs-mono-diamond > div { transform: rotate(-45deg); display: flex; gap: calc(1 * var(--u)); align-items: center; font-size: calc(20 * var(--u)); }
+.hs-mono-diamond > div i { font: 300 calc(6 * var(--u)) 'Montserrat', sans-serif; color: var(--macc); font-style: normal; }
+.hs-mono-overlap { width: calc(70 * var(--u)); height: calc(60 * var(--u)); font-size: calc(52 * var(--u)); }
+.hs-mono-overlap span { position: absolute; }
+.hs-mono-overlap .a { left: calc(6 * var(--u)); }
+.hs-mono-overlap .b { right: calc(6 * var(--u)); color: var(--macc); opacity: 0.92; }
+.hs-mono-vline { flex-direction: column; gap: calc(3 * var(--u)); }
+.hs-mono-vline .row { display: flex; align-items: center; gap: calc(6 * var(--u)); font-size: calc(30 * var(--u)); }
+.hs-mono-vline .row i { width: 1px; height: calc(26 * var(--u)); background: var(--macc); display: block; }
+.hs-mono-vline small { font: 300 calc(4 * var(--u)) 'Montserrat', sans-serif; letter-spacing: 0.42em; margin-right: -0.42em; text-transform: uppercase; color: var(--macc); }
+.hs-mono-wax { width: calc(52 * var(--u)); height: calc(52 * var(--u)); border-radius: 47% 53% 50% 50% / 52% 46% 54% 48%; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--mseal) 75%, white) 0, var(--mseal) 55%, color-mix(in srgb, var(--mseal) 55%, black) 100%); box-shadow: 0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, 0.55), inset 0 0 0 calc(2.2 * var(--u)) rgba(0, 0, 0, 0.12), inset 0 0 0 calc(2.6 * var(--u)) rgba(255, 255, 255, 0.07); font-size: calc(20 * var(--u)); gap: calc(1 * var(--u)); color: #f3e3cc; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.18); }
+.hs-mono-wax i { font: 300 calc(6 * var(--u)) 'Montserrat', sans-serif; font-style: normal; opacity: 0.8; }
+.hs-mono-frame { width: calc(58 * var(--u)); height: calc(58 * var(--u)); border: 1px solid var(--macc); outline: 1px solid var(--macc); outline-offset: calc(1.8 * var(--u)); gap: calc(1 * var(--u)); font-size: calc(24 * var(--u)); margin: calc(6 * var(--u)) 0; }
+.hs-mono-frame::before, .hs-mono-frame::after { content: ''; position: absolute; width: calc(2.2 * var(--u)); height: calc(2.2 * var(--u)); background: var(--macc); transform: rotate(45deg); left: 50%; margin-left: calc(-1.1 * var(--u)); }
+.hs-mono-frame::before { top: calc(-3.4 * var(--u)); }
+.hs-mono-frame::after { bottom: calc(-3.4 * var(--u)); }
+.hs-mono-frame i { font: 300 calc(6 * var(--u)) 'Montserrat', sans-serif; color: var(--macc); font-style: normal; }
+.hs-mono-stamp svg { width: calc(74 * var(--u)); height: calc(74 * var(--u)); overflow: visible; }
+.hs-mono-stamp text.ring { font: 400 9.2px 'Montserrat', sans-serif; letter-spacing: 0.28em; fill: var(--macc); }
+.hs-mono-stamp text.mid { font-family: var(--hs-font-family); fill: var(--hs-text-primary); font-size: 44px; }

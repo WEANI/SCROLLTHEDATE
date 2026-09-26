@@ -10,7 +10,7 @@ import DetailsSombre, { parseFaqItem, parseProgrammeItem } from '@/components/fa
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { HERO_THEMES } from '@/components/hero-scrub/themes'
 import type { HeroChapter } from '@/components/hero-scrub/types'
-import { getHeroDateFormat, getHeroFont, useGoogleFont, useGoogleFonts } from '@/components/hero-scrub/heroDecor'
+import { getHeroDateFormat, getHeroFont, monogramInitials, useGoogleFont, useGoogleFonts } from '@/components/hero-scrub/heroDecor'
 import type { HeroChapterTiming } from '@contracts/bespokePalette'
 import {
   BespokePaletteProvider,
@@ -567,7 +567,35 @@ export default function FairePart() {
         // calculée plus haut) est rendue en titre plutôt qu'en `lead`
         // (paragraphe libre des cartes texte ordinaires), pour le même
         // poids visuel que les 2 autres blocs fixes.
-        card.kind === 'countdown'
+        card.kind === 'monogram'
+          ? (() => {
+              const [a, b] = monogramInitials(coupleNames)
+              return {
+                id: 1000 + i,
+                kind: 'text' as const,
+                from: card.fromSec / videoDuration,
+                to: card.toSec / videoDuration,
+                verticalAlign: card.position,
+                titleSize: (card.titleSize || undefined) as HeroChapter['titleSize'],
+                textColorOverride: card.textColor || undefined,
+                cardBgOverride: card.cardBg || undefined,
+                cardFrame: card.cardFrame || undefined,
+                fontId: card.fontId || undefined,
+                textAnimation: card.textAnimation || undefined,
+                monogram: {
+                  layout: card.monogramLayout || 'circle',
+                  a,
+                  b,
+                  accent: card.monogramAccent,
+                  sealColor: card.sealColor,
+                  dateShort: weddingDateShort ?? '',
+                  dateNumeric: invite.weddingDate
+                    ? new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(invite.weddingDate)).replace(/\//g, ' · ')
+                    : '',
+                },
+              }
+            })()
+          : card.kind === 'countdown'
           ? {
               id: 1000 + i,
               kind: 'text' as const,

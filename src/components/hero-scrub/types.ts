@@ -4,7 +4,7 @@
  * (cf. src/components/demo/demoContent.ts, .../faire-part/*Content.ts).
  */
 
-import type { HeroDateLayout } from './heroDecor'
+import type { HeroDateLayout, HeroMonogram } from './heroDecor'
 
 export interface HeroChapter {
   id: number
@@ -98,6 +98,8 @@ export interface HeroChapter {
    * HERO_COUNTDOWN_STYLES, cf. HeroDateBlocks.tsx. Ajouté le 23/09/2026.
    */
   countdown?: { style: string; targetIso: string }
+  /** Monogramme des mariés (logo d'initiales), cf. HeroMonogramBlock. Ajouté le 26/09/2026. */
+  monogram?: HeroMonogram
 }
 
 /**

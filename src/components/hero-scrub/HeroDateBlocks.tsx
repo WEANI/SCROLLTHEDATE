@@ -1,6 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState, type CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
-import { ensureGoogleFamilies, HERO_COUNTDOWN_STYLES, type HeroDateLayout } from './heroDecor'
+import {
+  ensureGoogleFamilies,
+  getHeroFont,
+  HERO_COUNTDOWN_STYLES,
+  HERO_MONOGRAM_LAYOUTS,
+  type HeroDateLayout,
+  type HeroMonogram,
+} from './heroDecor'
 
 /**
  * Blocs "date multi-lignes" et "compte à rebours" du hero — repris du
@@ -68,6 +75,76 @@ export function HeroCountdownBlock({ style, targetIso }: { style: string; target
           </span>
         </span>
       ))}
+    </div>
+  )
+}
+
+/**
+ * Monogramme des mariés — logo d'initiales (cf. HERO_MONOGRAM_LAYOUTS,
+ * heroDecor.ts). Police = `--hs-font-family` du chapitre (fontId du bloc),
+ * lettres = `--hs-text-primary` (couleur du bloc), filets = `m.accent`.
+ */
+export function HeroMonogramBlock({ m, size, fontId }: { m: HeroMonogram; size?: string; fontId?: string }) {
+  const uid = useId().replace(/:/g, '')
+  useEffect(() => {
+    const f = getHeroFont(fontId)
+    if (f) ensureGoogleFamilies(f.googleFontsFamily)
+    ensureGoogleFamilies('Playfair+Display:ital@1&family=Montserrat:wght@300;400')
+  }, [fontId])
+  const A = m.a || 'A'
+  const B = m.b || 'B'
+  const scale = size === 'sm' ? 0.8 : size === 'lg' ? 1.2 : 1
+  const style = {
+    '--ms': scale,
+    '--macc': m.accent || 'var(--hs-accent)',
+    '--mseal': m.sealColor || '#8c1d24',
+  } as CSSProperties
+  let inner
+  switch (m.layout) {
+    case 'double':
+      inner = (<><span>{A}</span><span className="hs-mono-acc">{B}</span></>)
+      break
+    case 'amp':
+      inner = (<><span>{A}</span><em>&amp;</em><span>{B}</span></>)
+      break
+    case 'diamond':
+      inner = (<div><span>{A}</span><i>·</i><span>{B}</span></div>)
+      break
+    case 'overlap':
+      inner = (<><span className="a">{A}</span><span className="b">{B}</span></>)
+      break
+    case 'vline':
+      inner = (<><div className="row"><span>{A}</span><i /><span>{B}</span></div><small>{m.dateNumeric}</small></>)
+      break
+    case 'wax':
+      inner = (<><span>{A}</span><i>&amp;</i><span>{B}</span></>)
+      break
+    case 'frame':
+      inner = (<><span>{A}</span><i>&amp;</i><span>{B}</span></>)
+      break
+    case 'stamp': {
+      const ring = `SAVE THE DATE · ${m.dateShort.toUpperCase()} · `.repeat(2)
+      inner = (
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <defs>
+            <path id={`ring-${uid}`} d="M100,100 m-70,0 a70,70 0 1,1 140,0 a70,70 0 1,1 -140,0" />
+          </defs>
+          <circle cx="100" cy="100" r="92" fill="none" stroke="var(--macc)" strokeWidth="1.2" />
+          <circle cx="100" cy="100" r="50" fill="none" stroke="var(--macc)" strokeWidth="0.8" strokeDasharray="2 3" />
+          <text className="ring"><textPath href={`#ring-${uid}`}>{ring}</textPath></text>
+          <text className="mid" x="100" y="114" textAnchor="middle">{A}&amp;{B}</text>
+        </svg>
+      )
+      break
+    }
+    default:
+      inner = (<><span>{A}</span><i>·</i><span>{B}</span></>)
+  }
+  return (
+    <div className="hs-mono-wrap">
+      <div className={cn('hs-mono', `hs-mono-${HERO_MONOGRAM_LAYOUTS.some((l) => l.id === m.layout) ? m.layout : 'circle'}`)} style={style}>
+        {inner}
+      </div>
     </div>
   )
 }

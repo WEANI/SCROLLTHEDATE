@@ -90,6 +90,8 @@ export interface TemplateHeroChapter {
   /** Format de date choisi (cf. HERO_DATE_FORMATS) + où l'appliquer — résolu côté client par `resolveDateFormatsInChapters` (heroDecor.ts), car la bibliothèque vit dans src/. Ajouté le 26/09/2026 : la page d'aperçu générique doit montrer le format/la mise en page choisis. */
   dateFormatId?: string
   dateSlot?: 'block' | 'sub'
+  /** Monogramme des mariés — cf. HeroChapter.monogram (src/components/hero-scrub/types.ts). Ajouté le 26/09/2026. */
+  monogram?: { layout: string; a: string; b: string; accent: string; sealColor: string; dateShort: string; dateNumeric: string }
 }
 
 const RED_DOOR_THEME: HeroTheme = {
@@ -277,6 +279,28 @@ export interface SaveTheDateTemplateOverride {
    * pilotée par `exampleDate` en texte libre.
    */
   dateFormat: string
+  /**
+   * Bloc « Logo » : monogramme des initiales des mariés (cf.
+   * HERO_MONOGRAM_LAYOUTS, src/components/hero-scrub/heroDecor.ts). Désactivé
+   * par défaut — aucun modèle existant n'est affecté. Les initiales viennent
+   * des prénoms du client (questionnaire), jamais de ces réglages. Ajoutés
+   * le 26/09/2026.
+   */
+  monogramEnabled: boolean
+  monogramFromSec: number
+  monogramToSec: number
+  monogramPosition: HeroVerticalAlign
+  monogramLayout: string
+  monogramFontId: string
+  /** Couleur des lettres / des filets et de l'esperluette / du sceau (mise en page « wax ») — vide = thème. */
+  monogramColor: string
+  monogramAccent: string
+  monogramSealColor: string
+  /** 'sm'/'md'/'lg' — vide = 'md'. */
+  monogramSize: string
+  monogramCardBg: string
+  monogramCardFrame: string
+  monogramTextAnimation: string
 }
 
 // Couple d'exemple repris à l'identique du reste du site (récap /commander,
@@ -458,6 +482,15 @@ function extraCardsToChapters(cards: HeroCustomCard[], duration: number): Templa
   }))
 }
 
+/** Initiales de « Prénom & Prénom » (repli : 2 premiers mots) — même règle que monogramInitials (heroDecor.ts, côté client). */
+function initialsOf(names: string): [string, string] {
+  const up = (s: string | undefined) => (s ? s.trim().charAt(0).toLocaleUpperCase('fr-FR') : '')
+  const parts = names.split(/\s+(?:&|et)\s+/i)
+  if (parts.length >= 2) return [up(parts[0]), up(parts[parts.length - 1])]
+  const words = names.trim().split(/\s+/)
+  return [up(words[0]), up(words[1])]
+}
+
 /** Override "vide" (mêmes valeurs que les défauts codés en dur ci-dessus) — état initial du formulaire admin pour un modèle sans surcharge enregistrée. */
 export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTemplateOverride {
   const duration = templateDurationSec(template)
@@ -509,6 +542,19 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     dateBlockCardFrame: '',
     dateBlockCardBg: '',
     dateFormat: '',
+    monogramEnabled: false,
+    monogramFromSec: Math.round((ch2?.to ?? 1) * duration * 10) / 10,
+    monogramToSec: Math.round(duration * 10) / 10,
+    monogramPosition: 'middle',
+    monogramLayout: 'circle',
+    monogramFontId: 'great-vibes',
+    monogramColor: '',
+    monogramAccent: '',
+    monogramSealColor: '#8c1d24',
+    monogramSize: '',
+    monogramCardBg: 'none',
+    monogramCardFrame: '',
+    monogramTextAnimation: '',
   }
 }
 
@@ -586,6 +632,35 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
               dateFormatId: override.dateFormat || undefined,
               dateSlot: 'block' as const,
             },
+          ]
+        : []),
+      ...(override.monogramEnabled
+        ? [
+            (() => {
+              const [a, b] = initialsOf(override.exampleNames || EXAMPLE_NAMES)
+              return {
+                id: 3,
+                kind: 'text' as const,
+                from: ratio(override.monogramFromSec),
+                to: ratio(override.monogramToSec),
+                verticalAlign: override.monogramPosition,
+                titleSize: (override.monogramSize || undefined) as TemplateHeroChapter['titleSize'],
+                textColorOverride: override.monogramColor || undefined,
+                cardBgOverride: override.monogramCardBg || undefined,
+                cardFrame: override.monogramCardFrame || undefined,
+                fontId: override.monogramFontId || undefined,
+                textAnimation: override.monogramTextAnimation || undefined,
+                monogram: {
+                  layout: override.monogramLayout || 'circle',
+                  a,
+                  b,
+                  accent: override.monogramAccent,
+                  sealColor: override.monogramSealColor,
+                  dateShort: override.exampleDate || EXAMPLE_DATE,
+                  dateNumeric: '12 · 06 · 2027',
+                },
+              }
+            })(),
           ]
         : []),
       ...extraCardsToChapters(override.extraCards ?? [], duration),
@@ -698,6 +773,32 @@ export function buildFulfillmentData(
               cardFrame: o.dateBlockCardFrame || '',
               cardBg: o.dateBlockCardBg || '',
               countdownStyle: '',
+              monogramLayout: '',
+              monogramAccent: '',
+              sealColor: '',
+            },
+          ]
+        : []),
+      ...(o.monogramEnabled
+        ? [
+            {
+              id: 'monogram-block',
+              kind: 'monogram' as const,
+              text: 'Monogramme',
+              fromSec: o.monogramFromSec,
+              toSec: o.monogramToSec,
+              position: o.monogramPosition,
+              textColor: o.monogramColor || '',
+              fontId: o.monogramFontId || '',
+              textAnimation: o.monogramTextAnimation || '',
+              bold: false,
+              titleSize: o.monogramSize || '',
+              cardFrame: o.monogramCardFrame || '',
+              cardBg: o.monogramCardBg || '',
+              countdownStyle: '',
+              monogramLayout: o.monogramLayout || 'circle',
+              monogramAccent: o.monogramAccent || '',
+              sealColor: o.monogramSealColor || '',
             },
           ]
         : []),

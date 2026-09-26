@@ -28,12 +28,16 @@ import {
   HERO_CARD_FRAMES,
   HERO_DATE_FORMATS,
   HERO_COUNTDOWN_STYLES,
+  HERO_MONOGRAM_LAYOUTS,
+  HERO_MONOGRAM_FONT_IDS,
+  HERO_SEAL_COLORS,
+  monogramInitials,
   getHeroFont,
   getHeroDateFormat,
   useGoogleFont,
 } from "@/components/hero-scrub/heroDecor";
 import { HeroOverlayGraphic, HeroFilterLayer, ChapterContent } from "@/components/hero-scrub/HeroScrub";
-import { HeroDateLayoutBlock } from "@/components/hero-scrub/HeroDateBlocks";
+import { HeroDateLayoutBlock, HeroMonogramBlock } from "@/components/hero-scrub/HeroDateBlocks";
 import type { HeroChapter } from "@/components/hero-scrub/types";
 import type { HeroCustomCard } from "@contracts/bespokePalette";
 
@@ -201,7 +205,7 @@ export default function ModeleStdDetail() {
     if (loaded || !template || q.data === undefined) return;
     const saved = parseTemplateOverrides(q.data?.value);
     setAllOverrides(saved);
-    setO(saved[template.slug] ?? defaultOverrideFor(template));
+    setO({ ...defaultOverrideFor(template), ...(saved[template.slug] ?? {}) });
     setLoaded(true);
   }, [q.data, loaded, template]);
 
@@ -215,14 +219,14 @@ export default function ModeleStdDetail() {
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "" },
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "", monogramLayout: "", monogramAccent: "", sealColor: "" },
       ],
     });
   const addCountdownCard = () =>
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "Compte à rebours", position: "middle", kind: "countdown", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "boxes" },
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "Compte à rebours", position: "middle", kind: "countdown", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "boxes", monogramLayout: "", monogramAccent: "", sealColor: "" },
       ],
     });
   const removeExtraCard = (id: string) => update({ extraCards: (o?.extraCards ?? []).filter((c) => c.id !== id) });
@@ -307,6 +311,19 @@ export default function ModeleStdDetail() {
   // affichait toujours "sm" quoi que l'admin choisisse, rendant le réglage
   // "Taille de police" invisible ici (cf. échange du même jour).
   const selectedDateFormat = getHeroDateFormat(o.dateFormat);
+  // Monogramme (bloc « Logo ») — initiales tirées des prénoms d'exemple, comme
+  // pour un vrai client (elles viennent de son questionnaire).
+  const [monoA, monoB] = monogramInitials(o.exampleNames || "");
+  const monoData = {
+    layout: o.monogramLayout || "circle",
+    a: monoA,
+    b: monoB,
+    accent: o.monogramAccent,
+    sealColor: o.monogramSealColor,
+    dateShort: o.exampleDate || "12 juin 2027",
+    dateNumeric: "12 · 06 · 2027",
+  };
+  const monoFont = getHeroFont(o.monogramFontId);
   const chapter1FramePreview: HeroChapter = {
     id: 0,
     kind: "text",
@@ -776,6 +793,165 @@ export default function ModeleStdDetail() {
                 </>
               )}
             </div>
+          </div>
+        </Panel>
+
+        {/* ---- Logo — monogramme des initiales des mariés (échange du 26/09/2026) ---- */}
+        <Panel>
+          <PanelTitle
+            title="Logo — monogramme des mariés"
+            hint="Les initiales des mariés sous forme de logo. Elles viennent automatiquement des prénoms du client : vous ne réglez que le style."
+          />
+          <div className="flex flex-col gap-4 p-6">
+            <label className="flex items-center gap-2 text-[12.5px] font-medium text-neutral-500">
+              <input
+                type="checkbox"
+                checked={o.monogramEnabled}
+                onChange={(e) => update({ monogramEnabled: e.target.checked })}
+                className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
+              />
+              Logo activé
+            </label>
+            {!o.monogramEnabled ? (
+              <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
+                Désactivé — aucun logo n'apparaît sur ce modèle.
+              </p>
+            ) : (
+              <>
+                <div>
+                  <p className="mb-2 text-xs font-medium text-neutral-500">Mise en page</p>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
+                    {HERO_MONOGRAM_LAYOUTS.map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        onClick={() => update({ monogramLayout: l.id })}
+                        title={l.desc}
+                        className={cn(
+                          "flex flex-col gap-1.5 rounded-xl border p-1.5 text-center transition-colors",
+                          (o.monogramLayout || "circle") === l.id
+                            ? "border-terracotta-500 bg-terracotta-500/5"
+                            : "border-neutral-200 hover:border-terracotta-300",
+                        )}
+                      >
+                        <div
+                          className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950"
+                          style={{ aspectRatio: "1", containerType: "inline-size", ...themeVars, ...(monoFont ? { "--hs-font-family": monoFont.fontFamily } : null) } as CSSProperties}
+                        >
+                          <HeroMonogramBlock m={{ ...monoData, layout: l.id }} size="sm" fontId={o.monogramFontId} />
+                        </div>
+                        <span className="text-[10.5px] font-medium leading-tight text-ink">{l.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-5">
+                  <TimecodeField
+                    label="Apparaît à (s)"
+                    value={o.monogramFromSec}
+                    max={duration}
+                    onChange={(v) => update({ monogramFromSec: v })}
+                    onCaler={() => update({ monogramFromSec: Math.round(currentTime * 10) / 10 })}
+                  />
+                  <TimecodeField
+                    label="Disparaît à (s)"
+                    value={o.monogramToSec}
+                    max={duration}
+                    onChange={(v) => update({ monogramToSec: v })}
+                    onCaler={() => update({ monogramToSec: Math.round(currentTime * 10) / 10 })}
+                  />
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Position verticale
+                    <select value={o.monogramPosition} onChange={(e) => update({ monogramPosition: e.target.value as SaveTheDateTemplateOverride["monogramPosition"] })} className={inputClass}>
+                      <option value="top">Haut</option>
+                      <option value="middle">Milieu</option>
+                      <option value="bottom">Bas</option>
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Police des initiales
+                    <select value={o.monogramFontId} onChange={(e) => update({ monogramFontId: e.target.value })} className={inputClass}>
+                      {HERO_MONOGRAM_FONT_IDS.map((id) => {
+                        const f = getHeroFont(id);
+                        return f ? <option key={id} value={id}>{f.label}</option> : null;
+                      })}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Taille
+                    <select value={o.monogramSize} onChange={(e) => update({ monogramSize: e.target.value })} className={inputClass}>
+                      <option value="">Moyenne (défaut)</option>
+                      <option value="sm">Petite</option>
+                      <option value="md">Moyenne</option>
+                      <option value="lg">Grande</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <ColorField label="Couleur des lettres" hint="Vide = couleur du thème" value={o.monogramColor} onChange={(v) => update({ monogramColor: v })} />
+                  <ColorField label="Couleur des filets & de l'esperluette" hint="Vide = accent du thème" value={o.monogramAccent} onChange={(v) => update({ monogramAccent: v })} />
+                  {(o.monogramLayout || "circle") === "wax" && (
+                    <div className="flex flex-col gap-1.5">
+                      <ColorField label="Couleur du sceau" hint="Vide = bordeaux" value={o.monogramSealColor} onChange={(v) => update({ monogramSealColor: v })} />
+                      <div className="flex flex-wrap gap-1.5">
+                        {HERO_SEAL_COLORS.map((c) => (
+                          <button
+                            key={c.hex}
+                            type="button"
+                            title={c.label}
+                            aria-label={c.label}
+                            onClick={() => update({ monogramSealColor: c.hex })}
+                            className={cn(
+                              "h-6 w-6 rounded-full border-2",
+                              o.monogramSealColor.toLowerCase() === c.hex ? "border-ink" : "border-white ring-1 ring-neutral-200",
+                            )}
+                            style={{ background: c.hex }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <ColorField label="Fond de carte" hint="« Aucun fond » = logo seul" value={o.monogramCardBg} onChange={(v) => update({ monogramCardBg: v })} noneOption />
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Cadre (décor)
+                    <select value={o.monogramCardFrame} onChange={(e) => update({ monogramCardFrame: e.target.value })} className={inputClass}>
+                      <option value="">Aucun</option>
+                      {HERO_CARD_FRAMES.map((f) => (
+                        <option key={f.id} value={f.id}>{f.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Animation — ce bloc
+                    <AnimSelect value={o.monogramTextAnimation} onChange={(v) => update({ monogramTextAnimation: v })} defaultLabel="Animation du hero" />
+                  </label>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium text-neutral-500">Aperçu (initiales des prénoms d'exemple : {monoA} &amp; {monoB})</span>
+                  <PreviewStage themeVars={themeVars}>
+                    <ChapterContent
+                      chapter={{
+                        id: 4000,
+                        kind: "text",
+                        from: 0,
+                        to: 1,
+                        titleSize: (o.monogramSize || undefined) as HeroChapter["titleSize"],
+                        textColorOverride: o.monogramColor || undefined,
+                        cardBgOverride: o.monogramCardBg || undefined,
+                        cardFrame: o.monogramCardFrame || undefined,
+                        fontId: o.monogramFontId || undefined,
+                        monogram: monoData,
+                      }}
+                      textAnimation={o.monogramTextAnimation || o.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", (o.monogramTextAnimation || o.textAnimation) && `hs-anim-${o.monogramTextAnimation || o.textAnimation}`)}
+                    />
+                  </PreviewStage>
+                </div>
+              </>
+            )}
           </div>
         </Panel>
 
