@@ -2,11 +2,12 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronsUpDown, Check } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
 import { useLanguage } from '@/i18n/LanguageContext'
-import { projectStatusLabel, productLabel } from '@/components/espace/utils'
+import { projectStatusLabel, productLabel, productPath } from '@/components/espace/utils'
 
 /**
  * Sélecteur de projet — l'espace client supposait un seul projet actif par
@@ -37,6 +38,8 @@ interface ProjectSelectionValue {
   setProjectId: (id: number) => void
   projects: ProjectSummary[]
   current: ProjectSummary | undefined
+  /** Liste des projets pas encore chargée — distingue « aucun projet » de « pas encore su ». */
+  isLoading: boolean
 }
 
 const ProjectSelectionContext = createContext<ProjectSelectionValue>({
@@ -44,6 +47,7 @@ const ProjectSelectionContext = createContext<ProjectSelectionValue>({
   setProjectId: () => {},
   projects: [],
   current: undefined,
+  isLoading: false,
 })
 
 function storageKey(userId: number) {
@@ -52,7 +56,7 @@ function storageKey(userId: number) {
 
 export function ProjectSelectionProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth()
-  const { data } = trpc.projects.myProjects.useQuery(undefined, {
+  const { data, isLoading } = trpc.projects.myProjects.useQuery(undefined, {
     enabled: isAuthenticated,
     staleTime: 60_000,
   })
@@ -104,8 +108,9 @@ export function ProjectSelectionProvider({ children }: { children: ReactNode }) 
       setProjectId,
       projects,
       current: projects.find((p) => p.id === selected),
+      isLoading,
     }),
-    [selected, setProjectId, projects],
+    [selected, setProjectId, projects, isLoading],
   )
 
   return <ProjectSelectionContext.Provider value={value}>{children}</ProjectSelectionContext.Provider>
@@ -122,39 +127,55 @@ function projectLabel(p: ProjectSummary, t: (key: string) => string) {
 }
 
 /**
- * Sélecteur affiché dans la sidebar — masqué dès qu'un compte n'a qu'un
- * seul projet (l'immense majorité des vrais clients) : pas de contrôle à
- * expliquer pour un choix qui n'existe pas.
+ * Carte « projet sélectionné » en haut de la sidebar — toujours visible (même
+ * avec un seul projet) et volontairement très marquée (fond terracotta) : le
+ * client doit voir d'un coup d'œil sur quel projet il travaille (cf. échange
+ * du 26/09/2026). À partir de 2 projets, la carte ouvre la liste de choix ;
+ * choisir un projet depuis une page produit emmène sur la page de SON produit.
  */
 export function ProjectSwitcher() {
   const { t } = useLanguage()
   const { projectId, setProjectId, projects, current } = useSelectedProject()
   const [open, setOpen] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
 
-  if (projects.length < 2) return null
+  if (!current) return null
+  const canSwitch = projects.length > 1
+
+  const card = (
+    <>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">
+          {t('espace.projectSwitcher.selected')}
+        </p>
+        <p className="mt-0.5 truncate text-[15px] font-semibold text-white">{current.coupleNames ?? current.slug}</p>
+        <p className="mt-0.5 truncate text-[11.5px] text-white/85">
+          {current.product ? productLabel(current.product, t) : ''} · {projectStatusLabel(current.status, t)}
+        </p>
+      </div>
+      {canSwitch && <ChevronsUpDown size={16} className="shrink-0 text-white/80" />}
+    </>
+  )
 
   return (
-    <div className="relative px-3 pb-3">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-terracotta-300"
-      >
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-semibold text-ink">
-            {current ? projectLabel(current, t) : t('espace.projectSwitcher.choose')}
-          </p>
-          {current && (
-            <p className="truncate text-[11px] text-neutral-500">
-              {projectStatusLabel(current.status, t)}
-            </p>
-          )}
+    <div className="relative px-3 pb-1">
+      {canSwitch ? (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-center gap-2 rounded-2xl bg-terracotta-500 px-4 py-3 text-left shadow-[0_6px_18px_rgba(200,90,60,0.28)] transition-colors hover:bg-terracotta-400"
+        >
+          {card}
+        </button>
+      ) : (
+        <div className="flex w-full items-center gap-2 rounded-2xl bg-terracotta-500 px-4 py-3 shadow-[0_6px_18px_rgba(200,90,60,0.28)]">
+          {card}
         </div>
-        <ChevronsUpDown size={15} className="shrink-0 text-neutral-500" />
-      </button>
+      )}
 
       <AnimatePresence>
-        {open && (
+        {open && canSwitch && (
           <>
             <button
               type="button"
@@ -176,6 +197,9 @@ export function ProjectSwitcher() {
                   onClick={() => {
                     setProjectId(p.id)
                     setOpen(false)
+                    if (/^\/espace\/(save-the-date|faire-part)/.test(location.pathname)) {
+                      navigate(`${productPath(p.product)}/apercu`)
+                    }
                   }}
                   className={cn(
                     'flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-neutral-100',
@@ -184,9 +208,7 @@ export function ProjectSwitcher() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-medium text-ink">{projectLabel(p, t)}</p>
-                    <p className="truncate text-[11px] text-neutral-500">
-                      {projectStatusLabel(p.status, t)}
-                    </p>
+                    <p className="truncate text-[11px] text-neutral-500">{projectStatusLabel(p.status, t)}</p>
                   </div>
                   {p.id === projectId && <Check size={14} className="shrink-0 text-terracotta-500" />}
                 </button>

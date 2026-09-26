@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { useProductT } from '@/components/espace/useProductT'
 import {
   EmptyState,
   ErrorState,
@@ -117,6 +118,7 @@ function ProjectStepper({ steps }: { steps: Step[] }) {
 
 export default function TableauDeBord() {
   const { t, lang } = useLanguage()
+  const tp = useProductT()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   // `enabled: isAuthenticated` — sans ça, ces requêtes partent dès le
   // montage, avant que la session Supabase ne soit confirmée (juste après un
@@ -228,12 +230,12 @@ export default function TableauDeBord() {
       }
     if (rank >= 5)
       return {
-        text: t('espace.tableauDeBord.nextAction5Text'),
-        cta: t('espace.tableauDeBord.nextAction5Cta'),
+        text: tp('espace.tableauDeBord.nextAction5Text'),
+        cta: tp('espace.tableauDeBord.nextAction5Cta'),
         to: '/espace/commandes',
       }
     return null
-  }, [rank, photoCount, t])
+  }, [rank, photoCount, t, tp])
 
   // Checklist d'onboarding
   const checklist = useMemo(
@@ -281,7 +283,7 @@ export default function TableauDeBord() {
             {t('espace.tableauDeBord.greetingPrefix')} <span className="italic text-terracotta-500">{names || t('espace.tableauDeBord.greetingFallback')}</span>
           </motion.h2>
           <p className="mt-2 text-[15px] text-neutral-500">
-            {t('espace.tableauDeBord.subtitle')}
+            {tp('espace.tableauDeBord.subtitle')}
           </p>
         </div>
         {project?.weddingDate && (
@@ -425,7 +427,7 @@ export default function TableauDeBord() {
                   key: 'invitation',
                   to: rank >= 5 ? `/faire-part/${project.slug}` : '#',
                   icon: Sparkles,
-                  title: t('espace.tableauDeBord.cardInvitationTitle'),
+                  title: tp('espace.tableauDeBord.cardInvitationTitle'),
                   desc: rank >= 5 ? t('espace.tableauDeBord.cardInvitationLiveDesc') : t('espace.tableauDeBord.cardInvitationLockedDesc'),
                   disabled: rank < 5,
                 },

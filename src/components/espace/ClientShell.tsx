@@ -4,17 +4,14 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
   ChevronRight,
-  ClipboardList,
   Clapperboard,
-  Images,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu,
   MessageCircle,
   Settings,
   ShoppingBag,
-  Sparkles,
-  Users,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -53,25 +50,24 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'espace.shell.navDashboard', crumbKey: 'espace.shell.crumbHome', to: '/espace', icon: LayoutDashboard, end: true },
-  { labelKey: 'espace.shell.navQuestionnaire', crumbKey: 'espace.shell.navQuestionnaire', to: '/espace/questionnaire', icon: ClipboardList },
-  { labelKey: 'espace.shell.navMedia', crumbKey: 'espace.shell.navMedia', to: '/espace/questionnaire#medias', icon: Images },
-  { labelKey: 'espace.shell.navProject', crumbKey: 'espace.shell.navProject', to: '/espace/projet', icon: Clapperboard },
-  // Save the Date "sur un modèle" uniquement (cf. échange du 21/09/2026) —
-  // rien à personnaliser ici pour un faire-part bespoke (scénarios/montage
-  // sur mesure, déjà couvert par "Projet & scénarios" ci-dessus).
-  { labelKey: 'espace.shell.navPersonalization', crumbKey: 'espace.shell.navPersonalization', to: '/espace/personnalisation', icon: Sparkles, product: 'SAVE_THE_DATE' },
+  // Pages produit à onglets (cf. ProductSpace, échange du 26/09/2026) —
+  // grisées + « Commander » si le compte n'a pas acheté ce produit.
+  { labelKey: 'espace.shell.navSaveTheDate', crumbKey: 'espace.shell.navSaveTheDate', to: '/espace/save-the-date', icon: Clapperboard, product: 'SAVE_THE_DATE' },
+  { labelKey: 'espace.shell.navFairePart', crumbKey: 'espace.shell.navFairePart', to: '/espace/faire-part', icon: Mail, product: 'FAIRE_PART' },
   { labelKey: 'espace.shell.navOrders', crumbKey: 'espace.shell.navOrders', to: '/espace/commandes', icon: ShoppingBag },
-  // Faire-part uniquement (cf. échange du 23/09/2026) — le Save the Date
-  // est une page hero + footer sans formulaire de réponse (cf.
-  // FairePart.tsx), rien à suivre ici pour ce produit.
-  { labelKey: 'espace.shell.navRsvp', crumbKey: 'espace.shell.navRsvp', to: '/espace/rsvp', icon: Users, product: 'FAIRE_PART' },
   { labelKey: 'espace.shell.navMessages', crumbKey: 'espace.shell.navMessages', to: '/espace/messages', icon: MessageCircle },
   { labelKey: 'espace.shell.navSettings', crumbKey: 'espace.shell.navSettings', to: '/espace/parametres', icon: Settings },
 ]
 
+/** Page publique de commande de chaque produit — cible du bouton « Commander » d'une section grisée. */
+const ORDER_PATH = { SAVE_THE_DATE: '/save-the-date-digital', FAIRE_PART: '/faire-part-digital' } as const
+
 /** Segment de chemin → clé de libellé du fil d'Ariane (repli : le segment brut). */
 const CRUMB_KEY_BY_PATH: Record<string, string> = {
   espace: 'espace.shell.crumbHome',
+  'save-the-date': 'espace.shell.navSaveTheDate',
+  'faire-part': 'espace.shell.navFairePart',
+  apercu: 'espace.std.tabVideo',
   questionnaire: 'espace.shell.navQuestionnaire',
   projet: 'espace.shell.navProject',
   personnalisation: 'espace.shell.navPersonalization',
@@ -214,7 +210,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useLanguage()
   const location = useLocation()
   const { user, logout, isAuthenticated } = useAuth()
-  const { projectId } = useSelectedProject()
+  const { projectId, projects } = useSelectedProject()
   // `enabled: isAuthenticated` — capital ici : ce composant est monté sur
   // TOUTES les pages /espace/*, et sans cette garde ses requêtes (non
   // désactivées, elles) partagent leur clé de cache react-query avec les
@@ -249,7 +245,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </Link>
       </div>
 
-      {/* Sélecteur de projet — masqué si le compte n'en a qu'un */}
+      {/* Projet sélectionné — carte marquée, toujours visible */}
       <div className="pt-3">
         <ProjectSwitcher />
       </div>
@@ -279,11 +275,29 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             // l'espace client plus intuitif") — grisé + badge, toujours
             // cliquable : la page cible explique déjà la situation
             // ("réservé aux commandes Save the Date").
-            const locked = !!item.product && project?.product !== item.product
+            const locked = !!item.product && !projects.some((p) => p.product === item.product)
             const target = item.to.split('#')[0]
             const isActive = item.end
               ? location.pathname === target
               : location.pathname.startsWith(target)
+            if (locked && item.product) {
+              // Produit non acheté : ligne grisée + « Commander » vers la page
+              // publique de commande (vente additionnelle, cf. échange du 26/09/2026).
+              return (
+                <li key={item.labelKey}>
+                  <Link
+                    to={ORDER_PATH[item.product]}
+                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium text-neutral-500/80 transition-colors hover:bg-neutral-100"
+                  >
+                    <Icon size={18} className="text-neutral-400" />
+                    {t(item.labelKey)}
+                    <span className="ml-auto rounded-full bg-terracotta-500/10 px-2 py-0.5 text-[10px] font-semibold text-terracotta-500">
+                      {t('espace.shell.navOrderBadge')}
+                    </span>
+                  </Link>
+                </li>
+              )
+            }
             return (
               <li key={item.labelKey}>
                 <NavLink
@@ -292,21 +306,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   onClick={onNavigate}
                   className={cn(
                     'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium transition-colors',
-                    locked
-                      ? 'text-neutral-500/70 hover:bg-neutral-100 hover:text-neutral-500'
-                      : isActive
+                    isActive
                         ? 'bg-terracotta-500/10 text-terracotta-500'
                         : 'text-ink/70 hover:bg-neutral-100 hover:text-ink',
                   )}
                 >
-                  <Icon size={18} className={locked ? 'text-neutral-400' : isActive ? 'text-terracotta-500' : 'text-neutral-500 group-hover:text-ink'} />
+                  <Icon size={18} className={isActive ? 'text-terracotta-500' : 'text-neutral-500 group-hover:text-ink'} />
                   {t(item.labelKey)}
-                  {locked && (
-                    <span className="ml-auto rounded-full bg-neutral-200/70 px-2 py-0.5 text-[10px] font-medium text-neutral-500">
-                      {t('espace.shell.navLockedBadge')}
-                    </span>
-                  )}
-                  {!locked && item.labelKey === 'espace.shell.navMessages' && unreadMessages > 0 && (
+                  {item.labelKey === 'espace.shell.navMessages' && unreadMessages > 0 && (
                     <motion.span
                       animate={{ scale: [1, 1.15, 1] }}
                       transition={{ duration: 1.6, repeat: Infinity }}

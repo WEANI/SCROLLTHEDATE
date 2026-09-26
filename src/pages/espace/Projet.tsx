@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
+import { useProductT } from '@/components/espace/useProductT'
 import { useLanguage } from '@/i18n/LanguageContext'
 import {
   ErrorState,
@@ -114,6 +115,7 @@ const STATUS_RANK: Record<string, number> = {
 
 export default function Projet() {
   const { t, lang } = useLanguage()
+  const tp = useProductT()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { hash } = useLocation()
   const utils = trpc.useUtils()
@@ -281,7 +283,7 @@ export default function Projet() {
                   <li className="relative">
                     <span className="absolute -left-[31px] top-1 h-4 w-4 rounded-full border-2 border-dashed border-neutral-200 bg-white" />
                     <p className="text-[13.5px] text-neutral-500">
-                      {t('espace.projet.timelineUpcoming')}
+                      {tp('espace.projet.timelineUpcoming')}
                     </p>
                   </li>
                 )}
@@ -482,18 +484,18 @@ export default function Projet() {
 
           {/* Bloc 3 — Faire-part provisoire */}
           <SectionCard id="video">
-            <h3 className="font-display mb-1 text-2xl font-medium italic text-ink">{t('espace.projet.videoTitle')}</h3>
+            <h3 className="font-display mb-1 text-2xl font-medium italic text-ink">{tp('espace.projet.videoTitle')}</h3>
             <p className="mb-6 text-[13.5px] text-neutral-500">
-              {t('espace.projet.videoSubtitle')}
+              {tp('espace.projet.videoSubtitle')}
             </p>
             {rank < 4 && !currentVideo ? (
-              <LockedBlock label={t('espace.projet.lockedVideo')} />
+              <LockedBlock label={tp('espace.projet.lockedVideo')} />
             ) : !currentVideo ? (
               <div className="rounded-xl border border-dashed border-neutral-200 px-6 py-10 text-center">
                 <Clapperboard className="mx-auto text-terracotta-500" size={22} />
                 <p className="mt-3 text-[14px] font-medium text-ink">{t('espace.projet.editingInProgressTitle')}</p>
                 <p className="mt-1 text-[13px] text-neutral-500">
-                  {t('espace.projet.editingInProgressDesc')}
+                  {tp('espace.projet.editingInProgressDesc')}
                 </p>
               </div>
             ) : (
@@ -506,8 +508,8 @@ export default function Projet() {
                   <div className="min-w-0 flex-1">
                     <p className="text-[14px] font-medium text-white/90">
                       {currentVideo.status === 'approved' || currentVideo.status === 'final'
-                        ? t('espace.projet.videoApprovedTitle')
-                        : t('espace.projet.videoReadyTitle')}
+                        ? tp('espace.projet.videoApprovedTitle')
+                        : tp('espace.projet.videoReadyTitle')}
                     </p>
                     <p className="mt-0.5 text-[12px] text-white/60">
                       {currentVideo.status === 'approved' || currentVideo.status === 'final'
@@ -521,7 +523,7 @@ export default function Projet() {
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-[13px] font-semibold text-anthracite-900 transition-all hover:-translate-y-0.5 active:scale-[0.97]"
                   >
-                    {t('espace.projet.viewInvitation')} <ExternalLink size={13} />
+                    {tp('espace.projet.viewInvitation')} <ExternalLink size={13} />
                   </a>
                 </div>
 
@@ -588,7 +590,7 @@ export default function Projet() {
           {/* Bloc 4 — Livraison */}
           <SectionCard id="livraison">
             <h3 className="font-display mb-6 text-2xl font-medium italic text-ink">
-              {rank >= 5 ? t('espace.projet.deliveryLiveTitle') : t('espace.projet.deliveryTitle')}
+              {rank >= 5 ? tp('espace.projet.deliveryLiveTitle') : t('espace.projet.deliveryTitle')}
             </h3>
             {rank < 5 ? (
               <LockedBlock label={t('espace.projet.lockedDelivery')} />
@@ -610,7 +612,7 @@ export default function Projet() {
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-full bg-anthracite-800 px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-anthracite-700"
                   >
-                    {t('espace.projet.openInvitation')} <ExternalLink size={13} />
+                    {tp('espace.projet.openInvitation')} <ExternalLink size={13} />
                   </a>
                 </div>
 
@@ -701,7 +703,7 @@ export default function Projet() {
       <ConfirmModal
         open={confirmApprove}
         title={t('espace.projet.modal2Title')}
-        body={t('espace.projet.modal2Body')}
+        body={tp('espace.projet.modal2Body')}
         confirmLabel={t('espace.projet.modal2Confirm')}
         pending={approveMutation.isPending}
         onClose={() => setConfirmApprove(false)}

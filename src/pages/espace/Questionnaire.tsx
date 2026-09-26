@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { useProductT } from '@/components/espace/useProductT'
 import {
   ErrorState,
   Kicker,
@@ -70,12 +71,12 @@ interface Question {
 type Answers = Record<string, unknown>
 type T = (key: string) => string
 
-function buildStepTitles(t: T): Record<number, { title: string; sub: string }> {
+function buildStepTitles(t: T, tp: T): Record<number, { title: string; sub: string }> {
   return {
     1: { title: t('espace.questionnaire.step1Title'), sub: t('espace.questionnaire.step1Sub') },
     2: { title: t('espace.questionnaire.step2Title'), sub: t('espace.questionnaire.step2Sub') },
-    3: { title: t('espace.questionnaire.step3Title'), sub: t('espace.questionnaire.step3Sub') },
-    4: { title: t('espace.questionnaire.step4Title'), sub: t('espace.questionnaire.step4Sub') },
+    3: { title: t('espace.questionnaire.step3Title'), sub: tp('espace.questionnaire.step3Sub') },
+    4: { title: t('espace.questionnaire.step4Title'), sub: tp('espace.questionnaire.step4Sub') },
   }
 }
 
@@ -126,7 +127,7 @@ function FieldShell({
   question: Question
   children: React.ReactNode
 }) {
-  const { t } = useLanguage()
+  const tp = useProductT()
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -139,7 +140,7 @@ function FieldShell({
         {question.required && <span className="text-terracotta-500">*</span>}
         {question.showOnInvite && (
           <span className="rounded-full bg-terracotta-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-terracotta-500">
-            {t('espace.questionnaire.showOnInviteBadge')}
+            {tp('espace.questionnaire.showOnInviteBadge')}
           </span>
         )}
       </label>
@@ -834,6 +835,7 @@ function QuestionField({
 
 export default function Questionnaire() {
   const { t, lang } = useLanguage()
+  const tp = useProductT()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const location = useLocation()
   const utils = trpc.useUtils()
@@ -1134,7 +1136,7 @@ export default function Questionnaire() {
   }
 
   const noProject = notFound
-  const stepTitles = buildStepTitles(t)
+  const stepTitles = buildStepTitles(t, tp)
 
   return (
     <div className="flex flex-col gap-8">

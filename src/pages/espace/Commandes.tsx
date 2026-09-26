@@ -14,6 +14,7 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
+import { useProductT } from '@/components/espace/useProductT'
 import { useLanguage } from '@/i18n/LanguageContext'
 import {
   ErrorState,
@@ -229,6 +230,7 @@ function CountUp({ value }: { value: number }) {
 
 export default function Commandes() {
   const { t, tArray, lang } = useLanguage()
+  const tp = useProductT()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   // `enabled: isAuthenticated` — cf. TableauDeBord.tsx pour l'explication :
   // évite de lancer ces requêtes avant que la session ne soit confirmée
@@ -312,7 +314,7 @@ export default function Commandes() {
         <Kicker>{t('espace.commandes.kicker')}</Kicker>
         <h2 className="font-display mt-1 text-3xl font-medium tracking-[-0.01em] text-ink">{t('espace.commandes.title')}</h2>
         <p className="mt-1.5 text-[14px] text-neutral-500">
-          {t('espace.commandes.subtitle')}
+          {tp('espace.commandes.subtitle')}
         </p>
       </div>
 

@@ -15,6 +15,7 @@ import {
 import VoiceRecorder from '@/components/espace/VoiceRecorder'
 import type { VoiceNoteResult } from '@/components/espace/VoiceRecorder'
 import { useSelectedProject } from '@/components/espace/ProjectSelection'
+import { useProductT } from '@/components/espace/useProductT'
 
 // ---------------------------------------------------------------------------
 // Groupage par jour
@@ -38,6 +39,7 @@ const EMOJIS = ['❤️', '😂', '🥂', '🎉', '😘', '🙏']
 
 export default function Messages() {
   const { t, lang } = useLanguage()
+  const tp = useProductT()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const utils = trpc.useUtils()
   const { projectId } = useSelectedProject()
@@ -164,7 +166,7 @@ export default function Messages() {
         </div>
         {project && (
           <span className="hidden rounded-full bg-anthracite-800 px-3.5 py-1.5 text-[11.5px] font-medium text-white sm:block">
-            {t('espace.messages.projectBadgePrefix')} {names}
+            {tp('espace.messages.projectBadgePrefix')} {names}
           </span>
         )}
       </div>

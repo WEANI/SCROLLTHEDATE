@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation, useNavigationType } from 'react-router'
+import { Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router'
 import { useLayoutEffect } from 'react'
 import Layout from '@/components/Layout'
 import Home from '@/pages/Home'
@@ -31,6 +31,7 @@ import CommandesClient from '@/pages/espace/Commandes'
 import MessagesClient from '@/pages/espace/Messages'
 import ParametresClient from '@/pages/espace/Parametres'
 import RsvpClient from '@/pages/espace/Rsvp'
+import ProductSpace, { LegacyRedirect } from '@/pages/espace/ProductSpace'
 import AdminShell from '@/components/admin/AdminShell'
 import AdminDashboard from '@/pages/admin/Dashboard'
 import AdminCommandes from '@/pages/admin/Commandes'
@@ -132,12 +133,28 @@ export default function App() {
         {/* Espace client — shell clair dédié (hors Layout public) */}
         <Route path="/espace" element={<ClientShell />}>
           <Route index element={<TableauDeBord />} />
-          <Route path="questionnaire" element={<Questionnaire />} />
-          <Route path="projet" element={<Projet />} />
-          <Route path="personnalisation" element={<PersonnalisationClient />} />
+          {/* Pages produit à onglets (cf. ProductSpace) */}
+          <Route path="save-the-date" element={<ProductSpace product="SAVE_THE_DATE" />}>
+            <Route index element={<Navigate to="apercu" replace />} />
+            <Route path="apercu" element={<Projet />} />
+            <Route path="personnalisation" element={<PersonnalisationClient />} />
+            <Route path="questionnaire" element={<Questionnaire />} />
+            <Route path="*" element={<Navigate to="apercu" replace />} />
+          </Route>
+          <Route path="faire-part" element={<ProductSpace product="FAIRE_PART" />}>
+            <Route index element={<Navigate to="apercu" replace />} />
+            <Route path="apercu" element={<Projet />} />
+            <Route path="questionnaire" element={<Questionnaire />} />
+            <Route path="rsvp" element={<RsvpClient />} />
+            <Route path="*" element={<Navigate to="apercu" replace />} />
+          </Route>
+          {/* Anciennes URL → onglet équivalent de la page produit */}
+          <Route path="projet" element={<LegacyRedirect tab="apercu" />} />
+          <Route path="questionnaire" element={<LegacyRedirect tab="questionnaire" />} />
+          <Route path="personnalisation" element={<LegacyRedirect tab="personnalisation" />} />
+          <Route path="rsvp" element={<LegacyRedirect tab="rsvp" />} />
           <Route path="commandes" element={<CommandesClient />} />
           <Route path="messages" element={<MessagesClient />} />
-          <Route path="rsvp" element={<RsvpClient />} />
           <Route path="parametres" element={<ParametresClient />} />
         </Route>
 

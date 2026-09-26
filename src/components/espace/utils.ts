@@ -216,3 +216,8 @@ export function notificationHref(type: string): string | null {
       return null
   }
 }
+
+/** Chemin de la page produit d'un projet — cf. ProductSpace (pages/espace). */
+export function productPath(product: string | null): string {
+  return product === 'SAVE_THE_DATE' ? '/espace/save-the-date' : '/espace/faire-part'
+}
