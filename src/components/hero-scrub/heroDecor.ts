@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import type { TemplateHeroChapter } from '@contracts/saveTheDateTemplates'
+import type { HeroChapter } from './types'
 
 /**
  * Bibliothèque de décors du hero — piochée dans les 2 fichiers de référence
@@ -590,6 +592,28 @@ export const HERO_COUNTDOWN_STYLES: { id: string; label: string; fonts: string }
   { id: 'serif', label: 'Éditorial, sans secondes', fonts: 'Playfair+Display:ital@1' },
   { id: 'minimal', label: 'Ligne fine, mariage/luxe', fonts: 'JetBrains+Mono:wght@300' },
 ]
+
+/**
+ * Applique le format de date choisi (`dateFormatId`, posé par applyOverride)
+ * aux chapitres d'un modèle pour la page d'aperçu générique — date d'exemple
+ * fixe (12 juin 2027). Bloc "date" : mise en page multi-lignes si le format
+ * en a une, sinon texte formaté ; sous les prénoms : texte formaté (une
+ * ligne). Sans `dateFormatId`, chapitre inchangé (date d'exemple libre).
+ */
+export function resolveDateFormatsInChapters(chapters: TemplateHeroChapter[]): HeroChapter[] {
+  const example = new Date(2027, 5, 12)
+  return chapters.map((ch) => {
+    const fmt = getHeroDateFormat(ch.dateFormatId)
+    if (!fmt) return ch as HeroChapter
+    if (ch.dateSlot === 'block') {
+      return fmt.layout
+        ? ({ ...ch, segments: undefined, dateLayout: { id: fmt.id, fonts: fmt.layout.fonts, lines: fmt.layout.lines(example) } } as HeroChapter)
+        : ({ ...ch, segments: [{ text: fmt.format(example) }] } as HeroChapter)
+    }
+    if (ch.dateSlot === 'sub' && ch.subLines) return { ...ch, subLines: [fmt.format(example)] } as HeroChapter
+    return ch as HeroChapter
+  })
+}
 
 /** Charge (une seule fois par jeu de familles) des polices Google Fonts — cf. HeroDateBlocks.tsx. */
 export function ensureGoogleFamilies(families: string) {

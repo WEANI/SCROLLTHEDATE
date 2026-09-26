@@ -87,6 +87,9 @@ export interface TemplateHeroChapter {
   verticalAlign?: HeroVerticalAlign
   /** cf. doc de HeroChapter.countdown (src/components/hero-scrub/types.ts) — ajouté le 23/09/2026. */
   countdown?: { style: string; targetIso: string }
+  /** Format de date choisi (cf. HERO_DATE_FORMATS) + où l'appliquer — résolu côté client par `resolveDateFormatsInChapters` (heroDecor.ts), car la bibliothèque vit dans src/. Ajouté le 26/09/2026 : la page d'aperçu générique doit montrer le format/la mise en page choisis. */
+  dateFormatId?: string
+  dateSlot?: 'block' | 'sub'
 }
 
 const RED_DOOR_THEME: HeroTheme = {
@@ -561,6 +564,8 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         textAnimation: override.chapter2TextAnimation || undefined,
         bold: override.chapter2Bold,
         titleSize: (override.chapter2TitleSize || undefined) as TemplateHeroChapter['titleSize'],
+        dateFormatId: override.dateFormat || undefined,
+        dateSlot: 'sub',
       },
       ...(override.dateBlockEnabled
         ? [
@@ -578,6 +583,8 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
               fontId: override.dateBlockFontId || undefined,
               textAnimation: override.dateBlockTextAnimation || undefined,
               bold: override.dateBlockBold,
+              dateFormatId: override.dateFormat || undefined,
+              dateSlot: 'block' as const,
             },
           ]
         : []),

@@ -1103,7 +1103,7 @@ export default function ModeleStdDetail() {
                 )}
               </PreviewStage>
               <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
-                S'applique à la vraie date du client sur une commande passée sur ce modèle (sous les prénoms, ou dans le 3e bloc si activé ; les mises en page multi-lignes ne s'affichent que dans le 3e bloc, sous les prénoms elles retombent sur une ligne) — pas à cette page d'aperçu, qui garde la date d'exemple tapée plus haut.
+                S'applique à la vraie date du client sur une commande passée sur ce modèle (sous les prénoms, ou dans le 3e bloc si activé ; les mises en page multi-lignes ne s'affichent que dans le 3e bloc, sous les prénoms elles retombent sur une ligne) ; la page d'aperçu publique du modèle l'applique aussi, à la date d'exemple du 12 juin 2027.
               </p>
             </div>
           </div>

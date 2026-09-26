@@ -962,7 +962,7 @@ export function ChapterContent({
         {chapter.lead && (
           <p
             className={cn(
-              'mb-4 text-center leading-relaxed',
+              'mb-4 whitespace-pre-line text-center leading-relaxed',
               chapter.bold ? 'font-semibold' : 'font-light',
               // `titleSize` (échange du 23/09/2026, "blocs supplémentaires...
               // pouvoir tout gérer comme pour les autres blocs") — même
