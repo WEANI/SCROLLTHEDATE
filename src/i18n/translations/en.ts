@@ -824,6 +824,15 @@ export const en: Translations = {
       tabQuestionnaireFp: 'Questionnaire & media',
       tabRsvp: 'RSVP responses',
       tabsAria: 'Sections',
+      stepsTitle: 'The 4 steps',
+      step1: 'Fill in the questionnaire',
+      step2: 'Approve the scenario',
+      step3Fp: 'Approve the watermarked invitation',
+      step3Std: 'Approve the watermarked Save the Date',
+      step4Fp: 'Receive the final invitation',
+      step4Std: 'Receive the final Save the Date',
+      stepHintProduction: 'Editing in progress',
+      stepHintNow: 'To do now'
     },
     projectSwitcher: {
       selected: 'Selected project',

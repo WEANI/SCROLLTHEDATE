@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router'
+import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { EmptyState, PageSkeleton, StatusBadge } from '@/components/espace/shared'
@@ -36,6 +37,88 @@ const TABS: Record<EspaceProduct, TabDef[]> = {
 const ORDER_PATH: Record<EspaceProduct, string> = {
   SAVE_THE_DATE: '/save-the-date-digital',
   FAIRE_PART: '/faire-part-digital',
+}
+
+const STATUS_RANK: Record<string, number> = {
+  ONBOARDING: 0,
+  QUESTIONNAIRE: 1,
+  SCENARIOS: 2,
+  PRODUCTION: 3,
+  REVIEW: 4,
+  DELIVERED: 5,
+}
+
+/**
+ * Rappel des 4 étapes d'un projet sur mesure (faire-part ET Save the Date à
+ * 149 €, cf. échange du 26/09/2026) : questionnaire → scénario → vidéo
+ * filigranée → version définitive. L'étape en cours est déduite du statut du
+ * projet ; chaque étape mène à l'endroit où l'accomplir.
+ */
+function ProductSteps({ product, status }: { product: EspaceProduct; status: string }) {
+  const { t } = useLanguage()
+  const rank = STATUS_RANK[status] ?? 0
+  const base = productPath(product)
+  const std = product === 'SAVE_THE_DATE'
+  const steps = [
+    { label: t('espace.productSpace.step1'), to: `${base}/questionnaire`, done: rank >= 2, active: rank <= 1 },
+    { label: t('espace.productSpace.step2'), to: `${base}/apercu#scenarios`, done: rank >= 3, active: rank === 2 },
+    {
+      label: t(std ? 'espace.productSpace.step3Std' : 'espace.productSpace.step3Fp'),
+      to: `${base}/apercu#video`,
+      done: rank >= 5,
+      active: rank === 4,
+      hint: rank === 3 ? t('espace.productSpace.stepHintProduction') : undefined,
+    },
+    {
+      label: t(std ? 'espace.productSpace.step4Std' : 'espace.productSpace.step4Fp'),
+      to: `${base}/apercu#livraison`,
+      done: rank >= 5,
+      active: false,
+    },
+  ]
+  return (
+    <div className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
+      <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+        {t('espace.productSpace.stepsTitle')}
+      </p>
+      <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {steps.map((step, i) => (
+          <li key={step.to}>
+            <Link
+              to={step.to}
+              className={cn(
+                'flex h-full items-start gap-3 rounded-xl border px-3.5 py-3 transition-colors hover:border-terracotta-300',
+                step.active ? 'border-terracotta-500 bg-terracotta-500/[0.05]' : 'border-neutral-200',
+              )}
+            >
+              <span
+                className={cn(
+                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold',
+                  step.done
+                    ? 'bg-terracotta-500 text-white'
+                    : step.active
+                      ? 'border border-terracotta-500 bg-white text-terracotta-500'
+                      : 'bg-neutral-200/70 text-neutral-500',
+                )}
+              >
+                {step.done ? <Check size={14} /> : i + 1}
+              </span>
+              <span className="min-w-0">
+                <span className={cn('block text-[13.5px] leading-snug', step.active ? 'font-semibold text-ink' : 'font-medium text-ink/80')}>
+                  {step.label}
+                </span>
+                {(step.active || step.hint) && (
+                  <span className="mt-0.5 block text-[11.5px] text-terracotta-500">
+                    {step.hint ?? t('espace.productSpace.stepHintNow')}
+                  </span>
+                )}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
 }
 
 export default function ProductSpace({ product }: { product: EspaceProduct }) {
@@ -101,6 +184,8 @@ export default function ProductSpace({ product }: { product: EspaceProduct }) {
         </div>
         {current && <StatusBadge tone="info">{projectStatusLabel(current.status, t)}</StatusBadge>}
       </div>
+
+      {!isTemplate && current && <ProductSteps product={product} status={current.status} />}
 
       <nav aria-label={t('espace.productSpace.tabsAria')} className="-mx-1 flex gap-1 overflow-x-auto border-b border-neutral-200 px-1">
         {tabs.map((tab) => (

@@ -827,6 +827,15 @@ export const fr = {
       tabQuestionnaireFp: 'Questionnaire & médias',
       tabRsvp: 'Réponses RSVP',
       tabsAria: 'Sections',
+      stepsTitle: 'Les 4 étapes',
+      step1: 'Remplir le questionnaire',
+      step2: 'Valider le scénario',
+      step3Fp: 'Valider le faire-part filigrané',
+      step3Std: 'Valider le Save the Date filigrané',
+      step4Fp: 'Recevoir le faire-part définitif',
+      step4Std: 'Recevoir le Save the Date définitif',
+      stepHintProduction: 'Montage en cours',
+      stepHintNow: 'À faire maintenant'
     },
     projectSwitcher: {
       selected: 'Projet sélectionné',
