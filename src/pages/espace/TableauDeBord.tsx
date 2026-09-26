@@ -28,6 +28,7 @@ import {
   formatDate,
   formatPrice,
   productLabel,
+  productPath,
   projectStatusLabel,
   TEMPLATE_VIGNETTE,
 } from '@/components/espace/utils'
@@ -152,8 +153,33 @@ export default function TableauDeBord() {
   const voiceNoteCount = project?.voiceNotes?.length ?? 0
   const unreadMessages = thread.filter((m) => m.senderRole === 'admin' && !m.readAt).length
   const countdown = daysUntil(project?.weddingDate)
+  // Trois parcours (cf. échange du 26/09/2026) : faire-part et Save the Date
+  // sur mesure (149 €) = questionnaire + médias + scénarios + montage ; Save
+  // the Date « sur un modèle » (99 €) = livré tout de suite, à personnaliser.
+  const isTemplate = project?.product === 'SAVE_THE_DATE' && !!project.templateSlug
+  const base = productPath(project?.product ?? null)
 
   const steps: Step[] = useMemo(() => {
+    if (isTemplate) {
+      return [
+        { key: 'order', label: t('espace.std.dashStepOrder'), state: 'done' },
+        {
+          key: 'online',
+          label: t('espace.std.dashStepOnline'),
+          state: rank >= 5 ? 'done' : 'active',
+          dateLabel:
+            rank >= 5 && project
+              ? `${t('espace.tableauDeBord.stepDeliveredDatePrefix')} ${formatDate(project.updatedAt, undefined, lang)}`
+              : t('espace.std.dashStepOnlineActive'),
+        },
+        {
+          key: 'personalize',
+          label: t('espace.std.dashStepPersonalize'),
+          state: rank >= 5 ? 'active' : 'todo',
+          dateLabel: rank >= 5 ? t('espace.std.dashStepPersonalizeHint') : undefined,
+        },
+      ]
+    }
     const questionnaireDone = completionPct >= 100 || rank >= 2
     const mediaDone = photoCount >= 5 || rank >= 2
     return [
@@ -200,33 +226,38 @@ export default function TableauDeBord() {
             : undefined,
       },
     ]
-  }, [completionPct, rank, photoCount, project, t, lang])
+  }, [completionPct, rank, photoCount, project, t, lang, isTemplate])
 
   // Bannière « prochaine action » dynamique
   const nextAction = useMemo((): { text: string; cta: string; to: string } | null => {
+    if (isTemplate) {
+      return rank >= 5
+        ? { text: t('espace.std.dashNextPersonalizeText'), cta: t('espace.std.dashNextPersonalizeCta'), to: `${base}/personnalisation` }
+        : { text: t('espace.std.dashNextLiveText'), cta: t('espace.std.dashNextLiveCta'), to: `${base}/apercu` }
+    }
     if (rank <= 1)
       return {
         text: t('espace.tableauDeBord.nextAction1Text'),
         cta: t('espace.tableauDeBord.nextAction1Cta'),
-        to: '/espace/questionnaire',
+        to: `${base}/questionnaire`,
       }
     if (rank === 2)
       return {
         text: t('espace.tableauDeBord.nextAction2Text'),
         cta: photoCount < 5 ? t('espace.tableauDeBord.nextAction2CtaPhotos') : t('espace.tableauDeBord.nextAction2CtaScenarios'),
-        to: photoCount < 5 ? '/espace/questionnaire#medias' : '/espace/projet',
+        to: photoCount < 5 ? `${base}/questionnaire#medias` : `${base}/apercu`,
       }
     if (rank === 3)
       return {
         text: t('espace.tableauDeBord.nextAction3Text'),
         cta: t('espace.tableauDeBord.nextAction3Cta'),
-        to: '/espace/projet',
+        to: `${base}/apercu`,
       }
     if (rank === 4)
       return {
         text: t('espace.tableauDeBord.nextAction4Text'),
         cta: t('espace.tableauDeBord.nextAction4Cta'),
-        to: '/espace/projet',
+        to: `${base}/apercu`,
       }
     if (rank >= 5)
       return {
@@ -235,11 +266,17 @@ export default function TableauDeBord() {
         to: '/espace/commandes',
       }
     return null
-  }, [rank, photoCount, t, tp])
+  }, [rank, photoCount, t, tp, isTemplate, base])
 
   // Checklist d'onboarding
   const checklist = useMemo(
-    () => [
+    () => isTemplate
+      ? [
+          { key: 'order', label: t('espace.tableauDeBord.checklistOrderValidated'), done: orders.some((o) => o.paymentStatus === 'paid') },
+          { key: 'account', label: t('espace.tableauDeBord.checklistAccountCreated'), done: true },
+          { key: 'online', label: t('espace.std.dashChecklistOnline'), done: rank >= 5 },
+        ]
+      : [
       { key: 'order', label: t('espace.tableauDeBord.checklistOrderValidated'), done: orders.some((o) => o.paymentStatus === 'paid') },
       { key: 'account', label: t('espace.tableauDeBord.checklistAccountCreated'), done: true },
       { key: 'questionnaire', label: t('espace.tableauDeBord.checklistQuestionnaireCompleted'), done: completionPct >= 100 },
@@ -248,17 +285,17 @@ export default function TableauDeBord() {
         label: t('espace.tableauDeBord.checklistVoiceNote'),
         done: voiceNoteCount > 0,
         cta: t('espace.tableauDeBord.checklistVoiceNoteCta'),
-        to: '/espace/questionnaire#vocale',
+        to: `${base}/questionnaire#vocale`,
       },
       {
         key: 'photos',
         label: t('espace.tableauDeBord.checklistPhotos'),
         done: photoCount >= 5,
         cta: t('espace.tableauDeBord.checklistPhotosCta'),
-        to: '/espace/questionnaire#medias',
+        to: `${base}/questionnaire#medias`,
       },
     ],
-    [orders, completionPct, voiceNoteCount, photoCount, t],
+    [orders, completionPct, voiceNoteCount, photoCount, t, isTemplate, rank, base],
   )
   const checklistPct = Math.round((checklist.filter((c) => c.done).length / checklist.length) * 100)
 
@@ -394,9 +431,20 @@ export default function TableauDeBord() {
             {/* Raccourcis */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {[
+                ...(isTemplate
+                  ? [
+                      {
+                        key: 'personalize',
+                        to: `${base}/personnalisation`,
+                        icon: Sparkles,
+                        title: t('espace.std.dashCardPersonalizeTitle'),
+                        desc: t('espace.std.dashCardPersonalizeDesc'),
+                      },
+                    ]
+                  : [
                 {
                   key: 'questionnaire',
-                  to: '/espace/questionnaire',
+                  to: `${base}/questionnaire`,
                   icon: ClipboardList,
                   title: t('espace.tableauDeBord.cardQuestionnaireTitle'),
                   desc:
@@ -405,11 +453,12 @@ export default function TableauDeBord() {
                       : `${t('espace.tableauDeBord.cardQuestionnaireInProgressPrefix')}${t('espace.tableauDeBord.cardQuestionnaireInProgressPrefix') ? ' ' : ''}${completionPct}${t('espace.tableauDeBord.cardQuestionnaireInProgressSuffix')}`,
                   bar: completionPct,
                 },
+                    ]),
                 {
                   key: 'project',
-                  to: '/espace/projet',
+                  to: `${base}/apercu`,
                   icon: Clapperboard,
-                  title: t('espace.tableauDeBord.cardProjectTitle'),
+                  title: isTemplate ? t('espace.std.dashCardVideoTitle') : t('espace.tableauDeBord.cardProjectTitle'),
                   desc: project ? projectStatusLabel(project.status, t) : '—',
                 },
                 {
