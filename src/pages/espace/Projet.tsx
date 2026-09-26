@@ -159,6 +159,10 @@ export default function Projet() {
     [videosQuery.data],
   )
   const currentVideo = videos[0] ?? null
+  // Save the Date « sur un modèle » (99 €) : pas de scénarios ni de récit
+  // « L'aventure jusqu'ici » — ces sections n'existent que pour un projet sur
+  // mesure (149 € et faire-part), cf. échange du 26/09/2026.
+  const showStory = !(project?.product === 'SAVE_THE_DATE' && !!project.templateSlug)
   const rank = STATUS_RANK[project?.status ?? 'ONBOARDING'] ?? 0
 
   const [confirmScenarioId, setConfirmScenarioId] = useState<number | null>(null)
@@ -237,7 +241,8 @@ export default function Projet() {
       ) : (
         <>
           {/* Bloc 1 — Timeline + interlocutrice */}
-          <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+          <div className={cn('grid gap-6', showStory && 'lg:grid-cols-[1fr_300px]')}>
+            {showStory && (
             <SectionCard>
               <h3 className="font-display mb-6 text-xl font-medium text-ink">{t('espace.projet.timelineTitle')}</h3>
               <ol className="relative flex flex-col gap-5 border-l-2 border-terracotta-500/30 pl-6">
@@ -289,6 +294,7 @@ export default function Projet() {
                 )}
               </ol>
             </SectionCard>
+            )}
 
             {/* Interlocutrice */}
             <SectionCard className="flex h-fit flex-col items-start gap-4">
@@ -313,7 +319,8 @@ export default function Projet() {
             </SectionCard>
           </div>
 
-          {/* Bloc 2 — Scénarios */}
+          {/* Bloc 2 — Scénarios (projet sur mesure uniquement) */}
+          {showStory && (
           <SectionCard id="scenarios">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -481,6 +488,7 @@ export default function Projet() {
               </>
             )}
           </SectionCard>
+          )}
 
           {/* Bloc 3 — Faire-part provisoire */}
           <SectionCard id="video">

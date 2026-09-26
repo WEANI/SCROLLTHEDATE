@@ -43,6 +43,18 @@ export default function ProductSpace({ product }: { product: EspaceProduct }) {
   const { projects, current, isLoading, setProjectId } = useSelectedProject()
   const owned = projects.filter((p) => p.product === product)
   const isStd = product === 'SAVE_THE_DATE'
+  const location = useLocation()
+  // Save the Date : « sur mesure » (149 €) = onglet Questionnaire ; « sur un
+  // modèle » (99 €) = onglet Personnalisation — jamais les deux (cf. échange
+  // du 26/09/2026). Le projet sélectionné décide (`templateSlug` renseigné =
+  // sur un modèle).
+  const isTemplate = isStd && !!current?.templateSlug
+  const tabs = TABS[product].filter((tab) => {
+    if (!isStd) return true
+    if (tab.to === 'personnalisation') return isTemplate
+    if (tab.to === 'questionnaire') return !isTemplate
+    return true
+  })
   const mismatch = owned.length > 0 && current?.product !== product
 
   // Cale le projet sélectionné sur ce produit (le plus récent) — sans ça, les
@@ -52,6 +64,12 @@ export default function ProductSpace({ product }: { product: EspaceProduct }) {
   }, [mismatch, owned, setProjectId])
 
   if (isLoading || mismatch) return <PageSkeleton />
+
+  // URL d'un onglet masqué pour ce projet → onglet d'ouverture.
+  const currentTab = location.pathname.split('/')[3]
+  if (currentTab && !tabs.some((tab) => tab.to === currentTab)) {
+    return <Navigate to={`${productPath(product)}/apercu`} replace />
+  }
 
   if (owned.length === 0) {
     return (
@@ -85,7 +103,7 @@ export default function ProductSpace({ product }: { product: EspaceProduct }) {
       </div>
 
       <nav aria-label={t('espace.productSpace.tabsAria')} className="-mx-1 flex gap-1 overflow-x-auto border-b border-neutral-200 px-1">
-        {TABS[product].map((tab) => (
+        {tabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={`${productPath(product)}/${tab.to}`}

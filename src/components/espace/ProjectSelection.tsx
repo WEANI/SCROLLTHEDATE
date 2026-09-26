@@ -29,6 +29,8 @@ export interface ProjectSummary {
   slug: string
   status: string
   product: string | null
+  /** Renseigné = Save the Date « sur un modèle » (99 €) ; null = « sur mesure » (149 €, questionnaire + scénarios). */
+  templateSlug: string | null
   coupleNames: string | null
   createdAt: string | Date
 }

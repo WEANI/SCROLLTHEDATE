@@ -91,6 +91,7 @@ export async function findProjectsSummaryByUser(userId: number) {
     slug: p.slug,
     status: p.status,
     product: p.product,
+    templateSlug: p.templateSlug,
     coupleNames:
       (p.questionnaire?.answers as Record<string, unknown> | null)?.[
         "couple.prenoms"
