@@ -880,7 +880,19 @@ export function ChapterContent({
       ? { '--hs-text-primary': chapter.textColorOverride, '--hs-text-secondary': chapter.textColorOverride }
       : null),
     ...(cardNone
-      ? { '--hs-card-bg': 'transparent', '--hs-card-border': 'transparent', '--hs-card-shadow': 'none', '--hs-card-blur': '0px' }
+      ? {
+          '--hs-card-bg': 'transparent',
+          '--hs-card-border': 'transparent',
+          '--hs-card-shadow': 'none',
+          '--hs-card-blur': '0px',
+          // `saturate(140%)` du backdrop-filter (cf. hero-scrub.css) restait
+          // codé en dur, jamais neutralisé par ce sentinel : même "Aucun
+          // fond" laissait un rectangle bien visible derrière le bloc dès
+          // que la vidéo était colorée (le flou repassait à 0, mais la
+          // zone derrière `.hs-card` restait sursaturée de 40 %) — signalé
+          // le 28/09/2026 sur le monogramme Red Door (miroir/porte rouges).
+          '--hs-card-saturate': '100%',
+        }
       : chapter.cardBgOverride
         ? { '--hs-card-bg': chapter.cardBgOverride }
         : null),

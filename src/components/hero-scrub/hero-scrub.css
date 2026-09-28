@@ -112,8 +112,8 @@
      'none' dans ChapterContent, HeroScrub.tsx) : sans ça, même un fond
      transparent laissait un halo flouté derrière le texte (signalé le
      21/09/2026). */
-  backdrop-filter: blur(var(--hs-card-blur, 18px)) saturate(140%);
-  -webkit-backdrop-filter: blur(var(--hs-card-blur, 18px)) saturate(140%);
+  backdrop-filter: blur(var(--hs-card-blur, 18px)) saturate(var(--hs-card-saturate, 140%));
+  -webkit-backdrop-filter: blur(var(--hs-card-blur, 18px)) saturate(var(--hs-card-saturate, 140%));
   border: 1px solid var(--hs-card-border);
   border-radius: 20px;
   padding: 32px 32px;
@@ -2327,9 +2327,9 @@
 .hs-cd-cell { display: flex; align-items: flex-start; }
 .hs-cd-unit { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .hs-cd-num { font-family: 'JetBrains Mono', monospace; font-weight: 300; font-variant-numeric: tabular-nums; font-size: clamp(20px, 9cqw, 30px); line-height: 1.2; }
-.hs-cd-lab { font-size: clamp(7px, 2.6cqw, 9px); letter-spacing: 0.3em; margin-right: -0.3em; text-transform: uppercase; color: var(--hs-text-secondary); }
+.hs-cd-lab { text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55); font-size: clamp(7px, 2.6cqw, 9px); letter-spacing: 0.3em; margin-right: -0.3em; text-transform: uppercase; color: var(--hs-text-secondary); }
 .hs-cd-sep { color: var(--hs-accent); font-size: clamp(16px, 6cqw, 22px); padding: 0 clamp(4px, 1.6cqw, 8px); line-height: 1.5; }
-.hs-cd-boxes .hs-cd-num { background: color-mix(in srgb, var(--hs-text-primary) 8%, transparent); border: 1px solid color-mix(in srgb, var(--hs-text-primary) 22%, transparent); border-radius: 8px; min-width: clamp(38px, 15cqw, 56px); padding: 8px 4px; text-align: center; box-shadow: inset 0 -3px 0 var(--hs-accent); }
+.hs-cd-boxes .hs-cd-num { background: rgba(14, 9, 9, 0.5); -webkit-backdrop-filter: blur(6px) saturate(0.35); backdrop-filter: blur(6px) saturate(0.35); border: 1px solid color-mix(in srgb, var(--hs-text-primary) 28%, transparent); border-radius: 8px; min-width: clamp(38px, 15cqw, 56px); padding: 8px 4px; text-align: center; box-shadow: inset 0 -3px 0 var(--hs-accent); }
 .hs-cd-anton .hs-cd-num { font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: clamp(30px, 14cqw, 46px); color: var(--hs-accent); }
 .hs-cd-serif .hs-cd-num { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; font-size: clamp(24px, 11cqw, 36px); }
 .hs-cd-minimal .hs-cd-sep { padding: 0 clamp(6px, 2.4cqw, 12px); }
