@@ -891,7 +891,14 @@ export default function ModeleStdDetail() {
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <ColorField label="Couleur des lettres" hint="Vide = couleur du thème" value={o.monogramColor} onChange={(v) => update({ monogramColor: v })} />
-                  <ColorField label="Couleur des filets & de l'esperluette" hint="Vide = accent du thème" value={o.monogramAccent} onChange={(v) => update({ monogramAccent: v })} />
+                  {/* "Sceau de cire" ne dessine ni filet ni esperluette — ce
+                      réglage n'a aucun effet sur cette mise en page (signalé
+                      le 28/09/2026 : "la capture d'écran n'affiche pas les
+                      réglages sélectionnés"), donc masqué plutôt que
+                      silencieusement ignoré. */}
+                  {(o.monogramLayout || "circle") !== "wax" && (
+                    <ColorField label="Couleur des filets & de l'esperluette" hint="Vide = accent du thème" value={o.monogramAccent} onChange={(v) => update({ monogramAccent: v })} />
+                  )}
                   {(o.monogramLayout || "circle") === "wax" && (
                     <div className="flex flex-col gap-1.5">
                       <ColorField label="Couleur du sceau" hint="Vide = bordeaux" value={o.monogramSealColor} onChange={(v) => update({ monogramSealColor: v })} />
