@@ -2352,7 +2352,7 @@
 .hs-mono-overlap .a { left: calc(6 * var(--u)); }
 .hs-mono-overlap .b { right: calc(6 * var(--u)); color: var(--macc); opacity: 0.92; }
 .hs-mono-rings { width: calc(70 * var(--u)); height: calc(44 * var(--u)); font-size: calc(24 * var(--u)); }
-.hs-mono-rings .hs-mono-ring { position: absolute; width: calc(34 * var(--u)); height: calc(34 * var(--u)); border-radius: 50%; border: 1.5px solid var(--macc); }
+.hs-mono-rings .hs-mono-ring { position: absolute; width: calc(34 * var(--u)); height: calc(34 * var(--u)); border-radius: 50%; border: calc(2.6 * var(--u)) solid var(--macc); }
 .hs-mono-rings .ring-a { left: calc(6 * var(--u)); }
 .hs-mono-rings .ring-b { right: calc(6 * var(--u)); }
 .hs-mono-rings .a { margin-right: calc(4 * var(--u)); position: relative; z-index: 1; }
