@@ -18,6 +18,7 @@ import {
   defaultOverrideFor,
   parseTemplateOverrides,
   templateDurationSec,
+  type SaveTheDateTemplate,
   type SaveTheDateTemplateOverride,
 } from "@contracts/saveTheDateTemplates";
 import {
@@ -181,34 +182,60 @@ function BoldField({ checked, onChange }: { checked: boolean; onChange: (v: bool
 export default function ModeleStdDetail() {
   const { slug } = useParams();
   const template = getSaveTheDateTemplate(slug);
-  const { toasts, push } = useToasts();
-  const save = useSaveSetting(push);
   const q = trpc.settings.get.useQuery({ key: "saveTheDateTemplates" });
 
-  const [allOverrides, setAllOverrides] = useState<Record<string, SaveTheDateTemplateOverride>>({});
-  const [o, setO] = useState<SaveTheDateTemplateOverride | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  if (!template) {
+    return (
+      <div className="mx-auto w-full max-w-[1200px] text-ink">
+        <PageHeader title="Modèle introuvable" />
+        <Link to="/admin/parametres" className="text-sm font-medium text-terracotta-500 hover:text-terracotta-400">
+          ← Retour aux modèles
+        </Link>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    // `q.data === undefined` tant que la requête n'a pas encore résolu (au
-    // moins un aller-retour réseau, donc TOUJOURS après ce premier rendu) —
-    // sans cette garde, l'effet se déclenchait dès le premier rendu avec
-    // `q.data` encore `undefined`, `parseTemplateOverrides(undefined)`
-    // retombant sur `{}` : `allOverrides` ET `o` partaient des valeurs par
-    // défaut, `loaded` passait à `true` immédiatement, et la VRAIE réponse
-    // du serveur (arrivée juste après) était silencieusement ignorée — bug
-    // confirmé le 23/09/2026 (modifications d'un modèle "sur un modèle",
-    // ex. texte du hero réparti sur plusieurs lignes, qui semblaient
-    // annulées après déconnexion/reconnexion : uniquement le cache
-    // react-query froid d'une nouvelle session masquait le repli aux
-    // valeurs par défaut). Même garde que `TabFairePartDemo`
-    // (Parametres.tsx) — pattern déjà correct là-bas.
-    if (loaded || !template || q.data === undefined) return;
-    const saved = parseTemplateOverrides(q.data?.value);
-    setAllOverrides(saved);
-    setO({ ...defaultOverrideFor(template), ...(saved[template.slug] ?? {}) });
-    setLoaded(true);
-  }, [q.data, loaded, template]);
+  // `q.data === undefined` tant que la requête n'a pas encore résolu (au
+  // moins un aller-retour réseau, donc TOUJOURS après ce premier rendu) —
+  // le formulaire ne monte qu'une fois la VRAIE réponse du serveur connue,
+  // jamais avec un repli aux valeurs par défaut le temps d'un aller-retour
+  // réseau (bug confirmé le 23/09/2026 : un modèle "sur un modèle" dont le
+  // texte du hero semblait revenir à son état par défaut après déconnexion/
+  // reconnexion — uniquement le cache react-query froid d'une nouvelle
+  // session masquait temporairement la vraie sauvegarde). `key={template.slug}`
+  // : un formulaire tout neuf (état local réinitialisé) si l'admin passe
+  // d'un modèle à un autre sans quitter cette page.
+  if (q.data === undefined) return null;
+
+  return <ModeleStdDetailForm key={template.slug} template={template} initialOverrides={parseTemplateOverrides(q.data?.value)} />;
+}
+
+/**
+ * Formulaire d'un modèle — state local initialisé UNE FOIS depuis
+ * `initialOverrides` (via `useState(() => ...)`, jamais un effet qui copie
+ * une prop dans du state : cf. échange du 28/09/2026, "comment réparer
+ * cette erreur ?" — react-hooks/set-state-in-effect). Le composant parent
+ * ne le monte qu'une fois la vraie réponse serveur connue (cf.
+ * ModeleStdDetail ci-dessus), donc `initialOverrides` est toujours la
+ * bonne valeur dès le premier rendu.
+ */
+function ModeleStdDetailForm({
+  template,
+  initialOverrides,
+}: {
+  template: SaveTheDateTemplate;
+  initialOverrides: Record<string, SaveTheDateTemplateOverride>;
+}) {
+  const { toasts, push } = useToasts();
+  const save = useSaveSetting(push);
+
+  // Jamais réassigné après le montage (les AUTRES modèles ne changent pas
+  // pendant qu'on édite celui-ci) — une constante suffit, plus de setter
+  // fantôme depuis la suppression de l'effet de chargement.
+  const allOverrides = initialOverrides;
+  const [o, setO] = useState<SaveTheDateTemplateOverride>(
+    () => ({ ...defaultOverrideFor(template), ...(initialOverrides[template.slug] ?? {}) }),
+  );
 
   const update = (patch: Partial<SaveTheDateTemplateOverride>) =>
     setO((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -272,19 +299,6 @@ export default function ModeleStdDetail() {
     }, 2600);
     return () => window.clearInterval(id);
   }, [o?.textAnimation]);
-
-  if (!template) {
-    return (
-      <div className="mx-auto w-full max-w-[1200px] text-ink">
-        <PageHeader title="Modèle introuvable" />
-        <Link to="/admin/parametres" className="text-sm font-medium text-terracotta-500 hover:text-terracotta-400">
-          ← Retour aux modèles
-        </Link>
-      </div>
-    );
-  }
-
-  if (!loaded || !o) return null;
 
   const duration = templateDurationSec(template);
   // Même règle que splitLines (contracts/saveTheDateTemplates.ts) : un
