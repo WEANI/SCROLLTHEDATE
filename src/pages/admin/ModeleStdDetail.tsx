@@ -399,6 +399,20 @@ function ModeleStdDetailForm({
     "--hs-font-family": fontPreview?.fontFamily || "'Fraunces', Georgia, serif",
   } as CSSProperties;
 
+  // ---- onglets — un espace par bloc, vidéo/timeline toujours visible
+  // (échange du 28/09/2026 : "plus ergonomique avec un onglet par bloc tout
+  // en conservant la vidéo du montage visible dans chaque onglet") ----
+  const TABS: { id: string; label: string }[] = [
+    { id: "general", label: "Général" },
+    { id: "bloc1", label: "1er bloc" },
+    { id: "bloc2", label: "2e bloc" },
+    { id: "bloc3", label: "3e bloc" },
+    { id: "logo", label: "Logo" },
+    { id: "extra", label: "Blocs supp." },
+    { id: "decor", label: "Décor & style" },
+  ];
+  const [activeTab, setActiveTab] = useState<string>("general");
+
   return (
     <div className="mx-auto w-full max-w-[1200px] text-ink">
       <PageHeader
@@ -424,724 +438,155 @@ function ModeleStdDetailForm({
         }
       />
 
-      <div className="flex flex-col gap-4">
-        {/* ---- Vidéo + timeline ---- */}
-        <Panel>
-          <PanelTitle
-            title="Vidéo du montage"
-            hint="Lisez/scrubbez pour repérer le bon instant, puis « Caler ici » sur le champ voulu — le filtre choisi ci-dessous s'applique déjà en direct."
-          />
-          <div className="p-6">
-            <div
-              className={cn("relative mx-auto w-full max-w-[280px] overflow-hidden rounded-xl bg-anthracite-950", o.filter && `hs-filter-${o.filter}`)}
-              style={{ aspectRatio: "9/16" }}
-            >
-              <video
-                ref={videoRef}
-                src={template.desktopSrc}
-                poster={template.posterSrc}
-                controls
-                muted
-                playsInline
-                className="hs-video absolute inset-0 h-full w-full object-cover"
-                onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-                onLoadedMetadata={(e) => setVideoDuration(e.currentTarget.duration)}
-              />
-              <HeroFilterLayer id={o.filter || undefined} />
-            </div>
-
-            {videoDuration > 0 && (
-              <div className="mx-auto mt-4 max-w-[520px]">
-                <div
-                  ref={barRef}
-                  onClick={onBarClick}
-                  className="relative h-8 cursor-pointer rounded-md bg-neutral-100"
-                >
-                  <span
-                    className="pointer-events-none absolute inset-y-0 rounded-md bg-terracotta-500/30"
-                    style={{
-                      left: `${(Math.min(o.chapter1FromSec, videoDuration) / videoDuration) * 100}%`,
-                      width: `${(Math.max(0, o.chapter1ToSec - o.chapter1FromSec) / videoDuration) * 100}%`,
-                    }}
-                  />
-                  <span
-                    className="pointer-events-none absolute inset-y-0 rounded-md bg-terracotta-300/40"
-                    style={{
-                      left: `${(Math.min(o.chapter2FromSec, videoDuration) / videoDuration) * 100}%`,
-                      width: `${(Math.max(0, o.chapter2ToSec - o.chapter2FromSec) / videoDuration) * 100}%`,
-                    }}
-                  />
-                  <span
-                    className="pointer-events-none absolute inset-y-0 w-[2px] bg-ink"
-                    style={{ left: `${(currentTime / videoDuration) * 100}%` }}
-                  />
-                </div>
-                <div className="mt-1.5 flex items-center justify-between text-[11px] text-neutral-500">
-                  <span className="tabular">{fmtTimecode(currentTime)}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-terracotta-500/60" /> Texte 1</span>
-                    <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-terracotta-300/60" /> Texte 2</span>
-                  </div>
-                  <span className="tabular">{fmtTimecode(videoDuration)}</span>
-                </div>
+      <div className="grid gap-4 lg:grid-cols-[280px_1fr] lg:items-start">
+        {/* ---- Vidéo + timeline — colonne fixe, visible quel que soit
+            l'onglet ouvert à droite, pour caler un timing sans changer
+            d'onglet ---- */}
+        <div className="lg:sticky lg:top-4">
+          <Panel>
+            <PanelTitle
+              title="Vidéo du montage"
+              hint="Lisez/scrubbez pour repérer le bon instant, puis « Caler ici » sur le champ voulu — reste visible quel que soit l'onglet ouvert à droite."
+            />
+            <div className="p-6">
+              <div
+                className={cn("relative mx-auto w-full max-w-[280px] overflow-hidden rounded-xl bg-anthracite-950", o.filter && `hs-filter-${o.filter}`)}
+                style={{ aspectRatio: "9/16" }}
+              >
+                <video
+                  ref={videoRef}
+                  src={template.desktopSrc}
+                  poster={template.posterSrc}
+                  controls
+                  muted
+                  playsInline
+                  className="hs-video absolute inset-0 h-full w-full object-cover"
+                  onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                  onLoadedMetadata={(e) => setVideoDuration(e.currentTarget.duration)}
+                />
+                <HeroFilterLayer id={o.filter || undefined} />
               </div>
-            )}
-          </div>
-        </Panel>
 
-        {/* ---- Réglages généraux ---- */}
-        <Panel>
-          <PanelTitle title="Réglages généraux" hint="Nom, accroche et description affichés dans la bibliothèque de modèles." />
-          <div className="grid gap-4 p-6 md:grid-cols-2">
-            <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-              Nom du modèle
-              <input value={o.name} onChange={(e) => update({ name: e.target.value })} className={inputClass} />
-            </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-              Accroche (carte bibliothèque)
-              <input value={o.tagline} onChange={(e) => update({ tagline: e.target.value })} className={inputClass} />
-            </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 md:col-span-2">
-              Description
-              <textarea
-                rows={2}
-                value={o.description}
-                onChange={(e) => update({ description: e.target.value })}
-                className={textareaClass}
-              />
-            </label>
-          </div>
-        </Panel>
+              {videoDuration > 0 && (
+                <div className="mx-auto mt-4 max-w-[520px]">
+                  <div
+                    ref={barRef}
+                    onClick={onBarClick}
+                    className="relative h-8 cursor-pointer rounded-md bg-neutral-100"
+                  >
+                    <span
+                      className="pointer-events-none absolute inset-y-0 rounded-md bg-terracotta-500/30"
+                      style={{
+                        left: `${(Math.min(o.chapter1FromSec, videoDuration) / videoDuration) * 100}%`,
+                        width: `${(Math.max(0, o.chapter1ToSec - o.chapter1FromSec) / videoDuration) * 100}%`,
+                      }}
+                    />
+                    <span
+                      className="pointer-events-none absolute inset-y-0 rounded-md bg-terracotta-300/40"
+                      style={{
+                        left: `${(Math.min(o.chapter2FromSec, videoDuration) / videoDuration) * 100}%`,
+                        width: `${(Math.max(0, o.chapter2ToSec - o.chapter2FromSec) / videoDuration) * 100}%`,
+                      }}
+                    />
+                    <span
+                      className="pointer-events-none absolute inset-y-0 w-[2px] bg-ink"
+                      style={{ left: `${(currentTime / videoDuration) * 100}%` }}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-neutral-500">
+                    <span className="tabular">{fmtTimecode(currentTime)}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-terracotta-500/60" /> Texte 1</span>
+                      <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-terracotta-300/60" /> Texte 2</span>
+                    </div>
+                    <span className="tabular">{fmtTimecode(videoDuration)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Panel>
+        </div>
 
-        {/* ---- Blocs de texte — un espace par bloc, tous ses réglages regroupés (échange du 23/09/2026) ---- */}
-        <Panel>
-          <PanelTitle
-            title="Blocs de texte"
-            hint="Un espace par bloc : texte, timing, position, police, taille, couleur, gras, cadre et animation regroupés au même endroit."
-          />
-          <div className="flex flex-col gap-4 p-6">
-            {/* ---- Bloc 1 — "Save the date" ---- */}
-            <div className="rounded-xl border border-neutral-200 bg-white p-5">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                1er bloc — texte affiché (ex. « Save the date »)
-              </p>
-              <div className="grid gap-3 md:grid-cols-5">
+        {/* ---- Onglets — un espace par bloc ---- */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap gap-1.5 rounded-xl border border-neutral-200 bg-white p-1.5">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "rounded-lg px-3.5 py-2 text-[12.5px] font-medium transition-colors",
+                  activeTab === tab.id
+                    ? "bg-terracotta-500 text-white"
+                    : "text-neutral-500 hover:bg-neutral-100 hover:text-ink",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ---- Général ---- */}
+          {activeTab === "general" && (
+            <Panel>
+              <PanelTitle title="Réglages généraux" hint="Nom, accroche et description affichés dans la bibliothèque de modèles." />
+              <div className="grid gap-4 p-6 md:grid-cols-2">
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Nom du modèle
+                  <input value={o.name} onChange={(e) => update({ name: e.target.value })} className={inputClass} />
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                  Accroche (carte bibliothèque)
+                  <input value={o.tagline} onChange={(e) => update({ tagline: e.target.value })} className={inputClass} />
+                </label>
                 <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 md:col-span-2">
-                  Texte — une ligne par retour à la ligne (1 à 3 lignes)
+                  Description
                   <textarea
                     rows={2}
-                    value={o.chapter1Text}
-                    onChange={(e) => update({ chapter1Text: e.target.value })}
+                    value={o.description}
+                    onChange={(e) => update({ description: e.target.value })}
                     className={textareaClass}
                   />
                 </label>
-                <TimecodeField
-                  label="Apparaît à (s)"
-                  value={o.chapter1FromSec}
-                  max={duration}
-                  onChange={(v) => update({ chapter1FromSec: v })}
-                  onCaler={() => update({ chapter1FromSec: Math.round(currentTime * 10) / 10 })}
-                />
-                <TimecodeField
-                  label="Disparaît à (s)"
-                  value={o.chapter1ToSec}
-                  max={duration}
-                  onChange={(v) => update({ chapter1ToSec: v })}
-                  onCaler={() => update({ chapter1ToSec: Math.round(currentTime * 10) / 10 })}
-                />
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Position verticale
-                  <select
-                    value={o.chapter1Position}
-                    onChange={(e) => update({ chapter1Position: e.target.value as SaveTheDateTemplateOverride["chapter1Position"] })}
-                    className={inputClass}
-                  >
-                    <option value="top">Haut</option>
-                    <option value="middle">Milieu</option>
-                    <option value="bottom">Bas</option>
-                  </select>
-                </label>
               </div>
+            </Panel>
+          )}
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Taille de police
-                  <select
-                    value={o.chapter1TitleSize}
-                    onChange={(e) => update({ chapter1TitleSize: e.target.value })}
-                    className={inputClass}
-                  >
-                    <option value="sm">Petite</option>
-                    <option value="md">Moyenne</option>
-                    <option value="lg">Grande</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Police — ce bloc
-                  <FontSelect value={o.chapter1FontId} onChange={(v) => update({ chapter1FontId: v })} defaultLabel="Police du hero" />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Animation — ce bloc
-                  <AnimSelect value={o.chapter1TextAnimation} onChange={(v) => update({ chapter1TextAnimation: v })} defaultLabel="Animation du hero" />
-                </label>
-                <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.chapter1TextColor} onChange={(v) => update({ chapter1TextColor: v })} />
-                <ColorField label="Fond de carte" hint="Vide = fond du thème" value={o.chapter1CardBg} onChange={(v) => update({ chapter1CardBg: v })} noneOption />
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Cadre (décor)
-                  <select value={o.chapter1CardFrame} onChange={(e) => update({ chapter1CardFrame: e.target.value })} className={inputClass}>
-                    <option value="">Aucun</option>
-                    {HERO_CARD_FRAMES.map((f) => (
-                      <option key={f.id} value={f.id}>{f.label}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-                <BoldField checked={o.chapter1Bold} onChange={(v) => update({ chapter1Bold: v })} />
-              </div>
-
-              <div className="mt-3 flex flex-col gap-1">
-                <span className="text-xs font-medium text-neutral-500">Aperçu</span>
-                <PreviewStage themeVars={themeVars}>
-                  <ChapterContent
-                    chapter={chapter1FramePreview}
-                    textAnimation={chapter1FramePreview.textAnimation || o.textAnimation || undefined}
-                    className={cn("hs-overlay", animShow && "show", (chapter1FramePreview.textAnimation || o.textAnimation) && `hs-anim-${chapter1FramePreview.textAnimation || o.textAnimation}`)}
-                  />
-                </PreviewStage>
-              </div>
-            </div>
-
-            {/* ---- Bloc 2 — prénoms & date d'exemple ---- */}
-            <div className="rounded-xl border border-neutral-200 bg-white p-5">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                2e bloc — prénoms &amp; date d'exemple (un vrai client verra les siens à la place)
-              </p>
-              <div className="grid gap-3 md:grid-cols-5">
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Prénoms d'exemple
-                  <input value={o.exampleNames} onChange={(e) => update({ exampleNames: e.target.value })} className={inputClass} />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Date d'exemple
-                  <input value={o.exampleDate} onChange={(e) => update({ exampleDate: e.target.value })} className={inputClass} />
-                </label>
-                <TimecodeField
-                  label="Apparaît à (s)"
-                  value={o.chapter2FromSec}
-                  max={duration}
-                  onChange={(v) => update({ chapter2FromSec: v })}
-                  onCaler={() => update({ chapter2FromSec: Math.round(currentTime * 10) / 10 })}
-                />
-                <TimecodeField
-                  label="Disparaît à (s)"
-                  value={o.chapter2ToSec}
-                  max={duration}
-                  onChange={(v) => update({ chapter2ToSec: v })}
-                  onCaler={() => update({ chapter2ToSec: Math.round(currentTime * 10) / 10 })}
-                />
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Position verticale
-                  <select
-                    value={o.chapter2Position}
-                    onChange={(e) => update({ chapter2Position: e.target.value as SaveTheDateTemplateOverride["chapter2Position"] })}
-                    className={inputClass}
-                  >
-                    <option value="top">Haut</option>
-                    <option value="middle">Milieu</option>
-                    <option value="bottom">Bas</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-7">
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Taille de police
-                  <select
-                    value={o.chapter2TitleSize}
-                    onChange={(e) => update({ chapter2TitleSize: e.target.value })}
-                    className={inputClass}
-                  >
-                    <option value="">Moyenne (défaut)</option>
-                    <option value="sm">Petite</option>
-                    <option value="md">Moyenne</option>
-                    <option value="lg">Grande</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Police — ce bloc
-                  <FontSelect value={o.chapter2FontId} onChange={(v) => update({ chapter2FontId: v })} defaultLabel="Police du hero" />
-                </label>
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Animation — ce bloc
-                  <AnimSelect value={o.chapter2TextAnimation} onChange={(v) => update({ chapter2TextAnimation: v })} defaultLabel="Animation du hero" />
-                </label>
-                <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.chapter2TextColor} onChange={(v) => update({ chapter2TextColor: v })} />
-                <ColorField label="Fond de carte" hint="Vide = fond du thème" value={o.chapter2CardBg} onChange={(v) => update({ chapter2CardBg: v })} noneOption />
-                <ColorField label='Couleur du "&"' hint="Vide = accent du thème" value={o.chapter2AccentColor} onChange={(v) => update({ chapter2AccentColor: v })} />
-                <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                  Cadre (décor)
-                  <select value={o.chapter2CardFrame} onChange={(e) => update({ chapter2CardFrame: e.target.value })} className={inputClass}>
-                    <option value="">Aucun</option>
-                    {HERO_CARD_FRAMES.map((f) => (
-                      <option key={f.id} value={f.id}>{f.label}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-                <BoldField checked={o.chapter2Bold} onChange={(v) => update({ chapter2Bold: v })} />
-              </div>
-
-              <div className="mt-3 flex flex-col gap-1">
-                <span className="text-xs font-medium text-neutral-500">Aperçu</span>
-                <PreviewStage themeVars={themeVars}>
-                  <ChapterContent
-                    chapter={chapter2FramePreview}
-                    textAnimation={chapter2FramePreview.textAnimation || o.textAnimation || undefined}
-                    className={cn("hs-overlay", animShow && "show", (chapter2FramePreview.textAnimation || o.textAnimation) && `hs-anim-${chapter2FramePreview.textAnimation || o.textAnimation}`)}
-                  />
-                </PreviewStage>
-              </div>
-            </div>
-
-            {/* ---- Bloc 3 — la date, indépendant des prénoms ---- */}
-            <div className="rounded-xl border border-neutral-200 bg-white p-5">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                  3e bloc — la date, indépendant des prénoms
-                </p>
-                <label className="flex items-center gap-2 text-[12.5px] font-medium text-neutral-500">
-                  <input
-                    type="checkbox"
-                    checked={o.dateBlockEnabled}
-                    onChange={(e) => update({ dateBlockEnabled: e.target.checked })}
-                    className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
-                  />
-                  Bloc activé
-                </label>
-              </div>
-              {!o.dateBlockEnabled ? (
-                <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
-                  Désactivé — la date reste affichée sous les prénoms, comme aujourd'hui (comportement historique).
-                </p>
-              ) : (
-                <>
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <TimecodeField
-                      label="Apparaît à (s)"
-                      value={o.dateBlockFromSec}
-                      max={duration}
-                      onChange={(v) => update({ dateBlockFromSec: v })}
-                      onCaler={() => update({ dateBlockFromSec: Math.round(currentTime * 10) / 10 })}
-                    />
-                    <TimecodeField
-                      label="Disparaît à (s)"
-                      value={o.dateBlockToSec}
-                      max={duration}
-                      onChange={(v) => update({ dateBlockToSec: v })}
-                      onCaler={() => update({ dateBlockToSec: Math.round(currentTime * 10) / 10 })}
-                    />
-                    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                      Position verticale
-                      <select
-                        value={o.dateBlockPosition}
-                        onChange={(e) => update({ dateBlockPosition: e.target.value as SaveTheDateTemplateOverride["dateBlockPosition"] })}
-                        className={inputClass}
-                      >
-                        <option value="top">Haut</option>
-                        <option value="middle">Milieu</option>
-                        <option value="bottom">Bas</option>
-                      </select>
-                    </label>
-                  </div>
-
-                  <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                      Taille de police
-                      <select
-                        value={o.dateBlockTitleSize}
-                        onChange={(e) => update({ dateBlockTitleSize: e.target.value })}
-                        className={inputClass}
-                      >
-                        <option value="">Moyenne (défaut)</option>
-                        <option value="sm">Petite</option>
-                        <option value="md">Moyenne</option>
-                        <option value="lg">Grande</option>
-                      </select>
-                    </label>
-                    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                      Police — ce bloc
-                      <FontSelect value={o.dateBlockFontId} onChange={(v) => update({ dateBlockFontId: v })} defaultLabel="Police du hero" />
-                    </label>
-                    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                      Animation — ce bloc
-                      <AnimSelect value={o.dateBlockTextAnimation} onChange={(v) => update({ dateBlockTextAnimation: v })} defaultLabel="Animation du hero" />
-                    </label>
-                    <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.dateBlockTextColor} onChange={(v) => update({ dateBlockTextColor: v })} />
-                    <ColorField label="Fond de carte" hint="Vide = fond du thème" value={o.dateBlockCardBg} onChange={(v) => update({ dateBlockCardBg: v })} noneOption />
-                    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                      Cadre (décor)
-                      <select value={o.dateBlockCardFrame} onChange={(e) => update({ dateBlockCardFrame: e.target.value })} className={inputClass}>
-                        <option value="">Aucun</option>
-                        {HERO_CARD_FRAMES.map((f) => (
-                          <option key={f.id} value={f.id}>{f.label}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-                    <BoldField checked={o.dateBlockBold} onChange={(v) => update({ dateBlockBold: v })} />
-                  </div>
-
-                  <div className="mt-3 flex flex-col gap-1">
-                    <span className="text-xs font-medium text-neutral-500">Aperçu</span>
-                    <PreviewStage themeVars={themeVars}>
-                      <ChapterContent
-                        chapter={dateBlockPreview}
-                        textAnimation={dateBlockPreview.textAnimation || o.textAnimation || undefined}
-                        className={cn("hs-overlay", animShow && "show", (dateBlockPreview.textAnimation || o.textAnimation) && `hs-anim-${dateBlockPreview.textAnimation || o.textAnimation}`)}
-                      />
-                    </PreviewStage>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </Panel>
-
-        {/* ---- Logo — monogramme des initiales des mariés (échange du 26/09/2026) ---- */}
-        <Panel>
-          <PanelTitle
-            title="Logo — monogramme des mariés"
-            hint="Les initiales des mariés sous forme de logo. Elles viennent automatiquement des prénoms du client : vous ne réglez que le style."
-          />
-          <div className="flex flex-col gap-4 p-6">
-            <label className="flex items-center gap-2 text-[12.5px] font-medium text-neutral-500">
-              <input
-                type="checkbox"
-                checked={o.monogramEnabled}
-                onChange={(e) => update({ monogramEnabled: e.target.checked })}
-                className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
-              />
-              Logo activé
-            </label>
-            {!o.monogramEnabled ? (
-              <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
-                Désactivé — aucun logo n'apparaît sur ce modèle.
-              </p>
-            ) : (
-              <>
-                <div>
-                  <p className="mb-2 text-xs font-medium text-neutral-500">Mise en page</p>
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
-                    {HERO_MONOGRAM_LAYOUTS.map((l) => (
-                      <button
-                        key={l.id}
-                        type="button"
-                        onClick={() => update({ monogramLayout: l.id })}
-                        title={l.desc}
-                        className={cn(
-                          "flex flex-col gap-1.5 rounded-xl border p-1.5 text-center transition-colors",
-                          (o.monogramLayout || "circle") === l.id
-                            ? "border-terracotta-500 bg-terracotta-500/5"
-                            : "border-neutral-200 hover:border-terracotta-300",
-                        )}
-                      >
-                        <div
-                          className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950"
-                          style={{ aspectRatio: "1", containerType: "inline-size", ...themeVars, ...(monoFont ? { "--hs-font-family": monoFont.fontFamily } : null) } as CSSProperties}
-                        >
-                          <HeroMonogramBlock m={{ ...monoData, layout: l.id }} size="sm" fontId={o.monogramFontId} />
-                        </div>
-                        <span className="text-[10.5px] font-medium leading-tight text-ink">{l.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
+          {/* ---- Bloc 1 — "Save the date" ---- */}
+          {activeTab === "bloc1" && (
+            <Panel>
+              <PanelTitle title="1er bloc — texte affiché" hint="Ex. « Save the date » — texte, timing, position, police et style de ce bloc." />
+              <div className="p-6">
                 <div className="grid gap-3 md:grid-cols-5">
-                  <TimecodeField
-                    label="Apparaît à (s)"
-                    value={o.monogramFromSec}
-                    max={duration}
-                    onChange={(v) => update({ monogramFromSec: v })}
-                    onCaler={() => update({ monogramFromSec: Math.round(currentTime * 10) / 10 })}
-                  />
-                  <TimecodeField
-                    label="Disparaît à (s)"
-                    value={o.monogramToSec}
-                    max={duration}
-                    onChange={(v) => update({ monogramToSec: v })}
-                    onCaler={() => update({ monogramToSec: Math.round(currentTime * 10) / 10 })}
-                  />
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Position verticale
-                    <select value={o.monogramPosition} onChange={(e) => update({ monogramPosition: e.target.value as SaveTheDateTemplateOverride["monogramPosition"] })} className={inputClass}>
-                      <option value="top">Haut</option>
-                      <option value="middle">Milieu</option>
-                      <option value="bottom">Bas</option>
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Police des initiales
-                    <select value={o.monogramFontId} onChange={(e) => update({ monogramFontId: e.target.value })} className={inputClass}>
-                      {HERO_MONOGRAM_FONT_IDS.map((id) => {
-                        const f = getHeroFont(id);
-                        return f ? <option key={id} value={id}>{f.label}</option> : null;
-                      })}
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Taille
-                    <select value={o.monogramSize} onChange={(e) => update({ monogramSize: e.target.value })} className={inputClass}>
-                      <option value="">Moyenne (défaut)</option>
-                      <option value="sm">Petite</option>
-                      <option value="md">Moyenne</option>
-                      <option value="lg">Grande</option>
-                    </select>
-                  </label>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <ColorField label="Couleur des lettres" hint="Vide = couleur du thème" value={o.monogramColor} onChange={(v) => update({ monogramColor: v })} />
-                  {/* "Sceau de cire" ne dessine ni filet ni esperluette — ce
-                      réglage n'a aucun effet sur cette mise en page (signalé
-                      le 28/09/2026 : "la capture d'écran n'affiche pas les
-                      réglages sélectionnés"), donc masqué plutôt que
-                      silencieusement ignoré. */}
-                  {(o.monogramLayout || "circle") !== "wax" && (
-                    <ColorField label="Couleur des filets & de l'esperluette" hint="Vide = accent du thème" value={o.monogramAccent} onChange={(v) => update({ monogramAccent: v })} />
-                  )}
-                  {(o.monogramLayout || "circle") === "wax" && (
-                    <>
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Forme du sceau
-                        <select value={o.monogramSealShape || "classic"} onChange={(e) => update({ monogramSealShape: e.target.value })} className={inputClass}>
-                          {HERO_SEAL_SHAPES.map((s) => (
-                            <option key={s.id} value={s.id} title={s.desc}>{s.label}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <div className="flex flex-col gap-1.5">
-                        <ColorField label="Couleur du sceau" hint="Vide = bordeaux" value={o.monogramSealColor} onChange={(v) => update({ monogramSealColor: v })} />
-                        <div className="flex flex-wrap gap-1.5">
-                          {HERO_SEAL_COLORS.map((c) => (
-                            <button
-                              key={c.hex}
-                              type="button"
-                              title={c.label}
-                              aria-label={c.label}
-                              onClick={() => update({ monogramSealColor: c.hex })}
-                              className={cn(
-                                "h-6 w-6 rounded-full border-2",
-                                o.monogramSealColor.toLowerCase() === c.hex ? "border-ink" : "border-white ring-1 ring-neutral-200",
-                              )}
-                              style={{ background: c.hex }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      {/* Uniquement pertinent pour la forme "Double liseré" — cf. échange du 28/09/2026, "on a la possibilité de personnaliser chaque liseré ?". */}
-                      {(o.monogramSealShape || "classic") === "double" && (
-                        <div className="flex flex-col gap-1.5">
-                          <ColorField label="Couleur du 2e liseré" hint="Vide = couleur du sceau" value={o.monogramSealColor2} onChange={(v) => update({ monogramSealColor2: v })} />
-                          <div className="flex flex-wrap gap-1.5">
-                            {HERO_SEAL_COLORS.map((c) => (
-                              <button
-                                key={c.hex}
-                                type="button"
-                                title={c.label}
-                                aria-label={c.label}
-                                onClick={() => update({ monogramSealColor2: c.hex })}
-                                className={cn(
-                                  "h-6 w-6 rounded-full border-2",
-                                  o.monogramSealColor2.toLowerCase() === c.hex ? "border-ink" : "border-white ring-1 ring-neutral-200",
-                                )}
-                                style={{ background: c.hex }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  <ColorField label="Fond de carte" hint="« Aucun fond » = logo seul" value={o.monogramCardBg} onChange={(v) => update({ monogramCardBg: v })} noneOption />
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Cadre (décor)
-                    <select value={o.monogramCardFrame} onChange={(e) => update({ monogramCardFrame: e.target.value })} className={inputClass}>
-                      <option value="">Aucun</option>
-                      {HERO_CARD_FRAMES.map((f) => (
-                        <option key={f.id} value={f.id}>{f.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Animation — ce bloc
-                    <AnimSelect value={o.monogramTextAnimation} onChange={(v) => update({ monogramTextAnimation: v })} defaultLabel="Animation du hero" />
-                  </label>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-medium text-neutral-500">Aperçu (initiales des prénoms d'exemple : {monoA} &amp; {monoB})</span>
-                  <PreviewStage themeVars={themeVars}>
-                    <ChapterContent
-                      chapter={{
-                        id: 4000,
-                        kind: "text",
-                        from: 0,
-                        to: 1,
-                        titleSize: (o.monogramSize || undefined) as HeroChapter["titleSize"],
-                        textColorOverride: o.monogramColor || undefined,
-                        cardBgOverride: o.monogramCardBg || undefined,
-                        cardFrame: o.monogramCardFrame || undefined,
-                        fontId: o.monogramFontId || undefined,
-                        monogram: monoData,
-                      }}
-                      textAnimation={o.monogramTextAnimation || o.textAnimation || undefined}
-                      className={cn("hs-overlay", animShow && "show", (o.monogramTextAnimation || o.textAnimation) && `hs-anim-${o.monogramTextAnimation || o.textAnimation}`)}
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 md:col-span-2">
+                    Texte — une ligne par retour à la ligne (1 à 3 lignes)
+                    <textarea
+                      rows={2}
+                      value={o.chapter1Text}
+                      onChange={(e) => update({ chapter1Text: e.target.value })}
+                      className={textareaClass}
                     />
-                  </PreviewStage>
-                </div>
-              </>
-            )}
-          </div>
-        </Panel>
-
-        {/* ---- Blocs supplémentaires (généralistes, pas personnalisables par le client) ---- */}
-        <Panel>
-          <PanelTitle
-            title="Blocs supplémentaires"
-            hint={'Généralistes — identiques pour tous les clients de ce modèle (pas de personnalisation), mais bien présents sur la vraie vidéo livrée.'}
-          />
-          <div className="flex flex-col gap-3 p-6">
-            {(o.extraCards ?? []).map((card) => card.kind === 'countdown' ? (
-              <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                    Compte à rebours — jusqu'à la date du mariage du client
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => removeExtraCard(card.id)}
-                    aria-label="Retirer ce bloc"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 sm:col-span-2">
-                    Style
-                    <select value={card.countdownStyle || "boxes"} onChange={(e) => updateExtraCard(card.id, { countdownStyle: e.target.value })} className={inputClass}>
-                      {HERO_COUNTDOWN_STYLES.map((st) => (
-                        <option key={st.id} value={st.id}>{st.label}</option>
-                      ))}
-                    </select>
                   </label>
                   <TimecodeField
                     label="Apparaît à (s)"
-                    value={card.fromSec}
+                    value={o.chapter1FromSec}
                     max={duration}
-                    onChange={(v) => updateExtraCard(card.id, { fromSec: v })}
-                    onCaler={() => updateExtraCard(card.id, { fromSec: Math.round(currentTime * 10) / 10 })}
+                    onChange={(v) => update({ chapter1FromSec: v })}
+                    onCaler={() => update({ chapter1FromSec: Math.round(currentTime * 10) / 10 })}
                   />
                   <TimecodeField
                     label="Disparaît à (s)"
-                    value={card.toSec}
+                    value={o.chapter1ToSec}
                     max={duration}
-                    onChange={(v) => updateExtraCard(card.id, { toSec: v })}
-                    onCaler={() => updateExtraCard(card.id, { toSec: Math.round(currentTime * 10) / 10 })}
-                  />
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Position verticale
-                    <select value={card.position} onChange={(e) => updateExtraCard(card.id, { position: e.target.value as HeroCustomCard["position"] })} className={inputClass}>
-                      <option value="top">Haut</option>
-                      <option value="middle">Milieu</option>
-                      <option value="bottom">Bas</option>
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Animation — ce bloc
-                    <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
-                  </label>
-                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
-                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateExtraCard(card.id, { cardBg: v })} noneOption />
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Cadre (décor)
-                    <select value={card.cardFrame} onChange={(e) => updateExtraCard(card.id, { cardFrame: e.target.value })} className={inputClass}>
-                      <option value="">Aucun</option>
-                      {HERO_CARD_FRAMES.map((f) => (
-                        <option key={f.id} value={f.id}>{f.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <div className="mt-2 flex flex-col gap-1">
-                  <span className="text-xs font-medium text-neutral-500">Aperçu (décompte fictif de 100 jours)</span>
-                  <PreviewStage themeVars={themeVars}>
-                    <ChapterContent
-                      chapter={{
-                        id: 3000,
-                        kind: "text",
-                        from: 0,
-                        to: 1,
-                        countdown: { style: card.countdownStyle || "boxes", targetIso: COUNTDOWN_PREVIEW_TARGET },
-                        textColorOverride: card.textColor || undefined,
-                        cardBgOverride: card.cardBg || undefined,
-                        cardFrame: card.cardFrame || undefined,
-                      }}
-                      textAnimation={card.textAnimation || o.textAnimation || undefined}
-                      className={cn("hs-overlay", animShow && "show", (card.textAnimation || o.textAnimation) && `hs-anim-${card.textAnimation || o.textAnimation}`)}
-                    />
-                  </PreviewStage>
-                </div>
-              </div>
-            ) : (
-              <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
-                <div className="flex items-start gap-3">
-                  <textarea
-                    value={card.text}
-                    onChange={(e) => updateExtraCard(card.id, { text: e.target.value })}
-                    placeholder="Votre texte…"
-                    rows={2}
-                    maxLength={280}
-                    className={cn(textareaClass, "flex-1")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeExtraCard(card.id)}
-                    aria-label="Retirer ce bloc"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-                <div className="mt-2 grid grid-cols-3 gap-3">
-                  <TimecodeField
-                    label="Apparaît à (s)"
-                    value={card.fromSec}
-                    max={duration}
-                    onChange={(v) => updateExtraCard(card.id, { fromSec: v })}
-                    onCaler={() => updateExtraCard(card.id, { fromSec: Math.round(currentTime * 10) / 10 })}
-                  />
-                  <TimecodeField
-                    label="Disparaît à (s)"
-                    value={card.toSec}
-                    max={duration}
-                    onChange={(v) => updateExtraCard(card.id, { toSec: v })}
-                    onCaler={() => updateExtraCard(card.id, { toSec: Math.round(currentTime * 10) / 10 })}
+                    onChange={(v) => update({ chapter1ToSec: v })}
+                    onCaler={() => update({ chapter1ToSec: Math.round(currentTime * 10) / 10 })}
                   />
                   <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                     Position verticale
                     <select
-                      value={card.position}
-                      onChange={(e) => updateExtraCard(card.id, { position: e.target.value as HeroCustomCard["position"] })}
+                      value={o.chapter1Position}
+                      onChange={(e) => update({ chapter1Position: e.target.value as SaveTheDateTemplateOverride["chapter1Position"] })}
                       className={inputClass}
                     >
                       <option value="top">Haut</option>
@@ -1150,17 +595,107 @@ function ModeleStdDetailForm({
                     </select>
                   </label>
                 </div>
-                {/* Police/taille/couleur/cadre/animation/gras propres à CE
-                    bloc — vide = réglage hero-wide (cf. échanges des
-                    21/09/2026 et 23/09/2026, "pouvoir tout gérer comme pour
-                    les autres blocs") : même jeu complet de réglages que les
-                    3 blocs fixes ci-dessus, aperçu compris. */}
-                <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                   <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                     Taille de police
                     <select
-                      value={card.titleSize}
-                      onChange={(e) => updateExtraCard(card.id, { titleSize: e.target.value })}
+                      value={o.chapter1TitleSize}
+                      onChange={(e) => update({ chapter1TitleSize: e.target.value })}
+                      className={inputClass}
+                    >
+                      <option value="sm">Petite</option>
+                      <option value="md">Moyenne</option>
+                      <option value="lg">Grande</option>
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Police — ce bloc
+                    <FontSelect value={o.chapter1FontId} onChange={(v) => update({ chapter1FontId: v })} defaultLabel="Police du hero" />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Animation — ce bloc
+                    <AnimSelect value={o.chapter1TextAnimation} onChange={(v) => update({ chapter1TextAnimation: v })} defaultLabel="Animation du hero" />
+                  </label>
+                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.chapter1TextColor} onChange={(v) => update({ chapter1TextColor: v })} />
+                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={o.chapter1CardBg} onChange={(v) => update({ chapter1CardBg: v })} noneOption />
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Cadre (décor)
+                    <select value={o.chapter1CardFrame} onChange={(e) => update({ chapter1CardFrame: e.target.value })} className={inputClass}>
+                      <option value="">Aucun</option>
+                      {HERO_CARD_FRAMES.map((f) => (
+                        <option key={f.id} value={f.id}>{f.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+                  <BoldField checked={o.chapter1Bold} onChange={(v) => update({ chapter1Bold: v })} />
+                </div>
+
+                <div className="mt-3 flex flex-col gap-1">
+                  <span className="text-xs font-medium text-neutral-500">Aperçu</span>
+                  <PreviewStage themeVars={themeVars}>
+                    <ChapterContent
+                      chapter={chapter1FramePreview}
+                      textAnimation={chapter1FramePreview.textAnimation || o.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", (chapter1FramePreview.textAnimation || o.textAnimation) && `hs-anim-${chapter1FramePreview.textAnimation || o.textAnimation}`)}
+                    />
+                  </PreviewStage>
+                </div>
+              </div>
+            </Panel>
+          )}
+
+          {/* ---- Bloc 2 — prénoms & date d'exemple ---- */}
+          {activeTab === "bloc2" && (
+            <Panel>
+              <PanelTitle title="2e bloc — prénoms & date" hint="Un vrai client verra ses prénoms et sa date à la place de l'exemple." />
+              <div className="p-6">
+                <div className="grid gap-3 md:grid-cols-5">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Prénoms d'exemple
+                    <input value={o.exampleNames} onChange={(e) => update({ exampleNames: e.target.value })} className={inputClass} />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Date d'exemple
+                    <input value={o.exampleDate} onChange={(e) => update({ exampleDate: e.target.value })} className={inputClass} />
+                  </label>
+                  <TimecodeField
+                    label="Apparaît à (s)"
+                    value={o.chapter2FromSec}
+                    max={duration}
+                    onChange={(v) => update({ chapter2FromSec: v })}
+                    onCaler={() => update({ chapter2FromSec: Math.round(currentTime * 10) / 10 })}
+                  />
+                  <TimecodeField
+                    label="Disparaît à (s)"
+                    value={o.chapter2ToSec}
+                    max={duration}
+                    onChange={(v) => update({ chapter2ToSec: v })}
+                    onCaler={() => update({ chapter2ToSec: Math.round(currentTime * 10) / 10 })}
+                  />
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Position verticale
+                    <select
+                      value={o.chapter2Position}
+                      onChange={(e) => update({ chapter2Position: e.target.value as SaveTheDateTemplateOverride["chapter2Position"] })}
+                      className={inputClass}
+                    >
+                      <option value="top">Haut</option>
+                      <option value="middle">Milieu</option>
+                      <option value="bottom">Bas</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-7">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Taille de police
+                    <select
+                      value={o.chapter2TitleSize}
+                      onChange={(e) => update({ chapter2TitleSize: e.target.value })}
                       className={inputClass}
                     >
                       <option value="">Moyenne (défaut)</option>
@@ -1171,17 +706,18 @@ function ModeleStdDetailForm({
                   </label>
                   <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                     Police — ce bloc
-                    <FontSelect value={card.fontId} onChange={(v) => updateExtraCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
+                    <FontSelect value={o.chapter2FontId} onChange={(v) => update({ chapter2FontId: v })} defaultLabel="Police du hero" />
                   </label>
                   <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                     Animation — ce bloc
-                    <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                    <AnimSelect value={o.chapter2TextAnimation} onChange={(v) => update({ chapter2TextAnimation: v })} defaultLabel="Animation du hero" />
                   </label>
-                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
-                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateExtraCard(card.id, { cardBg: v })} noneOption />
+                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.chapter2TextColor} onChange={(v) => update({ chapter2TextColor: v })} />
+                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={o.chapter2CardBg} onChange={(v) => update({ chapter2CardBg: v })} noneOption />
+                  <ColorField label='Couleur du "&"' hint="Vide = accent du thème" value={o.chapter2AccentColor} onChange={(v) => update({ chapter2AccentColor: v })} />
                   <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                     Cadre (décor)
-                    <select value={card.cardFrame} onChange={(e) => updateExtraCard(card.id, { cardFrame: e.target.value })} className={inputClass}>
+                    <select value={o.chapter2CardFrame} onChange={(e) => update({ chapter2CardFrame: e.target.value })} className={inputClass}>
                       <option value="">Aucun</option>
                       {HERO_CARD_FRAMES.map((f) => (
                         <option key={f.id} value={f.id}>{f.label}</option>
@@ -1190,161 +726,674 @@ function ModeleStdDetailForm({
                   </label>
                 </div>
 
-                <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-                  <BoldField checked={card.bold} onChange={(v) => updateExtraCard(card.id, { bold: v })} />
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+                  <BoldField checked={o.chapter2Bold} onChange={(v) => update({ chapter2Bold: v })} />
                 </div>
 
-                <div className="mt-2 flex flex-col gap-1">
+                <div className="mt-3 flex flex-col gap-1">
                   <span className="text-xs font-medium text-neutral-500">Aperçu</span>
                   <PreviewStage themeVars={themeVars}>
                     <ChapterContent
-                      chapter={{
-                        id: 2000,
-                        kind: "text",
-                        from: 0,
-                        to: 1,
-                        lead: card.text || "Votre texte…",
-                        titleSize: (card.titleSize || undefined) as HeroChapter["titleSize"],
-                        textColorOverride: card.textColor || undefined,
-                        cardBgOverride: card.cardBg || undefined,
-                        cardFrame: card.cardFrame || undefined,
-                        fontId: card.fontId || undefined,
-                        bold: card.bold,
-                      }}
-                      textAnimation={card.textAnimation || o.textAnimation || undefined}
-                      className={cn("hs-overlay", animShow && "show", (card.textAnimation || o.textAnimation) && `hs-anim-${card.textAnimation || o.textAnimation}`)}
+                      chapter={chapter2FramePreview}
+                      textAnimation={chapter2FramePreview.textAnimation || o.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", (chapter2FramePreview.textAnimation || o.textAnimation) && `hs-anim-${chapter2FramePreview.textAnimation || o.textAnimation}`)}
                     />
                   </PreviewStage>
                 </div>
               </div>
-            ))}
+            </Panel>
+          )}
 
-            <button
-              type="button"
-              onClick={addCountdownCard}
-              className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
-            >
-              <Plus size={14} /> Ajouter un compte à rebours
-            </button>
-
-            <button
-              type="button"
-              onClick={addExtraCard}
-              className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
-            >
-              <Plus size={14} /> Ajouter un bloc
-            </button>
-          </div>
-        </Panel>
-
-        {/* ---- Décor & style, avec aperçu réactif ---- */}
-        <Panel>
-          <PanelTitle
-            title="Décor & style — réglages par défaut du hero"
-            hint="S'appliquent à toute la vidéo, sauf si un bloc ci-dessus a son propre réglage (qui prend alors le dessus). L'aperçu se met à jour dès que vous changez un réglage."
-          />
-          <div className="grid gap-6 p-6 md:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Décor graphique
-                <select value={o.overlayGraphic} onChange={(e) => update({ overlayGraphic: e.target.value })} className={inputClass}>
-                  <option value="">Aucun</option>
-                  {HERO_OVERLAY_GRAPHICS.map((g) => (
-                    <option key={g.id} value={g.id}>{g.label}</option>
-                  ))}
-                </select>
-              </label>
-              <PreviewStage themeVars={themeVars}>
-                <HeroOverlayGraphic id={o.overlayGraphic || undefined} />
-              </PreviewStage>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Police du titre — tout le hero
-                <FontSelect value={o.fontId} onChange={(v) => update({ fontId: v })} defaultLabel="Police du site (Fraunces)" />
-              </label>
-              <PreviewStage themeVars={themeVars}>
-                <p
-                  className="px-4 text-center text-[28px] font-light leading-[1.1]"
-                  style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)", fontStyle: fontPreview?.italic ? "italic" : undefined }}
-                >
-                  {o.chapter1Text || "Save the date"}
-                </p>
-              </PreviewStage>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Animation du texte — tout le hero
-                <AnimSelect value={o.textAnimation} onChange={(v) => update({ textAnimation: v })} defaultLabel="Fondu (défaut)" />
-              </label>
-              <PreviewStage themeVars={themeVars}>
-                <ChapterContent
-                  chapter={previewChapter}
-                  textAnimation={o.textAnimation || undefined}
-                  className={cn("hs-overlay", animShow && "show", o.textAnimation && `hs-anim-${o.textAnimation}`)}
-                />
-              </PreviewStage>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Filtre vidéo
-                <select value={o.filter} onChange={(e) => update({ filter: e.target.value })} className={inputClass}>
-                  <option value="">Aucun</option>
-                  {HERO_FILTERS.map((f) => (
-                    <option key={f.id} value={f.id}>{f.label}</option>
-                  ))}
-                </select>
-              </label>
-              <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
-                Déjà visible en direct sur la vidéo tout en haut de la page.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                Format de la date
-                <select value={o.dateFormat} onChange={(e) => update({ dateFormat: e.target.value })} className={inputClass}>
-                  <option value="">12 juin 2027 (défaut)</option>
-                  <optgroup label="Sur une ligne">
-                    {HERO_DATE_FORMATS.filter((f) => !f.layout).map((f) => (
-                      <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Mises en page multi-lignes (bloc date indépendant)">
-                    {HERO_DATE_FORMATS.filter((f) => f.layout).map((f) => (
-                      <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
-                    ))}
-                  </optgroup>
-                </select>
-              </label>
-              <PreviewStage themeVars={themeVars}>
-                {selectedDateFormat?.layout ? (
-                  <HeroDateLayoutBlock
-                    layout={{ id: selectedDateFormat.id, fonts: selectedDateFormat.layout.fonts, lines: selectedDateFormat.layout.lines(DATE_FORMAT_PREVIEW_DATE) }}
-                  />
-                ) : (
-                  <p
-                    className="px-4 text-center text-[22px] font-light"
-                    style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)", fontStyle: fontPreview?.italic ? "italic" : undefined }}
-                  >
-                    {selectedDateFormat?.format(DATE_FORMAT_PREVIEW_DATE) ?? "12 juin 2027"}
+          {/* ---- Bloc 3 — la date, indépendant des prénoms ---- */}
+          {activeTab === "bloc3" && (
+            <Panel>
+              <PanelTitle
+                title="3e bloc — date indépendante"
+                hint="Optionnel : sinon la date reste affichée sous les prénoms."
+                action={
+                  <label className="flex items-center gap-2 text-[12.5px] font-medium text-neutral-500">
+                    <input
+                      type="checkbox"
+                      checked={o.dateBlockEnabled}
+                      onChange={(e) => update({ dateBlockEnabled: e.target.checked })}
+                      className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
+                    />
+                    Bloc activé
+                  </label>
+                }
+              />
+              <div className="p-6">
+                {!o.dateBlockEnabled ? (
+                  <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
+                    Désactivé — la date reste affichée sous les prénoms, comme aujourd'hui (comportement historique).
                   </p>
-                )}
-              </PreviewStage>
-              <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
-                S'applique à la vraie date du client sur une commande passée sur ce modèle (sous les prénoms, ou dans le 3e bloc si activé ; les mises en page multi-lignes ne s'affichent que dans le 3e bloc, sous les prénoms elles retombent sur une ligne) ; la page d'aperçu publique du modèle l'applique aussi, à la date d'exemple du 12 juin 2027.
-              </p>
-            </div>
-          </div>
-        </Panel>
+                ) : (
+                  <>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <TimecodeField
+                        label="Apparaît à (s)"
+                        value={o.dateBlockFromSec}
+                        max={duration}
+                        onChange={(v) => update({ dateBlockFromSec: v })}
+                        onCaler={() => update({ dateBlockFromSec: Math.round(currentTime * 10) / 10 })}
+                      />
+                      <TimecodeField
+                        label="Disparaît à (s)"
+                        value={o.dateBlockToSec}
+                        max={duration}
+                        onChange={(v) => update({ dateBlockToSec: v })}
+                        onCaler={() => update({ dateBlockToSec: Math.round(currentTime * 10) / 10 })}
+                      />
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Position verticale
+                        <select
+                          value={o.dateBlockPosition}
+                          onChange={(e) => update({ dateBlockPosition: e.target.value as SaveTheDateTemplateOverride["dateBlockPosition"] })}
+                          className={inputClass}
+                        >
+                          <option value="top">Haut</option>
+                          <option value="middle">Milieu</option>
+                          <option value="bottom">Bas</option>
+                        </select>
+                      </label>
+                    </div>
 
-        <AdminButton className="self-start" disabled={save.isPending} onClick={persist}>
-          {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
-          Enregistrer le modèle
-        </AdminButton>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Taille de police
+                        <select
+                          value={o.dateBlockTitleSize}
+                          onChange={(e) => update({ dateBlockTitleSize: e.target.value })}
+                          className={inputClass}
+                        >
+                          <option value="">Moyenne (défaut)</option>
+                          <option value="sm">Petite</option>
+                          <option value="md">Moyenne</option>
+                          <option value="lg">Grande</option>
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Police — ce bloc
+                        <FontSelect value={o.dateBlockFontId} onChange={(v) => update({ dateBlockFontId: v })} defaultLabel="Police du hero" />
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Animation — ce bloc
+                        <AnimSelect value={o.dateBlockTextAnimation} onChange={(v) => update({ dateBlockTextAnimation: v })} defaultLabel="Animation du hero" />
+                      </label>
+                      <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={o.dateBlockTextColor} onChange={(v) => update({ dateBlockTextColor: v })} />
+                      <ColorField label="Fond de carte" hint="Vide = fond du thème" value={o.dateBlockCardBg} onChange={(v) => update({ dateBlockCardBg: v })} noneOption />
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Cadre (décor)
+                        <select value={o.dateBlockCardFrame} onChange={(e) => update({ dateBlockCardFrame: e.target.value })} className={inputClass}>
+                          <option value="">Aucun</option>
+                          {HERO_CARD_FRAMES.map((f) => (
+                            <option key={f.id} value={f.id}>{f.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+                      <BoldField checked={o.dateBlockBold} onChange={(v) => update({ dateBlockBold: v })} />
+                    </div>
+
+                    <div className="mt-3 flex flex-col gap-1">
+                      <span className="text-xs font-medium text-neutral-500">Aperçu</span>
+                      <PreviewStage themeVars={themeVars}>
+                        <ChapterContent
+                          chapter={dateBlockPreview}
+                          textAnimation={dateBlockPreview.textAnimation || o.textAnimation || undefined}
+                          className={cn("hs-overlay", animShow && "show", (dateBlockPreview.textAnimation || o.textAnimation) && `hs-anim-${dateBlockPreview.textAnimation || o.textAnimation}`)}
+                        />
+                      </PreviewStage>
+                    </div>
+                  </>
+                )}
+              </div>
+            </Panel>
+          )}
+
+          {/* ---- Logo — monogramme des initiales des mariés (échange du 26/09/2026) ---- */}
+          {activeTab === "logo" && (
+            <Panel>
+              <PanelTitle
+                title="Logo — monogramme des mariés"
+                hint="Les initiales des mariés sous forme de logo. Elles viennent automatiquement des prénoms du client : vous ne réglez que le style."
+                action={
+                  <label className="flex items-center gap-2 text-[12.5px] font-medium text-neutral-500">
+                    <input
+                      type="checkbox"
+                      checked={o.monogramEnabled}
+                      onChange={(e) => update({ monogramEnabled: e.target.checked })}
+                      className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
+                    />
+                    Logo activé
+                  </label>
+                }
+              />
+              <div className="flex flex-col gap-4 p-6">
+                {!o.monogramEnabled ? (
+                  <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
+                    Désactivé — aucun logo n'apparaît sur ce modèle.
+                  </p>
+                ) : (
+                  <>
+                    <div>
+                      <p className="mb-2 text-xs font-medium text-neutral-500">Mise en page</p>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
+                        {HERO_MONOGRAM_LAYOUTS.map((l) => (
+                          <button
+                            key={l.id}
+                            type="button"
+                            onClick={() => update({ monogramLayout: l.id })}
+                            title={l.desc}
+                            className={cn(
+                              "flex flex-col gap-1.5 rounded-xl border p-1.5 text-center transition-colors",
+                              (o.monogramLayout || "circle") === l.id
+                                ? "border-terracotta-500 bg-terracotta-500/5"
+                                : "border-neutral-200 hover:border-terracotta-300",
+                            )}
+                          >
+                            <div
+                              className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950"
+                              style={{ aspectRatio: "1", containerType: "inline-size", ...themeVars, ...(monoFont ? { "--hs-font-family": monoFont.fontFamily } : null) } as CSSProperties}
+                            >
+                              <HeroMonogramBlock m={{ ...monoData, layout: l.id }} size="sm" fontId={o.monogramFontId} />
+                            </div>
+                            <span className="text-[10.5px] font-medium leading-tight text-ink">{l.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-5">
+                      <TimecodeField
+                        label="Apparaît à (s)"
+                        value={o.monogramFromSec}
+                        max={duration}
+                        onChange={(v) => update({ monogramFromSec: v })}
+                        onCaler={() => update({ monogramFromSec: Math.round(currentTime * 10) / 10 })}
+                      />
+                      <TimecodeField
+                        label="Disparaît à (s)"
+                        value={o.monogramToSec}
+                        max={duration}
+                        onChange={(v) => update({ monogramToSec: v })}
+                        onCaler={() => update({ monogramToSec: Math.round(currentTime * 10) / 10 })}
+                      />
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Position verticale
+                        <select value={o.monogramPosition} onChange={(e) => update({ monogramPosition: e.target.value as SaveTheDateTemplateOverride["monogramPosition"] })} className={inputClass}>
+                          <option value="top">Haut</option>
+                          <option value="middle">Milieu</option>
+                          <option value="bottom">Bas</option>
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Police des initiales
+                        <select value={o.monogramFontId} onChange={(e) => update({ monogramFontId: e.target.value })} className={inputClass}>
+                          {HERO_MONOGRAM_FONT_IDS.map((id) => {
+                            const f = getHeroFont(id);
+                            return f ? <option key={id} value={id}>{f.label}</option> : null;
+                          })}
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Taille
+                        <select value={o.monogramSize} onChange={(e) => update({ monogramSize: e.target.value })} className={inputClass}>
+                          <option value="">Moyenne (défaut)</option>
+                          <option value="sm">Petite</option>
+                          <option value="md">Moyenne</option>
+                          <option value="lg">Grande</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      <ColorField label="Couleur des lettres" hint="Vide = couleur du thème" value={o.monogramColor} onChange={(v) => update({ monogramColor: v })} />
+                      {/* "Sceau de cire" ne dessine ni filet ni esperluette — ce
+                          réglage n'a aucun effet sur cette mise en page (signalé
+                          le 28/09/2026 : "la capture d'écran n'affiche pas les
+                          réglages sélectionnés"), donc masqué plutôt que
+                          silencieusement ignoré. */}
+                      {(o.monogramLayout || "circle") !== "wax" && (
+                        <ColorField label="Couleur des filets & de l'esperluette" hint="Vide = accent du thème" value={o.monogramAccent} onChange={(v) => update({ monogramAccent: v })} />
+                      )}
+                      {(o.monogramLayout || "circle") === "wax" && (
+                        <>
+                          <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                            Forme du sceau
+                            <select value={o.monogramSealShape || "classic"} onChange={(e) => update({ monogramSealShape: e.target.value })} className={inputClass}>
+                              {HERO_SEAL_SHAPES.map((s) => (
+                                <option key={s.id} value={s.id} title={s.desc}>{s.label}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <div className="flex flex-col gap-1.5">
+                            <ColorField label="Couleur du sceau" hint="Vide = bordeaux" value={o.monogramSealColor} onChange={(v) => update({ monogramSealColor: v })} />
+                            <div className="flex flex-wrap gap-1.5">
+                              {HERO_SEAL_COLORS.map((c) => (
+                                <button
+                                  key={c.hex}
+                                  type="button"
+                                  title={c.label}
+                                  aria-label={c.label}
+                                  onClick={() => update({ monogramSealColor: c.hex })}
+                                  className={cn(
+                                    "h-6 w-6 rounded-full border-2",
+                                    o.monogramSealColor.toLowerCase() === c.hex ? "border-ink" : "border-white ring-1 ring-neutral-200",
+                                  )}
+                                  style={{ background: c.hex }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          {/* Uniquement pertinent pour la forme "Double liseré" — cf. échange du 28/09/2026, "on a la possibilité de personnaliser chaque liseré ?". */}
+                          {(o.monogramSealShape || "classic") === "double" && (
+                            <div className="flex flex-col gap-1.5">
+                              <ColorField label="Couleur du 2e liseré" hint="Vide = couleur du sceau" value={o.monogramSealColor2} onChange={(v) => update({ monogramSealColor2: v })} />
+                              <div className="flex flex-wrap gap-1.5">
+                                {HERO_SEAL_COLORS.map((c) => (
+                                  <button
+                                    key={c.hex}
+                                    type="button"
+                                    title={c.label}
+                                    aria-label={c.label}
+                                    onClick={() => update({ monogramSealColor2: c.hex })}
+                                    className={cn(
+                                      "h-6 w-6 rounded-full border-2",
+                                      o.monogramSealColor2.toLowerCase() === c.hex ? "border-ink" : "border-white ring-1 ring-neutral-200",
+                                    )}
+                                    style={{ background: c.hex }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      <ColorField label="Fond de carte" hint="« Aucun fond » = logo seul" value={o.monogramCardBg} onChange={(v) => update({ monogramCardBg: v })} noneOption />
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Cadre (décor)
+                        <select value={o.monogramCardFrame} onChange={(e) => update({ monogramCardFrame: e.target.value })} className={inputClass}>
+                          <option value="">Aucun</option>
+                          {HERO_CARD_FRAMES.map((f) => (
+                            <option key={f.id} value={f.id}>{f.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Animation — ce bloc
+                        <AnimSelect value={o.monogramTextAnimation} onChange={(v) => update({ monogramTextAnimation: v })} defaultLabel="Animation du hero" />
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-medium text-neutral-500">Aperçu (initiales des prénoms d'exemple : {monoA} &amp; {monoB})</span>
+                      <PreviewStage themeVars={themeVars}>
+                        <ChapterContent
+                          chapter={{
+                            id: 4000,
+                            kind: "text",
+                            from: 0,
+                            to: 1,
+                            titleSize: (o.monogramSize || undefined) as HeroChapter["titleSize"],
+                            textColorOverride: o.monogramColor || undefined,
+                            cardBgOverride: o.monogramCardBg || undefined,
+                            cardFrame: o.monogramCardFrame || undefined,
+                            fontId: o.monogramFontId || undefined,
+                            monogram: monoData,
+                          }}
+                          textAnimation={o.monogramTextAnimation || o.textAnimation || undefined}
+                          className={cn("hs-overlay", animShow && "show", (o.monogramTextAnimation || o.textAnimation) && `hs-anim-${o.monogramTextAnimation || o.textAnimation}`)}
+                        />
+                      </PreviewStage>
+                    </div>
+                  </>
+                )}
+              </div>
+            </Panel>
+          )}
+
+          {/* ---- Blocs supplémentaires (généralistes, pas personnalisables par le client) ---- */}
+          {activeTab === "extra" && (
+            <Panel>
+              <PanelTitle
+                title="Blocs supplémentaires"
+                hint={'Généralistes — identiques pour tous les clients de ce modèle (pas de personnalisation), mais bien présents sur la vraie vidéo livrée.'}
+              />
+              <div className="flex flex-col gap-3 p-6">
+                {(o.extraCards ?? []).map((card) => card.kind === 'countdown' ? (
+                  <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                        Compte à rebours — jusqu'à la date du mariage du client
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => removeExtraCard(card.id)}
+                        aria-label="Retirer ce bloc"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 sm:col-span-2">
+                        Style
+                        <select value={card.countdownStyle || "boxes"} onChange={(e) => updateExtraCard(card.id, { countdownStyle: e.target.value })} className={inputClass}>
+                          {HERO_COUNTDOWN_STYLES.map((st) => (
+                            <option key={st.id} value={st.id}>{st.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <TimecodeField
+                        label="Apparaît à (s)"
+                        value={card.fromSec}
+                        max={duration}
+                        onChange={(v) => updateExtraCard(card.id, { fromSec: v })}
+                        onCaler={() => updateExtraCard(card.id, { fromSec: Math.round(currentTime * 10) / 10 })}
+                      />
+                      <TimecodeField
+                        label="Disparaît à (s)"
+                        value={card.toSec}
+                        max={duration}
+                        onChange={(v) => updateExtraCard(card.id, { toSec: v })}
+                        onCaler={() => updateExtraCard(card.id, { toSec: Math.round(currentTime * 10) / 10 })}
+                      />
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Position verticale
+                        <select value={card.position} onChange={(e) => updateExtraCard(card.id, { position: e.target.value as HeroCustomCard["position"] })} className={inputClass}>
+                          <option value="top">Haut</option>
+                          <option value="middle">Milieu</option>
+                          <option value="bottom">Bas</option>
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Animation — ce bloc
+                        <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                      </label>
+                      <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
+                      <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateExtraCard(card.id, { cardBg: v })} noneOption />
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Cadre (décor)
+                        <select value={card.cardFrame} onChange={(e) => updateExtraCard(card.id, { cardFrame: e.target.value })} className={inputClass}>
+                          <option value="">Aucun</option>
+                          {HERO_CARD_FRAMES.map((f) => (
+                            <option key={f.id} value={f.id}>{f.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="mt-2 flex flex-col gap-1">
+                      <span className="text-xs font-medium text-neutral-500">Aperçu (décompte fictif de 100 jours)</span>
+                      <PreviewStage themeVars={themeVars}>
+                        <ChapterContent
+                          chapter={{
+                            id: 3000,
+                            kind: "text",
+                            from: 0,
+                            to: 1,
+                            countdown: { style: card.countdownStyle || "boxes", targetIso: COUNTDOWN_PREVIEW_TARGET },
+                            textColorOverride: card.textColor || undefined,
+                            cardBgOverride: card.cardBg || undefined,
+                            cardFrame: card.cardFrame || undefined,
+                          }}
+                          textAnimation={card.textAnimation || o.textAnimation || undefined}
+                          className={cn("hs-overlay", animShow && "show", (card.textAnimation || o.textAnimation) && `hs-anim-${card.textAnimation || o.textAnimation}`)}
+                        />
+                      </PreviewStage>
+                    </div>
+                  </div>
+                ) : (
+                  <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                    <div className="flex items-start gap-3">
+                      <textarea
+                        value={card.text}
+                        onChange={(e) => updateExtraCard(card.id, { text: e.target.value })}
+                        placeholder="Votre texte…"
+                        rows={2}
+                        maxLength={280}
+                        className={cn(textareaClass, "flex-1")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeExtraCard(card.id)}
+                        aria-label="Retirer ce bloc"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-3">
+                      <TimecodeField
+                        label="Apparaît à (s)"
+                        value={card.fromSec}
+                        max={duration}
+                        onChange={(v) => updateExtraCard(card.id, { fromSec: v })}
+                        onCaler={() => updateExtraCard(card.id, { fromSec: Math.round(currentTime * 10) / 10 })}
+                      />
+                      <TimecodeField
+                        label="Disparaît à (s)"
+                        value={card.toSec}
+                        max={duration}
+                        onChange={(v) => updateExtraCard(card.id, { toSec: v })}
+                        onCaler={() => updateExtraCard(card.id, { toSec: Math.round(currentTime * 10) / 10 })}
+                      />
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Position verticale
+                        <select
+                          value={card.position}
+                          onChange={(e) => updateExtraCard(card.id, { position: e.target.value as HeroCustomCard["position"] })}
+                          className={inputClass}
+                        >
+                          <option value="top">Haut</option>
+                          <option value="middle">Milieu</option>
+                          <option value="bottom">Bas</option>
+                        </select>
+                      </label>
+                    </div>
+                    {/* Police/taille/couleur/cadre/animation/gras propres à CE
+                        bloc — vide = réglage hero-wide (cf. échanges des
+                        21/09/2026 et 23/09/2026, "pouvoir tout gérer comme pour
+                        les autres blocs") : même jeu complet de réglages que les
+                        3 blocs fixes ci-dessus, aperçu compris. */}
+                    <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Taille de police
+                        <select
+                          value={card.titleSize}
+                          onChange={(e) => updateExtraCard(card.id, { titleSize: e.target.value })}
+                          className={inputClass}
+                        >
+                          <option value="">Moyenne (défaut)</option>
+                          <option value="sm">Petite</option>
+                          <option value="md">Moyenne</option>
+                          <option value="lg">Grande</option>
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Police — ce bloc
+                        <FontSelect value={card.fontId} onChange={(v) => updateExtraCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Animation — ce bloc
+                        <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                      </label>
+                      <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
+                      <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateExtraCard(card.id, { cardBg: v })} noneOption />
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Cadre (décor)
+                        <select value={card.cardFrame} onChange={(e) => updateExtraCard(card.id, { cardFrame: e.target.value })} className={inputClass}>
+                          <option value="">Aucun</option>
+                          {HERO_CARD_FRAMES.map((f) => (
+                            <option key={f.id} value={f.id}>{f.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+                      <BoldField checked={card.bold} onChange={(v) => updateExtraCard(card.id, { bold: v })} />
+                    </div>
+
+                    <div className="mt-2 flex flex-col gap-1">
+                      <span className="text-xs font-medium text-neutral-500">Aperçu</span>
+                      <PreviewStage themeVars={themeVars}>
+                        <ChapterContent
+                          chapter={{
+                            id: 2000,
+                            kind: "text",
+                            from: 0,
+                            to: 1,
+                            lead: card.text || "Votre texte…",
+                            titleSize: (card.titleSize || undefined) as HeroChapter["titleSize"],
+                            textColorOverride: card.textColor || undefined,
+                            cardBgOverride: card.cardBg || undefined,
+                            cardFrame: card.cardFrame || undefined,
+                            fontId: card.fontId || undefined,
+                            bold: card.bold,
+                          }}
+                          textAnimation={card.textAnimation || o.textAnimation || undefined}
+                          className={cn("hs-overlay", animShow && "show", (card.textAnimation || o.textAnimation) && `hs-anim-${card.textAnimation || o.textAnimation}`)}
+                        />
+                      </PreviewStage>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addCountdownCard}
+                  className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
+                >
+                  <Plus size={14} /> Ajouter un compte à rebours
+                </button>
+
+                <button
+                  type="button"
+                  onClick={addExtraCard}
+                  className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
+                >
+                  <Plus size={14} /> Ajouter un bloc
+                </button>
+              </div>
+            </Panel>
+          )}
+
+          {/* ---- Décor & style, avec aperçu réactif ---- */}
+          {activeTab === "decor" && (
+            <Panel>
+              <PanelTitle
+                title="Décor & style — réglages par défaut du hero"
+                hint="S'appliquent à toute la vidéo, sauf si un bloc a son propre réglage (qui prend alors le dessus). L'aperçu se met à jour dès que vous changez un réglage."
+              />
+              <div className="grid gap-6 p-6 md:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Décor graphique
+                    <select value={o.overlayGraphic} onChange={(e) => update({ overlayGraphic: e.target.value })} className={inputClass}>
+                      <option value="">Aucun</option>
+                      {HERO_OVERLAY_GRAPHICS.map((g) => (
+                        <option key={g.id} value={g.id}>{g.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <PreviewStage themeVars={themeVars}>
+                    <HeroOverlayGraphic id={o.overlayGraphic || undefined} />
+                  </PreviewStage>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Police du titre — tout le hero
+                    <FontSelect value={o.fontId} onChange={(v) => update({ fontId: v })} defaultLabel="Police du site (Fraunces)" />
+                  </label>
+                  <PreviewStage themeVars={themeVars}>
+                    <p
+                      className="px-4 text-center text-[28px] font-light leading-[1.1]"
+                      style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)", fontStyle: fontPreview?.italic ? "italic" : undefined }}
+                    >
+                      {o.chapter1Text || "Save the date"}
+                    </p>
+                  </PreviewStage>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Animation du texte — tout le hero
+                    <AnimSelect value={o.textAnimation} onChange={(v) => update({ textAnimation: v })} defaultLabel="Fondu (défaut)" />
+                  </label>
+                  <PreviewStage themeVars={themeVars}>
+                    <ChapterContent
+                      chapter={previewChapter}
+                      textAnimation={o.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", o.textAnimation && `hs-anim-${o.textAnimation}`)}
+                    />
+                  </PreviewStage>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Filtre vidéo
+                    <select value={o.filter} onChange={(e) => update({ filter: e.target.value })} className={inputClass}>
+                      <option value="">Aucun</option>
+                      {HERO_FILTERS.map((f) => (
+                        <option key={f.id} value={f.id}>{f.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
+                    Déjà visible en direct sur la vidéo, dans la colonne de gauche.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    Format de la date
+                    <select value={o.dateFormat} onChange={(e) => update({ dateFormat: e.target.value })} className={inputClass}>
+                      <option value="">12 juin 2027 (défaut)</option>
+                      <optgroup label="Sur une ligne">
+                        {HERO_DATE_FORMATS.filter((f) => !f.layout).map((f) => (
+                          <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Mises en page multi-lignes (bloc date indépendant)">
+                        {HERO_DATE_FORMATS.filter((f) => f.layout).map((f) => (
+                          <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </label>
+                  <PreviewStage themeVars={themeVars}>
+                    {selectedDateFormat?.layout ? (
+                      <HeroDateLayoutBlock
+                        layout={{ id: selectedDateFormat.id, fonts: selectedDateFormat.layout.fonts, lines: selectedDateFormat.layout.lines(DATE_FORMAT_PREVIEW_DATE) }}
+                      />
+                    ) : (
+                      <p
+                        className="px-4 text-center text-[22px] font-light"
+                        style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)", fontStyle: fontPreview?.italic ? "italic" : undefined }}
+                      >
+                        {selectedDateFormat?.format(DATE_FORMAT_PREVIEW_DATE) ?? "12 juin 2027"}
+                      </p>
+                    )}
+                  </PreviewStage>
+                  <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
+                    S'applique à la vraie date du client sur une commande passée sur ce modèle (sous les prénoms, ou dans le 3e bloc si activé ; les mises en page multi-lignes ne s'affichent que dans le 3e bloc, sous les prénoms elles retombent sur une ligne) ; la page d'aperçu publique du modèle l'applique aussi, à la date d'exemple du 12 juin 2027.
+                  </p>
+                </div>
+              </div>
+            </Panel>
+          )}
+
+          <AdminButton className="self-start" disabled={save.isPending} onClick={persist}>
+            {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+            Enregistrer le modèle
+          </AdminButton>
+        </div>
       </div>
 
       <ToastStack toasts={toasts} />
