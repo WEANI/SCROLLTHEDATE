@@ -115,7 +115,7 @@ export function HeroMonogramBlock({ m, size, fontId }: { m: HeroMonogram; size?:
       inner = (<><span className="a">{A}</span><span className="b">{B}</span></>)
       break
     case 'rings':
-      inner = (<><span className="ring ring-a" /><span className="ring ring-b" /><span className="a">{A}</span><span className="b hs-mono-acc">{B}</span></>)
+      inner = (<><span className="hs-mono-ring ring-a" /><span className="hs-mono-ring ring-b" /><span className="a">{A}</span><span className="b hs-mono-acc">{B}</span></>)
       break
     case 'vline':
       inner = (<><div className="row"><span>{A}</span><i /><span>{B}</span></div><small>{m.dateNumeric}</small></>)
@@ -135,7 +135,7 @@ export function HeroMonogramBlock({ m, size, fontId }: { m: HeroMonogram; size?:
           </defs>
           <circle cx="100" cy="100" r="92" fill="none" stroke="var(--macc)" strokeWidth="1.2" />
           <circle cx="100" cy="100" r="50" fill="none" stroke="var(--macc)" strokeWidth="0.8" strokeDasharray="2 3" />
-          <text className="ring"><textPath href={`#ring-${uid}`}>{ring}</textPath></text>
+          <text className="hs-mono-ring"><textPath href={`#ring-${uid}`}>{ring}</textPath></text>
           <text className="mid" x="100" y="114" textAnchor="middle">{A}&amp;{B}</text>
         </svg>
       )

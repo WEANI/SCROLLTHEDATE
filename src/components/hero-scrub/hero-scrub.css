@@ -2352,7 +2352,7 @@
 .hs-mono-overlap .a { left: calc(6 * var(--u)); }
 .hs-mono-overlap .b { right: calc(6 * var(--u)); color: var(--macc); opacity: 0.92; }
 .hs-mono-rings { width: calc(70 * var(--u)); height: calc(44 * var(--u)); font-size: calc(24 * var(--u)); }
-.hs-mono-rings .ring { position: absolute; width: calc(34 * var(--u)); height: calc(34 * var(--u)); border-radius: 50%; border: 1.5px solid var(--macc); }
+.hs-mono-rings .hs-mono-ring { position: absolute; width: calc(34 * var(--u)); height: calc(34 * var(--u)); border-radius: 50%; border: 1.5px solid var(--macc); }
 .hs-mono-rings .ring-a { left: calc(6 * var(--u)); }
 .hs-mono-rings .ring-b { right: calc(6 * var(--u)); }
 .hs-mono-rings .a { margin-right: calc(4 * var(--u)); position: relative; z-index: 1; }
@@ -2371,5 +2371,5 @@
 .hs-mono-frame::after { bottom: calc(-3.4 * var(--u)); }
 .hs-mono-frame i { font: 300 calc(6 * var(--u)) 'Montserrat', sans-serif; color: var(--macc); font-style: normal; }
 .hs-mono-stamp svg { width: calc(74 * var(--u)); height: calc(74 * var(--u)); overflow: visible; }
-.hs-mono-stamp text.ring { font: 400 9.2px 'Montserrat', sans-serif; letter-spacing: 0.28em; fill: var(--macc); }
+.hs-mono-stamp text.hs-mono-ring { font: 400 9.2px 'Montserrat', sans-serif; letter-spacing: 0.28em; fill: var(--macc); }
 .hs-mono-stamp text.mid { font-family: var(--hs-font-family); fill: var(--hs-text-primary); font-size: 44px; }
