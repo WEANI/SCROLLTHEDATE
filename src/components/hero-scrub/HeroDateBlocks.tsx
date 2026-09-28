@@ -98,6 +98,7 @@ export function HeroMonogramBlock({ m, size, fontId }: { m: HeroMonogram; size?:
     '--ms': scale,
     '--macc': m.accent || 'var(--hs-accent)',
     '--mseal': m.sealColor || '#8c1d24',
+    '--mseal2': m.sealColor2 || m.sealColor || 'var(--hs-accent)',
   } as CSSProperties
   let inner
   switch (m.layout) {
@@ -112,6 +113,9 @@ export function HeroMonogramBlock({ m, size, fontId }: { m: HeroMonogram; size?:
       break
     case 'overlap':
       inner = (<><span className="a">{A}</span><span className="b">{B}</span></>)
+      break
+    case 'rings':
+      inner = (<><span className="ring ring-a" /><span className="ring ring-b" /><span className="a">{A}</span><span className="b hs-mono-acc">{B}</span></>)
       break
     case 'vline':
       inner = (<><div className="row"><span>{A}</span><i /><span>{B}</span></div><small>{m.dateNumeric}</small></>)
@@ -142,7 +146,16 @@ export function HeroMonogramBlock({ m, size, fontId }: { m: HeroMonogram; size?:
   }
   return (
     <div className="hs-mono-wrap">
-      <div className={cn('hs-mono', `hs-mono-${HERO_MONOGRAM_LAYOUTS.some((l) => l.id === m.layout) ? m.layout : 'circle'}`)} style={style}>
+      <div
+        className={cn(
+          'hs-mono',
+          `hs-mono-${HERO_MONOGRAM_LAYOUTS.some((l) => l.id === m.layout) ? m.layout : 'circle'}`,
+          // Forme du sceau (cf. HERO_SEAL_SHAPES) — uniquement pertinente
+          // pour layout 'wax', ignorée sinon (classe sans effet ailleurs).
+          m.layout === 'wax' && m.sealShape === 'double' && 'hs-mono-wax-double',
+        )}
+        style={style}
+      >
         {inner}
       </div>
     </div>

@@ -631,6 +631,7 @@ export const HERO_MONOGRAM_LAYOUTS: { id: string; label: string; desc: string }[
   { id: 'amp', label: 'Esperluette', desc: "Grand « & » italique entre les initiales" },
   { id: 'diamond', label: 'Losange', desc: 'Carré posé sur la pointe' },
   { id: 'overlap', label: 'Entrelacées', desc: "Deux lettres qui se chevauchent, l'une en accent" },
+  { id: 'rings', label: 'Anneaux entrelacés', desc: 'Deux anneaux qui se chevauchent, une initiale dans chacun' },
   { id: 'vline', label: 'Barre verticale', desc: 'Initiales de part et d\'autre d\'un filet, date dessous' },
   { id: 'wax', label: 'Sceau de cire', desc: 'Cachet en relief — couleur du sceau au choix' },
   { id: 'frame', label: 'Cadre orné', desc: 'Double filet carré, losanges en pointe' },
@@ -654,6 +655,19 @@ export const HERO_SEAL_COLORS: { hex: string; label: string }[] = [
   { hex: '#c98a94', label: 'Rose' },
 ]
 
+/**
+ * Forme du sceau (layout 'wax' uniquement) — ajouté le 28/09/2026,
+ * "Double liseré" en réponse à "on a la possibilité de personnaliser chaque
+ * liseré". 'classic' = comportement historique (un seul liseré/couleur,
+ * cf. HERO_SEAL_COLORS). 'double' ajoute un 2e anneau, avec SA propre
+ * couleur (cf. HeroMonogram.sealColor2) — les deux liserés restent
+ * distincts, jamais liés l'un à l'autre.
+ */
+export const HERO_SEAL_SHAPES: { id: string; label: string; desc: string }[] = [
+  { id: 'classic', label: 'Classique', desc: 'Un seul liseré, ombre portée' },
+  { id: 'double', label: 'Double liseré', desc: 'Un 2e anneau, avec sa propre couleur' },
+]
+
 /** Données d'un monogramme prêt à afficher — cf. `HeroChapter.monogram` (types.ts). */
 export interface HeroMonogram {
   layout: string
@@ -663,6 +677,10 @@ export interface HeroMonogram {
   accent: string
   /** Couleur du sceau (layout 'wax') — vide = bordeaux. */
   sealColor: string
+  /** Forme du sceau (cf. HERO_SEAL_SHAPES) — vide = 'classic'. Ajouté le 28/09/2026. */
+  sealShape: string
+  /** Couleur du 2e liseré (sealShape 'double' uniquement) — vide = couleur du sceau. Ajouté le 28/09/2026. */
+  sealColor2: string
   /** « 12 juin 2027 » — texte courbe du tampon. */
   dateShort: string
   /** « 12 · 06 · 2027 » — sous la barre verticale. */

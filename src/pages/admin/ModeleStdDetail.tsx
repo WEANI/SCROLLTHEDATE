@@ -31,6 +31,7 @@ import {
   HERO_MONOGRAM_LAYOUTS,
   HERO_MONOGRAM_FONT_IDS,
   HERO_SEAL_COLORS,
+  HERO_SEAL_SHAPES,
   monogramInitials,
   getHeroFont,
   getHeroDateFormat,
@@ -219,14 +220,14 @@ export default function ModeleStdDetail() {
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "", monogramLayout: "", monogramAccent: "", sealColor: "" },
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "", monogramLayout: "", monogramAccent: "", sealColor: "", sealShape: "", sealColor2: "" },
       ],
     });
   const addCountdownCard = () =>
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "Compte à rebours", position: "middle", kind: "countdown", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "boxes", monogramLayout: "", monogramAccent: "", sealColor: "" },
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "Compte à rebours", position: "middle", kind: "countdown", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "boxes", monogramLayout: "", monogramAccent: "", sealColor: "", sealShape: "", sealColor2: "" },
       ],
     });
   const removeExtraCard = (id: string) => update({ extraCards: (o?.extraCards ?? []).filter((c) => c.id !== id) });
@@ -320,6 +321,8 @@ export default function ModeleStdDetail() {
     b: monoB,
     accent: o.monogramAccent,
     sealColor: o.monogramSealColor,
+    sealShape: o.monogramSealShape || "classic",
+    sealColor2: o.monogramSealColor2,
     dateShort: o.exampleDate || "12 juin 2027",
     dateNumeric: "12 · 06 · 2027",
   };
@@ -900,25 +903,57 @@ export default function ModeleStdDetail() {
                     <ColorField label="Couleur des filets & de l'esperluette" hint="Vide = accent du thème" value={o.monogramAccent} onChange={(v) => update({ monogramAccent: v })} />
                   )}
                   {(o.monogramLayout || "circle") === "wax" && (
-                    <div className="flex flex-col gap-1.5">
-                      <ColorField label="Couleur du sceau" hint="Vide = bordeaux" value={o.monogramSealColor} onChange={(v) => update({ monogramSealColor: v })} />
-                      <div className="flex flex-wrap gap-1.5">
-                        {HERO_SEAL_COLORS.map((c) => (
-                          <button
-                            key={c.hex}
-                            type="button"
-                            title={c.label}
-                            aria-label={c.label}
-                            onClick={() => update({ monogramSealColor: c.hex })}
-                            className={cn(
-                              "h-6 w-6 rounded-full border-2",
-                              o.monogramSealColor.toLowerCase() === c.hex ? "border-ink" : "border-white ring-1 ring-neutral-200",
-                            )}
-                            style={{ background: c.hex }}
-                          />
-                        ))}
+                    <>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Forme du sceau
+                        <select value={o.monogramSealShape || "classic"} onChange={(e) => update({ monogramSealShape: e.target.value })} className={inputClass}>
+                          {HERO_SEAL_SHAPES.map((s) => (
+                            <option key={s.id} value={s.id} title={s.desc}>{s.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <div className="flex flex-col gap-1.5">
+                        <ColorField label="Couleur du sceau" hint="Vide = bordeaux" value={o.monogramSealColor} onChange={(v) => update({ monogramSealColor: v })} />
+                        <div className="flex flex-wrap gap-1.5">
+                          {HERO_SEAL_COLORS.map((c) => (
+                            <button
+                              key={c.hex}
+                              type="button"
+                              title={c.label}
+                              aria-label={c.label}
+                              onClick={() => update({ monogramSealColor: c.hex })}
+                              className={cn(
+                                "h-6 w-6 rounded-full border-2",
+                                o.monogramSealColor.toLowerCase() === c.hex ? "border-ink" : "border-white ring-1 ring-neutral-200",
+                              )}
+                              style={{ background: c.hex }}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                      {/* Uniquement pertinent pour la forme "Double liseré" — cf. échange du 28/09/2026, "on a la possibilité de personnaliser chaque liseré ?". */}
+                      {(o.monogramSealShape || "classic") === "double" && (
+                        <div className="flex flex-col gap-1.5">
+                          <ColorField label="Couleur du 2e liseré" hint="Vide = couleur du sceau" value={o.monogramSealColor2} onChange={(v) => update({ monogramSealColor2: v })} />
+                          <div className="flex flex-wrap gap-1.5">
+                            {HERO_SEAL_COLORS.map((c) => (
+                              <button
+                                key={c.hex}
+                                type="button"
+                                title={c.label}
+                                aria-label={c.label}
+                                onClick={() => update({ monogramSealColor2: c.hex })}
+                                className={cn(
+                                  "h-6 w-6 rounded-full border-2",
+                                  o.monogramSealColor2.toLowerCase() === c.hex ? "border-ink" : "border-white ring-1 ring-neutral-200",
+                                )}
+                                style={{ background: c.hex }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                   <ColorField label="Fond de carte" hint="« Aucun fond » = logo seul" value={o.monogramCardBg} onChange={(v) => update({ monogramCardBg: v })} noneOption />
                   <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">

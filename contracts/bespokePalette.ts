@@ -260,6 +260,11 @@ export const heroCustomCardSchema = z.object({
   monogramLayout: z.string().default(""),
   monogramAccent: z.string().default(""),
   sealColor: z.string().default(""),
+  // Forme du sceau (cf. HERO_SEAL_SHAPES, heroDecor.ts) + couleur du 2e
+  // liseré ("double") — vide = 'classic'/pas de 2e liseré. Ajoutés le
+  // 28/09/2026 : "on a la possibilité de personnaliser chaque liseré ?".
+  sealShape: z.string().default(""),
+  sealColor2: z.string().default(""),
 });
 /** Plafonné à 10 : au-delà, plus un outil de personnalisation qu'un risque réel côté produit — évite un payload sans limite. */
 export const heroCustomCardsSchema = z.array(heroCustomCardSchema).max(10);

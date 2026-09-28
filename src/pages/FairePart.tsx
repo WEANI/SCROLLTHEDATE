@@ -588,6 +588,8 @@ export default function FairePart() {
                   b,
                   accent: card.monogramAccent,
                   sealColor: card.sealColor,
+                  sealShape: card.sealShape || 'classic',
+                  sealColor2: card.sealColor2,
                   dateShort: weddingDateShort ?? '',
                   dateNumeric: invite.weddingDate
                     ? new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(invite.weddingDate)).replace(/\//g, ' · ')

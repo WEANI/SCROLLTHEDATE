@@ -2351,11 +2351,19 @@
 .hs-mono-overlap span { position: absolute; }
 .hs-mono-overlap .a { left: calc(6 * var(--u)); }
 .hs-mono-overlap .b { right: calc(6 * var(--u)); color: var(--macc); opacity: 0.92; }
+.hs-mono-rings { width: calc(70 * var(--u)); height: calc(44 * var(--u)); font-size: calc(24 * var(--u)); }
+.hs-mono-rings .ring { position: absolute; width: calc(34 * var(--u)); height: calc(34 * var(--u)); border-radius: 50%; border: 1.5px solid var(--macc); }
+.hs-mono-rings .ring-a { left: calc(6 * var(--u)); }
+.hs-mono-rings .ring-b { right: calc(6 * var(--u)); }
+.hs-mono-rings .a { margin-right: calc(4 * var(--u)); position: relative; z-index: 1; }
+.hs-mono-rings .b { margin-left: calc(4 * var(--u)); position: relative; z-index: 1; }
 .hs-mono-vline { flex-direction: column; gap: calc(3 * var(--u)); }
 .hs-mono-vline .row { display: flex; align-items: center; gap: calc(6 * var(--u)); font-size: calc(30 * var(--u)); }
 .hs-mono-vline .row i { width: 1px; height: calc(26 * var(--u)); background: var(--macc); display: block; }
 .hs-mono-vline small { font: 300 calc(4 * var(--u)) 'Montserrat', sans-serif; letter-spacing: 0.42em; margin-right: -0.42em; text-transform: uppercase; color: var(--macc); }
 .hs-mono-wax { width: calc(52 * var(--u)); height: calc(52 * var(--u)); border-radius: 47% 53% 50% 50% / 52% 46% 54% 48%; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--mseal) 75%, white) 0, var(--mseal) 55%, color-mix(in srgb, var(--mseal) 55%, black) 100%); box-shadow: 0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, 0.55), inset 0 0 0 calc(2.2 * var(--u)) rgba(0, 0, 0, 0.12), inset 0 0 0 calc(2.6 * var(--u)) rgba(255, 255, 255, 0.07); font-size: calc(20 * var(--u)); gap: calc(1 * var(--u)); color: var(--hs-text-primary, #f3e3cc); text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.18); }
+/* Forme "Double liseré" (HERO_SEAL_SHAPES) — 2e anneau, sa propre couleur (--mseal2), indépendante de --mseal (fond du sceau). Ajouté le 28/09/2026. */
+.hs-mono-wax-double { box-shadow: 0 0 0 calc(2.4 * var(--u)) transparent, 0 0 0 calc(2.4 * var(--u) + 1px) var(--mseal2), 0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, 0.55), inset 0 0 0 calc(2.2 * var(--u)) rgba(0, 0, 0, 0.12), inset 0 0 0 calc(2.6 * var(--u)) rgba(255, 255, 255, 0.07); }
 .hs-mono-wax i { font: 300 calc(6 * var(--u)) 'Montserrat', sans-serif; font-style: normal; opacity: 0.8; }
 .hs-mono-frame { width: calc(58 * var(--u)); height: calc(58 * var(--u)); border: 1px solid var(--macc); outline: 1px solid var(--macc); outline-offset: calc(1.8 * var(--u)); gap: calc(1 * var(--u)); font-size: calc(24 * var(--u)); margin: calc(6 * var(--u)) 0; }
 .hs-mono-frame::before, .hs-mono-frame::after { content: ''; position: absolute; width: calc(2.2 * var(--u)); height: calc(2.2 * var(--u)); background: var(--macc); transform: rotate(45deg); left: 50%; margin-left: calc(-1.1 * var(--u)); }

@@ -296,6 +296,10 @@ export interface SaveTheDateTemplateOverride {
   monogramColor: string
   monogramAccent: string
   monogramSealColor: string
+  /** Forme du sceau (cf. HERO_SEAL_SHAPES) — vide = 'classic'. Ajouté le 28/09/2026. */
+  monogramSealShape: string
+  /** Couleur du 2e liseré (monogramSealShape 'double' uniquement) — vide = couleur du sceau. Ajouté le 28/09/2026. */
+  monogramSealColor2: string
   /** 'sm'/'md'/'lg' — vide = 'md'. */
   monogramSize: string
   monogramCardBg: string
@@ -551,6 +555,8 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     monogramColor: '',
     monogramAccent: '',
     monogramSealColor: '#8c1d24',
+    monogramSealShape: 'classic',
+    monogramSealColor2: '',
     monogramSize: '',
     monogramCardBg: 'none',
     monogramCardFrame: '',
@@ -656,6 +662,8 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
                   b,
                   accent: override.monogramAccent,
                   sealColor: override.monogramSealColor,
+                  sealShape: override.monogramSealShape || 'classic',
+                  sealColor2: override.monogramSealColor2,
                   dateShort: override.exampleDate || EXAMPLE_DATE,
                   dateNumeric: '12 · 06 · 2027',
                 },
@@ -776,6 +784,8 @@ export function buildFulfillmentData(
               monogramLayout: '',
               monogramAccent: '',
               sealColor: '',
+              sealShape: '',
+              sealColor2: '',
             },
           ]
         : []),
@@ -799,6 +809,8 @@ export function buildFulfillmentData(
               monogramLayout: o.monogramLayout || 'circle',
               monogramAccent: o.monogramAccent || '',
               sealColor: o.monogramSealColor || '',
+              sealShape: o.monogramSealShape || 'classic',
+              sealColor2: o.monogramSealColor2 || '',
             },
           ]
         : []),
