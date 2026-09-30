@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Check, CloudUpload, ExternalLink, FileVideo, Loader2, Plus, Send, Sparkles, Upload, Wand2, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -11,9 +11,23 @@ import {
   HERO_FONTS,
   HERO_TEXT_ANIMATIONS,
   HERO_FILTERS,
+  HERO_CARD_FRAMES,
+  HERO_COUNTDOWN_STYLES,
+  HERO_DATE_FORMATS,
+  HERO_MONOGRAM_LAYOUTS,
+  HERO_MONOGRAM_FONT_IDS,
+  HERO_SEAL_COLORS,
+  HERO_SEAL_SHAPES,
+  getHeroDateFormat,
   getHeroFont,
+  monogramInitials,
   useGoogleFont,
+  useGoogleFonts,
 } from "@/components/hero-scrub/heroDecor";
+import { HERO_THEMES } from "@/components/hero-scrub/themes";
+import { ChapterContent } from "@/components/hero-scrub/HeroScrub";
+import { HeroDateLayoutBlock, HeroMonogramBlock } from "@/components/hero-scrub/HeroDateBlocks";
+import type { HeroChapter } from "@/components/hero-scrub/types";
 import type {
   BespokePaletteInput,
   HeroChaptersFairePartInput,
@@ -975,6 +989,9 @@ const BLANK_HERO_CHAPTERS_STD: HeroChaptersSaveTheDateInput = [
   { fromSec: 0, toSec: 0, position: "middle" },
 ];
 
+/** Cible de l'aperçu du compte à rebours — 100 jours après le chargement (jamais échue, contrairement à une date fixe). */
+const STUDIO_COUNTDOWN_PREVIEW_TARGET = new Date(Date.now() + 100 * 86400000).toISOString();
+
 /** Options du menu "Position verticale" — communes aux timings fixes et aux cartes personnalisées. */
 const VERTICAL_ALIGN_OPTIONS = [
   { value: "top", label: "Haut" },
@@ -1017,6 +1034,138 @@ function ColorField({
   );
 }
 
+/** Même allure que les autres champs du studio — factorisé pour les nouveaux sélecteurs de style ci-dessous. */
+const studioInput =
+  "w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500";
+
+/** Libellé + contrôle, dans le style des champs studio existants. */
+function StudioField({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[11px] font-semibold text-neutral-500">{label}</span>
+      {children}
+      {hint && <span className="text-[10px] leading-snug text-neutral-500">{hint}</span>}
+    </label>
+  );
+}
+
+/** Police d'UN bloc — même bibliothèque que les modèles Save the Date (heroDecor.ts). */
+function StudioFontSelect({ value, onChange, defaultLabel }: { value: string; onChange: (v: string) => void; defaultLabel: string }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={studioInput}>
+      <option value="">{defaultLabel}</option>
+      {Object.entries(
+        HERO_FONTS.reduce<Record<string, typeof HERO_FONTS>>((acc, f) => {
+          (acc[f.category] ??= []).push(f);
+          return acc;
+        }, {}),
+      ).map(([category, fonts]) => (
+        <optgroup key={category} label={category}>
+          {fonts.map((f) => (
+            <option key={f.id} value={f.id}>{f.label}</option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
+  );
+}
+
+function StudioAnimSelect({ value, onChange, defaultLabel }: { value: string; onChange: (v: string) => void; defaultLabel: string }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={studioInput}>
+      <option value="">{defaultLabel}</option>
+      {HERO_TEXT_ANIMATIONS.map((a) => (
+        <option key={a.id} value={a.id}>{a.label}</option>
+      ))}
+    </select>
+  );
+}
+
+function StudioFrameSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={studioInput}>
+      <option value="">Aucun</option>
+      {HERO_CARD_FRAMES.map((f) => (
+        <option key={f.id} value={f.id}>{f.label}</option>
+      ))}
+    </select>
+  );
+}
+
+function StudioSizeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={studioInput}>
+      <option value="">Moyenne (défaut)</option>
+      <option value="sm">Petite</option>
+      <option value="md">Moyenne</option>
+      <option value="lg">Grande</option>
+    </select>
+  );
+}
+
+function StudioBold({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 self-end pb-1.5 text-[12px] font-medium text-neutral-500">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
+      />
+      Gras
+    </label>
+  );
+}
+
+/**
+ * Variables CSS du thème du projet — mêmes clés que `themeVars` dans
+ * HeroScrub, pour que les aperçus ci-dessous rendent comme la vraie page
+ * (cf. ModeleStdDetail, qui fait pareil à partir du thème du modèle).
+ * `heroTextColor`/`heroCardBg` de la palette prévalent, comme dans
+ * FairePart.tsx.
+ */
+function useStudioThemeVars(project: Project360): CSSProperties {
+  const palette = { ...BLANK_PALETTE, ...((project.palette as BespokePaletteInput | null) ?? {}) };
+  const theme = HERO_THEMES[(project.template as keyof typeof HERO_THEMES) ?? "cinema"] ?? HERO_THEMES.cinema;
+  const heroFont = getHeroFont(palette.heroFontId);
+  return {
+    "--hs-frame-bg": theme.frameBg,
+    "--hs-vignette": theme.vignette,
+    "--hs-accent": theme.accent,
+    "--hs-text-primary": palette.heroTextColor || theme.textPrimary,
+    "--hs-text-secondary": palette.heroTextColor || theme.textSecondary,
+    "--hs-card-bg": palette.heroCardBg || theme.cardBg,
+    "--hs-card-border": theme.cardBorder,
+    "--hs-card-shadow": theme.cardShadow,
+    "--hs-font-family": heroFont?.fontFamily || "'Fraunces', Georgia, serif",
+  } as CSSProperties;
+}
+
+/** Vignette 9:16 — contexte de container-query (cqw) pour que le vrai rendu HeroScrub s'y affiche à l'identique de la page publique. */
+function StudioPreview({ themeVars, children }: { themeVars: CSSProperties; children: React.ReactNode }) {
+  return (
+    <div
+      className="relative w-full max-w-[160px] overflow-hidden rounded-lg bg-anthracite-950"
+      style={{ aspectRatio: "9/16", containerType: "inline-size", ...themeVars } as CSSProperties}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Rejoue l'animation d'apparition en boucle dans les aperçus (même principe que ModeleStdDetail). */
+function useAnimReplay(dep: string | undefined) {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setShow(false);
+      window.setTimeout(() => setShow(true), 80);
+    }, 2600);
+    return () => window.clearInterval(id);
+  }, [dep]);
+  return show;
+}
+
 /**
  * Cartes de texte overlay LIBRES, en plus des chapitres fixes du hero —
  * commune aux 2 produits (rendue dans PaletteHeroEditor pour un faire-part,
@@ -1028,15 +1177,49 @@ function ColorField({
  * au clavier — évite de tripler la logique d'aperçu vidéo/frames pour un
  * réglage secondaire.
  */
+/** Carte vierge du type demandé — au niveau module : `Date.now()`/`Math.random()`
+ * sont impurs, ils ne doivent jamais être évalués pendant un rendu. */
+function blankCustomCard(kind: HeroCustomCard["kind"], text: string): HeroCustomCard {
+  return {
+    id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`,
+    fromSec: 0,
+    toSec: 0,
+    text,
+    position: "middle",
+    kind,
+    textColor: "",
+    fontId: "",
+    textAnimation: "",
+    bold: false,
+    titleSize: "",
+    cardFrame: "",
+    cardBg: "",
+    countdownStyle: kind === "countdown" ? "boxes" : "",
+    monogramLayout: kind === "monogram" ? "circle" : "",
+    monogramAccent: "",
+    sealColor: kind === "monogram" ? "#8c1d24" : "",
+    sealShape: kind === "monogram" ? "classic" : "",
+    sealColor2: "",
+  };
+}
+
 function CustomCardsEditor({ project }: { project: Project360 }) {
   const utils = trpc.useUtils();
   const existing = (project.heroCustomCards as HeroCustomCard[] | null) ?? [];
   const [cards, setCards] = useState<HeroCustomCard[]>(existing);
+  const themeVars = useStudioThemeVars(project);
+  const animShow = useAnimReplay(undefined);
+  // Polices choisies bloc par bloc — chargées ici pour que les aperçus
+  // ci-dessous rendent avec la bonne police, comme la page publique.
+  useGoogleFonts(cards.flatMap((c) => [c.fontId, c.kind === "monogram" ? c.monogramLayout && c.fontId : ""]));
+  const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
+  const coupleNames = (answers["couple.prenoms"] as string | undefined) || coupleNamesFromSlug(project.slug);
+  const [monoA, monoB] = monogramInitials(coupleNames);
 
-  const addCard = () =>
+  const addCard = (kind: HeroCustomCard["kind"] = "text") =>
     setCards((prev) => [
       ...prev,
-      { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "", monogramLayout: "", monogramAccent: "", sealColor: "", sealShape: "", sealColor2: "" },
+      blankCustomCard(kind, kind === "countdown" ? "Compte à rebours" : kind === "monogram" ? "Monogramme" : ""),
     ]);
   const removeCard = (id: string) => setCards((prev) => prev.filter((c) => c.id !== id));
   const updateCard = (id: string, patch: Partial<HeroCustomCard>) =>
@@ -1050,98 +1233,353 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
     onError: () => toast.error("Échec de l'enregistrement des cartes"),
   });
   const submit = () => {
-    if (cards.some((c) => !c.text.trim())) {
-      toast.error("Chaque carte doit avoir un texte.");
+    // Seules les cartes de TEXTE ont besoin d'un texte : pour un compte à
+    // rebours ou un monogramme, `text` n'est qu'un placeholder (cf. doc de
+    // heroCustomCardSchema, bespokePalette.ts).
+    if (cards.some((c) => c.kind === "text" && !c.text.trim())) {
+      toast.error("Chaque carte de texte doit avoir un texte.");
       return;
     }
     save.mutate({ projectId: project.id, heroCustomCards: cards });
   };
 
+  /** Timing + position — communs aux 3 types de carte. */
+  const timingFields = (card: HeroCustomCard) => (
+    <div className="mt-2 grid grid-cols-3 gap-3">
+      <StudioField label="Début (s)">
+        <input
+          type="number"
+          step={0.1}
+          min={0}
+          value={card.fromSec}
+          onChange={(e) => updateCard(card.id, { fromSec: Number(e.target.value) })}
+          className={studioInput}
+        />
+      </StudioField>
+      <StudioField label="Fin (s)">
+        <input
+          type="number"
+          step={0.1}
+          min={0}
+          value={card.toSec}
+          onChange={(e) => updateCard(card.id, { toSec: Number(e.target.value) })}
+          className={studioInput}
+        />
+      </StudioField>
+      <StudioField label="Position">
+        <select
+          value={card.position}
+          onChange={(e) => updateCard(card.id, { position: e.target.value as "top" | "middle" | "bottom" })}
+          className={studioInput}
+        >
+          {VERTICAL_ALIGN_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </StudioField>
+    </div>
+  );
+
+  const removeButton = (card: HeroCustomCard) => (
+    <button
+      type="button"
+      onClick={() => removeCard(card.id)}
+      aria-label="Retirer cette carte"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
+    >
+      <X size={16} />
+    </button>
+  );
+
   return (
     <div className="border-t border-neutral-200 pt-6">
       <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-        Cartes de texte personnalisées
+        Blocs overlay personnalisés
       </h3>
       <p className="mb-4 text-[12px] text-neutral-500">
-        En plus des chapitres fixes ci-dessus — un texte libre de votre choix, positionné à l'instant que vous
-        voulez. Repérez l'instant sur l'aperçu vidéo plus haut, puis saisissez-le ici.
+        En plus des chapitres fixes ci-dessus — texte libre, compte à rebours ou monogramme des mariés, chacun avec
+        ses propres police, taille, couleurs, cadre et animation (mêmes réglages que les modèles Save the Date).
+        Repérez l'instant sur l'aperçu vidéo plus haut, puis saisissez-le ici.
       </p>
 
       {cards.length > 0 && (
         <div className="space-y-3">
-          {cards.map((card) => (
-            <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
-              <div className="flex items-start gap-3">
-                <textarea
-                  value={card.text}
-                  onChange={(e) => updateCard(card.id, { text: e.target.value })}
-                  placeholder="Votre texte…"
-                  rows={2}
-                  maxLength={280}
-                  className="flex-1 resize-y rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[13px] outline-none focus:border-terracotta-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeCard(card.id)}
-                  aria-label="Retirer cette carte"
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
-                >
-                  <X size={16} />
-                </button>
+          {cards.map((card) =>
+            card.kind === "countdown" ? (
+              <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[12px] font-semibold text-ink">Compte à rebours — jusqu'à la date du mariage</p>
+                  {removeButton(card)}
+                </div>
+                {timingFields(card)}
+                <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                  <StudioField label="Style">
+                    <select
+                      value={card.countdownStyle || "boxes"}
+                      onChange={(e) => updateCard(card.id, { countdownStyle: e.target.value })}
+                      className={studioInput}
+                    >
+                      {HERO_COUNTDOWN_STYLES.map((st) => (
+                        <option key={st.id} value={st.id}>{st.label}</option>
+                      ))}
+                    </select>
+                  </StudioField>
+                  <StudioField label="Animation">
+                    <StudioAnimSelect value={card.textAnimation} onChange={(v) => updateCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                  </StudioField>
+                  <StudioField label="Cadre (décor)">
+                    <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
+                  </StudioField>
+                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateCard(card.id, { textColor: v })} />
+                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateCard(card.id, { cardBg: v })} />
+                </div>
+                <div className="mt-2 flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">Aperçu (décompte fictif de 100 jours)</span>
+                  <StudioPreview themeVars={themeVars}>
+                    <ChapterContent
+                      chapter={{
+                        id: 3000,
+                        kind: "text",
+                        from: 0,
+                        to: 1,
+                        countdown: { style: card.countdownStyle || "boxes", targetIso: STUDIO_COUNTDOWN_PREVIEW_TARGET },
+                        textColorOverride: card.textColor || undefined,
+                        cardBgOverride: card.cardBg || undefined,
+                        cardFrame: card.cardFrame || undefined,
+                      }}
+                      textAnimation={card.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", card.textAnimation && `hs-anim-${card.textAnimation}`)}
+                    />
+                  </StudioPreview>
+                </div>
               </div>
-              <div className="mt-2 grid grid-cols-3 gap-3">
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold text-neutral-500">Début (s)</span>
-                  <input
-                    type="number"
-                    step={0.1}
-                    min={0}
-                    value={card.fromSec}
-                    onChange={(e) => updateCard(card.id, { fromSec: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold text-neutral-500">Fin (s)</span>
-                  <input
-                    type="number"
-                    step={0.1}
-                    min={0}
-                    value={card.toSec}
-                    onChange={(e) => updateCard(card.id, { toSec: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold text-neutral-500">Position</span>
-                  <select
-                    value={card.position}
-                    onChange={(e) => updateCard(card.id, { position: e.target.value as "top" | "middle" | "bottom" })}
-                    className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
-                  >
-                    {VERTICAL_ALIGN_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
+            ) : card.kind === "monogram" ? (
+              <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[12px] font-semibold text-ink">
+                    Monogramme — initiales des mariés ({monoA} &amp; {monoB})
+                  </p>
+                  {removeButton(card)}
+                </div>
+                {timingFields(card)}
+                <div className="mt-3">
+                  <p className="mb-2 text-[11px] font-semibold text-neutral-500">Mise en page</p>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
+                    {HERO_MONOGRAM_LAYOUTS.map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        title={l.desc}
+                        onClick={() => updateCard(card.id, { monogramLayout: l.id })}
+                        className={cn(
+                          "flex flex-col gap-1.5 rounded-xl border p-1.5 text-center transition-colors",
+                          (card.monogramLayout || "circle") === l.id
+                            ? "border-terracotta-500 bg-terracotta-500/5"
+                            : "border-neutral-200 hover:border-terracotta-300",
+                        )}
+                      >
+                        <div
+                          className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950"
+                          style={{
+                            aspectRatio: "1",
+                            containerType: "inline-size",
+                            ...themeVars,
+                            ...(getHeroFont(card.fontId) ? { "--hs-font-family": getHeroFont(card.fontId)!.fontFamily } : null),
+                          } as CSSProperties}
+                        >
+                          <HeroMonogramBlock
+                            m={{
+                              layout: l.id,
+                              a: monoA,
+                              b: monoB,
+                              accent: card.monogramAccent,
+                              sealColor: card.sealColor,
+                              sealShape: card.sealShape || "classic",
+                              sealColor2: card.sealColor2,
+                              dateShort: "12 juin 2027",
+                              dateNumeric: "12 · 06 · 2027",
+                            }}
+                            size="sm"
+                            fontId={card.fontId}
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium leading-tight text-ink">{l.label}</span>
+                      </button>
                     ))}
-                  </select>
-                </label>
+                  </div>
+                </div>
+                <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                  <StudioField label="Police des initiales">
+                    <select value={card.fontId} onChange={(e) => updateCard(card.id, { fontId: e.target.value })} className={studioInput}>
+                      <option value="">Police du hero</option>
+                      {HERO_MONOGRAM_FONT_IDS.map((id) => {
+                        const f = getHeroFont(id);
+                        return f ? <option key={id} value={id}>{f.label}</option> : null;
+                      })}
+                    </select>
+                  </StudioField>
+                  <StudioField label="Taille">
+                    <StudioSizeSelect value={card.titleSize} onChange={(v) => updateCard(card.id, { titleSize: v })} />
+                  </StudioField>
+                  <StudioField label="Animation">
+                    <StudioAnimSelect value={card.textAnimation} onChange={(v) => updateCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                  </StudioField>
+                  <ColorField label="Couleur des lettres" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateCard(card.id, { textColor: v })} />
+                  {(card.monogramLayout || "circle") !== "wax" && (
+                    <ColorField label="Couleur des filets & de l'esperluette" hint="Vide = accent du thème" value={card.monogramAccent} onChange={(v) => updateCard(card.id, { monogramAccent: v })} />
+                  )}
+                  {(card.monogramLayout || "circle") === "wax" && (
+                    <>
+                      <StudioField label="Forme du sceau">
+                        <select value={card.sealShape || "classic"} onChange={(e) => updateCard(card.id, { sealShape: e.target.value })} className={studioInput}>
+                          {HERO_SEAL_SHAPES.map((sh) => (
+                            <option key={sh.id} value={sh.id} title={sh.desc}>{sh.label}</option>
+                          ))}
+                        </select>
+                      </StudioField>
+                      <div className="flex flex-col gap-1.5">
+                        <ColorField label="Couleur du sceau" hint="Vide = bordeaux" value={card.sealColor} onChange={(v) => updateCard(card.id, { sealColor: v })} />
+                        <div className="flex flex-wrap gap-1.5">
+                          {HERO_SEAL_COLORS.map((c) => (
+                            <button
+                              key={c.hex}
+                              type="button"
+                              title={c.label}
+                              aria-label={c.label}
+                              onClick={() => updateCard(card.id, { sealColor: c.hex })}
+                              className={cn(
+                                "h-5 w-5 rounded-full border-2",
+                                card.sealColor.toLowerCase() === c.hex ? "border-ink" : "border-white ring-1 ring-neutral-200",
+                              )}
+                              style={{ background: c.hex }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      {(card.sealShape || "classic") === "double" && (
+                        <ColorField label="Couleur du 2e liseré" hint="Vide = couleur du sceau" value={card.sealColor2} onChange={(v) => updateCard(card.id, { sealColor2: v })} />
+                      )}
+                    </>
+                  )}
+                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateCard(card.id, { cardBg: v })} />
+                  <StudioField label="Cadre (décor)">
+                    <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
+                  </StudioField>
+                </div>
+                <div className="mt-2 flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">Aperçu</span>
+                  <StudioPreview themeVars={themeVars}>
+                    <ChapterContent
+                      chapter={{
+                        id: 4000,
+                        kind: "text",
+                        from: 0,
+                        to: 1,
+                        titleSize: (card.titleSize || undefined) as HeroChapter["titleSize"],
+                        textColorOverride: card.textColor || undefined,
+                        cardBgOverride: card.cardBg || undefined,
+                        cardFrame: card.cardFrame || undefined,
+                        fontId: card.fontId || undefined,
+                        monogram: {
+                          layout: card.monogramLayout || "circle",
+                          a: monoA,
+                          b: monoB,
+                          accent: card.monogramAccent,
+                          sealColor: card.sealColor,
+                          sealShape: card.sealShape || "classic",
+                          sealColor2: card.sealColor2,
+                          dateShort: "12 juin 2027",
+                          dateNumeric: "12 · 06 · 2027",
+                        },
+                      }}
+                      textAnimation={card.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", card.textAnimation && `hs-anim-${card.textAnimation}`)}
+                    />
+                  </StudioPreview>
+                </div>
               </div>
-            </div>
-          ))}
+            ) : (
+              <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                <div className="flex items-start gap-3">
+                  <textarea
+                    value={card.text}
+                    onChange={(e) => updateCard(card.id, { text: e.target.value })}
+                    placeholder="Votre texte…"
+                    rows={2}
+                    maxLength={280}
+                    className="flex-1 resize-y rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[13px] outline-none focus:border-terracotta-500"
+                  />
+                  {removeButton(card)}
+                </div>
+                {timingFields(card)}
+                <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                  <StudioField label="Taille de police">
+                    <StudioSizeSelect value={card.titleSize} onChange={(v) => updateCard(card.id, { titleSize: v })} />
+                  </StudioField>
+                  <StudioField label="Police — ce bloc">
+                    <StudioFontSelect value={card.fontId} onChange={(v) => updateCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
+                  </StudioField>
+                  <StudioField label="Animation — ce bloc">
+                    <StudioAnimSelect value={card.textAnimation} onChange={(v) => updateCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                  </StudioField>
+                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateCard(card.id, { textColor: v })} />
+                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateCard(card.id, { cardBg: v })} />
+                  <StudioField label="Cadre (décor)">
+                    <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
+                  </StudioField>
+                </div>
+                <div className="mt-2 flex flex-wrap items-end gap-4">
+                  <StudioBold checked={card.bold} onChange={(v) => updateCard(card.id, { bold: v })} />
+                </div>
+                <div className="mt-2 flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">Aperçu</span>
+                  <StudioPreview themeVars={themeVars}>
+                    <ChapterContent
+                      chapter={{
+                        id: 2000,
+                        kind: "text",
+                        from: 0,
+                        to: 1,
+                        lead: card.text || "Votre texte…",
+                        titleSize: (card.titleSize || undefined) as HeroChapter["titleSize"],
+                        textColorOverride: card.textColor || undefined,
+                        cardBgOverride: card.cardBg || undefined,
+                        cardFrame: card.cardFrame || undefined,
+                        fontId: card.fontId || undefined,
+                        bold: card.bold,
+                      }}
+                      textAnimation={card.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", card.textAnimation && `hs-anim-${card.textAnimation}`)}
+                    />
+                  </StudioPreview>
+                </div>
+              </div>
+            ),
+          )}
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between">
-        <button
-          type="button"
-          disabled={cards.length >= 10}
-          onClick={addCard}
-          className="flex items-center gap-2 rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12px] font-semibold text-neutral-500 transition-colors hover:border-terracotta-400 hover:text-terracotta-500 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Plus size={14} />
-          Ajouter une carte
-        </button>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {([
+            ["text", "Ajouter un texte"],
+            ["countdown", "Ajouter un compte à rebours"],
+            ["monogram", "Ajouter un monogramme"],
+          ] as const).map(([kind, label]) => (
+            <button
+              key={kind}
+              type="button"
+              disabled={cards.length >= 10}
+              onClick={() => addCard(kind)}
+              className="flex items-center gap-2 rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12px] font-semibold text-neutral-500 transition-colors hover:border-terracotta-400 hover:text-terracotta-500 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Plus size={14} />
+              {label}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           disabled={save.isPending}
@@ -1149,7 +1587,7 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
           className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
         >
           {save.isPending && <Loader2 size={14} className="animate-spin" />}
-          Enregistrer les cartes
+          Enregistrer les blocs
         </button>
       </div>
     </div>
@@ -1871,14 +2309,43 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
   // même recalcul des *Rgb que PaletteHeroEditor.submitPalette, ces champs
   // pouvant avoir changé entre-temps dans cet autre onglet.
   const existingPalette = { ...BLANK_PALETTE, ...(project.palette as BespokePaletteInput | null) };
+  // Jeu COMPLET de réglages par bloc — mêmes possibilités que les modèles
+  // Save the Date (cf. ModeleStdDetail) : taille, police, animation, gras,
+  // couleurs, cadre, plus le format de la date. Tous ces champs existaient
+  // déjà sur la palette et étaient déjà rendus par FairePart.tsx ; seul le
+  // studio ne les exposait pas (échange du 30/09/2026).
   const [stdColors, setStdColors] = useState({
     stdSaveTheDateTextColor: existingPalette.stdSaveTheDateTextColor,
     stdSaveTheDateCardBg: existingPalette.stdSaveTheDateCardBg,
+    stdSaveTheDateTitleSize: existingPalette.stdSaveTheDateTitleSize,
+    stdSaveTheDateCardFrame: existingPalette.stdSaveTheDateCardFrame,
+    stdSaveTheDateFontId: existingPalette.stdSaveTheDateFontId,
+    stdSaveTheDateTextAnimation: existingPalette.stdSaveTheDateTextAnimation,
+    stdSaveTheDateBold: existingPalette.stdSaveTheDateBold,
     stdNamesDateTextColor: existingPalette.stdNamesDateTextColor,
     stdNamesDateCardBg: existingPalette.stdNamesDateCardBg,
+    stdNamesDateAccentColor: existingPalette.stdNamesDateAccentColor,
+    stdNamesDateTitleSize: existingPalette.stdNamesDateTitleSize,
+    stdNamesDateCardFrame: existingPalette.stdNamesDateCardFrame,
+    stdNamesDateFontId: existingPalette.stdNamesDateFontId,
+    stdNamesDateTextAnimation: existingPalette.stdNamesDateTextAnimation,
+    stdNamesDateBold: existingPalette.stdNamesDateBold,
+    stdDateFormat: existingPalette.stdDateFormat,
   });
-  const setStdColor = (key: keyof typeof stdColors, value: string) =>
+  const setStdColor = (key: keyof typeof stdColors, value: string | boolean) =>
     setStdColors((prev) => ({ ...prev, [key]: value }));
+  const stdThemeVars = useStudioThemeVars(project);
+  const stdAnimShow = useAnimReplay(undefined);
+  useGoogleFonts([stdColors.stdSaveTheDateFontId, stdColors.stdNamesDateFontId]);
+  const stdAnswers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
+  const stdNames = (stdAnswers["couple.prenoms"] as string | undefined) || coupleNamesFromSlug(project.slug);
+  const stdNameParts = stdNames.split(/\s+(&|et)\s+/i);
+  const stdNameSegments =
+    stdNameParts.length === 3
+      ? [{ text: stdNameParts[0] }, { text: stdNameParts[1], accent: true }, { text: stdNameParts[2] }]
+      : [{ text: stdNames }];
+  const stdDateFmt = getHeroDateFormat(stdColors.stdDateFormat);
+  const STUDIO_DATE_PREVIEW = new Date(2027, 5, 12);
   const saveStdColors = trpc.projects.adminSetPalette.useMutation({
     onSuccess: () => {
       utils.projects.adminGet.invalidate({ projectId: project.id });
@@ -2003,17 +2470,26 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
 
       <div className="border-t border-neutral-200 pt-6">
         <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-          Couleurs des 2 blocs
+          Style des 2 blocs
         </h3>
         <p className="mb-4 text-[12px] text-neutral-500">
-          Couleur du texte et fond de carte propres à chaque bloc. Couleur du texte vide = retombe sur "Texte overlay
-          du hero" (onglet Palette & Hero), lui-même retombant sur le thème choisi. Fond de carte vide = transparent,
-          toujours (indépendant du réglage de l'onglet Palette & Hero).
+          Mêmes réglages que les modèles Save the Date : taille, police, animation, gras, couleurs et cadre, bloc par
+          bloc. Vide = retombe sur le réglage commun (onglet Palette &amp; Hero), lui-même retombant sur le thème.
+          Fond de carte vide = transparent, toujours.
         </p>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
             <p className="mb-2 text-[12px] font-semibold">Bloc 1 — "Save the date"</p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <StudioField label="Taille de police">
+                <StudioSizeSelect value={stdColors.stdSaveTheDateTitleSize} onChange={(v) => setStdColor("stdSaveTheDateTitleSize", v)} />
+              </StudioField>
+              <StudioField label="Police — ce bloc">
+                <StudioFontSelect value={stdColors.stdSaveTheDateFontId} onChange={(v) => setStdColor("stdSaveTheDateFontId", v)} defaultLabel="Police du hero" />
+              </StudioField>
+              <StudioField label="Animation — ce bloc">
+                <StudioAnimSelect value={stdColors.stdSaveTheDateTextAnimation} onChange={(v) => setStdColor("stdSaveTheDateTextAnimation", v)} defaultLabel="Animation du hero" />
+              </StudioField>
               <ColorField
                 label="Couleur du texte"
                 hint="Vide = couleur commune"
@@ -2026,11 +2502,49 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                 value={stdColors.stdSaveTheDateCardBg}
                 onChange={(v) => setStdColor("stdSaveTheDateCardBg", v)}
               />
+              <StudioField label="Cadre (décor)">
+                <StudioFrameSelect value={stdColors.stdSaveTheDateCardFrame} onChange={(v) => setStdColor("stdSaveTheDateCardFrame", v)} />
+              </StudioField>
+            </div>
+            <div className="mt-3 flex flex-wrap items-end gap-6">
+              <StudioBold checked={stdColors.stdSaveTheDateBold} onChange={(v) => setStdColor("stdSaveTheDateBold", v)} />
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold text-neutral-500">Aperçu</span>
+                <StudioPreview themeVars={stdThemeVars}>
+                  <ChapterContent
+                    chapter={{
+                      id: 0,
+                      kind: "text",
+                      from: 0,
+                      to: 1,
+                      segments: [{ text: "Save the date" }],
+                      titleSize: (stdColors.stdSaveTheDateTitleSize || "sm") as HeroChapter["titleSize"],
+                      textColorOverride: stdColors.stdSaveTheDateTextColor || undefined,
+                      cardBgOverride: stdColors.stdSaveTheDateCardBg || "transparent",
+                      cardFrame: stdColors.stdSaveTheDateCardFrame || undefined,
+                      fontId: stdColors.stdSaveTheDateFontId || undefined,
+                      bold: stdColors.stdSaveTheDateBold,
+                    }}
+                    textAnimation={stdColors.stdSaveTheDateTextAnimation || undefined}
+                    className={cn("hs-overlay", stdAnimShow && "show", stdColors.stdSaveTheDateTextAnimation && `hs-anim-${stdColors.stdSaveTheDateTextAnimation}`)}
+                  />
+                </StudioPreview>
+              </div>
             </div>
           </div>
+
           <div>
-            <p className="mb-2 text-[12px] font-semibold">Bloc 2 — Prénoms & date</p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <p className="mb-2 text-[12px] font-semibold">Bloc 2 — Prénoms &amp; date</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <StudioField label="Taille de police">
+                <StudioSizeSelect value={stdColors.stdNamesDateTitleSize} onChange={(v) => setStdColor("stdNamesDateTitleSize", v)} />
+              </StudioField>
+              <StudioField label="Police — ce bloc">
+                <StudioFontSelect value={stdColors.stdNamesDateFontId} onChange={(v) => setStdColor("stdNamesDateFontId", v)} defaultLabel="Police du hero" />
+              </StudioField>
+              <StudioField label="Animation — ce bloc">
+                <StudioAnimSelect value={stdColors.stdNamesDateTextAnimation} onChange={(v) => setStdColor("stdNamesDateTextAnimation", v)} defaultLabel="Animation du hero" />
+              </StudioField>
               <ColorField
                 label="Couleur du texte"
                 hint="Vide = couleur commune"
@@ -2043,6 +2557,83 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                 value={stdColors.stdNamesDateCardBg}
                 onChange={(v) => setStdColor("stdNamesDateCardBg", v)}
               />
+              <ColorField
+                label={'Couleur du "&"'}
+                hint="Vide = accent du thème"
+                value={stdColors.stdNamesDateAccentColor}
+                onChange={(v) => setStdColor("stdNamesDateAccentColor", v)}
+              />
+              <StudioField label="Cadre (décor)">
+                <StudioFrameSelect value={stdColors.stdNamesDateCardFrame} onChange={(v) => setStdColor("stdNamesDateCardFrame", v)} />
+              </StudioField>
+            </div>
+            <div className="mt-3 flex flex-wrap items-end gap-6">
+              <StudioBold checked={stdColors.stdNamesDateBold} onChange={(v) => setStdColor("stdNamesDateBold", v)} />
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold text-neutral-500">Aperçu</span>
+                <StudioPreview themeVars={stdThemeVars}>
+                  <ChapterContent
+                    chapter={{
+                      id: 1,
+                      kind: "text",
+                      from: 0,
+                      to: 1,
+                      segments: stdNameSegments,
+                      fitOneLine: true,
+                      titleSize: (stdColors.stdNamesDateTitleSize || "sm") as HeroChapter["titleSize"],
+                      textColorOverride: stdColors.stdNamesDateTextColor || undefined,
+                      cardBgOverride: stdColors.stdNamesDateCardBg || "transparent",
+                      accentColorOverride: stdColors.stdNamesDateAccentColor || undefined,
+                      cardFrame: stdColors.stdNamesDateCardFrame || undefined,
+                      fontId: stdColors.stdNamesDateFontId || undefined,
+                      bold: stdColors.stdNamesDateBold,
+                    }}
+                    textAnimation={stdColors.stdNamesDateTextAnimation || undefined}
+                    className={cn("hs-overlay", stdAnimShow && "show", stdColors.stdNamesDateTextAnimation && `hs-anim-${stdColors.stdNamesDateTextAnimation}`)}
+                  />
+                </StudioPreview>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-[12px] font-semibold">Format de la date</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <StudioField
+                label="Style d'affichage"
+                hint="S'applique à la vraie date du client, sous les prénoms. Les mises en page multi-lignes retombent sur une ligne à cet emplacement."
+              >
+                <select value={stdColors.stdDateFormat} onChange={(e) => setStdColor("stdDateFormat", e.target.value)} className={studioInput}>
+                  <option value="">12 juin 2027 (défaut)</option>
+                  <optgroup label="Sur une ligne">
+                    {HERO_DATE_FORMATS.filter((f) => !f.layout).map((f) => (
+                      <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Mises en page multi-lignes">
+                    {HERO_DATE_FORMATS.filter((f) => f.layout).map((f) => (
+                      <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
+                    ))}
+                  </optgroup>
+                </select>
+              </StudioField>
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold text-neutral-500">Aperçu (12 juin 2027)</span>
+                <StudioPreview themeVars={stdThemeVars}>
+                  {stdDateFmt?.layout ? (
+                    <HeroDateLayoutBlock
+                      layout={{ id: stdDateFmt.id, fonts: stdDateFmt.layout.fonts, lines: stdDateFmt.layout.lines(STUDIO_DATE_PREVIEW) }}
+                    />
+                  ) : (
+                    <p
+                      className="px-3 text-center text-[18px] font-light"
+                      style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)" }}
+                    >
+                      {stdDateFmt?.format(STUDIO_DATE_PREVIEW) ?? "12 juin 2027"}
+                    </p>
+                  )}
+                </StudioPreview>
+              </div>
             </div>
           </div>
         </div>
@@ -2054,7 +2645,7 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
             className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
           >
             {saveStdColors.isPending && <Loader2 size={14} className="animate-spin" />}
-            Enregistrer les couleurs
+            Enregistrer le style
           </button>
         </div>
       </div>
