@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Loader2 } from 'lucide-react'
 import { trpc } from '@/providers/trpc'
@@ -233,6 +233,22 @@ export default function FairePart() {
     }
     img.src = src
   }, [invite?.photoOuverture])
+
+  // Ouverture de la page — comptée UNE fois par chargement (le ref évite un
+  // doublon en StrictMode/re-rendu). Silencieuse par construction : la
+  // statistique ne doit jamais empêcher un invité de voir le faire-part,
+  // l'API avale déjà ses propres erreurs (cf. api/viewsRouter.ts). Ajouté le
+  // 30/09/2026 avec l'onglet Statistiques.
+  const recordView = trpc.views.record.useMutation()
+  const viewRecordedRef = useRef(false)
+  useEffect(() => {
+    if (!slug || viewRecordedRef.current) return
+    viewRecordedRef.current = true
+    recordView.mutate({ slug })
+    // `recordView` exclu des dépendances : la mutation tRPC change de
+    // référence à chaque rendu, l'inclure relancerait l'effet en boucle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug])
 
   useEffect(() => {
     if (!invite) return

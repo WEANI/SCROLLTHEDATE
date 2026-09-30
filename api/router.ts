@@ -8,6 +8,7 @@ import { scenariosRouter } from "./scenariosRouter";
 import { videosRouter } from "./videosRouter";
 import { messagesRouter } from "./messagesRouter";
 import { rsvpRouter } from "./rsvpRouter";
+import { viewsRouter } from "./viewsRouter";
 import {
   analyticsRouter,
   notificationsRouter,
@@ -26,6 +27,7 @@ export const appRouter = createRouter({
   videos: videosRouter,
   messages: messagesRouter,
   rsvp: rsvpRouter,
+  views: viewsRouter,
   analytics: analyticsRouter,
   notifications: notificationsRouter,
   settings: settingsRouter,

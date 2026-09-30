@@ -3,6 +3,7 @@ import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from "react
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
+  Eye,
   Bell,
   CheckCheck,
   ClipboardList,
@@ -30,6 +31,7 @@ const NAV = [
   { to: "/admin/clients", label: "Clients", icon: Users },
   { to: "/admin/formulaires", label: "Formulaires", icon: ClipboardList },
   { to: "/admin/analytique", label: "Analytique", icon: BarChart3 },
+  { to: "/admin/statistiques", label: "Statistiques", icon: Eye },
   { to: "/admin/messages", label: "Messages", icon: MessageSquare },
   { to: "/admin/parametres", label: "Paramètres", icon: Settings },
 ];

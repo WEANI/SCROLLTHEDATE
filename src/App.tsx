@@ -32,6 +32,7 @@ import MessagesClient from '@/pages/espace/Messages'
 import ParametresClient from '@/pages/espace/Parametres'
 import RsvpClient from '@/pages/espace/Rsvp'
 import ProductSpace, { LegacyRedirect } from '@/pages/espace/ProductSpace'
+import StatistiquesClient from '@/pages/espace/Statistiques'
 import AdminShell from '@/components/admin/AdminShell'
 import AdminDashboard from '@/pages/admin/Dashboard'
 import AdminCommandes from '@/pages/admin/Commandes'
@@ -39,6 +40,7 @@ import AdminProjets from '@/pages/admin/Projets'
 import AdminClients from '@/pages/admin/Clients'
 import AdminFormulaires from '@/pages/admin/Formulaires'
 import AdminAnalytique from '@/pages/admin/Analytique'
+import AdminStatistiques from '@/pages/admin/Statistiques'
 import AdminMessages from '@/pages/admin/Messages'
 import AdminParametres from '@/pages/admin/Parametres'
 import AdminModeleStdDetail from '@/pages/admin/ModeleStdDetail'
@@ -153,6 +155,7 @@ export default function App() {
           <Route path="questionnaire" element={<LegacyRedirect tab="questionnaire" />} />
           <Route path="personnalisation" element={<LegacyRedirect tab="personnalisation" />} />
           <Route path="rsvp" element={<LegacyRedirect tab="rsvp" />} />
+          <Route path="statistiques" element={<StatistiquesClient />} />
           <Route path="commandes" element={<CommandesClient />} />
           <Route path="messages" element={<MessagesClient />} />
           <Route path="parametres" element={<ParametresClient />} />
@@ -166,6 +169,7 @@ export default function App() {
           <Route path="clients" element={<AdminClients />} />
           <Route path="formulaires" element={<AdminFormulaires />} />
           <Route path="analytique" element={<AdminAnalytique />} />
+          <Route path="statistiques" element={<AdminStatistiques />} />
           <Route path="messages" element={<AdminMessages />} />
           <Route path="parametres" element={<AdminParametres />} />
           <Route path="parametres/modeles-std/:slug" element={<AdminModeleStdDetail />} />

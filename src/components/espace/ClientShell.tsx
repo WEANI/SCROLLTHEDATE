@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  BarChart3,
   Bell,
   ChevronRight,
   Clapperboard,
@@ -54,6 +55,7 @@ const NAV_ITEMS: NavItem[] = [
   // grisées + « Commander » si le compte n'a pas acheté ce produit.
   { labelKey: 'espace.shell.navSaveTheDate', crumbKey: 'espace.shell.navSaveTheDate', to: '/espace/save-the-date', icon: Clapperboard, product: 'SAVE_THE_DATE' },
   { labelKey: 'espace.shell.navFairePart', crumbKey: 'espace.shell.navFairePart', to: '/espace/faire-part', icon: Mail, product: 'FAIRE_PART' },
+  { labelKey: 'espace.shell.navStats', crumbKey: 'espace.shell.navStats', to: '/espace/statistiques', icon: BarChart3 },
   { labelKey: 'espace.shell.navOrders', crumbKey: 'espace.shell.navOrders', to: '/espace/commandes', icon: ShoppingBag },
   { labelKey: 'espace.shell.navMessages', crumbKey: 'espace.shell.navMessages', to: '/espace/messages', icon: MessageCircle },
   { labelKey: 'espace.shell.navSettings', crumbKey: 'espace.shell.navSettings', to: '/espace/parametres', icon: Settings },
@@ -71,6 +73,7 @@ const CRUMB_KEY_BY_PATH: Record<string, string> = {
   questionnaire: 'espace.shell.navQuestionnaire',
   projet: 'espace.shell.navProject',
   personnalisation: 'espace.shell.navPersonalization',
+  statistiques: 'espace.shell.navStats',
   commandes: 'espace.shell.navOrders',
   rsvp: 'espace.shell.navRsvp',
   messages: 'espace.shell.navMessages',

@@ -560,3 +560,46 @@ export const siteSettings = pgTable(
 
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type InsertSiteSetting = typeof siteSettings.$inferInsert;
+
+/**
+ * Ouvertures d'un faire-part / save the date publié — alimente les
+ * statistiques de l'espace client ("votre faire-part a été ouvert N fois")
+ * et de l'admin (viralité, canaux de partage). Ajoutée le 30/09/2026 :
+ * jusque-là aucune consultation n'était enregistrée.
+ *
+ * Aucun cookie, aucun stockage sur l'appareil du visiteur, aucune donnée
+ * personnelle conservée : `visitorHash` = sha256(sel du jour + IP +
+ * user-agent), et le sel change chaque jour — deux visites d'une même
+ * personne à deux jours d'écart sont donc indistinguables de deux personnes
+ * différentes. Les "visiteurs uniques" se comptent par jour, jamais sur
+ * toute une période (cf. doc des requêtes dans api/queries/inviteViews.ts).
+ */
+export const inviteViews = pgTable(
+  "invite_views",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    projectId: bigint("projectId", { mode: "number" })
+      .notNull()
+      .references(() => projects.id),
+    visitorHash: varchar("visitorHash", { length: 64 }).notNull(),
+    /** Créneau horaire UTC ("2026-09-30T14") — clé de dédoublonnage : une ligne par visiteur, projet et heure. */
+    hourBucket: varchar("hourBucket", { length: 16 }).notNull(),
+    /** Domaine du référent (whatsapp.com, instagram.com…), jamais l'URL complète. */
+    referrerHost: varchar("referrerHost", { length: 120 }),
+    device: varchar("device", { length: 10 }),
+    viewedAt: timestamp("viewedAt", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectIdx: index("invite_views_project_idx").on(table.projectId),
+    viewedIdx: index("invite_views_viewed_idx").on(table.viewedAt),
+    dedupeIdx: uniqueIndex("invite_views_dedupe_idx").on(
+      table.projectId,
+      table.visitorHash,
+      table.hourBucket,
+    ),
+    servicePolicy: serviceRoleFullAccess(),
+  }),
+).enableRLS();
+
+export type InviteView = typeof inviteViews.$inferSelect;
+export type InsertInviteView = typeof inviteViews.$inferInsert;
