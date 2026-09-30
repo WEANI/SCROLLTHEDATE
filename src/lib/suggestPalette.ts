@@ -156,6 +156,9 @@ export function suggestPaletteFromColors(
     stdNamesDateTextAnimation: "",
     stdNamesDateBold: false,
     stdNamesDateTitleSize: "",
+    stdNamesLayout: "",
+    stdNamesFamily: "",
+    stdNamesVerb: "",
     // Décor/police du hero : jamais suggérés automatiquement, cf. doc de
     // BespokePalette.heroOverlayGraphic/heroFontId.
     heroOverlayGraphic: "",

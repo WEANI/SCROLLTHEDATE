@@ -146,6 +146,10 @@ export type BespokePalette = {
   stdNamesDateBold: boolean
   /** Taille de police du bloc "prénoms" — cf. stdSaveTheDateTitleSize plus haut. Ajouté le 23/09/2026. */
   stdNamesDateTitleSize: string
+  /** Mise en page des prénoms + noms de famille + verbe — cf. HERO_NAMES_LAYOUTS (heroDecor.ts). Ajoutés le 30/09/2026. */
+  stdNamesLayout: string
+  stdNamesFamily: string
+  stdNamesVerb: string
   /**
    * Décor du hero — cf. src/components/hero-scrub/heroDecor.ts. Chaîne
    * vide = aucun décor / police du site (Fraunces). `heroFontId` ne
@@ -217,6 +221,9 @@ export const EW_PALETTE: BespokePalette = {
   stdNamesDateTextAnimation: '',
   stdNamesDateBold: false,
   stdNamesDateTitleSize: '',
+  stdNamesLayout: '',
+  stdNamesFamily: '',
+  stdNamesVerb: '',
   heroOverlayGraphic: '',
   heroFontId: '',
   heroTextAnimation: '',

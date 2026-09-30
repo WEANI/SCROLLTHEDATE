@@ -90,6 +90,10 @@ export interface TemplateHeroChapter {
   /** Format de date choisi (cf. HERO_DATE_FORMATS) + où l'appliquer — résolu côté client par `resolveDateFormatsInChapters` (heroDecor.ts), car la bibliothèque vit dans src/. Ajouté le 26/09/2026 : la page d'aperçu générique doit montrer le format/la mise en page choisis. */
   dateFormatId?: string
   dateSlot?: 'block' | 'sub'
+  /** Mise en page des prénoms (cf. HERO_NAMES_LAYOUTS) — résolue côté client, cf. resolveDateFormatsInChapters. Ajoutés le 30/09/2026. */
+  namesLayout?: string
+  namesFamily?: string
+  namesVerb?: string
   /** Monogramme des mariés — cf. HeroChapter.monogram (src/components/hero-scrub/types.ts). Ajouté le 26/09/2026. */
   monogram?: { layout: string; a: string; b: string; accent: string; sealColor: string; dateShort: string; dateNumeric: string }
 }
@@ -215,6 +219,12 @@ export interface SaveTheDateTemplateOverride {
   chapter2Bold: boolean
   /** cf. doc de TemplateHeroChapter.titleSize — vide = 'md' (ce bloc n'avait aucun contrôle de taille avant le 23/09/2026). */
   chapter2TitleSize: string
+  /** Mise en page des prénoms (cf. HERO_NAMES_LAYOUTS) — vide/'ligne' = rendu historique. Ajoutés le 30/09/2026. */
+  chapter2NamesLayout: string
+  /** Noms de famille d'exemple (« Moreau & Dupont ») — mise en page 'full' uniquement. */
+  chapter2NamesFamily: string
+  /** Verbe d'exemple (« se disent oui ») — mise en page 'verbe' uniquement. */
+  chapter2NamesVerb: string
   /** cf. doc de SaveTheDateTemplate.overlayGraphic — vide = comportement par défaut. */
   overlayGraphic: string
   fontId: string
@@ -528,6 +538,9 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     chapter2TextAnimation: ch2?.textAnimation ?? '',
     chapter2Bold: ch2?.bold ?? false,
     chapter2TitleSize: ch2?.titleSize ?? '',
+    chapter2NamesLayout: 'ligne',
+    chapter2NamesFamily: '',
+    chapter2NamesVerb: '',
     overlayGraphic: template.overlayGraphic ?? '',
     fontId: template.fontId ?? '',
     textAnimation: template.textAnimation ?? '',
@@ -618,6 +631,12 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         titleSize: (override.chapter2TitleSize || undefined) as TemplateHeroChapter['titleSize'],
         dateFormatId: override.dateFormat || undefined,
         dateSlot: 'sub',
+        // Mise en page des prénoms — seul l'identifiant voyage jusqu'ici : le
+        // bloc `names` est construit côté client (resolveDateFormatsInChapters,
+        // heroDecor.ts), ce fichier ne pouvant pas importer src/.
+        namesLayout: override.chapter2NamesLayout || undefined,
+        namesFamily: override.chapter2NamesFamily || undefined,
+        namesVerb: override.chapter2NamesVerb || undefined,
       },
       ...(override.dateBlockEnabled
         ? [
@@ -746,6 +765,9 @@ export function buildFulfillmentData(
       stdNamesDateTextAnimation: o.chapter2TextAnimation || '',
       stdNamesDateBold: o.chapter2Bold,
       stdNamesDateTitleSize: o.chapter2TitleSize || '',
+      stdNamesLayout: o.chapter2NamesLayout || '',
+      stdNamesFamily: o.chapter2NamesFamily || '',
+      stdNamesVerb: o.chapter2NamesVerb || '',
       heroOverlayGraphic: o.overlayGraphic || '',
       heroFontId: o.fontId || '',
       heroTextAnimation: o.textAnimation || '',

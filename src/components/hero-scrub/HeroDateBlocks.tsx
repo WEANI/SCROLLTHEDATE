@@ -5,9 +5,11 @@ import {
   getHeroFont,
   HERO_COUNTDOWN_STYLES,
   HERO_MONOGRAM_LAYOUTS,
+  HERO_NAMES_LAYOUTS,
   HERO_PROGRAMME_LAYOUTS,
   type HeroDateLayout,
   type HeroMonogram,
+  type HeroNames,
   type HeroProgramme,
 } from './heroDecor'
 
@@ -304,4 +306,124 @@ export function HeroProgrammeBlock({ p }: { p: HeroProgramme }) {
       {body()}
     </div>
   )
+}
+
+/**
+ * Prénoms des mariés — 12 mises en page (cf. HERO_NAMES_LAYOUTS,
+ * heroDecor.ts). N'est JAMAIS rendu pour `layout: 'ligne'` : ce cas
+ * continue de passer par `segments`/`fitOneLine` dans ChapterContent, donc
+ * un projet qui ne choisit rien garde exactement son rendu d'avant.
+ */
+export function HeroNamesBlock({ n }: { n: HeroNames }) {
+  const uid = useId().replace(/:/g, '')
+  useEffect(() => {
+    ensureGoogleFamilies('Playfair+Display:ital@1&family=Cinzel&family=Cinzel+Decorative&family=Great+Vibes&family=Montserrat:wght@300')
+  }, [])
+  const A = n.a || 'Prénom'
+  const B = n.b || ''
+  const layout = HERO_NAMES_LAYOUTS.some((l) => l.id === n.layout) ? n.layout : 'ligne'
+  const [famA, famB] = n.family ? n.family.split(/\s+(?:&|et)\s+/i).map((x) => x.trim()) : ['', '']
+  const date = n.dateShort ? <span className="hs-nm-dt">{n.dateShort}</span> : null
+  const rule = <span className="hs-nm-rule" />
+
+  let inner
+  switch (layout) {
+    case 'stack':
+      inner = (<><span className="hs-nm-n">{A}<span className="hs-nm-amp">&amp;</span>{B}</span>{rule}{date}</>)
+      break
+    case 'side':
+      inner = (
+        <>
+          <span className="hs-nm-row">
+            <span className="hs-nm-n">{A}</span>
+            <span className="hs-nm-vr" />
+            <span className="hs-nm-n">{B}</span>
+          </span>
+          {rule}
+          {date}
+        </>
+      )
+      break
+    case 'caps':
+      inner = (<><span className="hs-nm-n">{A.toLocaleUpperCase('fr-FR')}<span className="hs-nm-amp">&amp;</span>{B.toLocaleUpperCase('fr-FR')}</span>{rule}{date}</>)
+      break
+    case 'amp':
+      inner = (
+        <>
+          <span className="hs-nm-ghost" aria-hidden="true">&amp;</span>
+          <span className="hs-nm-over">
+            <span className="hs-nm-n">{A}</span>
+            <span className="hs-nm-n">{B}</span>
+          </span>
+        </>
+      )
+      break
+    case 'filigree': {
+      const ini = `${A.charAt(0)}${B.charAt(0)}`.toLocaleUpperCase('fr-FR')
+      inner = (
+        <>
+          <span className="hs-nm-ghost" aria-hidden="true">{ini}</span>
+          <span className="hs-nm-over">
+            <span className="hs-nm-n">{A} &amp; {B}</span>
+            {date}
+          </span>
+        </>
+      )
+      break
+    }
+    case 'arc':
+      inner = (
+        <>
+          <svg viewBox="0 0 200 120" aria-hidden="true">
+            <defs>
+              <path id={`nm-arc-${uid}`} d="M 14 108 A 92 92 0 0 1 186 108" />
+            </defs>
+            <text textAnchor="middle">
+              <textPath href={`#nm-arc-${uid}`} startOffset="50%">
+                {A} <tspan className="hs-nm-a">&amp;</tspan> {B}
+              </textPath>
+            </text>
+          </svg>
+          {rule}
+          {date}
+        </>
+      )
+      break
+    case 'cartouche':
+      inner = (
+        <span className="hs-nm-box">
+          <span className="hs-nm-n">{A}<span className="hs-nm-amp"> &amp; </span>{B}</span>
+        </span>
+      )
+      break
+    case 'mix':
+      inner = (<><span className="hs-nm-a1">{A}</span><span className="hs-nm-amp">&amp;</span><span className="hs-nm-b1">{B.toLocaleUpperCase('fr-FR')}</span>{rule}{date}</>)
+      break
+    case 'calli':
+      inner = (<><span className="hs-nm-n">{A} <span className="hs-nm-amp">&amp;</span> {B}</span>{date}</>)
+      break
+    case 'full':
+      inner = (
+        <>
+          <span className="hs-nm-n">{A}{famA && <span className="hs-nm-fam">{famA.toLocaleUpperCase('fr-FR')}</span>}</span>
+          <span className="hs-nm-amp">&amp;</span>
+          <span className="hs-nm-n">{B}{famB && <span className="hs-nm-fam">{famB.toLocaleUpperCase('fr-FR')}</span>}</span>
+        </>
+      )
+      break
+    case 'verbe':
+      inner = (
+        <>
+          <span className="hs-nm-n">{A} <span className="hs-nm-amp">&amp;</span> {B}</span>
+          <span className="hs-nm-v">{n.verb || 'se disent oui'}</span>
+          {rule}
+          {date}
+        </>
+      )
+      break
+    default:
+      inner = (<><span className="hs-nm-n">{A}<span className="hs-nm-amp">&amp;</span>{B}</span>{rule}{date}</>)
+  }
+
+  return <div className={cn('hs-nm', `hs-nm-${layout}`)}>{inner}</div>
 }

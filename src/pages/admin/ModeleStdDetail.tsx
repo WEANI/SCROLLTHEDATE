@@ -30,6 +30,8 @@ import {
   HERO_DATE_FORMATS,
   HERO_COUNTDOWN_STYLES,
   HERO_MONOGRAM_LAYOUTS,
+  HERO_NAMES_LAYOUTS,
+  splitCoupleNames,
   HERO_MONOGRAM_FONT_IDS,
   HERO_SEAL_COLORS,
   HERO_SEAL_SHAPES,
@@ -39,8 +41,9 @@ import {
   useGoogleFont,
 } from "@/components/hero-scrub/heroDecor";
 import { HeroOverlayGraphic, HeroFilterLayer, ChapterContent } from "@/components/hero-scrub/HeroScrub";
-import { HeroDateLayoutBlock, HeroMonogramBlock } from "@/components/hero-scrub/HeroDateBlocks";
+import { HeroDateLayoutBlock, HeroMonogramBlock, HeroNamesBlock } from "@/components/hero-scrub/HeroDateBlocks";
 import type { HeroChapter } from "@/components/hero-scrub/types";
+import type { HeroNames } from "@/components/hero-scrub/heroDecor";
 import type { HeroCustomCard } from "@contracts/bespokePalette";
 
 type Push = (kind: "success" | "error", text: string) => void;
@@ -354,12 +357,29 @@ function ModeleStdDetailForm({
     textAnimation: o.chapter1TextAnimation || undefined,
     bold: o.chapter1Bold,
   };
+  // Mise en page des prénoms (bibliothèque HERO_NAMES_LAYOUTS, cf.
+  // heroDecor.ts) — données d'aperçu partagées par la grille de vignettes et
+  // l'aperçu du 2e bloc. La date n'y figure que si le bloc date indépendant
+  // est éteint, exactement comme au rendu (`subLines` dans applyOverride).
+  const [namesPreviewA, namesPreviewB] = splitCoupleNames(o.exampleNames || "Anna & Théo");
+  const namesLayoutId = o.chapter2NamesLayout || "ligne";
+  const namesPreview: HeroNames = {
+    layout: namesLayoutId,
+    a: namesPreviewA,
+    b: namesPreviewB,
+    family: o.chapter2NamesFamily,
+    verb: o.chapter2NamesVerb,
+    dateShort: o.dateBlockEnabled ? "" : o.exampleDate || "12 juin 2027",
+  };
   const chapter2FramePreview: HeroChapter = {
     id: 1,
     kind: "text",
     from: 0,
     to: 1,
-    segments: [{ text: "Anna" }, { text: "&", accent: true }, { text: "Théo" }],
+    // Une mise en page dédiée REMPLACE les segments (elle réaffiche les
+    // prénoms elle-même) — même règle qu'au rendu, cf. resolveNamesLayout.
+    segments: namesLayoutId === "ligne" ? [{ text: namesPreviewA }, { text: "&", accent: true }, { text: namesPreviewB }] : undefined,
+    names: namesLayoutId === "ligne" ? undefined : namesPreview,
     titleSize: (o.chapter2TitleSize || "sm") as HeroChapter["titleSize"],
     fitOneLine: true,
     cardFrame: o.chapter2CardFrame || undefined,
@@ -688,6 +708,77 @@ function ModeleStdDetailForm({
                       <option value="bottom">Bas</option>
                     </select>
                   </label>
+                </div>
+
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-medium text-neutral-500">
+                    Mise en page des prénoms <span className="font-normal text-neutral-400">— « Une ligne » = rendu historique</span>
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+                    {HERO_NAMES_LAYOUTS.map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        onClick={() => update({ chapter2NamesLayout: l.id })}
+                        title={l.desc}
+                        className={cn(
+                          "flex flex-col gap-1.5 rounded-xl border p-1.5 text-center transition-colors",
+                          namesLayoutId === l.id ? "border-terracotta-500 bg-terracotta-500/5" : "border-neutral-200 hover:border-terracotta-300",
+                        )}
+                      >
+                        <div
+                          className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950 px-1"
+                          style={{ aspectRatio: "16 / 10", containerType: "inline-size", ...themeVars } as CSSProperties}
+                        >
+                          {l.id === "ligne" ? (
+                            // Pas de classe hero pour le titre (il est stylé en
+                            // Tailwind dans ChapterContent) — vignette recréée
+                            // à l'identique en cqw, comme les blocs hero.
+                            <div
+                              style={{
+                                fontFamily: "var(--hs-font-family)",
+                                color: "var(--hs-text-primary)",
+                                fontSize: "11cqw",
+                                lineHeight: 1.1,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {namesPreviewA} <span style={{ color: "var(--hs-accent)", fontStyle: "italic" }}>&amp;</span> {namesPreviewB}
+                            </div>
+                          ) : (
+                            <HeroNamesBlock n={{ ...namesPreview, layout: l.id }} />
+                          )}
+                        </div>
+                        <span className="text-[10.5px] font-medium leading-tight text-ink">{l.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {(namesLayoutId === "full" || namesLayoutId === "verbe") && (
+                    <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                      {namesLayoutId === "full" && (
+                        <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                          Noms de famille d'exemple
+                          <input
+                            value={o.chapter2NamesFamily}
+                            onChange={(e) => update({ chapter2NamesFamily: e.target.value })}
+                            placeholder="Moreau & Dupont"
+                            className={inputClass}
+                          />
+                        </label>
+                      )}
+                      {namesLayoutId === "verbe" && (
+                        <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                          Verbe d'exemple
+                          <input
+                            value={o.chapter2NamesVerb}
+                            onChange={(e) => update({ chapter2NamesVerb: e.target.value })}
+                            placeholder="se disent oui"
+                            className={inputClass}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-7">

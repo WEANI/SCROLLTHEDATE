@@ -332,6 +332,31 @@ export default function FairePart() {
   // bas) — jamais répétée sous les prénoms via `subLines` du chapitre 2
   // (baseChapters ci-dessous).
   const hasDateBlock = (invite.heroCustomCards ?? []).some((c) => c.kind === 'date')
+  // Mise en page des prénoms du 2e bloc des Save the Date (bibliothèque
+  // HERO_NAMES_LAYOUTS, cf. heroDecor.ts) — vide ou 'ligne' = rendu
+  // historique conservé (`segments` + `fitOneLine`, la date en `subLines`) :
+  // aucun projet déjà livré ne change d'aspect. Une autre mise en page
+  // réaffiche prénoms ET date à sa façon, donc elle REMPLACE ces champs au
+  // lieu de s'y ajouter (sinon les prénoms s'afficheraient deux fois).
+  const stdNamesLayoutId = palette.stdNamesLayout && palette.stdNamesLayout !== 'ligne' ? palette.stdNamesLayout : ''
+  const stdNamesFields: Partial<HeroChapter> = stdNamesLayoutId
+    ? {
+        names: {
+          layout: stdNamesLayoutId,
+          a: nameParts[0] ?? coupleNames,
+          b: nameParts.length === 3 ? nameParts[2] : '',
+          family: palette.stdNamesFamily,
+          verb: palette.stdNamesVerb,
+          dateShort: weddingDateShort && !hasDateBlock ? weddingDateShort : '',
+        },
+      }
+    : {
+        segments,
+        fitOneLine: true,
+        rule: true,
+        subLines: weddingDateShort && !hasDateBlock ? [weddingDateShort] : undefined,
+        subSize: 'md',
+      }
   // Jour/mois/année séparés — chapitre "Détails pratiques" du hero (cf.
   // échange du 07/09/2026 : uniquement la date, une ligne par partie,
   // plus d'heure/lieu/dress code dans ce chapitre). `weddingDateShort`
@@ -431,11 +456,7 @@ export default function FairePart() {
             // 14px) : la date reste plus discrète que les prénoms
             // (28-56px) tout en étant nettement plus lisible que 14px, cf.
             // échange du 08/09/2026.
-            segments,
-            fitOneLine: true,
-            rule: true,
-            subLines: weddingDateShort && !hasDateBlock ? [weddingDateShort] : undefined,
-            subSize: 'md',
+            ...stdNamesFields,
             textColorOverride: palette.stdNamesDateTextColor || undefined,
             cardBgOverride: palette.stdNamesDateCardBg || 'transparent',
             // Couleur du "&" entre les 2 prénoms — vide = accent du thème
@@ -484,11 +505,7 @@ export default function FairePart() {
             // 14px) : la date reste plus discrète que les prénoms
             // (28-56px) tout en étant nettement plus lisible que 14px, cf.
             // échange du 08/09/2026.
-            segments,
-            fitOneLine: true,
-            rule: true,
-            subLines: weddingDateShort && !hasDateBlock ? [weddingDateShort] : undefined,
-            subSize: 'md',
+            ...stdNamesFields,
             textColorOverride: palette.stdNamesDateTextColor || undefined,
             cardBgOverride: palette.stdNamesDateCardBg || 'transparent',
             // Couleur du "&" entre les 2 prénoms — vide = accent du thème

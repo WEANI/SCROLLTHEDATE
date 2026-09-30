@@ -16,6 +16,7 @@ import {
   HERO_DATE_FORMATS,
   HERO_MONOGRAM_LAYOUTS,
   HERO_MONOGRAM_FONT_IDS,
+  HERO_NAMES_LAYOUTS,
   HERO_PROGRAMME_ANIMATIONS,
   HERO_PROGRAMME_LAYOUTS,
   HERO_PROGRAMME_SPEEDS,
@@ -24,12 +25,14 @@ import {
   getHeroDateFormat,
   getHeroFont,
   monogramInitials,
+  splitCoupleNames,
   useGoogleFont,
   useGoogleFonts,
 } from "@/components/hero-scrub/heroDecor";
 import { HERO_THEMES } from "@/components/hero-scrub/themes";
 import { ChapterContent } from "@/components/hero-scrub/HeroScrub";
-import { HeroDateLayoutBlock, HeroMonogramBlock, HeroProgrammeBlock } from "@/components/hero-scrub/HeroDateBlocks";
+import { HeroDateLayoutBlock, HeroMonogramBlock, HeroNamesBlock, HeroProgrammeBlock } from "@/components/hero-scrub/HeroDateBlocks";
+import type { HeroNames } from "@/components/hero-scrub/heroDecor";
 import type { HeroChapter } from "@/components/hero-scrub/types";
 import type {
   BespokePaletteInput,
@@ -969,6 +972,9 @@ const BLANK_PALETTE: BespokePaletteInput = {
   stdNamesDateTextAnimation: "",
   stdNamesDateBold: false,
   stdNamesDateTitleSize: "",
+  stdNamesLayout: "",
+  stdNamesFamily: "",
+  stdNamesVerb: "",
   heroOverlayGraphic: "",
   heroFontId: "",
   heroTextAnimation: "",
@@ -2507,6 +2513,9 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
     stdNamesDateFontId: existingPalette.stdNamesDateFontId,
     stdNamesDateTextAnimation: existingPalette.stdNamesDateTextAnimation,
     stdNamesDateBold: existingPalette.stdNamesDateBold,
+    stdNamesLayout: existingPalette.stdNamesLayout,
+    stdNamesFamily: existingPalette.stdNamesFamily,
+    stdNamesVerb: existingPalette.stdNamesVerb,
     stdDateFormat: existingPalette.stdDateFormat,
   });
   const setStdColor = (key: keyof typeof stdColors, value: string | boolean) =>
@@ -2523,6 +2532,19 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
       : [{ text: stdNames }];
   const stdDateFmt = getHeroDateFormat(stdColors.stdDateFormat);
   const STUDIO_DATE_PREVIEW = new Date(2027, 5, 12);
+  // Mise en page des prénoms (bibliothèque HERO_NAMES_LAYOUTS, cf.
+  // heroDecor.ts) — vide ou 'ligne' = rendu historique (prénoms sur une
+  // ligne séparés par "&"), donc aucun projet déjà livré ne change d'aspect.
+  const [stdNamesA, stdNamesB] = splitCoupleNames(stdNames);
+  const stdNamesLayoutId = stdColors.stdNamesLayout || "ligne";
+  const stdNamesPreview: HeroNames = {
+    layout: stdNamesLayoutId,
+    a: stdNamesA,
+    b: stdNamesB,
+    family: stdColors.stdNamesFamily,
+    verb: stdColors.stdNamesVerb,
+    dateShort: stdDateFmt ? stdDateFmt.format(STUDIO_DATE_PREVIEW) : "12 juin 2027",
+  };
   const saveStdColors = trpc.projects.adminSetPalette.useMutation({
     onSuccess: () => {
       utils.projects.adminGet.invalidate({ projectId: project.id });
@@ -2712,6 +2734,71 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
 
           <div>
             <p className="mb-2 text-[12px] font-semibold">Bloc 2 — Prénoms &amp; date</p>
+            <div className="mb-4">
+              <p className="mb-2 text-[11px] font-semibold text-neutral-500">
+                Mise en page des prénoms <span className="font-normal">— « Une ligne » = rendu actuel</span>
+              </p>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+                {HERO_NAMES_LAYOUTS.map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => setStdColor("stdNamesLayout", l.id)}
+                    title={l.desc}
+                    className={cn(
+                      "flex flex-col gap-1.5 rounded-xl border p-1.5 text-center transition-colors",
+                      stdNamesLayoutId === l.id ? "border-terracotta-500 bg-terracotta-500/5" : "border-neutral-200 hover:border-terracotta-300",
+                    )}
+                  >
+                    <div
+                      className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950 px-1"
+                      style={{ aspectRatio: "16 / 10", containerType: "inline-size", ...stdThemeVars } as CSSProperties}
+                    >
+                      {l.id === "ligne" ? (
+                        <div
+                          style={{
+                            fontFamily: "var(--hs-font-family)",
+                            color: "var(--hs-text-primary)",
+                            fontSize: "11cqw",
+                            lineHeight: 1.1,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {stdNamesA} <span style={{ color: "var(--hs-accent)", fontStyle: "italic" }}>&amp;</span> {stdNamesB}
+                        </div>
+                      ) : (
+                        <HeroNamesBlock n={{ ...stdNamesPreview, layout: l.id }} />
+                      )}
+                    </div>
+                    <span className="text-[10px] font-medium leading-tight text-ink">{l.label}</span>
+                  </button>
+                ))}
+              </div>
+              {(stdNamesLayoutId === "full" || stdNamesLayoutId === "verbe") && (
+                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                  {stdNamesLayoutId === "full" && (
+                    <StudioField label="Noms de famille" hint="« Moreau & Dupont » — affichés sous les prénoms.">
+                      <input
+                        value={stdColors.stdNamesFamily}
+                        onChange={(e) => setStdColor("stdNamesFamily", e.target.value)}
+                        placeholder="Moreau & Dupont"
+                        className={studioInput}
+                      />
+                    </StudioField>
+                  )}
+                  {stdNamesLayoutId === "verbe" && (
+                    <StudioField label="Verbe" hint="Vide = « se disent oui ».">
+                      <input
+                        value={stdColors.stdNamesVerb}
+                        onChange={(e) => setStdColor("stdNamesVerb", e.target.value)}
+                        placeholder="se disent oui"
+                        className={studioInput}
+                      />
+                    </StudioField>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <StudioField label="Taille de police">
                 <StudioSizeSelect value={stdColors.stdNamesDateTitleSize} onChange={(v) => setStdColor("stdNamesDateTitleSize", v)} />
@@ -2755,7 +2842,8 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                       kind: "text",
                       from: 0,
                       to: 1,
-                      segments: stdNameSegments,
+                      segments: stdNamesLayoutId === "ligne" ? stdNameSegments : undefined,
+                      names: stdNamesLayoutId === "ligne" ? undefined : stdNamesPreview,
                       fitOneLine: true,
                       titleSize: (stdColors.stdNamesDateTitleSize || "sm") as HeroChapter["titleSize"],
                       textColorOverride: stdColors.stdNamesDateTextColor || undefined,

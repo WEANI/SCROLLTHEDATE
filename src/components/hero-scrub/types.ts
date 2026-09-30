@@ -4,7 +4,7 @@
  * (cf. src/components/demo/demoContent.ts, .../faire-part/*Content.ts).
  */
 
-import type { HeroDateLayout, HeroMonogram, HeroProgramme } from './heroDecor'
+import type { HeroDateLayout, HeroMonogram, HeroNames, HeroProgramme } from './heroDecor'
 
 export interface HeroChapter {
   id: number
@@ -102,6 +102,8 @@ export interface HeroChapter {
   monogram?: HeroMonogram
   /** Programme du jour J (timeline overlay), cf. HeroProgrammeBlock. Ajouté le 30/09/2026. */
   programme?: HeroProgramme
+  /** Mise en page des prénoms des mariés, cf. HeroNamesBlock — absent = rendu historique par `segments`. Ajouté le 30/09/2026. */
+  names?: HeroNames
 }
 
 /**

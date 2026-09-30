@@ -2516,3 +2516,66 @@
   .hs-tl .hs-tl-it, .hs-tl .hs-tl-rail-line, .hs-tl .hs-tl-dot { opacity: 1 !important; transform: none !important; }
   .hs-tl-runner { display: none; }
 }
+
+/* ==========================================================================
+   Prénoms des mariés (`.hs-nm-*`) — 12 mises en page, maquette « Les prénoms
+   des mariés » (30/09/2026). 'ligne' n'a PAS de règle ici : ce cas ne passe
+   pas par HeroNamesBlock, il reste rendu par `segments`/`fitOneLine` comme
+   avant. Couleurs prises sur les variables du thème, donc la couleur du bloc,
+   le cadre et le fond de carte s'appliquent comme aux autres blocs.
+   ========================================================================== */
+.hs-nm { position: relative; width: 84cqw; text-align: center; color: var(--hs-text-primary); font-family: var(--hs-font-family); display: flex; flex-direction: column; align-items: center; }
+.hs-nm .hs-nm-amp { color: var(--hs-chapter-accent, var(--hs-accent)); }
+.hs-nm .hs-nm-rule { width: 14cqw; height: 1px; background: var(--hs-accent); opacity: 0.75; margin: 3.4cqw auto; display: block; }
+.hs-nm .hs-nm-dt { font: 300 3.6cqw 'Montserrat', sans-serif; letter-spacing: 0.26em; margin-right: -0.26em; text-transform: uppercase; color: var(--hs-text-secondary); }
+
+/* Empilés */
+.hs-nm-stack .hs-nm-n { font-size: 13cqw; line-height: 1.06; }
+.hs-nm-stack .hs-nm-amp { display: block; font-size: 7cqw; font-style: italic; margin: 0.8cqw 0; }
+
+/* Côte à côte */
+.hs-nm-side .hs-nm-row { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0 4cqw; align-items: center; }
+.hs-nm-side .hs-nm-vr { background: var(--hs-accent); opacity: 0.5; height: 16cqw; }
+.hs-nm-side .hs-nm-n { font-size: 8.6cqw; line-height: 1.1; }
+
+/* Capitales espacées */
+.hs-nm-caps .hs-nm-n { font-family: 'Cinzel', Georgia, serif; font-size: 7cqw; letter-spacing: 0.34em; margin-right: -0.34em; line-height: 1.5; }
+.hs-nm-caps .hs-nm-amp { display: block; font-family: 'Playfair Display', serif; font-style: italic; letter-spacing: 0; margin: 1.6cqw 0; font-size: 6cqw; }
+
+/* Esperluette géante + initiales en filigrane — même mécanique : un signe estompé, le texte par-dessus */
+.hs-nm-amp, .hs-nm-filigree { justify-content: center; }
+.hs-nm-amp .hs-nm-ghost { font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-size: 46cqw; line-height: 0.8; color: var(--hs-accent); opacity: 0.22; }
+.hs-nm-filigree .hs-nm-ghost { font-family: 'Cinzel Decorative', serif; font-size: 40cqw; line-height: 0.85; color: var(--hs-accent); opacity: 0.13; }
+.hs-nm-amp .hs-nm-over, .hs-nm-filigree .hs-nm-over { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 1.4cqw; }
+.hs-nm-amp .hs-nm-n { font-size: 11cqw; line-height: 1.05; }
+.hs-nm-filigree .hs-nm-n { font-size: 10cqw; line-height: 1.1; white-space: nowrap; }
+
+/* Arc */
+.hs-nm-arc svg { width: 82cqw; height: 52cqw; overflow: visible; }
+.hs-nm-arc text { fill: var(--hs-text-primary); font-family: var(--hs-font-family); font-size: 13px; }
+.hs-nm-arc .hs-nm-a { fill: var(--hs-chapter-accent, var(--hs-accent)); }
+
+/* Cartouche */
+.hs-nm-cartouche .hs-nm-box { border: 1px solid var(--hs-accent); outline: 1px solid var(--hs-accent); outline-offset: 1.8cqw; padding: 6cqw 4cqw; position: relative; margin: 3cqw 0; }
+.hs-nm-cartouche .hs-nm-box::before, .hs-nm-cartouche .hs-nm-box::after { content: ''; position: absolute; width: 2.2cqw; height: 2.2cqw; background: var(--hs-accent); transform: rotate(45deg); left: 50%; margin-left: -1.1cqw; }
+.hs-nm-cartouche .hs-nm-box::before { top: -3.4cqw; }
+.hs-nm-cartouche .hs-nm-box::after { bottom: -3.4cqw; }
+.hs-nm-cartouche .hs-nm-n { font-size: 9cqw; line-height: 1.15; }
+
+/* Script & capitales */
+.hs-nm-mix .hs-nm-a1 { font-family: 'Great Vibes', cursive; font-size: 15cqw; line-height: 1; }
+.hs-nm-mix .hs-nm-amp { font-family: 'Playfair Display', serif; font-style: italic; font-size: 7cqw; display: block; margin: 1cqw 0; }
+.hs-nm-mix .hs-nm-b1 { font-family: 'Cinzel', serif; font-size: 7.4cqw; letter-spacing: 0.24em; margin-right: -0.24em; }
+
+/* Calligraphie pleine page */
+.hs-nm-calli .hs-nm-n { font-family: 'Great Vibes', cursive; font-size: 16cqw; line-height: 1.2; }
+.hs-nm-calli .hs-nm-dt { margin-top: 2cqw; }
+
+/* Nom complet */
+.hs-nm-full .hs-nm-n { font-size: 8.4cqw; line-height: 1.2; }
+.hs-nm-full .hs-nm-fam { display: block; font: 300 3.2cqw 'Montserrat', sans-serif; letter-spacing: 0.3em; margin-right: -0.3em; text-transform: uppercase; color: var(--hs-text-secondary); margin-top: 0.8cqw; }
+.hs-nm-full .hs-nm-amp { font-style: italic; display: block; margin: 2.6cqw 0; font-size: 6cqw; }
+
+/* Avec verbe */
+.hs-nm-verbe .hs-nm-n { font-size: 11cqw; line-height: 1.1; }
+.hs-nm-verbe .hs-nm-v { font-size: 6cqw; font-style: italic; color: var(--hs-text-secondary); margin-top: 2.4cqw; }

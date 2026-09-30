@@ -107,6 +107,15 @@ export const bespokePaletteSchema = z.object({
   // "prénoms" — vide = 'md' (comportement historique, jamais réglé avant
   // le 23/09/2026 : ce bloc n'avait jusqu'ici aucun contrôle de taille).
   stdNamesDateTitleSize: z.string().default(""),
+  // Mise en page des prénoms (cf. HERO_NAMES_LAYOUTS, heroDecor.ts) — vide/
+  // 'ligne' = rendu historique (une ligne réduite pour tenir), donc aucun
+  // projet existant n'est affecté. `stdNamesFamily` ("Moreau & Dupont") ne
+  // sert qu'à la mise en page 'full', `stdNamesVerb` ("se disent oui") qu'à
+  // 'verbe' — le questionnaire ne collecte ni l'un ni l'autre, ils se
+  // saisissent au studio. Ajoutés le 30/09/2026.
+  stdNamesLayout: z.string().default(""),
+  stdNamesFamily: z.string().default(""),
+  stdNamesVerb: z.string().default(""),
   // Couleur du "&"/"et" entre les 2 prénoms (segment `accent`) — vide =
   // couleur d'accent du thème (comportement historique). Ajouté le
   // 21/09/2026, même raisonnement que les champs stdNamesDate* ci-dessus.

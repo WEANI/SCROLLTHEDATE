@@ -602,20 +602,52 @@ export const HERO_COUNTDOWN_STYLES: { id: string; label: string; fonts: string }
  * fixe (12 juin 2027). Bloc "date" : mise en page multi-lignes si le format
  * en a une, sinon texte formaté ; sous les prénoms : texte formaté (une
  * ligne). Sans `dateFormatId`, chapitre inchangé (date d'exemple libre).
+ *
+ * Résout AUSSI la mise en page des prénoms (`namesLayout`, cf.
+ * HERO_NAMES_LAYOUTS) en bloc `names` prêt à afficher : ces contrats
+ * (contracts/) ne pouvant pas importer src/, seul l'identifiant y voyage et
+ * c'est ici que le bloc est construit. 'ligne' (ou vide) = rendu historique
+ * conservé tel quel — `segments` + `fitOneLine`, aucun bloc `names`.
  */
 export function resolveDateFormatsInChapters(chapters: TemplateHeroChapter[]): HeroChapter[] {
   const example = new Date(2027, 5, 12)
   return chapters.map((ch) => {
     const fmt = getHeroDateFormat(ch.dateFormatId)
-    if (!fmt) return ch as HeroChapter
-    if (ch.dateSlot === 'block') {
-      return fmt.layout
-        ? ({ ...ch, segments: undefined, dateLayout: { id: fmt.id, fonts: fmt.layout.fonts, lines: fmt.layout.lines(example) } } as HeroChapter)
-        : ({ ...ch, segments: [{ text: fmt.format(example) }] } as HeroChapter)
-    }
-    if (ch.dateSlot === 'sub' && ch.subLines) return { ...ch, subLines: [fmt.format(example)] } as HeroChapter
-    return ch as HeroChapter
+    const out = fmt ? resolveOneDateFormat(ch, fmt, example) : (ch as HeroChapter)
+    return resolveNamesLayout(ch, out)
   })
+}
+
+function resolveOneDateFormat(ch: TemplateHeroChapter, fmt: HeroDateFormatOption, example: Date): HeroChapter {
+  if (ch.dateSlot === 'block') {
+    return fmt.layout
+      ? ({ ...ch, segments: undefined, dateLayout: { id: fmt.id, fonts: fmt.layout.fonts, lines: fmt.layout.lines(example) } } as HeroChapter)
+      : ({ ...ch, segments: [{ text: fmt.format(example) }] } as HeroChapter)
+  }
+  if (ch.dateSlot === 'sub' && ch.subLines) return { ...ch, subLines: [fmt.format(example)] } as HeroChapter
+  return ch as HeroChapter
+}
+
+/**
+ * `namesLayout` → bloc `names`. Le texte des prénoms est relu dans
+ * `segments` (posés par nameSegments côté contrat : « Anna », « & »,
+ * « Théo ») et la date courte dans `subLines` — la mise en page choisie
+ * réaffiche les deux à sa façon, donc les deux sont retirés pour ne pas
+ * doubler l'affichage. Si le bloc date indépendant est activé, `subLines`
+ * est déjà vide et la mise en page s'affiche sans date, comme attendu.
+ */
+function resolveNamesLayout(src: TemplateHeroChapter, ch: HeroChapter): HeroChapter {
+  const layout = src.namesLayout
+  if (!layout || layout === 'ligne') return ch
+  const joined = (ch.segments ?? []).map((sg) => sg.text).join(' ').replace(/\s+/g, ' ').trim()
+  if (!joined) return ch
+  const [a, b] = splitCoupleNames(joined)
+  return {
+    ...ch,
+    segments: undefined,
+    subLines: undefined,
+    names: { layout, a, b, family: src.namesFamily ?? '', verb: src.namesVerb ?? '', dateShort: ch.subLines?.[0] ?? '' },
+  }
 }
 
 /**
@@ -745,6 +777,51 @@ export interface HeroProgramme {
   animation: string
   /** Facteur de durée (cf. HERO_PROGRAMME_SPEEDS) — 1 = vitesse normale. */
   speed: number
+}
+
+/**
+ * Mises en page des PRÉNOMS des mariés — l'élément central d'un save the
+ * date, qui n'avait qu'un seul traitement jusqu'au 30/09/2026 (une ligne,
+ * réduite pour tenir). Maquette « Les prénoms des mariés » du même jour,
+ * les 12 retenues telles quelles. Rendu : HeroDateBlocks.tsx (`.hs-nm-*`).
+ *
+ * `'ligne'` (ou vide) = comportement HISTORIQUE strictement inchangé : le
+ * bloc continue de passer par `segments`/`fitOneLine`, pas par
+ * HeroNamesBlock. Aucun projet existant n'est affecté tant qu'un autre
+ * choix n'est pas fait.
+ */
+export const HERO_NAMES_LAYOUTS: { id: string; label: string; desc: string; needs?: 'family' | 'verb' }[] = [
+  { id: 'ligne', label: 'Une ligne', desc: 'Les deux prénoms côte à côte, réduits pour tenir (actuel)' },
+  { id: 'stack', label: 'Empilés', desc: 'Un prénom par ligne — encaisse les prénoms longs' },
+  { id: 'side', label: 'Côte à côte', desc: 'Séparés par un filet vertical, à égalité' },
+  { id: 'caps', label: 'Capitales espacées', desc: 'Gravé, très éditorial' },
+  { id: 'amp', label: 'Esperluette géante', desc: 'Un « & » immense en fond, les prénoms par-dessus' },
+  { id: 'filigree', label: 'Initiales en filigrane', desc: 'Le monogramme estompé derrière les prénoms' },
+  { id: 'arc', label: 'Arc', desc: 'Les prénoms suivent une voûte' },
+  { id: 'cartouche', label: 'Cartouche', desc: "Encadrés d'un double filet et de losanges" },
+  { id: 'mix', label: 'Script & capitales', desc: 'Une calligraphie, puis des capitales gravées' },
+  { id: 'calli', label: 'Calligraphie pleine page', desc: 'Tout en écriture manuscrite, très grand' },
+  { id: 'full', label: 'Nom complet', desc: 'Prénom et nom de famille — registre traditionnel', needs: 'family' },
+  { id: 'verbe', label: 'Avec verbe', desc: "Les prénoms et ce qu'ils annoncent", needs: 'verb' },
+]
+
+/** Données d'un bloc prénoms prêt à afficher — cf. `HeroChapter.names` (types.ts). */
+export interface HeroNames {
+  layout: string
+  a: string
+  b: string
+  /** Noms de famille, mise en page 'full' uniquement — « Moreau & Dupont ». Vide = la mise en page retombe sur les prénoms seuls. */
+  family: string
+  /** Mise en page 'verbe' uniquement — « se disent oui ». Vide = valeur par défaut du rendu. */
+  verb: string
+  /** « 12 juin 2027 » — affichée sous les prénoms par la plupart des mises en page. */
+  dateShort: string
+}
+
+/** « Anna & Théo » → ['Anna', 'Théo'] — même découpage que nameSegments (FairePart.tsx), repli sur le texte entier. */
+export function splitCoupleNames(names: string): [string, string] {
+  const parts = names.split(/\s+(?:&|et)\s+/i)
+  return parts.length >= 2 ? [parts[0].trim(), parts[parts.length - 1].trim()] : [names.trim(), '']
 }
 
 /** Initiales d'un « Prénom & Prénom » — repli sur les 2 premiers mots, puis sur la seule initiale. */
