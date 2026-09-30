@@ -1,0 +1,20 @@
+/* Parchemin Blanc — univers du modèle de montage (AMBIANCE CLAIRE).
+   Valeurs RÉELLES : PARCHEMIN_BLANC_THEME dans contracts/saveTheDateTemplates.ts. */
+:root {
+  --brand-bg:         #F5EEDE;  /* frameBg */
+  --brand-surface:    rgba(250, 246, 236, 0.78);
+  --brand-ink:        #3A2E1F;  /* textPrimary — sombre sur fond clair */
+  --brand-ink-soft:   #7A6A50;
+  --brand-primary:    #B8934A;  /* or discret */
+  --brand-secondary:  #FAF6EC;
+  --brand-on-primary: #FFFFFF;
+
+  --brand-font-display: "Great Vibes", cursive;
+  --brand-font-body:    "Marcellus", Georgia, serif;
+  --brand-weight-display: 400;
+  --brand-weight-body:    400;
+
+  --brand-radius: 8px;
+  --brand-shadow: 0 24px 60px rgba(58, 46, 31, 0.18);
+  --brand-logo-url: "";
+}

@@ -1,0 +1,26 @@
+/* Scroll The Date — univers marketing (site, Instagram, publicité).
+   Valeurs RÉELLES, reprises de tailwind.config.cjs et du hero du site.
+   Contrat : voir references/univers.md — ne pas renommer les variables. */
+:root {
+  /* Couleurs */
+  --brand-bg:         #1B1B1E;  /* anthracite-950 */
+  --brand-surface:    #26262A;  /* anthracite-900 */
+  --brand-ink:        #F4F2F0;  /* neutral-100 */
+  --brand-ink-soft:   #9A9AA0;  /* neutral-500 */
+  --brand-primary:    #C96F5A;  /* terracotta-500 */
+  --brand-secondary:  #E8B4A4;  /* terracotta-300 */
+  --brand-on-primary: #FFFFFF;
+
+  /* Typographie — display en italique, c'est la signature du site */
+  --brand-font-display: "Fraunces", Georgia, serif;
+  --brand-font-body:    "Space Grotesk", system-ui, sans-serif;
+  --brand-weight-display: 300;
+  --brand-weight-body:    400;
+
+  /* Forme */
+  --brand-radius: 12px;
+  --brand-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+
+  /* Logo (public/logo.svg du projet) */
+  --brand-logo-url: "";
+}

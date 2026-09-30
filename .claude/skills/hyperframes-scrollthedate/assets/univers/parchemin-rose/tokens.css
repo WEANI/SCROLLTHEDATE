@@ -1,0 +1,20 @@
+/* Parchemin Rose — univers du modèle de montage (AMBIANCE CLAIRE).
+   Valeurs RÉELLES : PARCHEMIN_ROSE_THEME dans contracts/saveTheDateTemplates.ts. */
+:root {
+  --brand-bg:         #F7E4DC;  /* frameBg */
+  --brand-surface:    rgba(251, 239, 233, 0.78);
+  --brand-ink:        #4A2E28;  /* textPrimary */
+  --brand-ink-soft:   #8A6459;
+  --brand-primary:    #C08769;  /* cuivre rosé */
+  --brand-secondary:  #FBEFE9;
+  --brand-on-primary: #FFFFFF;
+
+  --brand-font-display: "Allura", cursive;
+  --brand-font-body:    "Cormorant Garamond", Georgia, serif;
+  --brand-weight-display: 400;
+  --brand-weight-body:    400;
+
+  --brand-radius: 8px;
+  --brand-shadow: 0 24px 60px rgba(74, 46, 40, 0.18);
+  --brand-logo-url: "";
+}

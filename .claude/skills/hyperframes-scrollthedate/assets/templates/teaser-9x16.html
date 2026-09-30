@@ -1,0 +1,110 @@
+<!--
+  Template Scroll The Date — TEASER PARTAGEABLE 9:16 (1080×1920) pour HyperFrames.
+  Agnostique : aucune couleur en dur, tout vient du tokens.css de l'univers.
+
+  C'est l'UN DES DEUX CAS où les textes sont incrustés dans la vidéo (l'autre étant le
+  marketing) : le couple partage un MP4 sur WhatsApp, il n'y a pas de page pour superposer
+  du HTML. Ne JAMAIS partir de ce template pour un montage hero — cf. LA règle du SKILL.md.
+
+  À FAIRE pour instancier :
+    1) Remplacer __UNIVERS__ par le slug (scrollthedate, red-door, parchemin-blanc, parchemin-rose).
+    2) Remplacer les textes __…__ et le clip de fond.
+    3) Vérifier --brand-ink : deux univers sur quatre sont CLAIRS (parchemins).
+    4) Respecter la safe-area 9:16 WhatsApp (~180px haut / ~220px bas, cf. references/formats.md).
+
+  Contrat : Rule of Three (racine data-*, clips class="clip" + data-start/duration/track-index,
+  GSAP { paused:true } enregistré sur window.__timelines). Aucun Date.now()/random non seedé.
+-->
+<link rel="stylesheet" href="../univers/__UNIVERS__/tokens.css">
+<style>
+  html, body { margin: 0; }
+  #root {
+    position: relative; overflow: hidden;
+    background: var(--brand-bg);
+    color: var(--brand-ink);
+    font-family: var(--brand-font-body);
+  }
+  .fill { position: absolute; inset: 0; }
+  .safe { position: absolute; left: 96px; right: 96px; text-align: center; }
+
+  /* Voile léger : le texte doit rester lisible sur un plan clair comme sur un plan sombre.
+     Sans lui, un parchemin ivoire avale un texte clair — piège déjà rencontré. */
+  .veil {
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--brand-bg) 55%, transparent) 0%,
+      transparent 38%,
+      color-mix(in srgb, var(--brand-bg) 72%, transparent) 100%);
+  }
+
+  .kicker {
+    top: 420px; font-size: 34px; letter-spacing: 0.34em; text-transform: uppercase;
+    color: var(--brand-primary);
+  }
+  .names {
+    top: 520px;
+    font-family: var(--brand-font-display);
+    font-weight: var(--brand-weight-display);
+    font-size: 132px; line-height: 1.04;
+  }
+  .names .amp { color: var(--brand-primary); font-style: italic; }
+  .date {
+    top: 760px; font-size: 52px; letter-spacing: 0.12em;
+    font-family: var(--brand-font-display);
+  }
+  .rule { top: 730px; left: 50%; width: 72px; height: 1px; margin-left: -36px;
+          background: var(--brand-primary); opacity: 0.7; position: absolute; }
+  .link {
+    bottom: 300px; font-size: 40px; letter-spacing: 0.08em;
+    color: var(--brand-ink-soft);
+  }
+  .wordmark {
+    bottom: 220px; font-family: var(--brand-font-display); font-style: italic;
+    font-size: 36px; color: var(--brand-ink-soft); opacity: 0.85;
+  }
+</style>
+
+<!-- Rule of Three #1 : racine -->
+<div id="root" class="fill"
+     data-composition-id="std-teaser-9x16"
+     data-width="1080" data-height="1920">
+
+  <!-- Piste 0 : le montage en fond (extrait, ou plan Seedance préparé — cf. references/montage-hero.md) -->
+  <div class="clip fill" data-start="0" data-duration="14" data-track-index="0">
+    <video src="../clips/__UNIVERS__-fond.mp4" data-media
+           style="width:100%;height:100%;object-fit:cover"></video>
+  </div>
+
+  <!-- Piste 1 : voile de lisibilité -->
+  <div class="clip fill veil" data-start="0" data-duration="14" data-track-index="1"></div>
+
+  <!-- Piste 2 : le message -->
+  <div id="kicker" class="clip safe kicker"
+       data-start="1.2" data-duration="12" data-track-index="2">__KICKER__</div>
+  <div id="names" class="clip safe names"
+       data-start="1.8" data-duration="11.4" data-track-index="2">__PRENOM_1__ <span class="amp">&amp;</span> __PRENOM_2__</div>
+  <div id="rule" class="clip rule"
+       data-start="2.6" data-duration="10.6" data-track-index="2"></div>
+  <div id="date" class="clip safe date"
+       data-start="2.8" data-duration="10.4" data-track-index="2">__DATE__</div>
+
+  <!-- Piste 3 : lien + signature -->
+  <div id="link" class="clip safe link"
+       data-start="9" data-duration="5" data-track-index="3">__LIEN__</div>
+  <div class="clip safe wordmark"
+       data-start="9.4" data-duration="4.6" data-track-index="3">Scroll The Date</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+  // Rule of Three #3 : timelines GSAP en pause, enregistrées sur window.__timelines.
+  window.__timelines = window.__timelines || [];
+
+  const tl = gsap.timeline({ paused: true });
+  tl.from("#kicker", { y: 24, opacity: 0, duration: 0.7, ease: "power2.out" }, 1.2)
+    .from("#names",  { y: 40, opacity: 0, duration: 0.9, ease: "power2.out" }, 1.8)
+    .from("#rule",   { scaleX: 0, duration: 0.6, ease: "power2.out" }, 2.6)
+    .from("#date",   { y: 20, opacity: 0, duration: 0.7, ease: "power2.out" }, 2.8)
+    .from("#link",   { opacity: 0, duration: 0.6, ease: "power1.out" }, 9);
+
+  window.__timelines.push(tl);
+</script>

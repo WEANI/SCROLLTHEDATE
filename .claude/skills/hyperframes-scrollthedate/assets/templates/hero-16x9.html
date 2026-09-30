@@ -1,0 +1,73 @@
+<!--
+  Template Scroll The Date — HERO 16:9 (1920×1080) pour HyperFrames.
+  Site, YouTube, présentation. Le 16:9 laisse de la place latérale : montrer le téléphone
+  (le montage en 9:16) d'un côté, le message de l'autre.
+  Univers attendu : scrollthedate.
+
+  À FAIRE : remplacer __…__. Contrat : Rule of Three. Aucun Date.now()/random non seedé.
+-->
+<link rel="stylesheet" href="../univers/scrollthedate/tokens.css">
+<style>
+  html, body { margin: 0; }
+  #root { position: relative; overflow: hidden;
+    background: var(--brand-bg); color: var(--brand-ink); font-family: var(--brand-font-body); }
+  .fill { position: absolute; inset: 0; }
+
+  /* Colonne gauche : le message. Colonne droite : le montage en 9:16. */
+  .copy { position: absolute; left: 120px; top: 300px; width: 780px; }
+  .kicker { font-size: 26px; letter-spacing: 0.3em; text-transform: uppercase;
+            color: var(--brand-primary); }
+  .headline {
+    margin-top: 28px;
+    font-family: var(--brand-font-display); font-weight: var(--brand-weight-display);
+    font-size: 96px; line-height: 1.04; letter-spacing: -0.015em;
+  }
+  .headline em { font-style: italic; color: var(--brand-primary); }
+  .subline { margin-top: 28px; font-size: 32px; line-height: 1.45; color: var(--brand-ink-soft); }
+
+  /* Cadre 9:16 du montage, à droite */
+  .phone {
+    position: absolute; right: 150px; top: 90px;
+    width: 506px; height: 900px;              /* 9:16 exact */
+    border-radius: 28px; overflow: hidden;
+    box-shadow: var(--brand-shadow);
+  }
+  .phone video { width: 100%; height: 100%; object-fit: cover; }
+  .wordmark {
+    position: absolute; left: 120px; bottom: 120px;
+    font-family: var(--brand-font-display); font-style: italic; font-size: 34px;
+    color: var(--brand-ink-soft);
+  }
+</style>
+
+<div id="root" class="fill"
+     data-composition-id="std-hero-16x9"
+     data-width="1920" data-height="1080">
+
+  <div class="copy">
+    <div id="kicker" class="clip kicker"
+         data-start="0.4" data-duration="11" data-track-index="0">__KICKER__</div>
+    <div id="headline" class="clip headline"
+         data-start="0.8" data-duration="10.6" data-track-index="0">__ACCROCHE__</div>
+    <div id="subline" class="clip subline"
+         data-start="1.4" data-duration="10" data-track-index="0">__SOUS_TITRE__</div>
+  </div>
+
+  <!-- Le montage, dans son cadre vertical -->
+  <div id="phone" class="clip phone" data-start="0" data-duration="12" data-track-index="1">
+    <video src="../clips/__CLIP_MONTAGE__.mp4" data-media></video>
+  </div>
+
+  <div class="clip wordmark" data-start="0" data-duration="12" data-track-index="2">Scroll The Date</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+  window.__timelines = window.__timelines || [];
+  const tl = gsap.timeline({ paused: true });
+  tl.from("#kicker",   { y: 18, opacity: 0, duration: 0.6, ease: "power2.out" }, 0.4)
+    .from("#headline", { y: 34, opacity: 0, duration: 0.8, ease: "power2.out" }, 0.8)
+    .from("#subline",  { y: 22, opacity: 0, duration: 0.7, ease: "power2.out" }, 1.4)
+    .from("#phone",    { y: 46, opacity: 0, duration: 0.9, ease: "power2.out" }, 0.2);
+  window.__timelines.push(tl);
+</script>

@@ -1,0 +1,21 @@
+/* Red Door — univers du modèle de montage.
+   Valeurs RÉELLES : RED_DOOR_THEME dans contracts/saveTheDateTemplates.ts.
+   Le code fait foi : si le thème y change, mettre ce fichier à jour. */
+:root {
+  --brand-bg:         #1A0A0A;  /* frameBg */
+  --brand-surface:    rgba(26, 10, 10, 0.55);  /* cardBg */
+  --brand-ink:        #F7EFE0;  /* textPrimary */
+  --brand-ink-soft:   #D8C2A0;  /* textSecondary */
+  --brand-primary:    #D4AF6A;  /* accent — dorures */
+  --brand-secondary:  #8C1D24;  /* bordeaux du sceau de cire */
+  --brand-on-primary: #1A0A0A;
+
+  --brand-font-display: "Cinzel Decorative", Georgia, serif;
+  --brand-font-body:    "Cormorant Garamond", Georgia, serif;
+  --brand-weight-display: 400;
+  --brand-weight-body:    400;
+
+  --brand-radius: 8px;
+  --brand-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  --brand-logo-url: "";
+}
