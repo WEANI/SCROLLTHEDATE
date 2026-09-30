@@ -567,7 +567,26 @@ export default function FairePart() {
         // calculée plus haut) est rendue en titre plutôt qu'en `lead`
         // (paragraphe libre des cartes texte ordinaires), pour le même
         // poids visuel que les 2 autres blocs fixes.
-        card.kind === 'monogram'
+        card.kind === 'programme'
+          ? {
+              id: 1000 + i,
+              kind: 'text' as const,
+              from: card.fromSec / videoDuration,
+              to: card.toSec / videoDuration,
+              verticalAlign: card.position,
+              textColorOverride: card.textColor || undefined,
+              cardBgOverride: card.cardBg || undefined,
+              cardFrame: card.cardFrame || undefined,
+              fontId: card.fontId || undefined,
+              textAnimation: card.textAnimation || undefined,
+              programme: {
+                layout: card.programmeLayout || 'rail',
+                items: card.programmeItems,
+                animation: card.programmeAnimation,
+                speed: card.programmeSpeed,
+              },
+            }
+          : card.kind === 'monogram'
           ? (() => {
               const [a, b] = monogramInitials(coupleNames)
               return {

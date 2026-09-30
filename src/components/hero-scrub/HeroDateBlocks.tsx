@@ -1,12 +1,14 @@
-import { useEffect, useId, useState, type CSSProperties } from 'react'
+import { Fragment, useEffect, useId, useState, type CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import {
   ensureGoogleFamilies,
   getHeroFont,
   HERO_COUNTDOWN_STYLES,
   HERO_MONOGRAM_LAYOUTS,
+  HERO_PROGRAMME_LAYOUTS,
   type HeroDateLayout,
   type HeroMonogram,
+  type HeroProgramme,
 } from './heroDecor'
 
 /**
@@ -158,6 +160,148 @@ export function HeroMonogramBlock({ m, size, fontId }: { m: HeroMonogram; size?:
       >
         {inner}
       </div>
+    </div>
+  )
+}
+
+const ROMAN_STEPS = ['I', 'II', 'III', 'IV', 'V', 'VI']
+
+/**
+ * Programme du jour J — timeline overlay (cf. HERO_PROGRAMME_LAYOUTS /
+ * HERO_PROGRAMME_ANIMATIONS, heroDecor.ts). Chaque étape porte `--i` : les
+ * animations décalent leur départ avec (cf. `.hs-tlan-*` dans
+ * hero-scrub.css), et `--hs-tl-dur` multiplie toutes les durées (réglage
+ * de vitesse). Les libellés prennent la police du bloc
+ * (`--hs-font-family`), les heures une mono, comme la maquette du
+ * 29/09/2026.
+ */
+export function HeroProgrammeBlock({ p }: { p: HeroProgramme }) {
+  useEffect(() => {
+    ensureGoogleFamilies('JetBrains+Mono:wght@300&family=Montserrat:wght@300&family=Cinzel+Decorative')
+  }, [])
+  const items = p.items.filter((it) => (it.h || '').trim() || (it.l || '').trim())
+  if (items.length === 0) return null
+  const layout = HERO_PROGRAMME_LAYOUTS.some((l) => l.id === p.layout) ? p.layout : 'rail'
+  const style = { '--hs-tl-dur': String(p.speed || 1) } as CSSProperties
+
+  // 'arc' : points répartis sur une voûte, libellés posés dessus — mêmes
+  // coordonnées que la maquette (repère 100×100, rayon 62).
+  const arcPoints = items.map((it, i) => {
+    const a = 200 + (i / Math.max(1, items.length - 1)) * 100
+    const rad = (a * Math.PI) / 180
+    return { it, cx: 50 + 62 * Math.cos(rad), cy: 96 + 62 * Math.sin(rad) }
+  })
+
+  const body = () => {
+    switch (layout) {
+      case 'horiz':
+        return (
+          <div className="hs-tl-track">
+            {items.map((it, i) => (
+              <span key={i} className="hs-tl-it" style={{ '--i': i } as CSSProperties}>
+                <span className="hs-tl-h">{it.h}</span>
+                <span className="hs-tl-dot" />
+                <span className="hs-tl-l">{it.l}</span>
+              </span>
+            ))}
+          </div>
+        )
+      case 'cols':
+        return (
+          <>
+            <span className="hs-tl-rule" />
+            {items.map((it, i) => (
+              <Fragment key={i}>
+                <span className="hs-tl-h" style={{ '--i': i } as CSSProperties}>{it.h}</span>
+                <span className="hs-tl-l" style={{ '--i': i } as CSSProperties}>{it.l}</span>
+              </Fragment>
+            ))}
+          </>
+        )
+      case 'dots':
+        return (
+          <>
+            {items.map((it, i) => (
+              <div key={i} className="hs-tl-it" style={{ '--i': i } as CSSProperties}>
+                <span className="hs-tl-l">{it.l}</span>
+                <span className="hs-tl-lead" />
+                <span className="hs-tl-h">{it.h}</span>
+              </div>
+            ))}
+          </>
+        )
+      case 'roman':
+        return (
+          <>
+            {items.map((it, i) => (
+              <div key={i} className="hs-tl-it" style={{ '--i': i } as CSSProperties}>
+                <span className="hs-tl-r">{ROMAN_STEPS[i] ?? String(i + 1)}</span>
+                <span className="hs-tl-l">{it.l}</span>
+                <span className="hs-tl-h">{it.h}</span>
+              </div>
+            ))}
+          </>
+        )
+      case 'num':
+        return (
+          <>
+            {items.map((it, i) => (
+              <div key={i} className="hs-tl-it" style={{ '--i': i } as CSSProperties}>
+                <span className="hs-tl-n">{String(i + 1).padStart(2, '0')}</span>
+                <span className="hs-tl-tx">
+                  <span className="hs-tl-h">{it.h}</span>
+                  <span className="hs-tl-l">{it.l}</span>
+                </span>
+              </div>
+            ))}
+          </>
+        )
+      case 'arc':
+        return (
+          <>
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <path d="M -8 38 A 62 62 0 0 1 108 38" fill="none" stroke="currentColor" strokeWidth="0.7" opacity="0.55" />
+              {arcPoints.map((pt, i) => (
+                <circle key={i} cx={pt.cx.toFixed(1)} cy={pt.cy.toFixed(1)} r="1.5" fill="currentColor" />
+              ))}
+            </svg>
+            {arcPoints.map((pt, i) => (
+              <span
+                key={i}
+                className="hs-tl-it"
+                style={{ '--i': i, left: `${pt.cx.toFixed(1)}%`, top: `${(pt.cy - 13).toFixed(1)}%` } as CSSProperties}
+              >
+                <span className="hs-tl-h">{pt.it.h}</span>
+                <span className="hs-tl-l">{pt.it.l}</span>
+              </span>
+            ))}
+          </>
+        )
+      default:
+        // rail / big / chips / min — même structure (heure + libellé), le
+        // CSS de chaque mise en page fait le reste.
+        return (
+          <>
+            {layout === 'rail' && <span className="hs-tl-rail-line" />}
+            {layout === 'rail' && p.animation === 'travel' && <span className="hs-tl-runner" />}
+            {items.map((it, i) => (
+              <div key={i} className="hs-tl-it" style={{ '--i': i } as CSSProperties}>
+                {layout === 'rail' && <span className="hs-tl-dot" />}
+                <span className="hs-tl-h">{it.h}</span>
+                <span className="hs-tl-l">{it.l}</span>
+              </div>
+            ))}
+          </>
+        )
+    }
+  }
+
+  return (
+    <div
+      className={cn('hs-tl', `hs-tl-${layout}`, p.animation && `hs-tlan-${p.animation}`)}
+      style={style}
+    >
+      {body()}
     </div>
   )
 }

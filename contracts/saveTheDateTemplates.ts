@@ -468,7 +468,7 @@ function extraCardsToChapters(cards: HeroCustomCard[], duration: number): Templa
     // Compte à rebours (cf. HeroCustomCard.kind) : `text` n'est qu'un
     // placeholder, la date visée est celle du couple d'exemple de cette page
     // d'aperçu générique (12 juin 2027, cf. EXAMPLE_DATE).
-    lead: card.kind === 'countdown' ? undefined : card.text,
+    lead: card.kind === 'countdown' || card.kind === 'programme' ? undefined : card.text,
     countdown: card.kind === 'countdown' ? { style: card.countdownStyle || 'boxes', targetIso: '2027-06-12T00:00:00' } : undefined,
     verticalAlign: card.position,
     fontId: card.fontId || undefined,
@@ -786,6 +786,10 @@ export function buildFulfillmentData(
               sealColor: '',
               sealShape: '',
               sealColor2: '',
+              programmeLayout: '',
+              programmeItems: [],
+              programmeAnimation: '',
+              programmeSpeed: 1,
             },
           ]
         : []),
@@ -811,6 +815,10 @@ export function buildFulfillmentData(
               sealColor: o.monogramSealColor || '',
               sealShape: o.monogramSealShape || 'classic',
               sealColor2: o.monogramSealColor2 || '',
+              programmeLayout: '',
+              programmeItems: [],
+              programmeAnimation: '',
+              programmeSpeed: 1,
             },
           ]
         : []),

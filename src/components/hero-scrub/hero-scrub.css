@@ -2373,3 +2373,146 @@
 .hs-mono-stamp svg { width: calc(74 * var(--u)); height: calc(74 * var(--u)); overflow: visible; }
 .hs-mono-stamp text.hs-mono-ring { font: 400 9.2px 'Montserrat', sans-serif; letter-spacing: 0.28em; fill: var(--macc); }
 .hs-mono-stamp text.mid { font-family: var(--hs-font-family); fill: var(--hs-text-primary); font-size: 44px; }
+
+/* ==========================================================================
+   Programme du jour J (`.hs-tl-*`) et ses animations (`.hs-tlan-*`) —
+   maquettes « Timelines overlay » (29/09/2026) et « Timelines animées »
+   (30/09/2026). Tailles en cqw comme le reste du hero ; couleurs prises
+   sur les variables du thème (--hs-accent, --hs-text-primary), donc la
+   couleur du bloc et le cadre s'appliquent comme aux autres blocs.
+   `--hs-tl-dur` : facteur de vitesse posé par HeroProgrammeBlock.
+   ========================================================================== */
+.hs-tl { --d: var(--hs-tl-dur, 1); position: relative; width: 82cqw; color: var(--hs-text-primary); font-family: var(--hs-font-family); }
+.hs-tl .hs-tl-h { font-family: 'JetBrains Mono', monospace; font-weight: 300; }
+.hs-tl svg { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--hs-accent); }
+
+/* 1 — filet vertical */
+.hs-tl-rail { display: flex; flex-direction: column; gap: 5cqw; padding-left: 11cqw; }
+.hs-tl-rail .hs-tl-rail-line { position: absolute; left: 4.2cqw; top: 2cqw; bottom: 2cqw; width: 1px; background: var(--hs-accent); opacity: 0.55; }
+.hs-tl-rail .hs-tl-it { position: relative; }
+.hs-tl-rail .hs-tl-dot { position: absolute; left: -7.4cqw; top: 2.4cqw; width: 2.6cqw; height: 2.6cqw; border-radius: 50%; background: var(--hs-accent); }
+.hs-tl-rail .hs-tl-h { display: block; font-size: 4.2cqw; letter-spacing: 0.14em; color: var(--hs-accent); }
+.hs-tl-rail .hs-tl-l { display: block; font-size: 6cqw; line-height: 1.2; margin-top: 0.5cqw; }
+
+/* 2 — pastilles numérotées */
+.hs-tl-num { display: flex; flex-direction: column; gap: 4.6cqw; }
+.hs-tl-num .hs-tl-it { display: flex; align-items: center; gap: 4cqw; }
+.hs-tl-num .hs-tl-n { flex: 0 0 auto; width: 9cqw; height: 9cqw; border: 1px solid var(--hs-accent); border-radius: 50%; display: grid; place-items: center; font: 300 3.6cqw 'Montserrat', sans-serif; color: var(--hs-accent); }
+.hs-tl-num .hs-tl-tx { display: flex; flex-direction: column; }
+.hs-tl-num .hs-tl-h { font-size: 3.6cqw; letter-spacing: 0.24em; color: var(--hs-accent); }
+.hs-tl-num .hs-tl-l { font-size: 5.6cqw; line-height: 1.15; }
+
+/* 3 — heures en gros */
+.hs-tl-big { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.hs-tl-big .hs-tl-it { padding: 3.4cqw 0; width: 100%; }
+.hs-tl-big .hs-tl-it + .hs-tl-it { border-top: 1px solid color-mix(in srgb, var(--hs-accent) 30%, transparent); }
+.hs-tl-big .hs-tl-h { display: block; font-family: var(--hs-font-family); font-size: 9cqw; line-height: 1; color: var(--hs-accent); }
+.hs-tl-big .hs-tl-l { display: block; font: 300 3.2cqw 'Montserrat', sans-serif; letter-spacing: 0.36em; margin-right: -0.36em; text-transform: uppercase; margin-top: 1.6cqw; }
+
+/* 4 — ligne horizontale */
+.hs-tl-horiz { width: 88cqw; }
+.hs-tl-horiz .hs-tl-track { position: relative; display: flex; justify-content: space-between; margin: 6cqw 0; }
+.hs-tl-horiz .hs-tl-track::before { content: ''; position: absolute; left: 2%; right: 2%; top: 50%; height: 1px; background: var(--hs-accent); opacity: 0.5; }
+.hs-tl-horiz .hs-tl-it { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2cqw; width: 22%; }
+.hs-tl-horiz .hs-tl-dot { width: 2.4cqw; height: 2.4cqw; border-radius: 50%; background: var(--hs-accent); position: relative; z-index: 1; }
+.hs-tl-horiz .hs-tl-h { position: absolute; bottom: calc(50% + 3.6cqw); font-size: 3.4cqw; color: var(--hs-accent); white-space: nowrap; }
+.hs-tl-horiz .hs-tl-l { position: absolute; top: calc(50% + 3.6cqw); font-size: 3.4cqw; line-height: 1.2; text-align: center; width: 120%; }
+
+/* 5 — deux colonnes */
+.hs-tl-cols { display: grid; grid-template-columns: auto 1px auto; gap: 0 4.4cqw; align-items: center; justify-content: center; row-gap: 3.4cqw; }
+.hs-tl-cols .hs-tl-rule { grid-row: 1 / -1; grid-column: 2; width: 1px; background: var(--hs-accent); opacity: 0.5; height: 100%; }
+.hs-tl-cols .hs-tl-h { grid-column: 1; text-align: right; font-size: 4.6cqw; color: var(--hs-accent); }
+.hs-tl-cols .hs-tl-l { grid-column: 3; text-align: left; font-size: 5.4cqw; line-height: 1.15; }
+
+/* 6 — points de suite */
+.hs-tl-dots { display: flex; flex-direction: column; gap: 3.6cqw; }
+.hs-tl-dots .hs-tl-it { display: flex; align-items: baseline; gap: 1.6cqw; font-size: 5cqw; }
+.hs-tl-dots .hs-tl-lead { flex: 1; border-bottom: 1px dotted color-mix(in srgb, var(--hs-accent) 60%, transparent); transform: translateY(-1cqw); }
+.hs-tl-dots .hs-tl-h { font-size: 4.2cqw; color: var(--hs-accent); }
+
+/* 7 — chiffres romains */
+.hs-tl-roman { display: flex; flex-direction: column; gap: 4.6cqw; text-align: center; }
+.hs-tl-roman .hs-tl-r { display: block; font-family: 'Cinzel Decorative', serif; font-size: 4.4cqw; letter-spacing: 0.3em; margin-right: -0.3em; color: var(--hs-accent); }
+.hs-tl-roman .hs-tl-l { display: block; font-size: 5.8cqw; line-height: 1.15; margin-top: 0.8cqw; }
+.hs-tl-roman .hs-tl-h { display: block; font: 300 3.2cqw 'Montserrat', sans-serif; letter-spacing: 0.3em; margin-right: -0.3em; color: var(--hs-text-secondary); text-transform: uppercase; }
+
+/* 8 — cartouches */
+.hs-tl-chips { display: flex; flex-direction: column; gap: 3cqw; }
+.hs-tl-chips .hs-tl-it { border: 1px solid color-mix(in srgb, var(--hs-accent) 45%, transparent); border-radius: 2cqw; padding: 2.6cqw 3.4cqw; display: flex; align-items: baseline; justify-content: space-between; gap: 3cqw; }
+.hs-tl-chips .hs-tl-l { font-size: 4.8cqw; }
+.hs-tl-chips .hs-tl-h { font-size: 3.8cqw; color: var(--hs-accent); }
+
+/* 9 — minimal espacé */
+.hs-tl-min { display: flex; flex-direction: column; gap: 4.4cqw; text-align: center; }
+.hs-tl-min .hs-tl-h { display: block; font-size: 3.4cqw; letter-spacing: 0.4em; margin-right: -0.4em; color: var(--hs-accent); }
+.hs-tl-min .hs-tl-l { display: block; font: 300 3.6cqw 'Montserrat', sans-serif; letter-spacing: 0.34em; margin-right: -0.34em; text-transform: uppercase; margin-top: 1.4cqw; }
+
+/* 10 — arc */
+.hs-tl-arc { width: 88cqw; aspect-ratio: 1 / 1.05; }
+.hs-tl-arc .hs-tl-it { position: absolute; transform: translate(-50%, -50%); text-align: center; width: 40cqw; }
+.hs-tl-arc .hs-tl-h { display: block; font-size: 3.4cqw; color: var(--hs-accent); }
+.hs-tl-arc .hs-tl-l { display: block; font-size: 4.4cqw; line-height: 1.15; }
+
+/* ---- animations : jouées quand l'overlay devient visible (`.show`) ---- */
+.hs-overlay .hs-tlan-cascade .hs-tl-it,
+.hs-overlay .hs-tlan-draw .hs-tl-it,
+.hs-overlay .hs-tlan-travel .hs-tl-it,
+.hs-overlay .hs-tlan-flip .hs-tl-it,
+.hs-overlay .hs-tlan-odo .hs-tl-it,
+.hs-overlay .hs-tlan-alt .hs-tl-it,
+.hs-overlay .hs-tlan-type .hs-tl-it { opacity: 0; }
+
+/* 1 — cascade */
+.hs-overlay.show .hs-tlan-cascade .hs-tl-it { animation: hs-tl-fade-up calc(0.7s * var(--d)) both; animation-delay: calc(var(--i) * 0.16s * var(--d)); }
+@keyframes hs-tl-fade-up { from { opacity: 0; transform: translateY(2.4cqw); } to { opacity: 1; transform: none; } }
+
+/* 2 — le filet se trace */
+.hs-overlay .hs-tlan-draw .hs-tl-rail-line { transform: scaleY(0); transform-origin: top; }
+.hs-overlay .hs-tlan-draw .hs-tl-dot { transform: scale(0); }
+.hs-overlay.show .hs-tlan-draw .hs-tl-rail-line { animation: hs-tl-draw calc(0.9s * var(--d)) ease-out both; }
+.hs-overlay.show .hs-tlan-draw .hs-tl-dot { animation: hs-tl-pop calc(0.35s * var(--d)) both; animation-delay: calc(0.5s * var(--d) + var(--i) * 0.16s * var(--d)); }
+.hs-overlay.show .hs-tlan-draw .hs-tl-it { animation: hs-tl-fade calc(0.5s * var(--d)) both; animation-delay: calc(0.6s * var(--d) + var(--i) * 0.16s * var(--d)); }
+@keyframes hs-tl-draw { to { transform: scaleY(1); } }
+@keyframes hs-tl-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes hs-tl-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* 3 — point qui progresse */
+.hs-tl-runner { position: absolute; left: 3cqw; top: 2.4cqw; width: 3.4cqw; height: 3.4cqw; border-radius: 50%; background: var(--hs-accent); box-shadow: 0 0 3cqw var(--hs-accent); opacity: 0; }
+.hs-overlay .hs-tlan-travel .hs-tl-rail-line { opacity: 0.28; }
+.hs-overlay .hs-tlan-travel .hs-tl-dot { transform: scale(0.55); opacity: 0.45; }
+.hs-overlay.show .hs-tlan-travel .hs-tl-runner { animation: hs-tl-run calc(2.2s * var(--d)) ease-in-out both; }
+.hs-overlay.show .hs-tlan-travel .hs-tl-it { animation: hs-tl-light calc(0.5s * var(--d)) both; animation-delay: calc(var(--i) * 0.5s * var(--d)); }
+.hs-overlay.show .hs-tlan-travel .hs-tl-dot { animation: hs-tl-light-dot calc(0.4s * var(--d)) both; animation-delay: calc(var(--i) * 0.5s * var(--d)); }
+@keyframes hs-tl-run { 0% { opacity: 0; transform: translateY(0); } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; transform: translateY(46cqw); } }
+@keyframes hs-tl-light { from { opacity: 0.28; } to { opacity: 1; } }
+@keyframes hs-tl-light-dot { from { transform: scale(0.55); opacity: 0.45; } to { transform: scale(1); opacity: 1; } }
+
+/* 4 — dépliage */
+.hs-tlan-flip { perspective: 60cqw; }
+.hs-overlay .hs-tlan-flip .hs-tl-it { transform-origin: top center; }
+.hs-overlay.show .hs-tlan-flip .hs-tl-it { animation: hs-tl-flip calc(0.7s * var(--d)) cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i) * 0.17s * var(--d)); }
+@keyframes hs-tl-flip { from { opacity: 0; transform: rotateX(-75deg); } to { opacity: 1; transform: none; } }
+
+/* 5 — heures qui défilent */
+.hs-overlay .hs-tlan-odo .hs-tl-h { overflow: hidden; }
+.hs-overlay.show .hs-tlan-odo .hs-tl-it { animation: hs-tl-fade calc(0.5s * var(--d)) both; animation-delay: calc(var(--i) * 0.16s * var(--d)); }
+.hs-overlay.show .hs-tlan-odo .hs-tl-h { animation: hs-tl-roll calc(0.8s * var(--d)) cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i) * 0.16s * var(--d)); }
+@keyframes hs-tl-roll { 0% { transform: translateY(120%); filter: blur(2px); } 60% { filter: blur(0); } 100% { transform: none; } }
+
+/* 6 — côtés alternés */
+.hs-overlay.show .hs-tlan-alt .hs-tl-it { animation: hs-tl-slide-l calc(0.7s * var(--d)) cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i) * 0.16s * var(--d)); }
+.hs-overlay.show .hs-tlan-alt .hs-tl-it:nth-child(even) { animation-name: hs-tl-slide-r; }
+@keyframes hs-tl-slide-l { from { opacity: 0; transform: translateX(-7cqw); } to { opacity: 1; transform: none; } }
+@keyframes hs-tl-slide-r { from { opacity: 0; transform: translateX(7cqw); } to { opacity: 1; transform: none; } }
+
+/* 7 — machine à écrire */
+.hs-overlay .hs-tlan-type .hs-tl-l { white-space: nowrap; overflow: hidden; }
+.hs-overlay.show .hs-tlan-type .hs-tl-it { animation: hs-tl-fade calc(0.25s * var(--d)) both; animation-delay: calc(var(--i) * 0.55s * var(--d)); }
+.hs-overlay.show .hs-tlan-type .hs-tl-l { animation: hs-tl-type calc(0.75s * var(--d)) steps(24, end) both; animation-delay: calc(var(--i) * 0.55s * var(--d)); }
+@keyframes hs-tl-type { from { max-width: 0; } to { max-width: 100%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hs-tl *, .hs-tl { animation: none !important; }
+  .hs-tl .hs-tl-it, .hs-tl .hs-tl-rail-line, .hs-tl .hs-tl-dot { opacity: 1 !important; transform: none !important; }
+  .hs-tl-runner { display: none; }
+}

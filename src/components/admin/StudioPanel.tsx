@@ -16,6 +16,9 @@ import {
   HERO_DATE_FORMATS,
   HERO_MONOGRAM_LAYOUTS,
   HERO_MONOGRAM_FONT_IDS,
+  HERO_PROGRAMME_ANIMATIONS,
+  HERO_PROGRAMME_LAYOUTS,
+  HERO_PROGRAMME_SPEEDS,
   HERO_SEAL_COLORS,
   HERO_SEAL_SHAPES,
   getHeroDateFormat,
@@ -26,7 +29,7 @@ import {
 } from "@/components/hero-scrub/heroDecor";
 import { HERO_THEMES } from "@/components/hero-scrub/themes";
 import { ChapterContent } from "@/components/hero-scrub/HeroScrub";
-import { HeroDateLayoutBlock, HeroMonogramBlock } from "@/components/hero-scrub/HeroDateBlocks";
+import { HeroDateLayoutBlock, HeroMonogramBlock, HeroProgrammeBlock } from "@/components/hero-scrub/HeroDateBlocks";
 import type { HeroChapter } from "@/components/hero-scrub/types";
 import type {
   BespokePaletteInput,
@@ -1200,6 +1203,18 @@ function blankCustomCard(kind: HeroCustomCard["kind"], text: string): HeroCustom
     sealColor: kind === "monogram" ? "#8c1d24" : "",
     sealShape: kind === "monogram" ? "classic" : "",
     sealColor2: "",
+    programmeLayout: kind === "programme" ? "rail" : "",
+    programmeItems:
+      kind === "programme"
+        ? [
+            { h: "15h30", l: "Cérémonie" },
+            { h: "17h00", l: "Vin d'honneur" },
+            { h: "20h00", l: "Dîner" },
+            { h: "23h00", l: "Soirée" },
+          ]
+        : [],
+    programmeAnimation: kind === "programme" ? "cascade" : "",
+    programmeSpeed: 1,
   };
 }
 
@@ -1307,7 +1322,164 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
       {cards.length > 0 && (
         <div className="space-y-3">
           {cards.map((card) =>
-            card.kind === "countdown" ? (
+            card.kind === "programme" ? (
+              <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[12px] font-semibold text-ink">Programme du jour J</p>
+                  {removeButton(card)}
+                </div>
+                {timingFields(card)}
+
+                <div className="mt-3">
+                  <p className="mb-2 text-[11px] font-semibold text-neutral-500">Étapes (heure + libellé)</p>
+                  <div className="space-y-2">
+                    {card.programmeItems.map((step, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={step.h}
+                          maxLength={20}
+                          placeholder="17h00"
+                          onChange={(e) =>
+                            updateCard(card.id, {
+                              programmeItems: card.programmeItems.map((x, k) => (k === i ? { ...x, h: e.target.value } : x)),
+                            })
+                          }
+                          className="w-[86px] shrink-0 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-center font-mono text-[12px] outline-none focus:border-terracotta-500"
+                        />
+                        <input
+                          type="text"
+                          value={step.l}
+                          maxLength={60}
+                          placeholder="Vin d'honneur"
+                          onChange={(e) =>
+                            updateCard(card.id, {
+                              programmeItems: card.programmeItems.map((x, k) => (k === i ? { ...x, l: e.target.value } : x)),
+                            })
+                          }
+                          className="flex-1 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
+                        />
+                        <button
+                          type="button"
+                          aria-label="Retirer cette étape"
+                          onClick={() =>
+                            updateCard(card.id, { programmeItems: card.programmeItems.filter((_, k) => k !== i) })
+                          }
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={card.programmeItems.length >= 6}
+                    onClick={() =>
+                      updateCard(card.id, { programmeItems: [...card.programmeItems, { h: "", l: "" }] })
+                    }
+                    className="mt-2 flex items-center gap-1.5 rounded-full border border-dashed border-neutral-300 px-3 py-1.5 text-[11.5px] font-semibold text-neutral-500 transition-colors hover:border-terracotta-400 hover:text-terracotta-500 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Plus size={13} /> Ajouter une étape
+                  </button>
+                </div>
+
+                <div className="mt-3">
+                  <p className="mb-2 text-[11px] font-semibold text-neutral-500">Mise en page</p>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {HERO_PROGRAMME_LAYOUTS.map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        title={l.desc}
+                        onClick={() => updateCard(card.id, { programmeLayout: l.id })}
+                        className={cn(
+                          "flex flex-col gap-1.5 rounded-xl border p-1.5 text-center transition-colors",
+                          (card.programmeLayout || "rail") === l.id
+                            ? "border-terracotta-500 bg-terracotta-500/5"
+                            : "border-neutral-200 hover:border-terracotta-300",
+                        )}
+                      >
+                        <div
+                          className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950"
+                          style={{
+                            aspectRatio: "9/16",
+                            containerType: "inline-size",
+                            ...themeVars,
+                            ...(getHeroFont(card.fontId) ? { "--hs-font-family": getHeroFont(card.fontId)!.fontFamily } : null),
+                          } as CSSProperties}
+                        >
+                          <HeroProgrammeBlock
+                            p={{ layout: l.id, items: card.programmeItems, animation: "", speed: card.programmeSpeed }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium leading-tight text-ink">{l.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <StudioField label="Animation d'apparition">
+                    <select
+                      value={card.programmeAnimation}
+                      onChange={(e) => updateCard(card.id, { programmeAnimation: e.target.value })}
+                      className={studioInput}
+                    >
+                      <option value="">Aucune (fondu commun)</option>
+                      {HERO_PROGRAMME_ANIMATIONS.map((a) => (
+                        <option key={a.id} value={a.id} title={a.desc}>{a.label}</option>
+                      ))}
+                    </select>
+                  </StudioField>
+                  <StudioField label="Vitesse">
+                    <select
+                      value={String(card.programmeSpeed)}
+                      onChange={(e) => updateCard(card.id, { programmeSpeed: Number(e.target.value) })}
+                      className={studioInput}
+                    >
+                      {HERO_PROGRAMME_SPEEDS.map((sp) => (
+                        <option key={sp.value} value={String(sp.value)}>{sp.label}</option>
+                      ))}
+                    </select>
+                  </StudioField>
+                  <StudioField label="Police des libellés">
+                    <StudioFontSelect value={card.fontId} onChange={(v) => updateCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
+                  </StudioField>
+                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateCard(card.id, { textColor: v })} />
+                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateCard(card.id, { cardBg: v })} />
+                  <StudioField label="Cadre (décor)">
+                    <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
+                  </StudioField>
+                </div>
+
+                <div className="mt-2 flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">Aperçu (animation rejouée en boucle)</span>
+                  <StudioPreview themeVars={themeVars}>
+                    <ChapterContent
+                      chapter={{
+                        id: 5000,
+                        kind: "text",
+                        from: 0,
+                        to: 1,
+                        textColorOverride: card.textColor || undefined,
+                        cardBgOverride: card.cardBg || undefined,
+                        cardFrame: card.cardFrame || undefined,
+                        fontId: card.fontId || undefined,
+                        programme: {
+                          layout: card.programmeLayout || "rail",
+                          items: card.programmeItems,
+                          animation: card.programmeAnimation,
+                          speed: card.programmeSpeed,
+                        },
+                      }}
+                      textAnimation={card.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", card.textAnimation && `hs-anim-${card.textAnimation}`)}
+                    />
+                  </StudioPreview>
+                </div>
+              </div>
+            ) : card.kind === "countdown" ? (
               <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-[12px] font-semibold text-ink">Compte à rebours — jusqu'à la date du mariage</p>
@@ -1567,6 +1739,11 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
             ["text", "Ajouter un texte"],
             ["countdown", "Ajouter un compte à rebours"],
             ["monogram", "Ajouter un monogramme"],
+            // Programme du jour J : proposé pour un faire-part seulement
+            // (un save the date n'annonce pas le déroulé, cf. échange du
+            // 30/09/2026) — un bloc déjà enregistré reste rendu quel que
+            // soit le produit.
+            ...(project.product === "FAIRE_PART" ? ([["programme", "Ajouter un programme"]] as const) : []),
           ] as const).map(([kind, label]) => (
             <button
               key={kind}

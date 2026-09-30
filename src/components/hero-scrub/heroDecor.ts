@@ -687,6 +687,66 @@ export interface HeroMonogram {
   dateNumeric: string
 }
 
+/**
+ * Programme du jour J affiché en overlay (bloc « Programme ») — mises en
+ * page proposées le 29/09/2026 (maquette « Timelines overlay ») et
+ * retenues telles quelles. Toutes pensées pour le cadre vertical 9:16 du
+ * hero ; 'horiz' et 'arc' restent les plus serrées au-delà de 4 étapes.
+ * Rendu : HeroDateBlocks.tsx (`.hs-tl-*`).
+ */
+export const HERO_PROGRAMME_LAYOUTS: { id: string; label: string; desc: string }[] = [
+  { id: 'rail', label: 'Filet vertical', desc: 'Une ligne, un point par étape — le plus lisible en 9:16' },
+  { id: 'num', label: 'Pastilles numérotées', desc: '01 / 02 / 03 en médaillon, heure et étape à droite' },
+  { id: 'big', label: 'Heures en gros', desc: "L'heure domine, l'étape en capitales espacées dessous" },
+  { id: 'horiz', label: 'Ligne horizontale', desc: 'Compact — heures au-dessus, étapes en dessous' },
+  { id: 'cols', label: 'Deux colonnes', desc: "Heures à droite d'un filet, étapes à gauche" },
+  { id: 'dots', label: 'Points de suite', desc: 'Étape … heure, façon carte de menu' },
+  { id: 'roman', label: 'Chiffres romains', desc: 'I / II / III gravés, esprit faire-part classique' },
+  { id: 'chips', label: 'Cartouches', desc: 'Chaque étape dans son propre encadré' },
+  { id: 'min', label: 'Minimal espacé', desc: 'Sans filet ni pastille — lettres très espacées' },
+  { id: 'arc', label: 'Arc', desc: 'Les étapes suivent une courbe, comme une voûte' },
+]
+
+/**
+ * Animations d'apparition du bloc « Programme » — proposées le 30/09/2026
+ * (maquette « Timelines animées »), 3 écartées par le client (révélation
+ * latérale, mise en avant, zoom doux). CSS pur déclenché par `.hs-overlay.show`,
+ * même mécanisme que HERO_TEXT_ANIMATIONS ; vide = aucune animation propre
+ * (le bloc suit alors le fondu commun). Rendu : `.hs-tlan-*` (hero-scrub.css).
+ */
+export const HERO_PROGRAMME_ANIMATIONS: { id: string; label: string; desc: string }[] = [
+  { id: 'cascade', label: 'Cascade', desc: 'Les étapes montent une à une — la plus sobre' },
+  { id: 'draw', label: 'Le filet se trace', desc: 'La ligne se dessine, puis les points et les étapes' },
+  { id: 'travel', label: 'Point qui progresse', desc: 'Une bille descend le filet et allume chaque étape' },
+  { id: 'flip', label: 'Dépliage', desc: "Les étapes basculent vers l'avant, comme un pli" },
+  { id: 'odo', label: 'Heures qui défilent', desc: "L'heure roule en place, façon compteur" },
+  { id: 'alt', label: 'Côtés alternés', desc: 'Une étape arrive par la gauche, la suivante par la droite' },
+  { id: 'type', label: 'Machine à écrire', desc: 'Les libellés s\'écrivent, étape après étape' },
+]
+
+/** Vitesse d'animation du bloc « Programme » — facteur multiplicateur des durées (cf. `--hs-tl-dur`). */
+export const HERO_PROGRAMME_SPEEDS: { value: number; label: string }[] = [
+  { value: 1.6, label: 'Lente' },
+  { value: 1, label: 'Normale' },
+  { value: 0.65, label: 'Rapide' },
+]
+
+/** Une étape du programme : heure + libellé. */
+export interface HeroProgrammeItem {
+  h: string
+  l: string
+}
+
+/** Données d'un programme prêt à afficher — cf. `HeroChapter.programme` (types.ts). */
+export interface HeroProgramme {
+  layout: string
+  items: HeroProgrammeItem[]
+  /** cf. HERO_PROGRAMME_ANIMATIONS — vide = aucune animation propre. */
+  animation: string
+  /** Facteur de durée (cf. HERO_PROGRAMME_SPEEDS) — 1 = vitesse normale. */
+  speed: number
+}
+
 /** Initiales d'un « Prénom & Prénom » — repli sur les 2 premiers mots, puis sur la seule initiale. */
 export function monogramInitials(names: string): [string, string] {
   const up = (s: string | undefined) => (s ? s.trim().charAt(0).toLocaleUpperCase('fr-FR') : '')

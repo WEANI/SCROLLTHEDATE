@@ -4,7 +4,7 @@
  * (cf. src/components/demo/demoContent.ts, .../faire-part/*Content.ts).
  */
 
-import type { HeroDateLayout, HeroMonogram } from './heroDecor'
+import type { HeroDateLayout, HeroMonogram, HeroProgramme } from './heroDecor'
 
 export interface HeroChapter {
   id: number
@@ -100,6 +100,8 @@ export interface HeroChapter {
   countdown?: { style: string; targetIso: string }
   /** Monogramme des mariés (logo d'initiales), cf. HeroMonogramBlock. Ajouté le 26/09/2026. */
   monogram?: HeroMonogram
+  /** Programme du jour J (timeline overlay), cf. HeroProgrammeBlock. Ajouté le 30/09/2026. */
+  programme?: HeroProgramme
 }
 
 /**

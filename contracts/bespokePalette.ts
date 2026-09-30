@@ -225,7 +225,7 @@ export const heroCustomCardSchema = z.object({
   // date du projet — une carte de ce type reste néanmoins un `HeroCustomCard`
   // ordinaire pour tout le reste (timing/position), donc `text` garde sa
   // contrainte `.min(1)` même si son contenu n'est alors qu'un placeholder.
-  kind: z.enum(["text", "date", "countdown", "monogram"]).default("text"),
+  kind: z.enum(["text", "date", "countdown", "monogram", "programme"]).default("text"),
   // Couleur de CETTE carte — vide = couleur du thème (comportement actuel
   // inchangé). Distinct de `textColorOverride` sur HeroChapter (nom
   // différent car HeroCustomCard n'a jamais eu ce champ avant) — permet au
@@ -265,6 +265,19 @@ export const heroCustomCardSchema = z.object({
   // 28/09/2026 : "on a la possibilité de personnaliser chaque liseré ?".
   sealShape: z.string().default(""),
   sealColor2: z.string().default(""),
+  // Programme du jour J (kind "programme", cf. HERO_PROGRAMME_LAYOUTS /
+  // HERO_PROGRAMME_ANIMATIONS, heroDecor.ts) : mise en page, étapes
+  // (heure + libellé), animation d'apparition et vitesse. Ajoutés le
+  // 30/09/2026 ; `text` reste un placeholder pour ce kind, comme pour
+  // "date"/"countdown"/"monogram".
+  programmeLayout: z.string().default(""),
+  programmeItems: z
+    .array(z.object({ h: z.string().max(20), l: z.string().max(60) }))
+    .max(6)
+    .default([]),
+  programmeAnimation: z.string().default(""),
+  /** Facteur de durée des animations — 1 = normale (cf. HERO_PROGRAMME_SPEEDS). */
+  programmeSpeed: z.number().min(0.4).max(2.5).default(1),
 });
 /** Plafonné à 10 : au-delà, plus un outil de personnalisation qu'un risque réel côté produit — évite un payload sans limite. */
 export const heroCustomCardsSchema = z.array(heroCustomCardSchema).max(10);

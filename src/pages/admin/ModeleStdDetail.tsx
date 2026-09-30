@@ -247,14 +247,14 @@ function ModeleStdDetailForm({
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "", monogramLayout: "", monogramAccent: "", sealColor: "", sealShape: "", sealColor2: "" },
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "", monogramLayout: "", monogramAccent: "", sealColor: "", sealShape: "", sealColor2: "", programmeLayout: "", programmeItems: [], programmeAnimation: "", programmeSpeed: 1 },
       ],
     });
   const addCountdownCard = () =>
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "Compte à rebours", position: "middle", kind: "countdown", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "boxes", monogramLayout: "", monogramAccent: "", sealColor: "", sealShape: "", sealColor2: "" },
+        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "Compte à rebours", position: "middle", kind: "countdown", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "boxes", monogramLayout: "", monogramAccent: "", sealColor: "", sealShape: "", sealColor2: "", programmeLayout: "", programmeItems: [], programmeAnimation: "", programmeSpeed: 1 },
       ],
     });
   const removeExtraCard = (id: string) => update({ extraCards: (o?.extraCards ?? []).filter((c) => c.id !== id) });
