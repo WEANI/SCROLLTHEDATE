@@ -5,6 +5,7 @@
  */
 
 import type { HeroDateLayout, HeroMonogram, HeroNames, HeroProgramme } from './heroDecor'
+import type { HeroScene } from './heroScenes'
 
 export interface HeroChapter {
   id: number
@@ -104,6 +105,8 @@ export interface HeroChapter {
   programme?: HeroProgramme
   /** Mise en page des prénoms des mariés, cf. HeroNamesBlock — absent = rendu historique par `segments`. Ajouté le 30/09/2026. */
   names?: HeroNames
+  /** Scène narrative (bibliothèque HERO_SCENES), cf. HeroSceneBlock — ajouté le 30/09/2026. */
+  scene?: HeroScene
 }
 
 /**

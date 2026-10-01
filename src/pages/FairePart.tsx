@@ -600,7 +600,42 @@ export default function FairePart() {
         // calculée plus haut) est rendue en titre plutôt qu'en `lead`
         // (paragraphe libre des cartes texte ordinaires), pour le même
         // poids visuel que les 2 autres blocs fixes.
-        card.kind === 'programme'
+        card.kind === 'scene'
+          ? {
+              id: 1000 + i,
+              kind: 'text' as const,
+              from: card.fromSec / videoDuration,
+              to: card.toSec / videoDuration,
+              verticalAlign: card.position,
+              textColorOverride: card.textColor || undefined,
+              cardBgOverride: card.cardBg || undefined,
+              cardFrame: card.cardFrame || undefined,
+              fontId: card.fontId || undefined,
+              textAnimation: card.textAnimation || undefined,
+              // Scène narrative (bibliothèque HERO_SCENES) : prénoms,
+              // initiales et date viennent du projet, jamais des champs
+              // saisis à l'admin — même règle que le monogramme ci-dessous.
+              scene: {
+                id: card.sceneId,
+                kicker: card.sceneKicker,
+                title: card.sceneTitle,
+                subtitle: card.sceneSubtitle,
+                extra: card.sceneExtra,
+                items: card.sceneItems,
+                colors: card.sceneColors,
+                image: card.sceneImage,
+                a: nameParts[0] ?? coupleNames,
+                b: nameParts.length === 3 ? nameParts[2] : '',
+                initials: monogramInitials(coupleNames).join(''),
+                dateShort: weddingDateShort ?? '',
+                dateNumeric: invite.weddingDate
+                  ? new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(invite.weddingDate)).replace(/\//g, ' · ')
+                  : '',
+                // `weddingDate` arrive typé `string | Date` selon la source — normalisé ici, le rendu attend une chaîne ISO.
+                dateIso: invite.weddingDate ? new Date(invite.weddingDate).toISOString() : '',
+              },
+            }
+          : card.kind === 'programme'
           ? {
               id: 1000 + i,
               kind: 'text' as const,

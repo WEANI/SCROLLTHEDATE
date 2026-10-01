@@ -1,4 +1,4 @@
-import type { BespokePaletteInput, HeroChapterTiming, HeroCustomCard, HeroVerticalAlign } from './bespokePalette'
+import { blankHeroCustomCard, type BespokePaletteInput, type HeroChapterTiming, type HeroCustomCard, type HeroVerticalAlign } from './bespokePalette'
 
 /**
  * Bibliothèque de modèles Save the Date « sur un modèle » (99 €, cf.
@@ -94,6 +94,31 @@ export interface TemplateHeroChapter {
   namesLayout?: string
   namesFamily?: string
   namesVerb?: string
+  /**
+   * Scène narrative (bibliothèque HERO_SCENES, cf.
+   * src/components/hero-scrub/heroScenes.ts) — structurellement identique à
+   * `HeroScene`, réécrit ici parce que les contrats ne peuvent pas importer
+   * src/. Contrairement à `namesLayout` ci-dessus, tout est posé dès ici :
+   * ce fichier connaît déjà les prénoms et la date d'exemple de la page
+   * d'aperçu générique, aucune résolution côté client n'est nécessaire.
+   * Ajouté le 30/09/2026.
+   */
+  scene?: {
+    id: string
+    kicker: string
+    title: string
+    subtitle: string
+    extra: string
+    items: { a: string; b: string }[]
+    colors: string[]
+    image: string
+    a: string
+    b: string
+    initials: string
+    dateShort: string
+    dateNumeric: string
+    dateIso: string
+  }
   /** Monogramme des mariés — cf. HeroChapter.monogram (src/components/hero-scrub/types.ts). Ajouté le 26/09/2026. */
   monogram?: { layout: string; a: string; b: string; accent: string; sealColor: string; dateShort: string; dateNumeric: string }
 }
@@ -468,8 +493,13 @@ function splitLines(text: string): Pick<TemplateHeroChapter, 'segments' | 'segme
 }
 
 /** `extraCards` (admin, généraliste) → chapitres additionnels, même conversion que `customChapters` dans FairePart.tsx (secondes → ratio [0,1], `lead` = paragraphe libre). Id décalé à 1000+ pour ne jamais entrer en collision avec les chapitres fixes 0/1, même règle que FairePart.tsx. */
-function extraCardsToChapters(cards: HeroCustomCard[], duration: number): TemplateHeroChapter[] {
+function extraCardsToChapters(cards: HeroCustomCard[], duration: number, names: string): TemplateHeroChapter[] {
   const ratio = (sec: number) => Math.min(1, Math.max(0, sec / duration))
+  const [iniA, iniB] = initialsOf(names)
+  const [nameA, nameB] = (() => {
+    const parts = names.split(/\s+(?:&|et)\s+/i)
+    return parts.length >= 2 ? [parts[0].trim(), parts[parts.length - 1].trim()] : [names.trim(), '']
+  })()
   return cards.map((card, i) => ({
     id: 1000 + i,
     kind: 'text' as const,
@@ -478,7 +508,29 @@ function extraCardsToChapters(cards: HeroCustomCard[], duration: number): Templa
     // Compte à rebours (cf. HeroCustomCard.kind) : `text` n'est qu'un
     // placeholder, la date visée est celle du couple d'exemple de cette page
     // d'aperçu générique (12 juin 2027, cf. EXAMPLE_DATE).
-    lead: card.kind === 'countdown' || card.kind === 'programme' ? undefined : card.text,
+    lead: card.kind === 'countdown' || card.kind === 'programme' || card.kind === 'scene' ? undefined : card.text,
+    // Scène : les prénoms/initiales/date viennent du couple d'exemple de
+    // cette page d'aperçu générique (cf. EXAMPLE_NAMES/EXAMPLE_DATE), jamais
+    // des champs saisis — même règle qu'au rendu d'un vrai projet.
+    scene:
+      card.kind === 'scene' && card.sceneId
+        ? {
+            id: card.sceneId,
+            kicker: card.sceneKicker,
+            title: card.sceneTitle,
+            subtitle: card.sceneSubtitle,
+            extra: card.sceneExtra,
+            items: card.sceneItems,
+            colors: card.sceneColors,
+            image: card.sceneImage,
+            a: nameA,
+            b: nameB,
+            initials: `${iniA}${iniB}`,
+            dateShort: EXAMPLE_DATE,
+            dateNumeric: '12 · 06 · 2027',
+            dateIso: '2027-06-12T00:00:00',
+          }
+        : undefined,
     countdown: card.kind === 'countdown' ? { style: card.countdownStyle || 'boxes', targetIso: '2027-06-12T00:00:00' } : undefined,
     verticalAlign: card.position,
     fontId: card.fontId || undefined,
@@ -690,7 +742,7 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
             })(),
           ]
         : []),
-      ...extraCardsToChapters(override.extraCards ?? [], duration),
+      ...extraCardsToChapters(override.extraCards ?? [], duration, override.exampleNames || EXAMPLE_NAMES),
     ],
   }
 }
@@ -789,9 +841,7 @@ export function buildFulfillmentData(
       ...(o.dateBlockEnabled
         ? [
             {
-              id: 'date-block',
-              kind: 'date' as const,
-              text: 'Date',
+              ...blankHeroCustomCard('date-block', 'date', 'Date'),
               fromSec: o.dateBlockFromSec,
               toSec: o.dateBlockToSec,
               position: o.dateBlockPosition,
@@ -802,45 +852,27 @@ export function buildFulfillmentData(
               titleSize: o.dateBlockTitleSize || '',
               cardFrame: o.dateBlockCardFrame || '',
               cardBg: o.dateBlockCardBg || '',
-              countdownStyle: '',
-              monogramLayout: '',
-              monogramAccent: '',
-              sealColor: '',
-              sealShape: '',
-              sealColor2: '',
-              programmeLayout: '',
-              programmeItems: [],
-              programmeAnimation: '',
-              programmeSpeed: 1,
             },
           ]
         : []),
       ...(o.monogramEnabled
         ? [
             {
-              id: 'monogram-block',
-              kind: 'monogram' as const,
-              text: 'Monogramme',
+              ...blankHeroCustomCard('monogram-block', 'monogram', 'Monogramme'),
               fromSec: o.monogramFromSec,
               toSec: o.monogramToSec,
               position: o.monogramPosition,
               textColor: o.monogramColor || '',
               fontId: o.monogramFontId || '',
               textAnimation: o.monogramTextAnimation || '',
-              bold: false,
               titleSize: o.monogramSize || '',
               cardFrame: o.monogramCardFrame || '',
               cardBg: o.monogramCardBg || '',
-              countdownStyle: '',
               monogramLayout: o.monogramLayout || 'circle',
               monogramAccent: o.monogramAccent || '',
               sealColor: o.monogramSealColor || '',
               sealShape: o.monogramSealShape || 'classic',
               sealColor2: o.monogramSealColor2 || '',
-              programmeLayout: '',
-              programmeItems: [],
-              programmeAnimation: '',
-              programmeSpeed: 1,
             },
           ]
         : []),

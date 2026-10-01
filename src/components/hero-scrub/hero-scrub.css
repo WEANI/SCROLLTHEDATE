@@ -2579,3 +2579,630 @@
 /* Avec verbe */
 .hs-nm-verbe .hs-nm-n { font-size: 11cqw; line-height: 1.1; }
 .hs-nm-verbe .hs-nm-v { font-size: 6cqw; font-style: italic; color: var(--hs-text-secondary); margin-top: 2.4cqw; }
+
+/* ------------------------------------------------------------------ */
+/* Scènes du hero — bibliothèque des 37 blocs overlay narratifs        */
+/* (heroScenes.ts, rendu par HeroSceneBlocks.tsx). Ajoutées le          */
+/* 30/09/2026. Toutes les classes internes sont préfixées `sc-` : les   */
+/* noms courts type `.ring`/`.box` entrent en collision avec les        */
+/* utilitaires Tailwind (bug constaté le 26/09/2026 sur les anneaux du  */
+/* monogramme, devenus bleus à cause de `.ring`).                      */
+/* ------------------------------------------------------------------ */
+.hs-sc {
+  position: relative;
+  z-index: 1;
+  width: 84cqw;
+  margin: 0 auto;
+  text-align: center;
+  color: var(--hs-text-primary);
+  font-family: var(--hs-font-family);
+}
+.hs-sc .sc-kick {
+  font: 300 3.2cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.42em;
+  margin-right: -0.42em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+}
+.hs-sc .sc-amp { color: var(--hs-chapter-accent, var(--hs-accent)); font-style: italic; }
+.hs-sc .sc-rule {
+  width: 14cqw;
+  height: 1px;
+  background: var(--hs-chapter-accent, var(--hs-accent));
+  opacity: 0.7;
+  margin: 3.4cqw auto;
+}
+.hs-sc .sc-mono { font-family: 'JetBrains Mono', monospace; font-weight: 300; letter-spacing: 0.14em; }
+
+/* ---- Ouverture ---- */
+.hs-sc-formule .sc-f1 { font-size: 4.6cqw; font-style: italic; color: var(--hs-text-secondary); line-height: 1.5; }
+.hs-sc-formule .sc-f2 { font-size: 12cqw; line-height: 1.1; margin: 2.6cqw 0; }
+.hs-sc-formule .sc-f3 { font-size: 4.4cqw; font-style: italic; }
+
+.hs-sc-citation .sc-q { font-size: 7cqw; font-style: italic; line-height: 1.45; }
+.hs-sc-citation .sc-q::before { content: '« '; }
+.hs-sc-citation .sc-q::after { content: ' »'; }
+.hs-sc-citation .sc-who {
+  font: 300 3.2cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  margin-top: 4cqw;
+}
+
+/* ---- Le couple ---- */
+.hs-sc-photo-polaroid .sc-ph {
+  position: relative;
+  width: 52cqw;
+  margin: 0 auto;
+  background: #f7efe0;
+  padding: 2.6cqw 2.6cqw 9cqw;
+  transform: rotate(-3deg);
+  box-shadow: 0 3cqw 7cqw rgba(0, 0, 0, 0.5);
+}
+.hs-sc-photo-polaroid .sc-im {
+  aspect-ratio: 1;
+  background: linear-gradient(140deg, #6b3a30, #2a1512 60%, #3d201b);
+  background-size: cover;
+  background-position: center;
+  display: grid;
+  place-items: center;
+}
+.hs-sc-photo-polaroid .sc-im span,
+.hs-sc-photo-medaillon .sc-ph span {
+  font: 300 2.6cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(247, 239, 224, 0.55);
+}
+.hs-sc-photo-polaroid .sc-cap {
+  position: absolute;
+  bottom: 2.4cqw;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: 'Great Vibes', cursive;
+  font-size: 4.4cqw;
+  color: #3a2620;
+}
+.hs-sc-photo-medaillon .sc-ph {
+  width: 48cqw;
+  aspect-ratio: 4 / 5;
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.4cqw solid var(--hs-chapter-accent, var(--hs-accent));
+  background: linear-gradient(140deg, #6b3a30, #2a1512 60%, #3d201b);
+  background-size: cover;
+  background-position: center;
+  display: grid;
+  place-items: center;
+}
+.hs-sc-photo-medaillon .sc-sm {
+  font: 300 3.6cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hs-text-secondary);
+}
+
+.hs-sc-temoins .sc-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 4cqw; margin-top: 3cqw; }
+.hs-sc-temoins .sc-col + .sc-col { border-left: 1px solid var(--hs-chapter-accent, var(--hs-accent)); }
+.hs-sc-temoins .sc-h {
+  font: 300 3cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  margin: 3cqw 0 2cqw;
+}
+.hs-sc-temoins .sc-n { font-size: 4.8cqw; line-height: 1.7; }
+
+/* ---- Notre histoire ---- */
+.hs-sc-jalons { text-align: left; width: 78cqw; }
+.hs-sc-jalons .sc-it { display: grid; grid-template-columns: auto 1fr; gap: 0 4cqw; }
+.hs-sc-jalons .sc-yr {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 4.4cqw;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  padding-top: 0.6cqw;
+}
+.hs-sc-jalons .sc-lb { font-size: 5.6cqw; line-height: 1.25; }
+.hs-sc-jalons .sc-sep {
+  grid-column: 1 / -1;
+  height: 1px;
+  background: var(--hs-chapter-accent, var(--hs-accent));
+  opacity: 0.3;
+  margin: 3.2cqw 0;
+}
+
+.hs-sc-millesimes .sc-it { margin: 4cqw 0; }
+.hs-sc-millesimes .sc-yr { font-size: 9cqw; color: var(--hs-chapter-accent, var(--hs-accent)); line-height: 1; }
+.hs-sc-millesimes .sc-lb {
+  font: 300 3.4cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.3em;
+  margin-right: -0.3em;
+  text-transform: uppercase;
+  margin-top: 1.2cqw;
+}
+
+/* ---- Le lieu & le jour ---- */
+.hs-sc-lieu .sc-pin { font-size: 5cqw; color: var(--hs-chapter-accent, var(--hs-accent)); }
+.hs-sc-lieu .sc-kick { margin-top: 2cqw; }
+.hs-sc-lieu .sc-nm { font-size: 8cqw; line-height: 1.15; margin-top: 2.4cqw; }
+.hs-sc-lieu .sc-ad {
+  font: 300 3.6cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.14em;
+  color: var(--hs-text-secondary);
+  line-height: 1.7;
+  margin-top: 2cqw;
+}
+
+.hs-sc-dresscode .sc-nm { font-size: 7cqw; margin-top: 1cqw; }
+.hs-sc-dresscode .sc-dots { display: flex; gap: 3cqw; justify-content: center; margin-top: 4cqw; }
+.hs-sc-dresscode .sc-dots i {
+  width: 7cqw;
+  height: 7cqw;
+  border-radius: 50%;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.hs-sc-infos { text-align: left; width: 76cqw; }
+.hs-sc-infos .sc-it {
+  display: flex;
+  justify-content: space-between;
+  gap: 3cqw;
+  align-items: baseline;
+  padding: 2.6cqw 0;
+  border-bottom: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+}
+.hs-sc-infos .sc-it:last-child { border-bottom: 0; }
+.hs-sc-infos .sc-k {
+  font: 300 3.2cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  white-space: nowrap;
+}
+.hs-sc-infos .sc-v { font-size: 4.8cqw; text-align: right; }
+
+/* ---- Clôture ---- */
+.hs-sc-rsvp .sc-box {
+  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  border-radius: 1.6cqw;
+  padding: 4.4cqw 5cqw;
+  display: inline-block;
+}
+.hs-sc-rsvp .sc-dt { font-size: 6.4cqw; margin-top: 1.4cqw; }
+.hs-sc-rsvp .sc-lk {
+  font: 300 3.2cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.2em;
+  color: var(--hs-text-secondary);
+  margin-top: 3.4cqw;
+}
+
+.hs-sc-suite-fp .sc-t { font-size: 8cqw; line-height: 1.15; }
+.hs-sc-suite-fp .sc-s {
+  font: 300 3.4cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.3em;
+  margin-right: -0.3em;
+  text-transform: uppercase;
+  color: var(--hs-text-secondary);
+}
+
+/* ---- L'annonce ---- */
+.hs-sc-hold .sc-t { font-size: 13cqw; line-height: 1.02; margin-top: 3cqw; }
+.hs-sc-hold .sc-d { font-size: 7cqw; color: var(--hs-chapter-accent, var(--hs-accent)); margin-top: 3cqw; }
+
+.hs-sc-bilingue .sc-en {
+  font: 300 4cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.44em;
+  margin-right: -0.44em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+}
+.hs-sc-bilingue .sc-fr { font-size: 10cqw; line-height: 1.1; margin-top: 2.6cqw; }
+.hs-sc-bilingue .sc-d { font-size: 4.2cqw; letter-spacing: 0.3em; margin-top: 3.4cqw; }
+
+.hs-sc-tampon .sc-box {
+  border: 0.7cqw solid var(--hs-chapter-accent, var(--hs-accent));
+  border-radius: 2cqw;
+  padding: 4cqw 5cqw;
+  display: inline-block;
+  transform: rotate(-7deg);
+  position: relative;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+}
+.hs-sc-tampon .sc-box::after {
+  content: '';
+  position: absolute;
+  inset: 1.4cqw;
+  border: 0.25cqw dashed currentColor;
+  border-radius: 1.2cqw;
+  opacity: 0.7;
+}
+.hs-sc-tampon .sc-t1 {
+  font: 500 3.4cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.34em;
+  margin-right: -0.34em;
+  text-transform: uppercase;
+}
+.hs-sc-tampon .sc-t2 {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 400;
+  font-size: 6cqw;
+  letter-spacing: 0.14em;
+  margin: 1.6cqw 0;
+}
+.hs-sc-tampon .sc-t3 {
+  font: 300 2.8cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.3em;
+  margin-right: -0.3em;
+  text-transform: uppercase;
+}
+
+.hs-sc-billet .sc-box {
+  border: 0.3cqw dashed rgba(255, 255, 255, 0.45);
+  border-radius: 1.6cqw;
+  padding: 4cqw 4.4cqw;
+  background: rgba(255, 255, 255, 0.04);
+}
+.hs-sc-billet .sc-t1 {
+  font: 300 2.8cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.4em;
+  margin-right: -0.4em;
+  text-transform: uppercase;
+  color: var(--hs-text-secondary);
+}
+.hs-sc-billet .sc-t2 { font-family: 'Bebas Neue', sans-serif; font-size: 9cqw; letter-spacing: 0.1em; margin: 2cqw 0 1.4cqw; }
+.hs-sc-billet .sc-t3 {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 3cqw;
+  letter-spacing: 0.24em;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+}
+
+/* ---- La date, autrement ---- */
+.hs-sc-saison .sc-s { font-size: 11cqw; line-height: 1.1; font-style: italic; margin-top: 3cqw; }
+.hs-sc-saison .sc-y {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 5cqw;
+  letter-spacing: 0.5em;
+  margin-right: -0.5em;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  margin-top: 2.6cqw;
+}
+
+.hs-sc-jour-semaine .sc-j {
+  font-size: 14cqw;
+  line-height: 1;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  text-transform: capitalize;
+}
+.hs-sc-jour-semaine .sc-d {
+  font: 300 4cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.34em;
+  margin-right: -0.34em;
+  text-transform: uppercase;
+  margin-top: 3cqw;
+}
+
+.hs-sc-mois .sc-k { margin-bottom: 2cqw; }
+.hs-sc-mois .sc-n {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20cqw;
+  line-height: 1;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  letter-spacing: 0.04em;
+}
+.hs-sc-mois .sc-u {
+  font: 300 4cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.34em;
+  margin-right: -0.34em;
+  text-transform: uppercase;
+  margin-top: 1cqw;
+}
+
+/* ---- Le lieu, sans l'adresse ---- */
+.hs-sc-region .sc-r { font-size: 11cqw; line-height: 1.1; margin-top: 2.6cqw; }
+.hs-sc-region .sc-p {
+  font: 300 3.4cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.36em;
+  margin-right: -0.36em;
+  text-transform: uppercase;
+  color: var(--hs-text-secondary);
+  margin-top: 3cqw;
+}
+
+.hs-sc-repere .sc-pin { width: 26cqw; height: 26cqw; margin: 0 auto 3cqw; color: var(--hs-chapter-accent, var(--hs-accent)); }
+.hs-sc-repere .sc-pin svg { width: 100%; height: 100%; }
+.hs-sc-repere .sc-r { font-size: 8cqw; line-height: 1.15; }
+.hs-sc-repere .sc-c {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 3cqw;
+  letter-spacing: 0.24em;
+  color: var(--hs-text-secondary);
+  margin-top: 2.4cqw;
+}
+
+/* ---- Ce qu'on attend d'eux ---- */
+.hs-sc-conges .sc-t { font-size: 7.4cqw; line-height: 1.3; font-style: italic; }
+.hs-sc-conges .sc-s {
+  font: 300 3.2cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  margin-top: 3.6cqw;
+}
+
+.hs-sc-hashtag .sc-h { font-size: 8cqw; line-height: 1.15; color: var(--hs-chapter-accent, var(--hs-accent)); margin-top: 3cqw; }
+.hs-sc-hashtag .sc-s {
+  font: 300 3cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--hs-text-secondary);
+  margin-top: 3cqw;
+}
+
+.hs-sc-suite-std .sc-t { font-size: 9cqw; line-height: 1.15; font-style: italic; }
+.hs-sc-suite-std .sc-s {
+  font: 300 3.2cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.32em;
+  margin-right: -0.32em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+}
+
+/* ---- Comme au cinéma ---- */
+.hs-sc-bande .sc-soon {
+  font-family: 'Anton', Impact, sans-serif;
+  font-size: 11cqw;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+.hs-sc-bande .sc-t { font-size: 9cqw; line-height: 1.1; margin-top: 3cqw; }
+.hs-sc-bande .sc-d {
+  font: 400 3.6cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.4em;
+  margin-right: -0.4em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  margin-top: 3.4cqw;
+}
+
+.hs-sc-generique .sc-r {
+  font: 300 2.9cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.4em;
+  margin-right: -0.4em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  margin-top: 5cqw;
+}
+.hs-sc-generique .sc-n { font-size: 8.4cqw; line-height: 1.2; margin-top: 1.2cqw; }
+.hs-sc-generique .sc-n.sc-small { font-size: 5.6cqw; }
+
+.hs-sc-affiche .sc-top {
+  font: 300 2.7cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.34em;
+  margin-right: -0.34em;
+  text-transform: uppercase;
+  color: var(--hs-text-secondary);
+  line-height: 1.9;
+}
+.hs-sc-affiche .sc-t { font-family: 'Bebas Neue', sans-serif; font-size: 15cqw; line-height: 0.95; letter-spacing: 0.04em; margin: 3cqw 0; }
+.hs-sc-affiche .sc-cast {
+  font: 300 3cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+}
+.hs-sc-affiche .sc-fine {
+  font: 300 2.2cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hs-text-secondary);
+  line-height: 1.8;
+  margin-top: 4cqw;
+  opacity: 0.85;
+}
+
+.hs-sc-clap .sc-board {
+  width: 64cqw;
+  margin: 0 auto;
+  border: 0.6cqw solid var(--hs-text-primary);
+  border-radius: 1cqw;
+  overflow: hidden;
+  transform: rotate(-2deg);
+}
+.hs-sc-clap .sc-stripe {
+  height: 7cqw;
+  background: repeating-linear-gradient(115deg, var(--hs-text-primary) 0 5cqw, var(--hs-frame-bg, #1b0c0c) 5cqw 10cqw);
+}
+.hs-sc-clap .sc-body {
+  padding: 3cqw;
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 3.1cqw;
+  line-height: 2;
+}
+.hs-sc-clap .sc-body i { color: var(--hs-chapter-accent, var(--hs-accent)); font-style: normal; }
+.hs-sc-clap .sc-big { font-size: 5cqw; letter-spacing: 0.1em; }
+
+/* ---- Le calendrier ---- */
+.hs-sc-calendrier .sc-sheet {
+  width: 62cqw;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  border-radius: 1.6cqw;
+  overflow: hidden;
+}
+.hs-sc-calendrier .sc-hd {
+  background: var(--hs-chapter-accent, var(--hs-accent));
+  color: var(--hs-frame-bg, #1b0c0c);
+  font: 500 3.4cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.3em;
+  margin-right: -0.3em;
+  text-transform: uppercase;
+  padding: 2.4cqw 0;
+}
+.hs-sc-calendrier .sc-grid7 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.6cqw;
+  padding: 2.6cqw 2cqw 3.4cqw;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 2.7cqw;
+}
+.hs-sc-calendrier .sc-grid7 span { aspect-ratio: 1; display: grid; place-items: center; color: var(--hs-text-secondary); }
+.hs-sc-calendrier .sc-grid7 .sc-dow { color: var(--hs-chapter-accent, var(--hs-accent)); font-size: 2.2cqw; }
+.hs-sc-calendrier .sc-grid7 .sc-on {
+  color: var(--hs-frame-bg, #1b0c0c);
+  background: var(--hs-chapter-accent, var(--hs-accent));
+  border-radius: 50%;
+  font-weight: 400;
+}
+
+.hs-sc-eclat .sc-l { font-family: 'Anton', Impact, sans-serif; font-size: 19cqw; line-height: 0.92; letter-spacing: 0.02em; }
+.hs-sc-eclat .sc-l:nth-child(2) { color: var(--hs-chapter-accent, var(--hs-accent)); }
+.hs-sc-eclat .sc-s {
+  font: 300 3.2cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.44em;
+  margin-right: -0.44em;
+  text-transform: uppercase;
+  color: var(--hs-text-secondary);
+  margin-top: 2.6cqw;
+}
+
+.hs-sc-jmoins .sc-n {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 15cqw;
+  letter-spacing: 0.04em;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  line-height: 1;
+  margin-top: 3cqw;
+}
+.hs-sc-jmoins .sc-s {
+  font: 300 3.2cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.34em;
+  margin-right: -0.34em;
+  text-transform: uppercase;
+  margin-top: 3cqw;
+}
+
+/* ---- Objets du voyage ---- */
+.hs-sc-timbre .sc-st {
+  width: 44cqw;
+  margin: 0 auto;
+  padding: 3cqw;
+  background: rgba(255, 255, 255, 0.07);
+  border: 0.5cqw dashed rgba(255, 255, 255, 0.5);
+  border-radius: 1cqw;
+  transform: rotate(3deg);
+}
+.hs-sc-timbre .sc-in {
+  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  padding: 3.4cqw 2cqw;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+}
+.hs-sc-timbre .sc-mn { font-family: var(--hs-font-family); font-size: 9cqw; line-height: 1; }
+.hs-sc-timbre .sc-dt {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 2.6cqw;
+  letter-spacing: 0.2em;
+  margin-top: 1.6cqw;
+}
+.hs-sc-timbre .sc-val {
+  font: 500 2.4cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hs-text-secondary);
+  margin-top: 2.4cqw;
+}
+
+.hs-sc-etiquette .sc-tg {
+  width: 56cqw;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  border-radius: 1.6cqw 1.6cqw 3cqw 3cqw;
+  padding: 5cqw 3cqw 4cqw;
+  position: relative;
+  transform: rotate(-3deg);
+}
+.hs-sc-etiquette .sc-tg::before {
+  content: '';
+  position: absolute;
+  top: 2cqw;
+  left: 50%;
+  width: 4cqw;
+  height: 4cqw;
+  margin-left: -2cqw;
+  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  border-radius: 50%;
+}
+.hs-sc-etiquette .sc-to {
+  font: 300 2.6cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  margin-top: 3cqw;
+}
+.hs-sc-etiquette .sc-pl { font-size: 7cqw; line-height: 1.15; margin-top: 1.4cqw; }
+.hs-sc-etiquette .sc-dt {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 3cqw;
+  letter-spacing: 0.2em;
+  color: var(--hs-text-secondary);
+  margin-top: 2.4cqw;
+}
+
+.hs-sc-rose .sc-cmp { width: 30cqw; height: 30cqw; margin: 0 auto 3.4cqw; color: var(--hs-chapter-accent, var(--hs-accent)); }
+.hs-sc-rose .sc-cmp svg { width: 100%; height: 100%; }
+.hs-sc-rose .sc-pl { font-size: 7.4cqw; line-height: 1.15; }
+.hs-sc-rose .sc-km {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 3cqw;
+  letter-spacing: 0.22em;
+  color: var(--hs-text-secondary);
+  margin-top: 2.4cqw;
+}
+
+/* ---- Fiançailles & histoire ---- */
+.hs-sc-oui .sc-t { font-size: 12cqw; line-height: 1.08; font-style: italic; }
+.hs-sc-oui .sc-s {
+  font: 300 3.2cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  margin-top: 3.6cqw;
+}
+
+.hs-sc-villes .sc-k {
+  font: 300 2.8cqw 'Montserrat', sans-serif;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--hs-text-secondary);
+}
+.hs-sc-villes .sc-v { font-size: 8cqw; line-height: 1.15; }
+.hs-sc-villes .sc-ar { color: var(--hs-chapter-accent, var(--hs-accent)); font-size: 5cqw; margin: 2.4cqw 0; }
+
+.hs-sc-ans .sc-n {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 17cqw;
+  line-height: 1;
+  color: var(--hs-chapter-accent, var(--hs-accent));
+  letter-spacing: 0.06em;
+  margin-top: 2cqw;
+}
+.hs-sc-ans .sc-t { font-size: 6.4cqw; line-height: 1.25; margin-top: 2cqw; }

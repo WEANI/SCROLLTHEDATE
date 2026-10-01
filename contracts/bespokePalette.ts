@@ -234,7 +234,7 @@ export const heroCustomCardSchema = z.object({
   // date du projet — une carte de ce type reste néanmoins un `HeroCustomCard`
   // ordinaire pour tout le reste (timing/position), donc `text` garde sa
   // contrainte `.min(1)` même si son contenu n'est alors qu'un placeholder.
-  kind: z.enum(["text", "date", "countdown", "monogram", "programme"]).default("text"),
+  kind: z.enum(["text", "date", "countdown", "monogram", "programme", "scene"]).default("text"),
   // Couleur de CETTE carte — vide = couleur du thème (comportement actuel
   // inchangé). Distinct de `textColorOverride` sur HeroChapter (nom
   // différent car HeroCustomCard n'a jamais eu ce champ avant) — permet au
@@ -287,9 +287,90 @@ export const heroCustomCardSchema = z.object({
   programmeAnimation: z.string().default(""),
   /** Facteur de durée des animations — 1 = normale (cf. HERO_PROGRAMME_SPEEDS). */
   programmeSpeed: z.number().min(0.4).max(2.5).default(1),
+  // Scène narrative (kind "scene", cf. HERO_SCENES dans
+  // src/components/hero-scrub/heroScenes.ts) — bibliothèque des 37 blocs
+  // overlay proposés le 30/09/2026 et tous conservés. UN seul kind pour les
+  // 37 mises en page : elles consomment le même petit jeu de champs
+  // ci-dessous, chacune n'en utilisant que 1 à 3 (cf. `fields` sur
+  // HeroSceneOption, qui pilote le formulaire d'admin). Les prénoms, les
+  // initiales et la date ne sont JAMAIS saisis ici : ils viennent du projet,
+  // comme pour le monogramme. `text` reste un placeholder pour ce kind.
+  sceneId: z.string().default(""),
+  /** Surtitre / titre / sous-titre / 3e ligne — les retours à la ligne saisis sont rendus tels quels. */
+  sceneKicker: z.string().max(200).default(""),
+  sceneTitle: z.string().max(200).default(""),
+  sceneSubtitle: z.string().max(200).default(""),
+  sceneExtra: z.string().max(200).default(""),
+  /** Paires intitulé/valeur — jalons datés, infos pratiques, générique, témoins… */
+  sceneItems: z
+    .array(z.object({ a: z.string().max(60), b: z.string().max(120) }))
+    .max(6)
+    .default([]),
+  /** Pastilles de couleur (scène « Dress code ») — hex, jusqu'à 4. */
+  sceneColors: z.array(z.string().max(9)).max(4).default([]),
+  /** URL d'une photo (scènes « Photo — polaroid »/« médaillon ») — vide = cadre vide avec la mention "photo du couple". */
+  sceneImage: z.string().max(500).default(""),
 });
 /** Plafonné à 10 : au-delà, plus un outil de personnalisation qu'un risque réel côté produit — évite un payload sans limite. */
 export const heroCustomCardsSchema = z.array(heroCustomCardSchema).max(10);
 
 export type HeroCustomCard = z.infer<typeof heroCustomCardSchema>;
+
+/**
+ * Carte overlay « vierge » du type demandé, avec les défauts propres à ce
+ * kind (style de compte à rebours, mise en page du monogramme, étapes de
+ * programme d'exemple…). Source unique : ces littéraux étaient recopiés à
+ * l'identique dans StudioPanel, ModeleStdDetail et buildFulfillmentData, et
+ * chaque champ ajouté au schéma cassait la compilation aux 3 endroits (le
+ * cas au 30/09/2026 avec les champs `scene*`).
+ *
+ * `id` est passé par l'appelant, jamais généré ici : `Date.now()`/
+ * `Math.random()` sont impurs et ne doivent pas être évalués pendant un
+ * rendu React.
+ */
+export function blankHeroCustomCard(id: string, kind: HeroCustomCard["kind"], text: string): HeroCustomCard {
+  return {
+    id,
+    fromSec: 0,
+    toSec: 0,
+    text,
+    position: "middle",
+    kind,
+    textColor: "",
+    fontId: "",
+    textAnimation: "",
+    bold: false,
+    titleSize: "",
+    cardFrame: "",
+    cardBg: "",
+    countdownStyle: kind === "countdown" ? "boxes" : "",
+    monogramLayout: kind === "monogram" ? "circle" : "",
+    monogramAccent: "",
+    sealColor: kind === "monogram" ? "#8c1d24" : "",
+    sealShape: kind === "monogram" ? "classic" : "",
+    sealColor2: "",
+    programmeLayout: kind === "programme" ? "rail" : "",
+    programmeItems:
+      kind === "programme"
+        ? [
+            { h: "15h30", l: "Cérémonie" },
+            { h: "17h00", l: "Vin d'honneur" },
+            { h: "20h00", l: "Dîner" },
+            { h: "23h00", l: "Soirée" },
+          ]
+        : [],
+    programmeAnimation: kind === "programme" ? "cascade" : "",
+    programmeSpeed: 1,
+    // Scène : la mise en page (et son contenu de départ) est choisie dans un
+    // second temps, dans le formulaire — cf. heroSceneDefaults (heroScenes.ts).
+    sceneId: "",
+    sceneKicker: "",
+    sceneTitle: "",
+    sceneSubtitle: "",
+    sceneExtra: "",
+    sceneItems: [],
+    sceneColors: [],
+    sceneImage: "",
+  };
+}
 export type HeroCustomCardsInput = z.infer<typeof heroCustomCardsSchema>;

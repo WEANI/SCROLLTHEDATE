@@ -42,9 +42,11 @@ import {
 } from "@/components/hero-scrub/heroDecor";
 import { HeroOverlayGraphic, HeroFilterLayer, ChapterContent } from "@/components/hero-scrub/HeroScrub";
 import { HeroDateLayoutBlock, HeroMonogramBlock, HeroNamesBlock } from "@/components/hero-scrub/HeroDateBlocks";
+import { HeroSceneCardEditor } from "@/components/admin/HeroSceneCardEditor";
+import { getHeroScene, heroSceneFromCard, type HeroSceneContext } from "@/components/hero-scrub/heroScenes";
 import type { HeroChapter } from "@/components/hero-scrub/types";
 import type { HeroNames } from "@/components/hero-scrub/heroDecor";
-import type { HeroCustomCard } from "@contracts/bespokePalette";
+import { blankHeroCustomCard, type HeroCustomCard } from "@contracts/bespokePalette";
 
 type Push = (kind: "success" | "error", text: string) => void;
 
@@ -250,14 +252,21 @@ function ModeleStdDetailForm({
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "", position: "middle", kind: "text", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "", monogramLayout: "", monogramAccent: "", sealColor: "", sealShape: "", sealColor2: "", programmeLayout: "", programmeItems: [], programmeAnimation: "", programmeSpeed: 1 },
+        blankHeroCustomCard(`card-${Date.now()}-${Math.round(Math.random() * 1000)}`, "text", ""),
       ],
     });
   const addCountdownCard = () =>
     update({
       extraCards: [
         ...(o?.extraCards ?? []),
-        { id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`, fromSec: 0, toSec: 0, text: "Compte à rebours", position: "middle", kind: "countdown", textColor: "", fontId: "", textAnimation: "", bold: false, titleSize: "", cardFrame: "", cardBg: "", countdownStyle: "boxes", monogramLayout: "", monogramAccent: "", sealColor: "", sealShape: "", sealColor2: "", programmeLayout: "", programmeItems: [], programmeAnimation: "", programmeSpeed: 1 },
+        blankHeroCustomCard(`card-${Date.now()}-${Math.round(Math.random() * 1000)}`, "countdown", "Compte à rebours"),
+      ],
+    });
+  const addSceneCard = () =>
+    update({
+      extraCards: [
+        ...(o?.extraCards ?? []),
+        blankHeroCustomCard(`card-${Date.now()}-${Math.round(Math.random() * 1000)}`, "scene", "Scène"),
       ],
     });
   const removeExtraCard = (id: string) => update({ extraCards: (o?.extraCards ?? []).filter((c) => c.id !== id) });
@@ -370,6 +379,17 @@ function ModeleStdDetailForm({
     family: o.chapter2NamesFamily,
     verb: o.chapter2NamesVerb,
     dateShort: o.dateBlockEnabled ? "" : o.exampleDate || "12 juin 2027",
+  };
+  // Contexte passé aux scènes (bibliothèque HERO_SCENES) — le couple
+  // d'exemple de ce modèle, jamais un vrai client : cette page règle le
+  // modèle générique, chaque projet réinjectera ses propres prénoms/date.
+  const sceneCtx: HeroSceneContext = {
+    a: namesPreviewA,
+    b: namesPreviewB,
+    initials: `${namesPreviewA.charAt(0)}${namesPreviewB.charAt(0)}`.toLocaleUpperCase("fr-FR"),
+    dateShort: o.exampleDate || "12 juin 2027",
+    dateNumeric: "12 · 06 · 2027",
+    dateIso: "2027-06-12T00:00:00",
   };
   const chapter2FramePreview: HeroChapter = {
     id: 1,
@@ -1154,7 +1174,95 @@ function ModeleStdDetailForm({
                 hint={'Généralistes — identiques pour tous les clients de ce modèle (pas de personnalisation), mais bien présents sur la vraie vidéo livrée.'}
               />
               <div className="flex flex-col gap-3 p-6">
-                {(o.extraCards ?? []).map((card) => card.kind === 'countdown' ? (
+                {(o.extraCards ?? []).map((card) => card.kind === 'scene' ? (
+                  <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                        Scène{getHeroScene(card.sceneId) ? ` — ${getHeroScene(card.sceneId)!.label}` : ""}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => removeExtraCard(card.id)}
+                        aria-label="Retirer ce bloc"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-3">
+                      <TimecodeField
+                        label="Apparaît à (s)"
+                        value={card.fromSec}
+                        max={duration}
+                        onChange={(v) => updateExtraCard(card.id, { fromSec: v })}
+                        onCaler={() => updateExtraCard(card.id, { fromSec: Math.round(currentTime * 10) / 10 })}
+                      />
+                      <TimecodeField
+                        label="Disparaît à (s)"
+                        value={card.toSec}
+                        max={duration}
+                        onChange={(v) => updateExtraCard(card.id, { toSec: v })}
+                        onCaler={() => updateExtraCard(card.id, { toSec: Math.round(currentTime * 10) / 10 })}
+                      />
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Position verticale
+                        <select value={card.position} onChange={(e) => updateExtraCard(card.id, { position: e.target.value as HeroCustomCard["position"] })} className={inputClass}>
+                          <option value="top">Haut</option>
+                          <option value="middle">Milieu</option>
+                          <option value="bottom">Bas</option>
+                        </select>
+                      </label>
+                    </div>
+                    <HeroSceneCardEditor
+                      card={card}
+                      onChange={(patch) => updateExtraCard(card.id, patch)}
+                      ctx={sceneCtx}
+                      themeVars={themeVars}
+                      inputClass={inputClass}
+                    />
+                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Police — ce bloc
+                        <FontSelect value={card.fontId} onChange={(v) => updateExtraCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Animation — ce bloc
+                        <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                      </label>
+                      <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
+                      <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateExtraCard(card.id, { cardBg: v })} noneOption />
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Cadre (décor)
+                        <select value={card.cardFrame} onChange={(e) => updateExtraCard(card.id, { cardFrame: e.target.value })} className={inputClass}>
+                          <option value="">Aucun</option>
+                          {HERO_CARD_FRAMES.map((f) => (
+                            <option key={f.id} value={f.id}>{f.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="mt-2 flex flex-col gap-1">
+                      <span className="text-xs font-medium text-neutral-500">Aperçu</span>
+                      <PreviewStage themeVars={themeVars}>
+                        <ChapterContent
+                          chapter={{
+                            id: 3100,
+                            kind: "text",
+                            from: 0,
+                            to: 1,
+                            textColorOverride: card.textColor || undefined,
+                            cardBgOverride: card.cardBg || undefined,
+                            cardFrame: card.cardFrame || undefined,
+                            fontId: card.fontId || undefined,
+                            scene: heroSceneFromCard(card, sceneCtx),
+                          }}
+                          textAnimation={card.textAnimation || o.textAnimation || undefined}
+                          className={cn("hs-overlay", animShow && "show", (card.textAnimation || o.textAnimation) && `hs-anim-${card.textAnimation || o.textAnimation}`)}
+                        />
+                      </PreviewStage>
+                    </div>
+                  </div>
+                ) : card.kind === 'countdown' ? (
                   <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
@@ -1369,6 +1477,13 @@ function ModeleStdDetailForm({
                   className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
                 >
                   <Plus size={14} /> Ajouter un bloc
+                </button>
+                <button
+                  type="button"
+                  onClick={addSceneCard}
+                  className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
+                >
+                  <Plus size={14} /> Ajouter une scène
                 </button>
               </div>
             </Panel>

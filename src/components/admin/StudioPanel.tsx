@@ -32,13 +32,16 @@ import {
 import { HERO_THEMES } from "@/components/hero-scrub/themes";
 import { ChapterContent } from "@/components/hero-scrub/HeroScrub";
 import { HeroDateLayoutBlock, HeroMonogramBlock, HeroNamesBlock, HeroProgrammeBlock } from "@/components/hero-scrub/HeroDateBlocks";
+import { HeroSceneCardEditor } from "@/components/admin/HeroSceneCardEditor";
+import { getHeroScene, heroSceneFromCard, type HeroSceneContext } from "@/components/hero-scrub/heroScenes";
 import type { HeroNames } from "@/components/hero-scrub/heroDecor";
 import type { HeroChapter } from "@/components/hero-scrub/types";
-import type {
-  BespokePaletteInput,
-  HeroChaptersFairePartInput,
-  HeroChaptersSaveTheDateInput,
-  HeroCustomCard,
+import {
+  blankHeroCustomCard,
+  type BespokePaletteInput,
+  type HeroChaptersFairePartInput,
+  type HeroChaptersSaveTheDateInput,
+  type HeroCustomCard,
 } from "@contracts/bespokePalette";
 import { QUESTIONNAIRE_KEYS } from "@contracts/questionnaireKeys";
 import {
@@ -1187,41 +1190,11 @@ function useAnimReplay(dep: string | undefined) {
  * réglage secondaire.
  */
 /** Carte vierge du type demandé — au niveau module : `Date.now()`/`Math.random()`
- * sont impurs, ils ne doivent jamais être évalués pendant un rendu. */
+ * sont impurs, ils ne doivent jamais être évalués pendant un rendu. Les
+ * défauts par kind vivent dans le contrat (source unique, cf.
+ * blankHeroCustomCard). */
 function blankCustomCard(kind: HeroCustomCard["kind"], text: string): HeroCustomCard {
-  return {
-    id: `card-${Date.now()}-${Math.round(Math.random() * 1000)}`,
-    fromSec: 0,
-    toSec: 0,
-    text,
-    position: "middle",
-    kind,
-    textColor: "",
-    fontId: "",
-    textAnimation: "",
-    bold: false,
-    titleSize: "",
-    cardFrame: "",
-    cardBg: "",
-    countdownStyle: kind === "countdown" ? "boxes" : "",
-    monogramLayout: kind === "monogram" ? "circle" : "",
-    monogramAccent: "",
-    sealColor: kind === "monogram" ? "#8c1d24" : "",
-    sealShape: kind === "monogram" ? "classic" : "",
-    sealColor2: "",
-    programmeLayout: kind === "programme" ? "rail" : "",
-    programmeItems:
-      kind === "programme"
-        ? [
-            { h: "15h30", l: "Cérémonie" },
-            { h: "17h00", l: "Vin d'honneur" },
-            { h: "20h00", l: "Dîner" },
-            { h: "23h00", l: "Soirée" },
-          ]
-        : [],
-    programmeAnimation: kind === "programme" ? "cascade" : "",
-    programmeSpeed: 1,
-  };
+  return blankHeroCustomCard(`card-${Date.now()}-${Math.round(Math.random() * 1000)}`, kind, text);
 }
 
 function CustomCardsEditor({ project }: { project: Project360 }) {
@@ -1236,6 +1209,31 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
   const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
   const coupleNames = (answers["couple.prenoms"] as string | undefined) || coupleNamesFromSlug(project.slug);
   const [monoA, monoB] = monogramInitials(coupleNames);
+  // Contexte passé aux scènes (bibliothèque HERO_SCENES) : prénoms,
+  // initiales et date du projet — jamais saisis dans le formulaire. La date
+  // d'aperçu est celle du questionnaire si elle est connue, sinon une date
+  // d'exemple, pour que les scènes « calendrier »/« décompte » montrent
+  // quelque chose de crédible au studio.
+  const sceneDateIso = (() => {
+    // `jourj.date` est une saisie libre du questionnaire : un format
+    // inattendu donnerait un « Invalid Date » dans les aperçus — repli sur
+    // la date d'exemple plutôt que sur une date illisible.
+    const candidate =
+      (project.weddingDate ? new Date(project.weddingDate).toISOString().slice(0, 10) : "") ||
+      (answers["jourj.date"] as string | undefined) ||
+      "";
+    return candidate && !Number.isNaN(new Date(candidate).getTime()) ? candidate : "2027-06-12";
+  })();
+  const sceneCtx: HeroSceneContext = {
+    a: coupleNames.split(/\s+(?:&|et)\s+/i)[0] ?? coupleNames,
+    b: coupleNames.split(/\s+(?:&|et)\s+/i).slice(1).join(" ").trim(),
+    initials: `${monoA}${monoB}`,
+    dateShort: new Date(sceneDateIso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
+    dateNumeric: new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
+      .format(new Date(sceneDateIso))
+      .replace(/\//g, " · "),
+    dateIso: sceneDateIso,
+  };
 
   const addCard = (kind: HeroCustomCard["kind"] = "text") =>
     setCards((prev) => [
@@ -1259,6 +1257,12 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
     // heroCustomCardSchema, bespokePalette.ts).
     if (cards.some((c) => c.kind === "text" && !c.text.trim())) {
       toast.error("Chaque carte de texte doit avoir un texte.");
+      return;
+    }
+    // Une scène sans mise en page choisie ne rendrait rien à l'image —
+    // autant le dire ici plutôt que de laisser un bloc vide en production.
+    if (cards.some((c) => c.kind === "scene" && !c.sceneId)) {
+      toast.error("Choisissez une mise en page pour chaque scène.");
       return;
     }
     save.mutate({ projectId: project.id, heroCustomCards: cards });
@@ -1320,7 +1324,8 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
         Blocs overlay personnalisés
       </h3>
       <p className="mb-4 text-[12px] text-neutral-500">
-        En plus des chapitres fixes ci-dessus — texte libre, compte à rebours ou monogramme des mariés, chacun avec
+        En plus des chapitres fixes ci-dessus — texte libre, compte à rebours, monogramme des mariés ou scène de la
+        bibliothèque (37 mises en page : formule d'annonce, jalons, lieu, dress code, billet, calendrier…), chacun avec
         ses propres police, taille, couleurs, cadre et animation (mêmes réglages que les modèles Save the Date).
         Repérez l'instant sur l'aperçu vidéo plus haut, puis saisissez-le ici.
       </p>
@@ -1328,7 +1333,57 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
       {cards.length > 0 && (
         <div className="space-y-3">
           {cards.map((card) =>
-            card.kind === "programme" ? (
+            card.kind === "scene" ? (
+              <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[12px] font-semibold text-ink">
+                    Scène{getHeroScene(card.sceneId) ? ` — ${getHeroScene(card.sceneId)!.label}` : ""}
+                  </p>
+                  {removeButton(card)}
+                </div>
+                {timingFields(card)}
+                <HeroSceneCardEditor
+                  card={card}
+                  onChange={(patch) => updateCard(card.id, patch)}
+                  ctx={sceneCtx}
+                  themeVars={themeVars}
+                  inputClass={studioInput}
+                />
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <StudioField label="Police">
+                    <StudioFontSelect value={card.fontId} onChange={(v) => updateCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
+                  </StudioField>
+                  <StudioField label="Animation">
+                    <StudioAnimSelect value={card.textAnimation} onChange={(v) => updateCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                  </StudioField>
+                  <StudioField label="Cadre (décor)">
+                    <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
+                  </StudioField>
+                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateCard(card.id, { textColor: v })} />
+                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateCard(card.id, { cardBg: v })} />
+                </div>
+                <div className="mt-2 flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">Aperçu</span>
+                  <StudioPreview themeVars={themeVars}>
+                    <ChapterContent
+                      chapter={{
+                        id: 3100,
+                        kind: "text",
+                        from: 0,
+                        to: 1,
+                        textColorOverride: card.textColor || undefined,
+                        cardBgOverride: card.cardBg || undefined,
+                        cardFrame: card.cardFrame || undefined,
+                        fontId: card.fontId || undefined,
+                        scene: heroSceneFromCard(card, sceneCtx),
+                      }}
+                      textAnimation={card.textAnimation || undefined}
+                      className={cn("hs-overlay", animShow && "show", card.textAnimation && `hs-anim-${card.textAnimation}`)}
+                    />
+                  </StudioPreview>
+                </div>
+              </div>
+            ) : card.kind === "programme" ? (
               <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-[12px] font-semibold text-ink">Programme du jour J</p>
@@ -1745,6 +1800,9 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
             ["text", "Ajouter un texte"],
             ["countdown", "Ajouter un compte à rebours"],
             ["monogram", "Ajouter un monogramme"],
+            // Scènes narratives (37 mises en page, cf. HERO_SCENES) — la
+            // mise en page se choisit ensuite dans la carte elle-même.
+            ["scene", "Ajouter une scène"],
             // Programme du jour J : proposé pour un faire-part seulement
             // (un save the date n'annonce pas le déroulé, cf. échange du
             // 30/09/2026) — un bloc déjà enregistré reste rendu quel que

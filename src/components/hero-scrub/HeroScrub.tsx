@@ -4,6 +4,7 @@ import type { HeroChapter, HeroTheme, HeroVideoConfig } from './types'
 import { FrameSequence } from './FrameSequence'
 import { getHeroFont } from './heroDecor'
 import { HeroCountdownBlock, HeroDateLayoutBlock, HeroMonogramBlock, HeroNamesBlock, HeroProgrammeBlock } from './HeroDateBlocks'
+import { HeroSceneBlock } from './HeroSceneBlocks'
 import './hero-scrub.css'
 
 /**
@@ -1007,6 +1008,7 @@ export function ChapterContent({
         {chapter.monogram && <HeroMonogramBlock m={chapter.monogram} size={chapter.titleSize} fontId={chapter.fontId} />}
         {chapter.programme && <HeroProgrammeBlock p={chapter.programme} />}
         {chapter.names && <HeroNamesBlock n={chapter.names} />}
+      {chapter.scene && <HeroSceneBlock s={chapter.scene} />}
         {chapter.dateLayout && <HeroDateLayoutBlock layout={chapter.dateLayout} />}
         {chapter.countdown && <HeroCountdownBlock style={chapter.countdown.style} targetIso={chapter.countdown.targetIso} />}
 
