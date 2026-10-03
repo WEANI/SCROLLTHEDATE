@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router'
-import { useLayoutEffect } from 'react'
+import { Suspense, lazy, useLayoutEffect } from 'react'
 import Layout from '@/components/Layout'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
@@ -22,28 +22,54 @@ import DemoFairePart1 from '@/pages/DemoFairePart1'
 import DemoFairePart2 from '@/pages/DemoFairePart2'
 import FairePartCamilleAdrien from '@/pages/FairePartCamilleAdrien'
 import FairePart from '@/pages/FairePart'
+
+/**
+ * /espace/* et /admin/* chargés à la demande (`React.lazy`) plutôt que dans
+ * le bundle public initial — mesuré le 04/10/2026 : ces 20 composants (dont
+ * StudioPanel et ModeleStdDetail, les plus gros fichiers du projet, jamais
+ * ouverts par un visiteur de l'accueil) représentaient une bonne part des
+ * 2,85 Mo du bundle unique, téléchargés par CHAQUE visiteur public avant de
+ * pouvoir voir la vitrine. Aucun des composants ci-dessous n'est importé
+ * ailleurs dans l'app (vérifié) : ce découpage ne duplique rien dans un
+ * autre chunk, il retire simplement ce bloc du chemin public.
+ *
+ * `LegacyRedirect` (export nommé de ProductSpace, pas un composant de page)
+ * reste un import normal — lazy() ne s'applique qu'à des exports par défaut.
+ */
 import ClientShell from '@/components/espace/ClientShell'
-import TableauDeBord from '@/pages/espace/TableauDeBord'
-import Questionnaire from '@/pages/espace/Questionnaire'
-import Projet from '@/pages/espace/Projet'
-import PersonnalisationClient from '@/pages/espace/Personnalisation'
-import CommandesClient from '@/pages/espace/Commandes'
-import MessagesClient from '@/pages/espace/Messages'
-import ParametresClient from '@/pages/espace/Parametres'
-import RsvpClient from '@/pages/espace/Rsvp'
-import ProductSpace, { LegacyRedirect } from '@/pages/espace/ProductSpace'
-import StatistiquesClient from '@/pages/espace/Statistiques'
+const TableauDeBord = lazy(() => import('@/pages/espace/TableauDeBord'))
+const Questionnaire = lazy(() => import('@/pages/espace/Questionnaire'))
+const Projet = lazy(() => import('@/pages/espace/Projet'))
+const PersonnalisationClient = lazy(() => import('@/pages/espace/Personnalisation'))
+const CommandesClient = lazy(() => import('@/pages/espace/Commandes'))
+const MessagesClient = lazy(() => import('@/pages/espace/Messages'))
+const ParametresClient = lazy(() => import('@/pages/espace/Parametres'))
+const RsvpClient = lazy(() => import('@/pages/espace/Rsvp'))
+const ProductSpace = lazy(() => import('@/pages/espace/ProductSpace'))
+const LegacyRedirect = lazy(() =>
+  import('@/pages/espace/ProductSpace').then((m) => ({ default: m.LegacyRedirect })),
+)
+const StatistiquesClient = lazy(() => import('@/pages/espace/Statistiques'))
 import AdminShell from '@/components/admin/AdminShell'
-import AdminDashboard from '@/pages/admin/Dashboard'
-import AdminCommandes from '@/pages/admin/Commandes'
-import AdminProjets from '@/pages/admin/Projets'
-import AdminClients from '@/pages/admin/Clients'
-import AdminFormulaires from '@/pages/admin/Formulaires'
-import AdminAnalytique from '@/pages/admin/Analytique'
-import AdminStatistiques from '@/pages/admin/Statistiques'
-import AdminMessages from '@/pages/admin/Messages'
-import AdminParametres from '@/pages/admin/Parametres'
-import AdminModeleStdDetail from '@/pages/admin/ModeleStdDetail'
+const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
+const AdminCommandes = lazy(() => import('@/pages/admin/Commandes'))
+const AdminProjets = lazy(() => import('@/pages/admin/Projets'))
+const AdminClients = lazy(() => import('@/pages/admin/Clients'))
+const AdminFormulaires = lazy(() => import('@/pages/admin/Formulaires'))
+const AdminAnalytique = lazy(() => import('@/pages/admin/Analytique'))
+const AdminStatistiques = lazy(() => import('@/pages/admin/Statistiques'))
+const AdminMessages = lazy(() => import('@/pages/admin/Messages'))
+const AdminParametres = lazy(() => import('@/pages/admin/Parametres'))
+const AdminModeleStdDetail = lazy(() => import('@/pages/admin/ModeleStdDetail'))
+
+/** Fallback pendant le chargement d'un chunk /espace ou /admin — même motif que le spinner de chargement de session d'AdminShell.tsx, pour qu'il n'y ait aucun flash visuel entre les deux. */
+function RouteLoadingFallback() {
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-neutral-100">
+      <span className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-200 border-t-terracotta-500" />
+    </div>
+  )
+}
 
 /**
  * Remet la page en haut à chaque changement d'URL.
@@ -132,8 +158,12 @@ export default function App() {
         <Route path="/faire-part/camille-adrien" element={<FairePartCamilleAdrien />} />
         <Route path="/faire-part/:slug" element={<FairePart />} />
 
-        {/* Espace client — shell clair dédié (hors Layout public) */}
-        <Route path="/espace" element={<ClientShell />}>
+        {/* Espace client — shell clair dédié (hors Layout public). `Suspense`
+            posé ici, autour de `ClientShell` : il reste un ancêtre de
+            n'importe quelle route enfant rendue par son `<Outlet/>`, donc
+            capte la suspension de CHACUNE des pages lazy ci-dessous sans
+            avoir à répéter la limite sur chaque `<Route>`. */}
+        <Route path="/espace" element={<Suspense fallback={<RouteLoadingFallback />}><ClientShell /></Suspense>}>
           <Route index element={<TableauDeBord />} />
           {/* Pages produit à onglets (cf. ProductSpace) */}
           <Route path="save-the-date" element={<ProductSpace product="SAVE_THE_DATE" />}>
@@ -161,8 +191,8 @@ export default function App() {
           <Route path="parametres" element={<ParametresClient />} />
         </Route>
 
-        {/* Admin — shell dense dédié (hors Layout public) */}
-        <Route path="/admin" element={<AdminShell />}>
+        {/* Admin — shell dense dédié (hors Layout public) — même principe de `Suspense` que /espace ci-dessus. */}
+        <Route path="/admin" element={<Suspense fallback={<RouteLoadingFallback />}><AdminShell /></Suspense>}>
           <Route index element={<AdminDashboard />} />
           <Route path="commandes" element={<AdminCommandes />} />
           <Route path="projets" element={<AdminProjets />} />
