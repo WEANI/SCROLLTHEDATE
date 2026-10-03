@@ -27,6 +27,13 @@ import { formatEuros, getProduct, productSlug, usePricing } from '@/components/c
  * nouveau bloc en haut n'en est qu'un avant-goût visuel.
  */
 
+// Les cartes jouent des EXTRAITS de 5 s (`*-preview.mp4`, 720 px, sans
+// son, ~1 Mo chacun) et non les montages complets (1080p, ~40 Mo chacun) :
+// en lecture automatique dès l'ouverture de la page, les deux montages
+// faisaient télécharger ~75 Mo à chaque visiteur pour n'en montrer que 5 s.
+// Extraits régénérables depuis les montages complets avec le ffmpeg du
+// projet (node_modules/ffmpeg-static/ffmpeg) :
+//   -t 5 -an -vf scale=720:-2,fps=30 -c:v libx264 -crf 24 -preset slow -movflags +faststart
 const CARD_PREVIEW_SECONDS = 5
 
 /**
@@ -163,7 +170,7 @@ export default function SaveTheDateDigital() {
             eyebrow={t('saveTheDateDigital.preview.customEyebrow')}
             price={formatEuros(saveTheDate.priceCents)}
             tagline={t('saveTheDateDigital.preview.customTagline')}
-            videoSrc="/save-the-date-sur-mesure-demo.mp4"
+            videoSrc="/save-the-date-sur-mesure-demo-preview.mp4"
             posterSrc="/save-the-date-sur-mesure-demo-poster.jpg"
             ctaLabel={t('saveTheDateDigital.preview.order')}
             ctaHref={checkoutHref}
@@ -173,7 +180,7 @@ export default function SaveTheDateDigital() {
             eyebrow={t('saveTheDateDigital.preview.templateEyebrow')}
             price={formatEuros(9900)}
             tagline={t('saveTheDateDigital.preview.templateTagline')}
-            videoSrc="/red-door.mp4"
+            videoSrc="/red-door-preview.mp4"
             posterSrc="/red-door-frames/00001.jpg"
             ctaLabel={t('saveTheDateDigital.preview.seeTemplates')}
             ctaHref="/save-the-date-modeles"
