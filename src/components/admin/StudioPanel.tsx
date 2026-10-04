@@ -33,6 +33,7 @@ import { HERO_THEMES } from "@/components/hero-scrub/themes";
 import { ChapterContent } from "@/components/hero-scrub/HeroScrub";
 import { HeroDateLayoutBlock, HeroMonogramBlock, HeroNamesBlock, HeroProgrammeBlock } from "@/components/hero-scrub/HeroDateBlocks";
 import { HeroSceneCardEditor } from "@/components/admin/HeroSceneCardEditor";
+import { PaletteLivePreview } from "@/components/admin/PaletteLivePreview";
 import { getHeroScene, heroSceneFromCard, type HeroSceneContext } from "@/components/hero-scrub/heroScenes";
 import type { HeroNames } from "@/components/hero-scrub/heroDecor";
 import type { HeroChapter } from "@/components/hero-scrub/types";
@@ -1985,6 +1986,35 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
     onError: () => toast.error("Échec de l'enregistrement des timings"),
   });
 
+  // Données de l'aperçu en direct (PaletteLivePreview) — vraies réponses du
+  // couple quand elles existent, exemples sinon (même clés de questionnaire
+  // que projects.getPublicInvite, qui alimente la vraie page).
+  const previewStr = (key: string) =>
+    typeof answers[key] === "string" && (answers[key] as string).trim() ? (answers[key] as string).trim() : "";
+  const previewCouple = previewStr("couple.prenoms") || coupleNamesFromSlug(project.slug);
+  const previewDateIso = (() => {
+    const candidate =
+      (project.weddingDate ? new Date(project.weddingDate).toISOString().slice(0, 10) : "") || previewStr("jourj.date");
+    return candidate && !Number.isNaN(new Date(candidate).getTime()) ? candidate : "";
+  })();
+  const previewVenue = previewStr("jourj.lieu_ceremonie") || (project.venue ?? "");
+  const previewProgramme = (() => {
+    const v = answers[QUESTIONNAIRE_KEYS.programme];
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim().length > 0) : [];
+  })();
+  const previewDressCode = previewStr("jourj.dress_code");
+  const previewDressColors = (() => {
+    const v = answers["jourj.dress_code_couleur"];
+    const raw = Array.isArray(v) ? v : typeof v === "string" ? [v] : [];
+    return raw.filter((x): x is string => typeof x === "string" && /^#[0-9a-fA-F]{6}$/.test(x));
+  })();
+  const previewUsesSample = !previewDateIso || !previewVenue || previewProgramme.length === 0 || !previewDressCode;
+  const previewPoster = approvedVideo
+    ? approvedVideo.kind === "frames"
+      ? approvedVideo.url
+      : (approvedVideo.posterUrl ?? undefined)
+    : undefined;
+
   return (
     <section className="space-y-8">
       {/* Indications du client — jamais appliquées automatiquement, juste un repère pour le studio */}
@@ -2125,7 +2155,11 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
         </p>
       </div>
 
-      {/* 22 champs, retouchables à la main */}
+      {/* 22 champs, retouchables à la main — à gauche ; aperçu en direct à
+          droite, collant pendant le défilement des champs. Seuil en largeur
+          d'écran (le Studio vit dans un tiroir à 70 % de la largeur) : en
+          dessous, l'aperçu passe sous les champs. */}
+      <div className="grid gap-6 min-[1400px]:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-5">
         <div>
           <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Fonds</h4>
@@ -2348,20 +2382,27 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
               </select>
             </label>
           </div>
-          {palette.heroFontId && getHeroFont(palette.heroFontId) && (
-            <p
-              className="mt-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-[13px] text-neutral-500"
-              style={{
-                fontFamily: getHeroFont(palette.heroFontId)!.fontFamily,
-                fontStyle: getHeroFont(palette.heroFontId)!.italic ? "italic" : "normal",
-                fontSize: "22px",
-                color: "#232326",
-              }}
-            >
-              Aperçu — {(answers["couple.prenoms"] as string | undefined) || "Prénom & Prénom"}
-            </p>
-          )}
         </div>
+      </div>
+        <aside className="min-[1400px]:sticky min-[1400px]:top-4 min-[1400px]:self-start">
+          <PaletteLivePreview
+            palette={palette}
+            template={project.template ?? null}
+            isStd={isStd}
+            coupleNames={previewCouple}
+            weddingDateIso={previewDateIso || "2027-06-12"}
+            venueName={previewVenue || "Domaine des Oliviers"}
+            programme={
+              previewProgramme.length > 0
+                ? previewProgramme
+                : ["15h30 — Cérémonie — Au jardin", "17h00 — Vin d'honneur", "20h00 — Dîner", "23h00 — Soirée"]
+            }
+            dressCode={previewDressCode || "Élégance champêtre"}
+            dressCodeColors={previewDressColors}
+            posterSrc={previewPoster}
+            usesSampleContent={previewUsesSample}
+          />
+        </aside>
       </div>
 
       <div className="flex justify-end">
