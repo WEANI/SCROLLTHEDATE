@@ -52,6 +52,7 @@ export function PaletteLivePreview({
   dressCodeColors,
   posterSrc,
   usesSampleContent,
+  mode,
 }: {
   palette: BespokePaletteInput;
   /** `project.template` — thème d'ambiance du hero (HERO_THEMES). */
@@ -67,9 +68,16 @@ export function PaletteLivePreview({
   /** Image du film livré (1re image ou affiche) — fond de l'aperçu du hero. */
   posterSrc?: string;
   usesSampleContent: boolean;
+  /**
+   * Fixe l'aperçu sur une seule vue, sans sélecteur : « hero » dans l'onglet
+   * Hero du Studio, « page » dans l'onglet Couleurs de la page (refonte du
+   * 05/10/2026). Absent = les deux vues avec un sélecteur.
+   */
+  mode?: "hero" | "page";
 }) {
   useGoogleFont(palette.heroFontId);
-  const [tab, setTab] = useState<"hero" | "page">("hero");
+  const [tabState, setTab] = useState<"hero" | "page">("hero");
+  const tab = mode ?? tabState;
 
   // Mêmes règles que FairePart.tsx — cf. doc du composant.
   const hasDarkBespokeBg = (() => {
@@ -132,7 +140,7 @@ export function PaletteLivePreview({
     <div className="rounded-xl border border-neutral-200 bg-white p-3">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Aperçu en direct</h4>
-        {!isStd && (
+        {!isStd && !mode && (
           <div className="flex gap-1 rounded-full border border-neutral-200 bg-neutral-100 p-0.5" role="tablist">
             {(
               [

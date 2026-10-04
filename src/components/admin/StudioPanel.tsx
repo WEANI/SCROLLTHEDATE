@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Check, CloudUpload, ExternalLink, FileVideo, Loader2, Plus, Send, Sparkles, Upload, Wand2, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -70,12 +70,37 @@ function draftKey(projectId: number) {
   return `scrollthedate-scenario-draft-${projectId}`;
 }
 
+/**
+ * À l'envoi, la durée et l'ambiance sont ajoutées en fin de résumé
+ * (« — Durée estimée : 45 s · Ambiance : cinéma ») : c'est ce que lit le
+ * client. Avant le 05/10/2026, rouvrir l'éditeur gardait cette ligne dans le
+ * texte ET remettait le compteur à 60 s : un nouvel envoi l'ajoutait une
+ * seconde fois, avec une durée fausse. On la relit ici pour la séparer du
+ * texte et retrouver les vraies valeurs.
+ */
+const SCENARIO_SUFFIX_RE = /\n*— Durée estimée : (\d+) s(?: · Ambiance : ([^\n]*))?\s*$/;
+function splitScenarioSummary(raw: string): { summary: string; durationSec: number; tags: string[] } {
+  const m = raw.match(SCENARIO_SUFFIX_RE);
+  if (!m || m.index === undefined) return { summary: raw, durationSec: 60, tags: [] };
+  return {
+    summary: raw.slice(0, m.index).trimEnd(),
+    durationSec: Number(m[1]) || 60,
+    tags: m[2] ? m[2].split(",").map((t) => t.trim()).filter((t) => AMBIANCE_TAGS.includes(t)) : [],
+  };
+}
+
 function loadDrafts(projectId: number, existing: Project360["scenarioProposals"]): DraftProposal[] {
   try {
     const raw = localStorage.getItem(draftKey(projectId));
     if (raw) {
       const parsed = JSON.parse(raw) as DraftProposal[];
-      if (Array.isArray(parsed) && parsed.length === 3) return parsed;
+      if (Array.isArray(parsed) && parsed.length === 3) {
+        // Un brouillon local enregistré avant le correctif peut contenir la ligne de durée dans le texte.
+        return parsed.map((d) => {
+          const split = splitScenarioSummary(d.summary);
+          return split.summary === d.summary ? d : { ...d, ...split };
+        });
+      }
     }
   } catch {
     /* brouillon illisible → on repart des données serveur */
@@ -85,9 +110,7 @@ function loadDrafts(projectId: number, existing: Project360["scenarioProposals"]
     return s
       ? {
           title: s.title,
-          summary: s.summary ?? "",
-          durationSec: 60,
-          tags: [],
+          ...splitScenarioSummary(s.summary ?? ""),
           moodboard: (s.moodboard as DraftProposal["moodboard"] | null) ?? [],
         }
       : { ...EMPTY_PROPOSAL };
@@ -107,10 +130,8 @@ function loadDrafts(projectId: number, existing: Project360["scenarioProposals"]
  *    demandé.
  */
 function ClientFeedback({ project }: { project: Project360 }) {
-  const enCours = project.scenarioProposals.filter(
-    (s) => s.status === "changes_requested" && s.clientComment,
-  );
-
+  // Le retour EN COURS s'affiche directement dans la carte de la proposition
+  // concernée (cf. ScenarioEditor) : ici, l'historique seul.
   const historique = project.auditEvents
     .filter((e) => e.action === "scenario.changes_requested")
     .map((e) => {
@@ -119,28 +140,13 @@ function ClientFeedback({ project }: { project: Project360 }) {
     })
     .filter((h) => h.commentaire);
 
-  if (enCours.length === 0 && historique.length === 0) return null;
+  if (historique.length === 0) return null;
 
   return (
     <div className="mb-5 rounded-xl border border-pending/30 bg-pending/[0.06] p-4">
       <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-pending">
-        Retours du client
+        Retours précédents du client
       </h4>
-
-      {enCours.length > 0 && (
-        <div className="mb-3 space-y-2">
-          {enCours.map((s) => (
-            <div key={s.id} className="rounded-lg border border-pending/30 bg-white p-3">
-              <p className="text-[12px] font-semibold text-ink">
-                Modification demandée sur « {s.title} »
-              </p>
-              <p className="mt-1 text-[12px] italic leading-relaxed text-neutral-500">
-                « {s.clientComment} »
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
 
       {historique.length > 0 && (
         <details className="text-[12px]">
@@ -166,6 +172,9 @@ function ScenarioEditor({ project }: { project: Project360 }) {
   const [drafts, setDrafts] = useState<DraftProposal[]>(() => loadDrafts(project.id, project.scenarioProposals));
   const [confirmSend, setConfirmSend] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  // Les cartes incomplètes ne passent en rouge qu'après une tentative d'envoi,
+  // pas dès l'ouverture d'un éditeur vide.
+  const [triedSend, setTriedSend] = useState(false);
 
   // Sauvegarde brouillon auto (locale) à chaque frappe
   useEffect(() => {
@@ -198,7 +207,23 @@ function ScenarioEditor({ project }: { project: Project360 }) {
   const validity = drafts.map((d) => d.title.trim().length > 0 && d.summary.trim().length > 0);
   const allValid = validity.every(Boolean);
   const clientMedia = project.media.filter((m) => m.status !== "rejected");
+  const clientPhotos = clientMedia.filter((m) => m.type === "photo");
   const alreadySent = project.scenarioProposals.length === 3;
+  const chosen = project.scenarioProposals.find((p) => p.status === "chosen");
+  const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
+  const histoire = typeof answers[QUESTIONNAIRE_KEYS.histoire] === "string" ? (answers[QUESTIONNAIRE_KEYS.histoire] as string).trim() : "";
+  const motsCles = (() => {
+    const v = answers[QUESTIONNAIRE_KEYS.histoireMotsCles];
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim().length > 0) : [];
+  })();
+  const requestSend = () => {
+    setTriedSend(true);
+    if (!allValid) {
+      toast.error("Complétez les 3 propositions : un titre et un résumé chacune.");
+      return;
+    }
+    setConfirmSend(true);
+  };
 
   const submit = () => {
     create.mutate({
@@ -226,6 +251,36 @@ function ScenarioEditor({ project }: { project: Project360 }) {
         </span>
       </div>
 
+      {chosen && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-success/30 bg-success/[0.06] p-4">
+          <Check size={16} className="mt-0.5 shrink-0 text-success" />
+          <p className="text-[13px] leading-relaxed">
+            <span className="font-semibold">Le client a choisi « {chosen.title} ».</span>{" "}
+            <span className="text-neutral-500">
+              Un nouvel envoi remplacerait les 3 propositions et annulerait ce choix.
+            </span>
+          </p>
+        </div>
+      )}
+
+      {(histoire || motsCles.length > 0) && (
+        <details className="mb-5 rounded-xl border border-neutral-200 bg-white p-4" open={!alreadySent}>
+          <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+            Repères du questionnaire
+          </summary>
+          {histoire && <p className="mt-3 max-w-[75ch] whitespace-pre-line text-[13px] leading-relaxed">{histoire}</p>}
+          {motsCles.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {motsCles.map((m) => (
+                <span key={m} className="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-medium text-neutral-500">
+                  {m}
+                </span>
+              ))}
+            </div>
+          )}
+        </details>
+      )}
+
       <ClientFeedback project={project} />
 
       <div className="grid gap-4 xl:grid-cols-3">
@@ -237,15 +292,43 @@ function ScenarioEditor({ project }: { project: Project360 }) {
             transition={{ delay: i * 0.1, duration: 0.4 }}
             className={cn(
               "flex flex-col gap-3 rounded-xl border bg-white p-4",
-              validity[i] ? "border-neutral-200" : "border-error/40",
+              triedSend && !validity[i] ? "border-error/50" : "border-neutral-200",
             )}
           >
-            <div className="flex items-center justify-between">
-              <span className="tabular text-[11px] font-bold uppercase tracking-[0.14em] text-terracotta-500">
-                Proposition {i + 1}
-              </span>
-              {!validity[i] && <span className="text-[10px] font-semibold text-error">Titre + résumé requis</span>}
-            </div>
+            {(() => {
+              const server = project.scenarioProposals.find((p) => p.ordre === i + 1);
+              return (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="tabular text-[11px] font-bold uppercase tracking-[0.14em] text-terracotta-500">
+                      Proposition {i + 1}
+                    </span>
+                    {server?.status === "chosen" ? (
+                      <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-success">
+                        Choisie par le client
+                      </span>
+                    ) : server?.status === "changes_requested" ? (
+                      <span className="rounded-full bg-pending/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pending">
+                        Modification demandée
+                      </span>
+                    ) : server ? (
+                      <span className="rounded-full bg-info/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-info">
+                        Envoyée
+                      </span>
+                    ) : !validity[i] ? (
+                      <span className={cn("text-[10px] font-semibold", triedSend ? "text-error" : "text-neutral-500")}>
+                        À compléter
+                      </span>
+                    ) : null}
+                  </div>
+                  {server?.status === "changes_requested" && server.clientComment && (
+                    <p className="rounded-lg border border-pending/30 bg-pending/[0.06] px-3 py-2 text-[12px] italic leading-relaxed">
+                      « {server.clientComment} »
+                    </p>
+                  )}
+                </>
+              );
+            })()}
             <input
               value={d.title}
               onChange={(e) => update(i, { title: e.target.value })}
@@ -306,10 +389,10 @@ function ScenarioEditor({ project }: { project: Project360 }) {
               <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
                 Moodboard ({d.moodboard.length}/3)
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 pt-1.5">
                 {d.moodboard.map((m, mi) => (
                   <span key={mi} className="group relative">
-                    <img src={m.url} alt="" className="h-14 w-14 rounded-lg object-cover" />
+                    <img src={m.url} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover ring-2 ring-terracotta-500" />
                     <button
                       type="button"
                       aria-label="Retirer"
@@ -321,22 +404,21 @@ function ScenarioEditor({ project }: { project: Project360 }) {
                   </span>
                 ))}
                 {d.moodboard.length < 3 &&
-                  clientMedia
-                    .filter((m) => m.type === "photo" && !d.moodboard.some((x) => x.url === m.url))
-                    .slice(0, 6)
+                  clientPhotos
+                    .filter((m) => !d.moodboard.some((x) => x.url === m.url))
                     .map((m) => (
                       <button
                         key={m.id}
                         type="button"
                         title={m.filename ?? "Ajouter au moodboard"}
                         onClick={() => update(i, { moodboard: [...d.moodboard, { url: m.url }] })}
-                        className="relative h-14 w-14 overflow-hidden rounded-lg border border-dashed border-neutral-200 opacity-70 transition-all hover:border-terracotta-500 hover:opacity-100"
+                        className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-dashed border-neutral-200 opacity-70 transition-all hover:border-terracotta-500 hover:opacity-100"
                       >
                         <img src={m.url} alt="" className="h-full w-full object-cover" />
                         <Plus size={12} className="absolute inset-0 m-auto text-white drop-shadow" />
                       </button>
                     ))}
-                {clientMedia.filter((m) => m.type === "photo").length === 0 && d.moodboard.length === 0 && (
+                {clientPhotos.length === 0 && d.moodboard.length === 0 && (
                   <span className="text-[11px] italic text-neutral-500">Aucune photo client disponible.</span>
                 )}
               </div>
@@ -353,8 +435,8 @@ function ScenarioEditor({ project }: { project: Project360 }) {
         </p>
         <button
           type="button"
-          disabled={!allValid || create.isPending}
-          onClick={() => setConfirmSend(true)}
+          disabled={create.isPending}
+          onClick={requestSend}
           className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {create.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
@@ -384,6 +466,11 @@ function ScenarioEditor({ project }: { project: Project360 }) {
                 Le client recevra un email « Vos scénarios sont prêts » et un message système sera ajouté au
                 fil du projet.
               </p>
+              {chosen && (
+                <p className="mt-3 rounded-lg border border-pending/30 bg-pending/[0.06] px-3 py-2 text-[12px] leading-relaxed">
+                  Le client avait choisi « {chosen.title} » : ce choix sera annulé et il devra choisir à nouveau.
+                </p>
+              )}
               <ul className="mt-4 space-y-2 rounded-xl bg-neutral-100 p-4">
                 {drafts.map((d, i) => (
                   <li key={i} className="tabular text-[13px]">
@@ -425,7 +512,6 @@ function ScenarioEditor({ project }: { project: Project360 }) {
 function VideoManager({ project }: { project: Project360 }) {
   const utils = trpc.useUtils();
   const [url, setUrl] = useState("");
-  const [watermark, setWatermark] = useState(true);
   const [status, setStatus] = useState<"draft" | "sent" | "final">("sent");
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -461,19 +547,22 @@ function VideoManager({ project }: { project: Project360 }) {
   const markFinal = trpc.videos.adminAddVersion.useMutation({
     onSuccess: (r) => {
       utils.projects.adminGet.invalidate({ projectId: project.id });
-      toast.success(`Version finale HD (v${r.version}) insérée dans le faire-part`);
+      toast.success(`Version finale (v${r.version}) publiée sur la page, sans filigrane`);
     },
     onError: () => toast.error("Échec de l'insertion"),
   });
 
   const clientVideos = project.media.filter((m) => m.type === "video");
-  const approved = project.videoVersions.find((v) => v.status === "approved");
   const nextVersion = (project.videoVersions.at(0)?.version ?? 0) + 1;
+  // Version que la page publique affiche — même règle que projects.getPublicInvite.
+  const publicVideo =
+    project.videoVersions.find((v) => !v.watermark) ??
+    project.videoVersions.find((v) => v.status === "sent" || v.status === "final");
 
   return (
     <section>
       <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-        Vidéo — versions
+        Déposer une version
       </h3>
 
       {/* Zone d'ajout */}
@@ -486,6 +575,44 @@ function VideoManager({ project }: { project: Project360 }) {
             <p className="text-[13px] font-medium">
               Nouvelle version <span className="tabular text-neutral-500">(v{nextVersion})</span>
             </p>
+
+            {/* Le choix le plus lourd de conséquences, en premier et en clair
+                (il était caché dans une liste déroulante à côté du bouton). */}
+            <div role="radiogroup" aria-label="Que faire de cette version" className="grid gap-2 sm:grid-cols-3">
+              {(
+                [
+                  ["sent", "Envoyer pour validation", "Filigranée. Le client la voit sur son faire-part et peut commenter."],
+                  ["final", "Publier la version finale", "Sans filigrane, en ligne tout de suite. Aucune validation."],
+                  ["draft", "Garder en brouillon", "Invisible pour le client."],
+                ] as const
+              ).map(([value, label, desc]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={status === value}
+                  onClick={() => setStatus(value)}
+                  className={cn(
+                    "rounded-xl border p-3 text-left transition-colors",
+                    status === value ? "border-terracotta-500 bg-terracotta-500/5" : "border-neutral-200 hover:border-neutral-500",
+                  )}
+                >
+                  <span className="flex items-center gap-2 text-[12px] font-semibold">
+                    <span
+                      className={cn(
+                        "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border",
+                        status === value ? "border-terracotta-500" : "border-neutral-300",
+                      )}
+                      aria-hidden
+                    >
+                      {status === value && <span className="h-1.5 w-1.5 rounded-full bg-terracotta-500" />}
+                    </span>
+                    {label}
+                  </span>
+                  <span className="mt-1 block text-[11px] leading-snug text-neutral-500">{desc}</span>
+                </button>
+              ))}
+            </div>
 
             {/* Upload drag & drop */}
             <button
@@ -552,7 +679,11 @@ function VideoManager({ project }: { project: Project360 }) {
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
-                <p className="text-[11px] tabular text-neutral-500">Upload en cours… {uploadProgress} %</p>
+                <p className="text-[11px] tabular text-neutral-500">
+                  {uploadProgress < 100
+                    ? `Envoi du fichier… ${uploadProgress} %`
+                    : "Fichier reçu — découpage du film en images, cela peut prendre une minute…"}
+                </p>
               </div>
             )}
 
@@ -583,15 +714,6 @@ function VideoManager({ project }: { project: Project360 }) {
               </div>
             )}
             <div className="flex flex-wrap items-center gap-4">
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as "draft" | "sent" | "final")}
-                className="h-9 rounded-[10px] border border-neutral-200 bg-white px-3 text-[12px] font-medium outline-none focus:border-terracotta-500"
-              >
-                <option value="final">Vidéo finale (publiée immédiatement)</option>
-                <option value="sent">Envoyer au client (faire-part filigrané, pour approbation)</option>
-                <option value="draft">Brouillon (invisible client)</option>
-              </select>
               <button
                 type="button"
                 disabled={(url.trim().length === 0 && !file) || addVersion.isPending || isUploading}
@@ -656,7 +778,8 @@ function VideoManager({ project }: { project: Project360 }) {
                   addVersion.mutate({
                     projectId: project.id,
                     ...(uploadedFrames ? uploadedFrames : { url: videoUrl }),
-                    watermark: isFinal ? false : watermark,
+                    // Filigrane sur toute version à faire valider ; jamais sur une version finale.
+                    watermark: !isFinal,
                     status,
                   });
                 }}
@@ -670,254 +793,105 @@ function VideoManager({ project }: { project: Project360 }) {
         </div>
       </div>
 
-      {/* Historique */}
-      <ul className="mt-4 space-y-2">
-        {project.videoVersions.length === 0 && (
-          <li className="rounded-xl border border-neutral-200 bg-white p-4 text-[13px] text-neutral-500">
+      {/* Historique — chaque version avec son image, ses retours client et son état sur la page */}
+      <div className="mt-6">
+        <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Versions</h4>
+        {project.videoVersions.length === 0 ? (
+          <p className="rounded-xl border border-neutral-200 bg-white p-4 text-[13px] text-neutral-500">
             Aucune version pour l'instant.
-          </li>
-        )}
-        {project.videoVersions.map((v) => (
-          <li key={v.id} className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3">
-            <span className="tabular text-[13px] font-bold">v{v.version}</span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                v.status === "approved"
-                  ? "bg-terracotta-500/15 text-terracotta-500"
-                  : v.status === "final"
-                    ? "bg-success/15 text-success"
-                    : v.status === "sent"
-                      ? "bg-info/15 text-info"
-                      : "bg-neutral-500/15 text-neutral-500",
-              )}
-            >
-              {v.status === "approved" ? "Approuvée" : v.status === "final" ? "Finale HD" : v.status === "sent" ? "Envoyée" : "Brouillon"}
-            </span>
-            {v.watermark && (
-              <span className="rounded-full bg-anthracite-800 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                Filigrane
-              </span>
-            )}
-            {v.kind === "frames" && (
-              <span
-                title={`Séquence d'images — ${v.frameCount ?? "?"} images à ${v.frameFps ?? "?"} im/s`}
-                className="rounded-full bg-terracotta-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-terracotta-500"
-              >
-                Frames · {v.frameCount ?? "?"} images
-              </span>
-            )}
-            <span className="tabular ml-auto text-[11px] text-neutral-500">{formatDateTime(v.createdAt)}</span>
-          </li>
-        ))}
-      </ul>
-
-      {approved && (
-        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-terracotta-500/30 bg-terracotta-500/5 p-4">
-          <Sparkles size={16} className="text-terracotta-500" />
-          <p className="flex-1 text-[13px] font-medium">
-            La v{approved.version} est approuvée — prête pour la version finale HD.
           </p>
-          <button
-            type="button"
-            disabled={markFinal.isPending}
-            onClick={() =>
-              markFinal.mutate({
-                projectId: project.id,
-                // La version approuvée peut être en mode "frames" — dans ce
-                // cas `approved.url` n'est que la 1ère image (compat), la
-                // reporter telle quelle créerait une version "finale" cassée
-                // (une balise <video> pointée sur un .jpg). Reporter plutôt
-                // les champs frames d'origine, cf. adminAddVersion.
-                ...(approved.kind === "frames" && approved.frameBaseUrl && approved.frameCount && approved.frameFps
-                  ? {
-                      frameBaseUrl: approved.frameBaseUrl,
-                      frameCount: approved.frameCount,
-                      frameFps: approved.frameFps,
-                    }
-                  : { url: approved.url }),
-                watermark: false,
-                status: "final",
-              })
-            }
-            className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-terracotta-400 disabled:opacity-40"
-          >
-            {markFinal.isPending && <Loader2 size={14} className="animate-spin" />}
-            Insérer dans le faire-part
-          </button>
-        </div>
-      )}
-    </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Faire-part — template + activation
-// ---------------------------------------------------------------------------
-const TEMPLATES = [
-  { id: "editorial" as const, label: "Éditorial", img: "/template-editorial.jpg" },
-  { id: "cinema" as const, label: "Cinéma", img: "/template-cinema.jpg" },
-  { id: "minimal" as const, label: "Minimal", img: "/template-minimal.jpg" },
-];
-
-function FairePartActivation({ project }: { project: Project360 }) {
-  const utils = trpc.useUtils();
-  const [confirm, setConfirm] = useState(false);
-
-  const setTemplate = trpc.projects.adminSetTemplate.useMutation({
-    onSuccess: () => {
-      utils.projects.adminGet.invalidate({ projectId: project.id });
-      toast.success("Template du faire-part mis à jour");
-    },
-    onError: () => toast.error("Échec du changement de template"),
-  });
-
-  const activate = trpc.projects.adminUpdateStatus.useMutation({
-    onSuccess: () => {
-      utils.projects.adminGet.invalidate({ projectId: project.id });
-      utils.projects.adminList.invalidate();
-      utils.analytics.adminOverview.invalidate();
-      setConfirm(false);
-      toast.success("Faire-part activé — le client est notifié");
-    },
-    onError: () => toast.error("Échec de l'activation"),
-  });
-
-  // "/faire-part/", pas "/m/" — la vraie route publique (cf. App.tsx). Le
-  // "/m/" affiché ici jusqu'au 29/08/2026 était une 404 pour tout vrai
-  // client qui suivait ce lien ou scannait le QR code.
-  const publicUrl = `${window.location.origin}/faire-part/${project.slug}`;
-  const delivered = project.status === "DELIVERED";
-
-  return (
-    <section>
-      <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-        Faire-part — activation
-      </h3>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        {TEMPLATES.map((t) => {
-          const active = project.template === t.id;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => !active && setTemplate.mutate({ projectId: project.id, template: t.id })}
-              className={cn(
-                "group overflow-hidden rounded-xl border-2 bg-white text-left transition-all",
-                active ? "border-terracotta-500 shadow-[0_8px_32px_rgba(201,111,90,.18)]" : "border-transparent hover:border-neutral-200",
-              )}
-            >
-              <div className="relative aspect-[4/5] overflow-hidden">
-                <img
-                  src={t.img}
-                  alt={`Template ${t.label}`}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                {active && (
-                  <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-terracotta-500 text-white">
-                    <Check size={13} />
-                  </span>
-                )}
-              </div>
-              <p className="flex items-center justify-between px-3 py-2.5 text-[13px] font-semibold">
-                {t.label}
-                {active && <span className="text-[10px] font-bold uppercase tracking-wide text-terracotta-500">Actif</span>}
-              </p>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-5 flex flex-wrap items-center gap-4 rounded-xl border border-neutral-200 bg-white p-5">
-        {delivered ? (
-          <>
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-success/15 text-success">
-              <Check size={18} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold">Faire-part activé</p>
-              <a
-                href={publicUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1 truncate text-[12px] font-medium text-terracotta-500 hover:underline"
-              >
-                {publicUrl} <ExternalLink size={11} />
-              </a>
-            </div>
-            <div className="rounded-xl border border-neutral-200 bg-white p-2">
-              <QRCodeSVG value={publicUrl} size={72} fgColor="#232326" />
-            </div>
-          </>
         ) : (
-          <>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold">Prêt à activer ?</p>
-              <p className="text-[12px] text-neutral-500">
-                L'URL publique sera <span className="tabular font-medium text-ink">/faire-part/{project.slug}</span> — QR
-                généré, email de livraison et message client automatiques.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setConfirm(true)}
-              className="rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400"
-            >
-              Activer le faire-part
-            </button>
-          </>
+          <ul className="space-y-2">
+            {project.videoVersions.map((v) => {
+              const comments = (v.clientComment as { timecode: string; comment: string }[] | null) ?? [];
+              const thumb =
+                v.kind === "frames" && v.frameBaseUrl ? `${v.frameBaseUrl}00001.jpg` : (v.posterUrl ?? null);
+              const isPublic = publicVideo?.id === v.id;
+              return (
+                <li key={v.id} className="flex gap-3 rounded-xl border border-neutral-200 bg-white p-3">
+                  <div className="h-[72px] w-[41px] shrink-0 overflow-hidden rounded-md bg-anthracite-950">
+                    {thumb ? (
+                      <img src={thumb} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <FileVideo size={16} className="m-auto mt-7 text-white/50" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="tabular text-[13px] font-bold">v{v.version}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                          v.status === "approved"
+                            ? "bg-terracotta-500/15 text-terracotta-500"
+                            : v.status === "final"
+                              ? "bg-success/15 text-success"
+                              : v.status === "sent"
+                                ? "bg-info/15 text-info"
+                                : "bg-neutral-500/15 text-neutral-500",
+                        )}
+                      >
+                        {v.status === "approved" ? "Approuvée par le client" : v.status === "final" ? "Finale" : v.status === "sent" ? "Envoyée au client" : "Brouillon"}
+                      </span>
+                      {v.watermark && (
+                        <span className="rounded-full bg-anthracite-800 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                          Filigrane
+                        </span>
+                      )}
+                      {isPublic && (
+                        <span className="rounded-full border border-success/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-success">
+                          Affichée sur la page
+                        </span>
+                      )}
+                      <span className="tabular ml-auto text-[11px] text-neutral-500">{formatDateTime(v.createdAt)}</span>
+                    </div>
+                    {v.kind === "frames" && (
+                      <p className="mt-1 text-[11px] text-neutral-500">
+                        {v.frameCount ?? "?"} images · {((v.frameCount ?? 0) / (v.frameFps ?? 12)).toFixed(1)} s
+                      </p>
+                    )}
+                    {comments.length > 0 && (
+                      <ul className="mt-2 space-y-1 rounded-lg border border-pending/30 bg-pending/[0.06] px-3 py-2">
+                        {comments.map((c, i) => (
+                          <li key={i} className="text-[12px] leading-relaxed">
+                            <span className="tabular font-semibold text-terracotta-500">{c.timecode}</span> — {c.comment}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {v.status === "approved" && (
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <p className="text-[12px] text-neutral-500">Le client l'a validée : publiez-la sans filigrane.</p>
+                        <button
+                          type="button"
+                          disabled={markFinal.isPending}
+                          onClick={() =>
+                            markFinal.mutate({
+                              projectId: project.id,
+                              // Une version en images reporte ses champs « frames » ;
+                              // son `url` n'est que la 1re image et créerait une
+                              // version finale cassée (cf. adminAddVersion).
+                              ...(v.kind === "frames" && v.frameBaseUrl && v.frameCount && v.frameFps
+                                ? { frameBaseUrl: v.frameBaseUrl, frameCount: v.frameCount, frameFps: v.frameFps }
+                                : { url: v.url }),
+                              watermark: false,
+                              status: "final",
+                            })
+                          }
+                          className="flex items-center gap-2 rounded-full bg-terracotta-500 px-4 py-2 text-[12px] font-semibold text-white hover:bg-terracotta-400 disabled:opacity-40"
+                        >
+                          {markFinal.isPending ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                          Publier en version finale
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
-
-      <AnimatePresence>
-        {confirm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-anthracite-950/50 p-6 backdrop-blur-sm"
-            onClick={() => setConfirm(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-2xl"
-            >
-              <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-terracotta-500/10 text-terracotta-500">
-                <Sparkles size={22} />
-              </span>
-              <h3 className="font-display text-[20px] font-medium">
-                Activer le faire-part de {coupleNamesFromSlug(project.slug)} ?
-              </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-neutral-500">
-                Le projet passera au statut « Livré », le client recevra l'email de livraison avec le lien et le
-                QR code.
-              </p>
-              <div className="mt-6 flex justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setConfirm(false)}
-                  className="rounded-full border border-neutral-200 px-5 py-2.5 text-[13px] font-semibold hover:border-neutral-500"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  disabled={activate.isPending}
-                  onClick={() => activate.mutate({ projectId: project.id, status: "DELIVERED" })}
-                  className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-terracotta-400 disabled:opacity-40"
-                >
-                  {activate.isPending && <Loader2 size={14} className="animate-spin" />}
-                  Activer
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 }
@@ -1025,22 +999,53 @@ function ColorField({
   onChange: (v: string) => void;
 }) {
   const isHex = /^#[0-9a-fA-F]{6}$/.test(value);
+  // Vide = « valeur par défaut », pas noir : la pastille native affichait du
+  // noir, ce qui laissait croire à une couleur choisie. Hachures à la place.
+  // La croix « revenir au défaut » n'apparaît que sur les champs qui ont
+  // vraiment une valeur de repli (ceux dont l'aide dit « Vide = … ») : vider
+  // l'encre ou l'accent principal casserait l'affichage.
+  const empty = value.trim() === "";
+  const hatched = empty || value.trim() === "transparent";
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[11px] font-semibold text-neutral-500">{label}</span>
       <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={isHex ? value : "#000000"}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-8 w-8 shrink-0 cursor-pointer rounded-md border border-neutral-200 bg-transparent p-0"
-        />
+        <span className="relative h-8 w-8 shrink-0">
+          <input
+            type="color"
+            value={isHex ? value : "#000000"}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-8 w-8 cursor-pointer rounded-md border border-neutral-200 bg-transparent p-0"
+          />
+          {hatched && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-md border border-neutral-200"
+              style={{ background: "repeating-linear-gradient(135deg, #fff 0 4px, #e6e6e1 4px 5px)" }}
+            />
+          )}
+        </span>
         <input
           type="text"
           value={value}
+          placeholder={hint ? "Défaut" : "Vide"}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 font-mono text-[12px] outline-none focus:border-terracotta-500"
+          className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 font-mono text-[12px] outline-none placeholder:font-sans placeholder:text-neutral-400 focus:border-terracotta-500"
         />
+        {!empty && hint && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onChange("");
+            }}
+            title="Revenir à la valeur par défaut"
+            aria-label={`${label} : revenir à la valeur par défaut`}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-neutral-400 hover:text-error"
+          >
+            <X size={13} />
+          </button>
+        )}
       </div>
       {hint && <span className="text-[10px] leading-snug text-neutral-500">{hint}</span>}
     </label>
@@ -1137,9 +1142,21 @@ function StudioBold({ checked, onChange }: { checked: boolean; onChange: (v: boo
  * `heroTextColor`/`heroCardBg` de la palette prévalent, comme dans
  * FairePart.tsx.
  */
-function useStudioThemeVars(project: Project360): CSSProperties {
-  const palette = { ...BLANK_PALETTE, ...((project.palette as BespokePaletteInput | null) ?? {}) };
-  const theme = HERO_THEMES[(project.template as keyof typeof HERO_THEMES) ?? "cinema"] ?? HERO_THEMES.cinema;
+/**
+ * Variables CSS des aperçus du Studio — calculées depuis la palette EN COURS
+ * D'ÉDITION (brouillon commun), pas depuis la palette enregistrée : les
+ * aperçus suivent chaque changement avant l'enregistrement. Mêmes règles que
+ * la page publique (FairePart.tsx) : fond de page sombre → ambiance Cinéma,
+ * fond de carte vide → transparent (et non le fond de carte du thème, comme
+ * le montraient à tort les aperçus avant le 05/10/2026).
+ */
+function studioThemeVars(project: Project360, palette: BespokePaletteInput): CSSProperties {
+  const hex = palette.bg?.match(/^#([0-9a-f]{6})$/i)?.[1];
+  const darkBg = hex
+    ? 0.299 * (parseInt(hex.slice(0, 2), 16) / 255) + 0.587 * (parseInt(hex.slice(2, 4), 16) / 255) + 0.114 * (parseInt(hex.slice(4, 6), 16) / 255) < 0.4
+    : false;
+  const key = darkBg ? "cinema" : ((project.template as keyof typeof HERO_THEMES) ?? "cinema");
+  const theme = HERO_THEMES[key] ?? HERO_THEMES.cinema;
   const heroFont = getHeroFont(palette.heroFontId);
   return {
     "--hs-frame-bg": theme.frameBg,
@@ -1147,7 +1164,7 @@ function useStudioThemeVars(project: Project360): CSSProperties {
     "--hs-accent": theme.accent,
     "--hs-text-primary": palette.heroTextColor || theme.textPrimary,
     "--hs-text-secondary": palette.heroTextColor || theme.textSecondary,
-    "--hs-card-bg": palette.heroCardBg || theme.cardBg,
+    "--hs-card-bg": palette.heroCardBg || "transparent",
     "--hs-card-border": theme.cardBorder,
     "--hs-card-shadow": theme.cardShadow,
     "--hs-font-family": heroFont?.fontFamily || "'Fraunces', Georgia, serif",
@@ -1198,11 +1215,20 @@ function blankCustomCard(kind: HeroCustomCard["kind"], text: string): HeroCustom
   return blankHeroCustomCard(`card-${Date.now()}-${Math.round(Math.random() * 1000)}`, kind, text);
 }
 
-function CustomCardsEditor({ project }: { project: Project360 }) {
-  const utils = trpc.useUtils();
-  const existing = (project.heroCustomCards as HeroCustomCard[] | null) ?? [];
-  const [cards, setCards] = useState<HeroCustomCard[]>(existing);
-  const themeVars = useStudioThemeVars(project);
+function CustomCardsEditor({
+  project,
+  cards,
+  setCards,
+  palette,
+}: {
+  project: Project360;
+  /** Brouillon partagé du Studio (cf. useStudioDraft) — enregistré par la barre d'enregistrement commune. */
+  cards: HeroCustomCard[];
+  setCards: React.Dispatch<React.SetStateAction<HeroCustomCard[]>>;
+  /** Palette du brouillon — pour que les aperçus des blocs suivent les couleurs en cours d'édition. */
+  palette: BespokePaletteInput;
+}) {
+  const themeVars = studioThemeVars(project, palette);
   const animShow = useAnimReplay(undefined);
   // Polices choisies bloc par bloc — chargées ici pour que les aperçus
   // ci-dessous rendent avec la bonne police, comme la page publique.
@@ -1245,29 +1271,6 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
   const updateCard = (id: string, patch: Partial<HeroCustomCard>) =>
     setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
 
-  const save = trpc.projects.adminSetHeroCustomCards.useMutation({
-    onSuccess: () => {
-      utils.projects.adminGet.invalidate({ projectId: project.id });
-      toast.success("Cartes de texte enregistrées");
-    },
-    onError: () => toast.error("Échec de l'enregistrement des cartes"),
-  });
-  const submit = () => {
-    // Seules les cartes de TEXTE ont besoin d'un texte : pour un compte à
-    // rebours ou un monogramme, `text` n'est qu'un placeholder (cf. doc de
-    // heroCustomCardSchema, bespokePalette.ts).
-    if (cards.some((c) => c.kind === "text" && !c.text.trim())) {
-      toast.error("Chaque carte de texte doit avoir un texte.");
-      return;
-    }
-    // Une scène sans mise en page choisie ne rendrait rien à l'image —
-    // autant le dire ici plutôt que de laisser un bloc vide en production.
-    if (cards.some((c) => c.kind === "scene" && !c.sceneId)) {
-      toast.error("Choisissez une mise en page pour chaque scène.");
-      return;
-    }
-    save.mutate({ projectId: project.id, heroCustomCards: cards });
-  };
 
   /** Timing + position — communs aux 3 types de carte. */
   const timingFields = (card: HeroCustomCard) => (
@@ -1822,22 +1825,455 @@ function CustomCardsEditor({ project }: { project: Project360 }) {
             </button>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Brouillon commun du Studio — couleurs, timings du hero, blocs personnalisés
+// ---------------------------------------------------------------------------
+/**
+ * Un seul brouillon pour tout le Studio, enregistré par UNE barre commune
+ * (cf. StudioSaveBar), au lieu de trois formulaires indépendants avec chacun
+ * son bouton « Enregistrer » (refonte du 05/10/2026, demande : « plus
+ * ergonomiques »). Deux problèmes réglés d'un coup :
+ *  - changer d'onglet effaçait les modifications non enregistrées (chaque
+ *    onglet était démonté et repartait des données serveur) ;
+ *  - la couleur réglée dans un onglet pouvait être écrasée par l'autre :
+ *    les onglets Palette & Hero et Save the Date gardaient chacun SA copie
+ *    de la palette entière et l'envoyaient en entier à l'enregistrement.
+ * Ici, une seule copie, lue et modifiée par tous les onglets.
+ *
+ * `baseline` = dernier état connu du serveur (au montage, puis après chaque
+ * enregistrement réussi), sérialisé — la comparaison dit ce qui a changé.
+ */
+function initialPalette(project: Project360): BespokePaletteInput {
+  return { ...BLANK_PALETTE, ...((project.palette as BespokePaletteInput | null) ?? {}) };
+}
+function initialChapters(project: Project360): HeroChaptersFairePartInput | HeroChaptersSaveTheDateInput {
+  // Vérifie la longueur RÉELLE avant de faire confiance au cast : un projet
+  // dont les timings ont été réglés au mauvais format (3 chapitres pour un
+  // save the date, ou l'inverse) repart des valeurs vides plutôt que
+  // d'envoyer un tableau incohérent — cf. commande 25 (08/09/2026).
+  const isStd = project.product === "SAVE_THE_DATE";
+  const expected = isStd ? 2 : 3;
+  if (Array.isArray(project.heroChapters) && project.heroChapters.length === expected) {
+    return project.heroChapters as HeroChaptersFairePartInput | HeroChaptersSaveTheDateInput;
+  }
+  return isStd ? BLANK_HERO_CHAPTERS_STD : BLANK_HERO_CHAPTERS;
+}
+function initialCards(project: Project360): HeroCustomCard[] {
+  return (project.heroCustomCards as HeroCustomCard[] | null) ?? [];
+}
+
+function useStudioDraft(project: Project360) {
+  const utils = trpc.useUtils();
+  const [palette, setPalette] = useState<BespokePaletteInput>(() => initialPalette(project));
+  const [chapters, setChapters] = useState<HeroChaptersFairePartInput | HeroChaptersSaveTheDateInput>(() =>
+    initialChapters(project),
+  );
+  const [cards, setCards] = useState<HeroCustomCard[]>(() => initialCards(project));
+  const [baseline, setBaseline] = useState(() => ({
+    palette: JSON.stringify(initialPalette(project)),
+    chapters: JSON.stringify(initialChapters(project)),
+    cards: JSON.stringify(initialCards(project)),
+  }));
+  const [saving, setSaving] = useState(false);
+
+  const dirty = {
+    palette: JSON.stringify(palette) !== baseline.palette,
+    chapters: JSON.stringify(chapters) !== baseline.chapters,
+    cards: JSON.stringify(cards) !== baseline.cards,
+  };
+  const anyDirty = dirty.palette || dirty.chapters || dirty.cards;
+
+  // Fermer l'onglet du navigateur avec des modifications en attente :
+  // le navigateur demande confirmation.
+  useEffect(() => {
+    if (!anyDirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [anyDirty]);
+
+  const setField = (key: keyof BespokePaletteInput, value: string | boolean) =>
+    setPalette((prev) => ({ ...prev, [key]: value }));
+
+  const savePaletteM = trpc.projects.adminSetPalette.useMutation();
+  const saveChaptersM = trpc.projects.adminSetHeroChapters.useMutation();
+  const saveCardsM = trpc.projects.adminSetHeroCustomCards.useMutation();
+
+  const save = async () => {
+    // Seules les cartes de TEXTE ont besoin d'un texte (pour les autres
+    // types, `text` n'est qu'un placeholder) ; une scène sans mise en page
+    // ne rendrait rien à l'image.
+    if (dirty.cards && cards.some((c) => c.kind === "text" && !c.text.trim())) {
+      toast.error("Chaque bloc de texte doit avoir un texte (onglet Hero).");
+      return;
+    }
+    if (dirty.cards && cards.some((c) => c.kind === "scene" && !c.sceneId)) {
+      toast.error("Choisissez une mise en page pour chaque scène (onglet Hero).");
+      return;
+    }
+    setSaving(true);
+    try {
+      // Une partie enregistrée reste enregistrée même si la suivante
+      // échoue : sa référence est mise à jour aussitôt, seul le reste
+      // apparaît encore comme « non enregistré ».
+      if (dirty.palette) {
+        await savePaletteM.mutateAsync({
+          projectId: project.id,
+          palette: {
+            ...palette,
+            // Jamais saisis : recalculés depuis leur compagnon hex.
+            inkRgb: hexToRgbString(palette.ink),
+            inkOnCardRgb: hexToRgbString(palette.inkOnCard),
+            bordeauxRgb: hexToRgbString(palette.bordeaux),
+            goldRgb: hexToRgbString(palette.gold),
+          },
+        });
+        setBaseline((b) => ({ ...b, palette: JSON.stringify(palette) }));
+      }
+      if (dirty.chapters) {
+        await saveChaptersM.mutateAsync({ projectId: project.id, heroChapters: chapters });
+        setBaseline((b) => ({ ...b, chapters: JSON.stringify(chapters) }));
+      }
+      if (dirty.cards) {
+        await saveCardsM.mutateAsync({ projectId: project.id, heroCustomCards: cards });
+        setBaseline((b) => ({ ...b, cards: JSON.stringify(cards) }));
+      }
+      toast.success("Modifications enregistrées");
+    } catch {
+      toast.error("Échec de l'enregistrement — vos modifications sont toujours là, réessayez.");
+    } finally {
+      setSaving(false);
+      utils.projects.adminGet.invalidate({ projectId: project.id });
+    }
+  };
+
+  const reset = () => {
+    setPalette(JSON.parse(baseline.palette) as BespokePaletteInput);
+    setChapters(JSON.parse(baseline.chapters) as HeroChaptersFairePartInput | HeroChaptersSaveTheDateInput);
+    setCards(JSON.parse(baseline.cards) as HeroCustomCard[]);
+  };
+
+  return { palette, setPalette, setField, chapters, setChapters, cards, setCards, dirty, anyDirty, saving, save, reset };
+}
+type StudioDraft = ReturnType<typeof useStudioDraft>;
+
+/** Barre collée en bas du Studio, visible seulement quand quelque chose n'est pas enregistré. */
+function StudioSaveBar({ draft }: { draft: StudioDraft }) {
+  if (!draft.anyDirty) return null;
+  const parts = [
+    draft.dirty.palette && "couleurs et texte du hero",
+    draft.dirty.chapters && "timings",
+    draft.dirty.cards && "blocs supplémentaires",
+  ].filter(Boolean) as string[];
+  return (
+    <div className="sticky bottom-0 z-30 -mx-1 pt-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-terracotta-500/40 bg-white px-4 py-3 shadow-[0_-8px_28px_rgba(27,27,30,0.12)]">
+        <span className="h-2 w-2 shrink-0 rounded-full bg-terracotta-500" aria-hidden />
+        <p className="min-w-0 flex-1 text-[13px]">
+          <span className="font-semibold">Modifications non enregistrées</span>
+          <span className="text-neutral-500"> — {parts.join(", ")}</span>
+        </p>
         <button
           type="button"
-          disabled={save.isPending}
-          onClick={submit}
-          className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
+          onClick={draft.reset}
+          disabled={draft.saving}
+          className="rounded-full border border-neutral-200 px-4 py-2 text-[12px] font-semibold text-neutral-500 hover:border-neutral-500 hover:text-ink disabled:opacity-40"
         >
-          {save.isPending && <Loader2 size={14} className="animate-spin" />}
-          Enregistrer les blocs
+          Annuler les modifications
+        </button>
+        <button
+          type="button"
+          onClick={() => void draft.save()}
+          disabled={draft.saving}
+          className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-terracotta-400 disabled:opacity-40"
+        >
+          {draft.saving && <Loader2 size={14} className="animate-spin" />}
+          Enregistrer
         </button>
       </div>
     </div>
   );
 }
 
-function PaletteHeroEditor({ project }: { project: Project360 }) {
-  const utils = trpc.useUtils();
+/** Titre de section d'onglet — même allure partout, avec une phrase d'aide facultative. */
+function StudioSectionTitle({ id, title, hint }: { id?: string; title: string; hint?: string }) {
+  return (
+    <div id={id} className="mb-4 scroll-mt-4">
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">{title}</h3>
+      {hint && <p className="mt-1 max-w-[70ch] text-[12px] leading-relaxed text-neutral-500">{hint}</p>}
+    </div>
+  );
+}
+
+/** Raccourcis vers les sections d'un onglet long (Hero, Couleurs de la page). */
+function SectionJumps({ items }: { items: { id: string; label: string }[] }) {
+  return (
+    <nav aria-label="Aller à" className="flex flex-wrap gap-2">
+      {items.map((it) => (
+        <button
+          key={it.id}
+          type="button"
+          onClick={() => document.getElementById(it.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[12px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
+        >
+          {it.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Timings du hero — commun au faire-part (3 chapitres) et au save the date (2)
+// ---------------------------------------------------------------------------
+/** Version vidéo sur laquelle on repère les instants : approuvée ou finale, sinon la plus récente. */
+function referenceVideo(project: Project360) {
+  return (
+    project.videoVersions.find((v) => v.status === "approved" || v.status === "final") ?? project.videoVersions.at(0)
+  );
+}
+
+/**
+ * Repérage des instants où chaque chapitre apparaît — image du film à
+ * gauche, chapitres à droite, visibles ENSEMBLE : avant la refonte, l'image
+ * (9:16, ~800 px de haut) poussait les champs hors de l'écran, si bien qu'on
+ * ne voyait jamais l'image et les boutons de capture en même temps.
+ * La frise montre les plages de chaque chapitre sur toute la durée du film ;
+ * cliquer sur une plage amène l'image au début du chapitre.
+ */
+function HeroTimingsEditor({
+  project,
+  labels,
+  chapters,
+  setChapters,
+}: {
+  project: Project360;
+  labels: readonly string[];
+  chapters: HeroChaptersFairePartInput | HeroChaptersSaveTheDateInput;
+  setChapters: StudioDraft["setChapters"];
+}) {
+  const video = referenceVideo(project);
+  const isFrameMode = video?.kind === "frames" && !!video.frameBaseUrl && !!video.frameCount;
+  const fps = video?.frameFps ?? 12;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [frameIdx, setFrameIdx] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [videoTime, setVideoTime] = useState(0);
+  const duration = isFrameMode ? (video!.frameCount! - 1) / fps : videoDuration;
+  const current = isFrameMode ? frameIdx / fps : videoTime;
+
+  const setChapter = (index: number, patch: Partial<{ fromSec: number; toSec: number; position: "top" | "middle" | "bottom" }>) =>
+    setChapters((prev) => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)) as typeof prev);
+  const capture = (index: number, key: "fromSec" | "toSec") => setChapter(index, { [key]: Math.round(current * 10) / 10 });
+  const seek = (sec: number) => {
+    if (isFrameMode) setFrameIdx(Math.max(0, Math.min(video!.frameCount! - 1, Math.round(sec * fps))));
+    else if (videoRef.current) videoRef.current.currentTime = sec;
+  };
+  const SEG_COLORS = ["bg-terracotta-500", "bg-info", "bg-success"];
+
+  return (
+    <div className="grid gap-5 md:grid-cols-[200px_minmax(0,1fr)]">
+      <div className="space-y-2">
+        {video && isFrameMode ? (
+          <>
+            <img
+              src={`${video.frameBaseUrl}${String(frameIdx + 1).padStart(5, "0")}.jpg`}
+              alt=""
+              className="aspect-[9/16] w-full rounded-xl bg-black object-cover"
+            />
+            <input
+              type="range"
+              min={0}
+              max={video.frameCount! - 1}
+              value={frameIdx}
+              onChange={(e) => setFrameIdx(Number(e.target.value))}
+              aria-label="Position dans le film"
+              className="w-full accent-terracotta-500"
+            />
+          </>
+        ) : video ? (
+          <video
+            ref={videoRef}
+            src={video.url}
+            controls
+            onLoadedMetadata={(e) => setVideoDuration(e.currentTarget.duration || 0)}
+            onTimeUpdate={(e) => setVideoTime(e.currentTarget.currentTime)}
+            className="aspect-[9/16] w-full rounded-xl bg-black object-cover"
+          />
+        ) : (
+          <p className="rounded-xl border border-dashed border-neutral-200 bg-white p-4 text-[12px] leading-relaxed text-neutral-500">
+            Aucun film pour repérer les instants. Déposez d'abord une version dans l'onglet Vidéo.
+          </p>
+        )}
+        {video && (
+          <p className="tabular text-center text-[12px] font-semibold">
+            {current.toFixed(1)} s <span className="font-normal text-neutral-500">/ {duration.toFixed(1)} s</span>
+          </p>
+        )}
+      </div>
+
+      <div className="min-w-0 space-y-3">
+        {video && duration > 0 && (
+          <div>
+            <div className="relative h-8 overflow-hidden rounded-lg bg-neutral-200/70" aria-hidden>
+              {chapters.map((c, i) =>
+                c.toSec > c.fromSec ? (
+                  <button
+                    key={i}
+                    type="button"
+                    tabIndex={-1}
+                    title={`${labels[i]} : ${c.fromSec}–${c.toSec} s`}
+                    onClick={() => seek(c.fromSec)}
+                    className={cn("absolute inset-y-1 rounded-md opacity-80 hover:opacity-100", SEG_COLORS[i % SEG_COLORS.length])}
+                    style={{
+                      left: `${(Math.min(c.fromSec, duration) / duration) * 100}%`,
+                      width: `${(Math.max(0, Math.min(c.toSec, duration) - c.fromSec) / duration) * 100}%`,
+                    }}
+                  />
+                ) : null,
+              )}
+              <span
+                className="absolute inset-y-0 w-0.5 bg-ink"
+                style={{ left: `${(Math.min(current, duration) / duration) * 100}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[11px] text-neutral-500">
+              Cliquez sur une plage pour amener l'image au début du chapitre, puis ajustez avec le curseur.
+            </p>
+          </div>
+        )}
+
+        {labels.map((label, i) => (
+          <div key={label} className="rounded-xl border border-neutral-200 bg-white p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <span className={cn("h-2.5 w-2.5 rounded-full", SEG_COLORS[i % SEG_COLORS.length])} aria-hidden />
+              <span className="text-[13px] font-semibold">{label}</span>
+              {chapters[i].toSec <= chapters[i].fromSec && (
+                <span className="text-[11px] font-medium text-pending">à régler</span>
+              )}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_120px]">
+              {(["fromSec", "toSec"] as const).map((key) => (
+                <label key={key} className="flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">{key === "fromSec" ? "Apparaît à (s)" : "Disparaît à (s)"}</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step={0.1}
+                      min={0}
+                      value={chapters[i][key]}
+                      onChange={(e) => setChapter(i, { [key]: Number(e.target.value) })}
+                      className={studioInput}
+                    />
+                    <button
+                      type="button"
+                      disabled={!video}
+                      onClick={() => capture(i, key)}
+                      title="Utiliser l'instant affiché à gauche"
+                      className="flex h-8 shrink-0 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-semibold text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Camera size={13} />
+                      Caler
+                    </button>
+                  </div>
+                </label>
+              ))}
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold text-neutral-500">Position</span>
+                <select
+                  value={chapters[i].position}
+                  onChange={(e) => setChapter(i, { position: e.target.value as "top" | "middle" | "bottom" })}
+                  className={studioInput}
+                >
+                  {VERTICAL_ALIGN_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Aperçus — contenu du couple partagé par les onglets Hero et Couleurs
+// ---------------------------------------------------------------------------
+/** Données d'aperçu (PaletteLivePreview) : vraies réponses du couple, exemples sinon — mêmes clés que projects.getPublicInvite. */
+function previewPropsFor(project: Project360) {
+  const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
+  const str = (key: string) =>
+    typeof answers[key] === "string" && (answers[key] as string).trim() ? (answers[key] as string).trim() : "";
+  const dateIso = (() => {
+    const candidate =
+      (project.weddingDate ? new Date(project.weddingDate).toISOString().slice(0, 10) : "") || str("jourj.date");
+    return candidate && !Number.isNaN(new Date(candidate).getTime()) ? candidate : "";
+  })();
+  const venue = str("jourj.lieu_ceremonie") || (project.venue ?? "");
+  const programme = (() => {
+    const v = answers[QUESTIONNAIRE_KEYS.programme];
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim().length > 0) : [];
+  })();
+  const dressCode = str("jourj.dress_code");
+  const dressColors = (() => {
+    const v = answers["jourj.dress_code_couleur"];
+    const raw = Array.isArray(v) ? v : typeof v === "string" ? [v] : [];
+    return raw.filter((x): x is string => typeof x === "string" && /^#[0-9a-fA-F]{6}$/.test(x));
+  })();
+  const video = referenceVideo(project);
+  return {
+    template: project.template ?? null,
+    isStd: project.product === "SAVE_THE_DATE",
+    coupleNames: str("couple.prenoms") || coupleNamesFromSlug(project.slug),
+    weddingDateIso: dateIso || "2027-06-12",
+    venueName: venue || "Domaine des Oliviers",
+    programme:
+      programme.length > 0
+        ? programme
+        : ["15h30 — Cérémonie — Au jardin", "17h00 — Vin d'honneur", "20h00 — Dîner", "23h00 — Soirée"],
+    dressCode: dressCode || "Élégance champêtre",
+    dressCodeColors: dressColors,
+    posterSrc: video ? (video.kind === "frames" ? video.url : (video.posterUrl ?? undefined)) : undefined,
+    usesSampleContent: !dateIso || !venue || programme.length === 0 || !dressCode,
+  };
+}
+
+/**
+ * Champs que « Générer une proposition » a le droit de remplir — fonds,
+ * encre, accents, sceau, pastilles du dress code. Avant la refonte, la
+ * proposition remplaçait la palette ENTIÈRE et effaçait au passage tout le
+ * réglage du hero (police, décor, texte sous les prénoms, blocs du save the
+ * date…), que suggestPalette renvoie vides.
+ */
+const GENERATED_PALETTE_KEYS = [
+  "bg", "bgDate", "bgProgramme", "bgLieu", "bgDressCode", "bgMenu", "bgHistoire", "bgFaq", "bgHebergements",
+  "bgListeMariage", "cream", "ink", "inkRgb", "inkOnCard", "inkOnCardRgb", "mapLine", "bordeaux", "bordeauxRgb",
+  "gold", "goldRgb", "sectionTitle", "timelineAccent", "stepLabel", "seal", "sealLight", "sealDark",
+  "dressCode1", "dressCode2", "dressCode3",
+] as const satisfies readonly (keyof BespokePaletteInput)[];
+
+function onlyGeneratedKeys(p: BespokePaletteInput): Partial<BespokePaletteInput> {
+  const out: Partial<BespokePaletteInput> = {};
+  for (const k of GENERATED_PALETTE_KEYS) (out as Record<string, unknown>)[k] = p[k];
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Onglet « Couleurs de la page » — faire-part seulement
+// ---------------------------------------------------------------------------
+function PageColorsTab({ project, draft }: { project: Project360; draft: StudioDraft }) {
+  const { palette, setPalette, setField } = draft;
   const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
   const modeHint = answers[QUESTIONNAIRE_KEYS.paletteMode] === true ? "dark" : "light";
   const preferenceHint =
@@ -1848,23 +2284,11 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
     typeof answers[QUESTIONNAIRE_KEYS.paletteAEviter] === "string"
       ? (answers[QUESTIONNAIRE_KEYS.paletteAEviter] as string).trim()
       : "";
-  // Couleur de fond exacte (champ `color` du questionnaire) : contrairement
-  // aux autres indications, c'est une valeur directement exploitable — d'où
-  // le bouton « Utiliser » ci-dessous, qui la reporte dans la palette.
   const fondHint =
     typeof answers[QUESTIONNAIRE_KEYS.paletteFond] === "string" &&
     /^#[0-9a-fA-F]{6}$/.test(answers[QUESTIONNAIRE_KEYS.paletteFond] as string)
       ? (answers[QUESTIONNAIRE_KEYS.paletteFond] as string).toLowerCase()
       : "";
-  // "Thème et couleurs du mariage" — question `color` (maxColors 4, cf.
-  // QUESTIONNAIRE_KEYS.paletteTheme), jusqu'à 4 teintes indicatives EN PLUS
-  // de `fondHint` ci-dessus. Pas de champ de palette dédié où les reporter
-  // automatiquement (contrairement à `fondHint` → `palette.bg`) : affichées
-  // en repère avec un bouton "Copier" chacune, à coller à la main dans le
-  // ou les champs de palette pertinents. Une réponse saisie avant le
-  // passage de cette question en `color` (07/09/2026) était une chaîne
-  // libre, jamais un hex valide — filtrée silencieusement ici, comme dans
-  // MultiColorQuestionField côté questionnaire.
   const themeColorsHint = (() => {
     const v = answers[QUESTIONNAIRE_KEYS.paletteTheme];
     const raw = Array.isArray(v) ? v : typeof v === "string" ? [v] : [];
@@ -1872,151 +2296,27 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
       .filter((x): x is string => typeof x === "string" && /^#[0-9a-fA-F]{6}$/.test(x))
       .map((x) => x.toLowerCase());
   })();
-
-  const existingPalette = project.palette as BespokePaletteInput | null;
   const [mode, setMode] = useState<"light" | "dark">(modeHint);
-  const [accentColor, setAccentColor] = useState(existingPalette?.gold ?? FALLBACK_ACCENT);
-  // Fusionné avec BLANK_PALETTE (pas juste `existingPalette ?? BLANK_PALETTE`)
-  // : une palette enregistrée avant l'ajout d'un champ (ex. heroTextColor/
-  // heroCardBg/heroInviteText, cf. échange du 06/09/2026) ne le porte pas
-  // du tout — sans fusion, ce champ resterait `undefined` dans le
-  // formulaire (valeur incontrôlée sur l'input) et disparaîtrait carrément
-  // du payload envoyé à l'enregistrement (JSON omet les clés `undefined`),
-  // rejeté côté serveur qui l'exige (cf. bespokePaletteSchema).
-  const [palette, setPalette] = useState<BespokePaletteInput>({ ...BLANK_PALETTE, ...existingPalette });
-  // Charge la police choisie pour l'aperçu ci-dessous — même chargement
-  // que la page publique (cf. doc de useGoogleFont), rien de spécifique à
-  // l'aperçu studio.
-  useGoogleFont(palette.heroFontId);
-
-  const setField = (key: keyof BespokePaletteInput, value: string) =>
-    setPalette((prev) => ({ ...prev, [key]: value }));
-  // Seul champ booléen de BespokePaletteInput (les 21 autres sont des
-  // chaînes) — setter dédié plutôt que d'élargir `setField` à `string |
-  // boolean` pour tous les appelants existants.
-  const setHeroClosingEnabled = (value: boolean) => setPalette((prev) => ({ ...prev, heroClosingEnabled: value }));
-
-  const generate = () => setPalette(suggestPalette(accentColor, mode, fondHint || undefined));
-  // Composition à partir des vraies couleurs choisies par le couple
-  // (themeColorsHint, cf. plus haut) plutôt que d'une seule couleur saisie
-  // à l'œil — cf. doc de suggestPaletteFromColors pour l'affectation
-  // exacte (1ère couleur = accent principal, 2e = secondaire, 3e/4e =
-  // pastilles dress code).
-  const generateFromTheme = () => setPalette(suggestPaletteFromColors(themeColorsHint, mode, fondHint || undefined));
-
-  const savePalette = trpc.projects.adminSetPalette.useMutation({
-    onSuccess: () => {
-      utils.projects.adminGet.invalidate({ projectId: project.id });
-      toast.success("Palette enregistrée");
-    },
-    onError: () => toast.error("Échec de l'enregistrement de la palette"),
-  });
-
-  const submitPalette = () => {
-    // Les 4 champs `...Rgb` ne sont jamais saisis à la main — recalculés
-    // ici depuis leur compagnon hex pour ne jamais désynchroniser les deux.
-    const complete: BespokePaletteInput = {
-      ...palette,
-      inkRgb: hexToRgbString(palette.ink),
-      inkOnCardRgb: hexToRgbString(palette.inkOnCard),
-      bordeauxRgb: hexToRgbString(palette.bordeaux),
-      goldRgb: hexToRgbString(palette.gold),
-    };
-    savePalette.mutate({ projectId: project.id, palette: complete });
-  };
-
-  // Timings du hero — faire-part uniquement (3 chapitres) ; un save the
-  // date a son propre onglet dédié, cf. SaveTheDateEditor plus bas (2
-  // chapitres, page hero + footer sans corps).
-  const isStd = project.product === "SAVE_THE_DATE";
-  // Vérifie la longueur RÉELLE avant de faire confiance au cast TS
-  // (`project.heroChapters` n'est qu'un JSONB, aucune validation à la
-  // lecture) — un projet dont les timings ont été réglés avant l'ajout de
-  // l'onglet Save the Date (donc encore au format 3 chapitres faire-part)
-  // se retrouvait sinon avec un tableau à 3 éléments réutilisé tel quel :
-  // seuls les 2 premiers étaient éditables ici, le 3e restait invisible
-  // mais repartait au prochain enregistrement, gardant un tableau à 3
-  // éléments pour un projet qui en attend 3 ici — sans incidence propre à
-  // cet éditeur, mais le même bug côté SaveTheDateEditor (2 attendus)
-  // envoyait un tableau à 3 éléments accepté par le schéma (union 2 ou 3)
-  // sans jamais recouper avec le produit réel — reproduit en conditions
-  // réelles le 08/09/2026 (commande 25, Yasmine & Adam : timings ignorés,
-  // tout retombait sur le repli générique en toute fin de scroll).
-  const existingChapters =
-    Array.isArray(project.heroChapters) && project.heroChapters.length === 3
-      ? (project.heroChapters as HeroChaptersFairePartInput)
-      : null;
-  const [chapters, setChapters] = useState<HeroChaptersFairePartInput>(existingChapters ?? BLANK_HERO_CHAPTERS);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const approvedVideo =
-    project.videoVersions.find((v) => v.status === "approved" || v.status === "final") ??
-    project.videoVersions.at(0);
-  // Mode "frames" (cf. VideoManager plus haut) : pas de fichier vidéo unique
-  // à faire défiler — `approvedVideo.url` n'est que la 1ère image (valeur de
-  // compatibilité côté API), pas lisible par une balise <video>. On repère
-  // les instants via un curseur d'index d'image à la place (cf. rendu plus
-  // bas), converti en secondes via `frameFps`.
-  const isFrameMode = approvedVideo?.kind === "frames";
-  const [frameIdx, setFrameIdx] = useState(0);
-
-  const setChapterField = (index: number, key: "fromSec" | "toSec", value: number) =>
-    setChapters((prev) => {
-      const next = [...prev] as HeroChaptersFairePartInput;
-      next[index] = { ...next[index], [key]: value };
-      return next;
-    });
-  const setChapterPosition = (index: number, position: "top" | "middle" | "bottom") =>
-    setChapters((prev) => {
-      const next = [...prev] as HeroChaptersFairePartInput;
-      next[index] = { ...next[index], position };
-      return next;
-    });
-
-  const capture = (index: number, key: "fromSec" | "toSec") => {
-    const t = isFrameMode ? frameIdx / (approvedVideo?.frameFps ?? 12) : videoRef.current?.currentTime;
-    if (t === undefined) return;
-    setChapterField(index, key, Math.round(t * 10) / 10);
-  };
-
-  const saveChapters = trpc.projects.adminSetHeroChapters.useMutation({
-    onSuccess: () => {
-      utils.projects.adminGet.invalidate({ projectId: project.id });
-      toast.success("Timings du hero enregistrés");
-    },
-    onError: () => toast.error("Échec de l'enregistrement des timings"),
-  });
-
-  // Données de l'aperçu en direct (PaletteLivePreview) — vraies réponses du
-  // couple quand elles existent, exemples sinon (même clés de questionnaire
-  // que projects.getPublicInvite, qui alimente la vraie page).
-  const previewStr = (key: string) =>
-    typeof answers[key] === "string" && (answers[key] as string).trim() ? (answers[key] as string).trim() : "";
-  const previewCouple = previewStr("couple.prenoms") || coupleNamesFromSlug(project.slug);
-  const previewDateIso = (() => {
-    const candidate =
-      (project.weddingDate ? new Date(project.weddingDate).toISOString().slice(0, 10) : "") || previewStr("jourj.date");
-    return candidate && !Number.isNaN(new Date(candidate).getTime()) ? candidate : "";
-  })();
-  const previewVenue = previewStr("jourj.lieu_ceremonie") || (project.venue ?? "");
-  const previewProgramme = (() => {
-    const v = answers[QUESTIONNAIRE_KEYS.programme];
-    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim().length > 0) : [];
-  })();
-  const previewDressCode = previewStr("jourj.dress_code");
-  const previewDressColors = (() => {
-    const v = answers["jourj.dress_code_couleur"];
-    const raw = Array.isArray(v) ? v : typeof v === "string" ? [v] : [];
-    return raw.filter((x): x is string => typeof x === "string" && /^#[0-9a-fA-F]{6}$/.test(x));
-  })();
-  const previewUsesSample = !previewDateIso || !previewVenue || previewProgramme.length === 0 || !previewDressCode;
-  const previewPoster = approvedVideo
-    ? approvedVideo.kind === "frames"
-      ? approvedVideo.url
-      : (approvedVideo.posterUrl ?? undefined)
-    : undefined;
+  const [accentColor, setAccentColor] = useState(palette.gold || FALLBACK_ACCENT);
+  const generate = () =>
+    setPalette((prev) => ({ ...prev, ...onlyGeneratedKeys(suggestPalette(accentColor, mode, fondHint || undefined)) }));
+  const generateFromTheme = () =>
+    setPalette((prev) => ({
+      ...prev,
+      ...onlyGeneratedKeys(suggestPaletteFromColors(themeColorsHint, mode, fondHint || undefined)),
+    }));
+  const preview = previewPropsFor(project);
 
   return (
     <section className="space-y-8">
+      <SectionJumps
+        items={[
+          { id: "page-client", label: "Indications du client" },
+          { id: "page-depart", label: "Proposition de départ" },
+          { id: "page-couleurs", label: "Couleurs" },
+        ]}
+      />
+      <div id="page-client" className="scroll-mt-4">
       {/* Indications du client — jamais appliquées automatiquement, juste un repère pour le studio */}
       <div className="rounded-xl border border-neutral-200 bg-white p-4">
         <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
@@ -2087,7 +2387,8 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
           )}
         </div>
       </div>
-
+      </div>
+      <div id="page-depart" className="scroll-mt-4">
       {/* Générateur de proposition */}
       <div className="rounded-xl border border-dashed border-terracotta-500/40 bg-white p-4">
         <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
@@ -2154,13 +2455,10 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
           deux cas : un point de départ à retoucher, jamais le résultat final.
         </p>
       </div>
+      </div>
 
-      {/* 22 champs, retouchables à la main — à gauche ; aperçu en direct à
-          droite, collant pendant le défilement des champs. Seuil en largeur
-          d'écran (le Studio vit dans un tiroir à 70 % de la largeur) : en
-          dessous, l'aperçu passe sous les champs. */}
-      <div className="grid gap-6 min-[1400px]:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="space-y-5">
+      <div id="page-couleurs" className="grid scroll-mt-4 gap-6 min-[1400px]:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-5">
         <div>
           <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Fonds</h4>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -2260,6 +2558,24 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
             <ColorField label="Teinte 3" value={palette.dressCode3} onChange={(v) => setField("dressCode3", v)} />
           </div>
         </div>
+        </div>
+        <aside className="min-[1400px]:sticky min-[1400px]:top-4 min-[1400px]:self-start">
+          <PaletteLivePreview palette={palette} mode="page" {...preview} />
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Onglet « Hero » — texte, timings, blocs (faire-part et save the date)
+// ---------------------------------------------------------------------------
+function HeroStyleFields({ draft, isStd }: { draft: StudioDraft; isStd: boolean }) {
+  const { palette, setField } = draft;
+  const setHeroClosingEnabled = (value: boolean) => setField("heroClosingEnabled", value);
+  useGoogleFont(palette.heroFontId);
+  return (
+    <div className="space-y-5">
         <div>
           <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
             Texte overlay du hero
@@ -2282,6 +2598,8 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
               onChange={(v) => setField("heroCardBg", v)}
             />
           </div>
+          {!isStd && (
+            <>
           <label className="mt-3 flex flex-col gap-1">
             <span className="text-[11px] font-semibold text-neutral-500">
               Texte sous les prénoms (chapitre d'ouverture)
@@ -2305,9 +2623,11 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
             </span>
           </label>
           <p className="mt-1 text-[11px] text-neutral-500">
-            Uniquement pour un projet sans timings studio réglés (onglet Vidéo → Timings du hero) — sinon le chapitre
+            Uniquement pour un projet sans timings studio réglés (onglet Hero → Timings) — sinon le chapitre
             "Détails pratiques" prend le relais, piloté par son propre timing.
           </p>
+            </>
+          )}
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1">
@@ -2383,245 +2703,16 @@ function PaletteHeroEditor({ project }: { project: Project360 }) {
             </label>
           </div>
         </div>
-      </div>
-        <aside className="min-[1400px]:sticky min-[1400px]:top-4 min-[1400px]:self-start">
-          <PaletteLivePreview
-            palette={palette}
-            template={project.template ?? null}
-            isStd={isStd}
-            coupleNames={previewCouple}
-            weddingDateIso={previewDateIso || "2027-06-12"}
-            venueName={previewVenue || "Domaine des Oliviers"}
-            programme={
-              previewProgramme.length > 0
-                ? previewProgramme
-                : ["15h30 — Cérémonie — Au jardin", "17h00 — Vin d'honneur", "20h00 — Dîner", "23h00 — Soirée"]
-            }
-            dressCode={previewDressCode || "Élégance champêtre"}
-            dressCodeColors={previewDressColors}
-            posterSrc={previewPoster}
-            usesSampleContent={previewUsesSample}
-          />
-        </aside>
-      </div>
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          disabled={savePalette.isPending}
-          onClick={submitPalette}
-          className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
-        >
-          {savePalette.isPending && <Loader2 size={14} className="animate-spin" />}
-          Enregistrer la palette
-        </button>
-      </div>
-
-      {/* Timings du hero — faire-part uniquement (3 chapitres fixes), cf.
-          isStd plus haut. Un save the date règle ses 2 timings dans son
-          propre onglet dédié (SaveTheDateEditor). */}
-      {!isStd && (
-      <div className="border-t border-neutral-200 pt-6">
-        <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-          Timings du hero vidéo
-        </h3>
-        <p className="mb-4 text-[12px] text-neutral-500">
-          3 chapitres fixes (ouverture, détails pratiques, clôture) — le texte de chacun vient du questionnaire,
-          seuls les instants où ils apparaissent à l'image se règlent ici.
-        </p>
-
-        {approvedVideo && isFrameMode && approvedVideo.frameBaseUrl && approvedVideo.frameCount ? (
-          <div className="mb-4 w-full max-w-md space-y-2">
-            <img
-              src={`${approvedVideo.frameBaseUrl}${String(frameIdx + 1).padStart(5, "0")}.jpg`}
-              alt=""
-              className="w-full rounded-xl bg-black"
-            />
-            <input
-              type="range"
-              min={0}
-              max={approvedVideo.frameCount - 1}
-              value={frameIdx}
-              onChange={(e) => setFrameIdx(Number(e.target.value))}
-              className="w-full"
-            />
-            <p className="text-[11px] tabular text-neutral-500">
-              Image {frameIdx + 1} / {approvedVideo.frameCount} — {(frameIdx / (approvedVideo.frameFps ?? 12)).toFixed(1)} s
-            </p>
-          </div>
-        ) : approvedVideo ? (
-          <video ref={videoRef} src={approvedVideo.url} controls className="mb-4 w-full max-w-md rounded-xl bg-black" />
-        ) : (
-          <p className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 text-[13px] text-neutral-500">
-            Aucune vidéo disponible pour repérer les instants — ajoutez d'abord une version dans l'onglet Vidéo.
-          </p>
-        )}
-
-        <div className="space-y-3">
-          {HERO_CHAPTER_LABELS.map((label, i) => (
-            <div key={label} className="grid items-end gap-3 rounded-xl border border-neutral-200 bg-white p-3 sm:grid-cols-[120px_1fr_1fr_110px]">
-              <span className="text-[13px] font-semibold">{label}</span>
-              {(["fromSec", "toSec"] as const).map((key) => (
-                <label key={key} className="flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold text-neutral-500">
-                    {key === "fromSec" ? "Début (s)" : "Fin (s)"}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step={0.1}
-                      min={0}
-                      value={chapters[i][key]}
-                      onChange={(e) => setChapterField(i, key, Number(e.target.value))}
-                      className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
-                    />
-                    <button
-                      type="button"
-                      disabled={!approvedVideo}
-                      title="Capturer l'instant courant de la vidéo"
-                      onClick={() => capture(i, key)}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-200 text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <Camera size={14} />
-                    </button>
-                  </div>
-                </label>
-              ))}
-              <label className="flex flex-col gap-1">
-                <span className="text-[11px] font-semibold text-neutral-500">Position</span>
-                <select
-                  value={chapters[i].position}
-                  onChange={(e) => setChapterPosition(i, e.target.value as "top" | "middle" | "bottom")}
-                  className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
-                >
-                  {VERTICAL_ALIGN_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            disabled={saveChapters.isPending}
-            onClick={() => saveChapters.mutate({ projectId: project.id, heroChapters: chapters })}
-            className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
-          >
-            {saveChapters.isPending && <Loader2 size={14} className="animate-spin" />}
-            Enregistrer les timings
-          </button>
-        </div>
-      </div>
-      )}
-
-      {/* Communes aux 2 produits — cf. doc de CustomCardsEditor. Rendu ici
-          (Palette & Hero, seul onglet commun à faire-part et save the
-          date) plutôt que dupliqué aussi dans l'onglet Save the Date, pour
-          n'avoir qu'un seul endroit où les gérer. */}
-      <CustomCardsEditor project={project} />
-    </section>
+    </div>
   );
 }
 
-/**
- * Onglet "Save the Date" — remplace l'onglet "Faire-part" pour un projet
- * SAVE_THE_DATE (cf. isStd dans PaletteHeroEditor, StudioPanel plus bas) :
- * la page publique n'a pas de corps à activer/thématiser (hero + footer
- * uniquement, cf. échange du 07/09/2026), seuls les 2 timings du hero
- * restent à régler ("Save the date" / prénoms+date). Même mécanique de
- * repérage (aperçu vidéo/frames + capture de l'instant courant) que
- * "Timings du hero vidéo" dans PaletteHeroEditor, dupliquée plutôt que
- * factorisée : les 2 structures divergent (2 chapitres fixes vs 3) et la
- * logique reste courte, pas de gain clair à l'abstraire pour un seul autre
- * appelant.
- */
-function SaveTheDateEditor({ project }: { project: Project360 }) {
-  const utils = trpc.useUtils();
-  // Vérifie la longueur RÉELLE avant de faire confiance au cast TS — cf.
-  // le même garde-fou dans PaletteHeroEditor pour l'explication complète
-  // du bug reproduit en conditions réelles (commande 25).
-  const existingChapters =
-    Array.isArray(project.heroChapters) && project.heroChapters.length === 2
-      ? (project.heroChapters as HeroChaptersSaveTheDateInput)
-      : null;
-  const [chapters, setChapters] = useState<HeroChaptersSaveTheDateInput>(existingChapters ?? BLANK_HERO_CHAPTERS_STD);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const approvedVideo =
-    project.videoVersions.find((v) => v.status === "approved" || v.status === "final") ??
-    project.videoVersions.at(0);
-  const isFrameMode = approvedVideo?.kind === "frames";
-  const [frameIdx, setFrameIdx] = useState(0);
-
-  const setChapterField = (index: number, key: "fromSec" | "toSec", value: number) =>
-    setChapters((prev) => {
-      const next = [...prev] as HeroChaptersSaveTheDateInput;
-      next[index] = { ...next[index], [key]: value };
-      return next;
-    });
-  const setChapterPosition = (index: number, position: "top" | "middle" | "bottom") =>
-    setChapters((prev) => {
-      const next = [...prev] as HeroChaptersSaveTheDateInput;
-      next[index] = { ...next[index], position };
-      return next;
-    });
-
-  const capture = (index: number, key: "fromSec" | "toSec") => {
-    const t = isFrameMode ? frameIdx / (approvedVideo?.frameFps ?? 12) : videoRef.current?.currentTime;
-    if (t === undefined) return;
-    setChapterField(index, key, Math.round(t * 10) / 10);
-  };
-
-  const saveChapters = trpc.projects.adminSetHeroChapters.useMutation({
-    onSuccess: () => {
-      utils.projects.adminGet.invalidate({ projectId: project.id });
-      toast.success("Timings du hero enregistrés");
-    },
-    onError: () => toast.error("Échec de l'enregistrement des timings"),
-  });
-
-  // Couleurs propres à chacun des 2 blocs de texte overlay — cf. doc de
-  // BespokePalette.stdSaveTheDateTextColor et co. Fusionnées avec le reste
-  // de la palette existante à l'enregistrement (les 18 autres champs,
-  // gérés dans l'onglet "Palette & Hero", ne doivent pas être écrasés) —
-  // même recalcul des *Rgb que PaletteHeroEditor.submitPalette, ces champs
-  // pouvant avoir changé entre-temps dans cet autre onglet.
-  const existingPalette = { ...BLANK_PALETTE, ...(project.palette as BespokePaletteInput | null) };
-  // Jeu COMPLET de réglages par bloc — mêmes possibilités que les modèles
-  // Save the Date (cf. ModeleStdDetail) : taille, police, animation, gras,
-  // couleurs, cadre, plus le format de la date. Tous ces champs existaient
-  // déjà sur la palette et étaient déjà rendus par FairePart.tsx ; seul le
-  // studio ne les exposait pas (échange du 30/09/2026).
-  const [stdColors, setStdColors] = useState({
-    stdSaveTheDateTextColor: existingPalette.stdSaveTheDateTextColor,
-    stdSaveTheDateCardBg: existingPalette.stdSaveTheDateCardBg,
-    stdSaveTheDateTitleSize: existingPalette.stdSaveTheDateTitleSize,
-    stdSaveTheDateCardFrame: existingPalette.stdSaveTheDateCardFrame,
-    stdSaveTheDateFontId: existingPalette.stdSaveTheDateFontId,
-    stdSaveTheDateTextAnimation: existingPalette.stdSaveTheDateTextAnimation,
-    stdSaveTheDateBold: existingPalette.stdSaveTheDateBold,
-    stdNamesDateTextColor: existingPalette.stdNamesDateTextColor,
-    stdNamesDateCardBg: existingPalette.stdNamesDateCardBg,
-    stdNamesDateAccentColor: existingPalette.stdNamesDateAccentColor,
-    stdNamesDateTitleSize: existingPalette.stdNamesDateTitleSize,
-    stdNamesDateCardFrame: existingPalette.stdNamesDateCardFrame,
-    stdNamesDateFontId: existingPalette.stdNamesDateFontId,
-    stdNamesDateTextAnimation: existingPalette.stdNamesDateTextAnimation,
-    stdNamesDateBold: existingPalette.stdNamesDateBold,
-    stdNamesLayout: existingPalette.stdNamesLayout,
-    stdNamesFamily: existingPalette.stdNamesFamily,
-    stdNamesVerb: existingPalette.stdNamesVerb,
-    stdDateFormat: existingPalette.stdDateFormat,
-  });
-  const setStdColor = (key: keyof typeof stdColors, value: string | boolean) =>
-    setStdColors((prev) => ({ ...prev, [key]: value }));
-  const stdThemeVars = useStudioThemeVars(project);
-  const stdAnimShow = useAnimReplay(undefined);
-  useGoogleFonts([stdColors.stdSaveTheDateFontId, stdColors.stdNamesDateFontId]);
+/** Les 2 blocs fixes du save the date (« Save the date », prénoms & date) et le format de la date. */
+function StdBlocksEditor({ project, draft }: { project: Project360; draft: StudioDraft }) {
+  const { palette, setField } = draft;
+  const themeVars = studioThemeVars(project, palette);
+  const animShow = useAnimReplay(undefined);
+  useGoogleFonts([palette.stdSaveTheDateFontId, palette.stdNamesDateFontId]);
   const stdAnswers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
   const stdNames = (stdAnswers["couple.prenoms"] as string | undefined) || coupleNamesFromSlug(project.slug);
   const stdNameParts = stdNames.split(/\s+(&|et)\s+/i);
@@ -2629,186 +2720,54 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
     stdNameParts.length === 3
       ? [{ text: stdNameParts[0] }, { text: stdNameParts[1], accent: true }, { text: stdNameParts[2] }]
       : [{ text: stdNames }];
-  const stdDateFmt = getHeroDateFormat(stdColors.stdDateFormat);
+  const stdDateFmt = getHeroDateFormat(palette.stdDateFormat);
   const STUDIO_DATE_PREVIEW = new Date(2027, 5, 12);
-  // Mise en page des prénoms (bibliothèque HERO_NAMES_LAYOUTS, cf.
-  // heroDecor.ts) — vide ou 'ligne' = rendu historique (prénoms sur une
-  // ligne séparés par "&"), donc aucun projet déjà livré ne change d'aspect.
   const [stdNamesA, stdNamesB] = splitCoupleNames(stdNames);
-  const stdNamesLayoutId = stdColors.stdNamesLayout || "ligne";
+  const stdNamesLayoutId = palette.stdNamesLayout || "ligne";
   const stdNamesPreview: HeroNames = {
     layout: stdNamesLayoutId,
     a: stdNamesA,
     b: stdNamesB,
-    family: stdColors.stdNamesFamily,
-    verb: stdColors.stdNamesVerb,
+    family: palette.stdNamesFamily,
+    verb: palette.stdNamesVerb,
     dateShort: stdDateFmt ? stdDateFmt.format(STUDIO_DATE_PREVIEW) : "12 juin 2027",
   };
-  const saveStdColors = trpc.projects.adminSetPalette.useMutation({
-    onSuccess: () => {
-      utils.projects.adminGet.invalidate({ projectId: project.id });
-      toast.success("Couleurs enregistrées");
-    },
-    onError: () => toast.error("Échec de l'enregistrement des couleurs"),
-  });
-  const submitStdColors = () => {
-    const complete: BespokePaletteInput = {
-      ...existingPalette,
-      ...stdColors,
-      inkRgb: hexToRgbString(existingPalette.ink),
-      inkOnCardRgb: hexToRgbString(existingPalette.inkOnCard),
-      bordeauxRgb: hexToRgbString(existingPalette.bordeaux),
-      goldRgb: hexToRgbString(existingPalette.gold),
-    };
-    saveStdColors.mutate({ projectId: project.id, palette: complete });
-  };
-
   return (
-    <section className="space-y-6">
-      <div>
-        <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-          Timings du hero — Save the Date
-        </h3>
-        <p className="mb-4 text-[12px] text-neutral-500">
-          2 chapitres fixes : "Save the date", puis les prénoms (sur une ligne, séparés par "&") et la date juste en
-          dessous. Seuls les instants où ils apparaissent à l'image se règlent ici. La page publique n'affiche que le
-          hero et le pied de page — pas de corps de faire-part (programme, lieu, RSVP…).
-        </p>
-
-        {approvedVideo && isFrameMode && approvedVideo.frameBaseUrl && approvedVideo.frameCount ? (
-          <div className="mb-4 w-full max-w-md space-y-2">
-            <img
-              src={`${approvedVideo.frameBaseUrl}${String(frameIdx + 1).padStart(5, "0")}.jpg`}
-              alt=""
-              className="w-full rounded-xl bg-black"
-            />
-            <input
-              type="range"
-              min={0}
-              max={approvedVideo.frameCount - 1}
-              value={frameIdx}
-              onChange={(e) => setFrameIdx(Number(e.target.value))}
-              className="w-full"
-            />
-            <p className="text-[11px] tabular text-neutral-500">
-              Image {frameIdx + 1} / {approvedVideo.frameCount} — {(frameIdx / (approvedVideo.frameFps ?? 12)).toFixed(1)} s
-            </p>
-          </div>
-        ) : approvedVideo ? (
-          <video ref={videoRef} src={approvedVideo.url} controls className="mb-4 w-full max-w-md rounded-xl bg-black" />
-        ) : (
-          <p className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 text-[13px] text-neutral-500">
-            Aucune vidéo disponible pour repérer les instants — ajoutez d'abord une version dans l'onglet Vidéo.
-          </p>
-        )}
-
-        <div className="space-y-3">
-          {HERO_CHAPTER_LABELS_STD.map((label, i) => (
-            <div
-              key={label}
-              className="grid items-end gap-3 rounded-xl border border-neutral-200 bg-white p-3 sm:grid-cols-[140px_1fr_1fr_110px]"
-            >
-              <span className="text-[13px] font-semibold">{label}</span>
-              {(["fromSec", "toSec"] as const).map((key) => (
-                <label key={key} className="flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold text-neutral-500">
-                    {key === "fromSec" ? "Début (s)" : "Fin (s)"}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step={0.1}
-                      min={0}
-                      value={chapters[i][key]}
-                      onChange={(e) => setChapterField(i, key, Number(e.target.value))}
-                      className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
-                    />
-                    <button
-                      type="button"
-                      disabled={!approvedVideo}
-                      title="Capturer l'instant courant de la vidéo"
-                      onClick={() => capture(i, key)}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-200 text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <Camera size={14} />
-                    </button>
-                  </div>
-                </label>
-              ))}
-              <label className="flex flex-col gap-1">
-                <span className="text-[11px] font-semibold text-neutral-500">Position</span>
-                <select
-                  value={chapters[i].position}
-                  onChange={(e) => setChapterPosition(i, e.target.value as "top" | "middle" | "bottom")}
-                  className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[13px] outline-none focus:border-terracotta-500"
-                >
-                  {VERTICAL_ALIGN_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            disabled={saveChapters.isPending}
-            onClick={() => saveChapters.mutate({ projectId: project.id, heroChapters: chapters })}
-            className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
-          >
-            {saveChapters.isPending && <Loader2 size={14} className="animate-spin" />}
-            Enregistrer les timings
-          </button>
-        </div>
-      </div>
-
-      <div className="border-t border-neutral-200 pt-6">
-        <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-          Style des 2 blocs
-        </h3>
-        <p className="mb-4 text-[12px] text-neutral-500">
-          Mêmes réglages que les modèles Save the Date : taille, police, animation, gras, couleurs et cadre, bloc par
-          bloc. Vide = retombe sur le réglage commun (onglet Palette &amp; Hero), lui-même retombant sur le thème.
-          Fond de carte vide = transparent, toujours.
-        </p>
+    <div>
         <div className="space-y-5">
           <div>
             <p className="mb-2 text-[12px] font-semibold">Bloc 1 — "Save the date"</p>
             <div className="grid gap-3 sm:grid-cols-3">
               <StudioField label="Taille de police">
-                <StudioSizeSelect value={stdColors.stdSaveTheDateTitleSize} onChange={(v) => setStdColor("stdSaveTheDateTitleSize", v)} />
+                <StudioSizeSelect value={palette.stdSaveTheDateTitleSize} onChange={(v) => setField("stdSaveTheDateTitleSize", v)} />
               </StudioField>
               <StudioField label="Police — ce bloc">
-                <StudioFontSelect value={stdColors.stdSaveTheDateFontId} onChange={(v) => setStdColor("stdSaveTheDateFontId", v)} defaultLabel="Police du hero" />
+                <StudioFontSelect value={palette.stdSaveTheDateFontId} onChange={(v) => setField("stdSaveTheDateFontId", v)} defaultLabel="Police du hero" />
               </StudioField>
               <StudioField label="Animation — ce bloc">
-                <StudioAnimSelect value={stdColors.stdSaveTheDateTextAnimation} onChange={(v) => setStdColor("stdSaveTheDateTextAnimation", v)} defaultLabel="Animation du hero" />
+                <StudioAnimSelect value={palette.stdSaveTheDateTextAnimation} onChange={(v) => setField("stdSaveTheDateTextAnimation", v)} defaultLabel="Animation du hero" />
               </StudioField>
               <ColorField
                 label="Couleur du texte"
                 hint="Vide = couleur commune"
-                value={stdColors.stdSaveTheDateTextColor}
-                onChange={(v) => setStdColor("stdSaveTheDateTextColor", v)}
+                value={palette.stdSaveTheDateTextColor}
+                onChange={(v) => setField("stdSaveTheDateTextColor", v)}
               />
               <ColorField
                 label="Fond de la carte"
                 hint="Vide = transparent"
-                value={stdColors.stdSaveTheDateCardBg}
-                onChange={(v) => setStdColor("stdSaveTheDateCardBg", v)}
+                value={palette.stdSaveTheDateCardBg}
+                onChange={(v) => setField("stdSaveTheDateCardBg", v)}
               />
               <StudioField label="Cadre (décor)">
-                <StudioFrameSelect value={stdColors.stdSaveTheDateCardFrame} onChange={(v) => setStdColor("stdSaveTheDateCardFrame", v)} />
+                <StudioFrameSelect value={palette.stdSaveTheDateCardFrame} onChange={(v) => setField("stdSaveTheDateCardFrame", v)} />
               </StudioField>
             </div>
             <div className="mt-3 flex flex-wrap items-end gap-6">
-              <StudioBold checked={stdColors.stdSaveTheDateBold} onChange={(v) => setStdColor("stdSaveTheDateBold", v)} />
-              <div className="flex flex-col gap-1">
+              <StudioBold checked={palette.stdSaveTheDateBold} onChange={(v) => setField("stdSaveTheDateBold", v)} />
+              <div className="w-[160px] shrink-0 flex flex-col gap-1">
                 <span className="text-[11px] font-semibold text-neutral-500">Aperçu</span>
-                <StudioPreview themeVars={stdThemeVars}>
+                <StudioPreview themeVars={themeVars}>
                   <ChapterContent
                     chapter={{
                       id: 0,
@@ -2816,15 +2775,15 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                       from: 0,
                       to: 1,
                       segments: [{ text: "Save the date" }],
-                      titleSize: (stdColors.stdSaveTheDateTitleSize || "sm") as HeroChapter["titleSize"],
-                      textColorOverride: stdColors.stdSaveTheDateTextColor || undefined,
-                      cardBgOverride: stdColors.stdSaveTheDateCardBg || "transparent",
-                      cardFrame: stdColors.stdSaveTheDateCardFrame || undefined,
-                      fontId: stdColors.stdSaveTheDateFontId || undefined,
-                      bold: stdColors.stdSaveTheDateBold,
+                      titleSize: (palette.stdSaveTheDateTitleSize || "sm") as HeroChapter["titleSize"],
+                      textColorOverride: palette.stdSaveTheDateTextColor || undefined,
+                      cardBgOverride: palette.stdSaveTheDateCardBg || "transparent",
+                      cardFrame: palette.stdSaveTheDateCardFrame || undefined,
+                      fontId: palette.stdSaveTheDateFontId || undefined,
+                      bold: palette.stdSaveTheDateBold,
                     }}
-                    textAnimation={stdColors.stdSaveTheDateTextAnimation || undefined}
-                    className={cn("hs-overlay", stdAnimShow && "show", stdColors.stdSaveTheDateTextAnimation && `hs-anim-${stdColors.stdSaveTheDateTextAnimation}`)}
+                    textAnimation={palette.stdSaveTheDateTextAnimation || undefined}
+                    className={cn("hs-overlay", animShow && "show", palette.stdSaveTheDateTextAnimation && `hs-anim-${palette.stdSaveTheDateTextAnimation}`)}
                   />
                 </StudioPreview>
               </div>
@@ -2842,7 +2801,7 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                   <button
                     key={l.id}
                     type="button"
-                    onClick={() => setStdColor("stdNamesLayout", l.id)}
+                    onClick={() => setField("stdNamesLayout", l.id)}
                     title={l.desc}
                     className={cn(
                       "flex flex-col gap-1.5 rounded-xl border p-1.5 text-center transition-colors",
@@ -2851,7 +2810,7 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                   >
                     <div
                       className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950 px-1"
-                      style={{ aspectRatio: "16 / 10", containerType: "inline-size", ...stdThemeVars } as CSSProperties}
+                      style={{ aspectRatio: "16 / 10", containerType: "inline-size", ...themeVars } as CSSProperties}
                     >
                       {l.id === "ligne" ? (
                         <div
@@ -2878,8 +2837,8 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                   {stdNamesLayoutId === "full" && (
                     <StudioField label="Noms de famille" hint="« Moreau & Dupont » — affichés sous les prénoms.">
                       <input
-                        value={stdColors.stdNamesFamily}
-                        onChange={(e) => setStdColor("stdNamesFamily", e.target.value)}
+                        value={palette.stdNamesFamily}
+                        onChange={(e) => setField("stdNamesFamily", e.target.value)}
                         placeholder="Moreau & Dupont"
                         className={studioInput}
                       />
@@ -2888,8 +2847,8 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                   {stdNamesLayoutId === "verbe" && (
                     <StudioField label="Verbe" hint="Vide = « se disent oui ».">
                       <input
-                        value={stdColors.stdNamesVerb}
-                        onChange={(e) => setStdColor("stdNamesVerb", e.target.value)}
+                        value={palette.stdNamesVerb}
+                        onChange={(e) => setField("stdNamesVerb", e.target.value)}
                         placeholder="se disent oui"
                         className={studioInput}
                       />
@@ -2900,41 +2859,41 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <StudioField label="Taille de police">
-                <StudioSizeSelect value={stdColors.stdNamesDateTitleSize} onChange={(v) => setStdColor("stdNamesDateTitleSize", v)} />
+                <StudioSizeSelect value={palette.stdNamesDateTitleSize} onChange={(v) => setField("stdNamesDateTitleSize", v)} />
               </StudioField>
               <StudioField label="Police — ce bloc">
-                <StudioFontSelect value={stdColors.stdNamesDateFontId} onChange={(v) => setStdColor("stdNamesDateFontId", v)} defaultLabel="Police du hero" />
+                <StudioFontSelect value={palette.stdNamesDateFontId} onChange={(v) => setField("stdNamesDateFontId", v)} defaultLabel="Police du hero" />
               </StudioField>
               <StudioField label="Animation — ce bloc">
-                <StudioAnimSelect value={stdColors.stdNamesDateTextAnimation} onChange={(v) => setStdColor("stdNamesDateTextAnimation", v)} defaultLabel="Animation du hero" />
+                <StudioAnimSelect value={palette.stdNamesDateTextAnimation} onChange={(v) => setField("stdNamesDateTextAnimation", v)} defaultLabel="Animation du hero" />
               </StudioField>
               <ColorField
                 label="Couleur du texte"
                 hint="Vide = couleur commune"
-                value={stdColors.stdNamesDateTextColor}
-                onChange={(v) => setStdColor("stdNamesDateTextColor", v)}
+                value={palette.stdNamesDateTextColor}
+                onChange={(v) => setField("stdNamesDateTextColor", v)}
               />
               <ColorField
                 label="Fond de la carte"
                 hint="Vide = transparent"
-                value={stdColors.stdNamesDateCardBg}
-                onChange={(v) => setStdColor("stdNamesDateCardBg", v)}
+                value={palette.stdNamesDateCardBg}
+                onChange={(v) => setField("stdNamesDateCardBg", v)}
               />
               <ColorField
                 label={'Couleur du "&"'}
                 hint="Vide = accent du thème"
-                value={stdColors.stdNamesDateAccentColor}
-                onChange={(v) => setStdColor("stdNamesDateAccentColor", v)}
+                value={palette.stdNamesDateAccentColor}
+                onChange={(v) => setField("stdNamesDateAccentColor", v)}
               />
               <StudioField label="Cadre (décor)">
-                <StudioFrameSelect value={stdColors.stdNamesDateCardFrame} onChange={(v) => setStdColor("stdNamesDateCardFrame", v)} />
+                <StudioFrameSelect value={palette.stdNamesDateCardFrame} onChange={(v) => setField("stdNamesDateCardFrame", v)} />
               </StudioField>
             </div>
             <div className="mt-3 flex flex-wrap items-end gap-6">
-              <StudioBold checked={stdColors.stdNamesDateBold} onChange={(v) => setStdColor("stdNamesDateBold", v)} />
-              <div className="flex flex-col gap-1">
+              <StudioBold checked={palette.stdNamesDateBold} onChange={(v) => setField("stdNamesDateBold", v)} />
+              <div className="w-[160px] shrink-0 flex flex-col gap-1">
                 <span className="text-[11px] font-semibold text-neutral-500">Aperçu</span>
-                <StudioPreview themeVars={stdThemeVars}>
+                <StudioPreview themeVars={themeVars}>
                   <ChapterContent
                     chapter={{
                       id: 1,
@@ -2944,16 +2903,16 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                       segments: stdNamesLayoutId === "ligne" ? stdNameSegments : undefined,
                       names: stdNamesLayoutId === "ligne" ? undefined : stdNamesPreview,
                       fitOneLine: true,
-                      titleSize: (stdColors.stdNamesDateTitleSize || "sm") as HeroChapter["titleSize"],
-                      textColorOverride: stdColors.stdNamesDateTextColor || undefined,
-                      cardBgOverride: stdColors.stdNamesDateCardBg || "transparent",
-                      accentColorOverride: stdColors.stdNamesDateAccentColor || undefined,
-                      cardFrame: stdColors.stdNamesDateCardFrame || undefined,
-                      fontId: stdColors.stdNamesDateFontId || undefined,
-                      bold: stdColors.stdNamesDateBold,
+                      titleSize: (palette.stdNamesDateTitleSize || "sm") as HeroChapter["titleSize"],
+                      textColorOverride: palette.stdNamesDateTextColor || undefined,
+                      cardBgOverride: palette.stdNamesDateCardBg || "transparent",
+                      accentColorOverride: palette.stdNamesDateAccentColor || undefined,
+                      cardFrame: palette.stdNamesDateCardFrame || undefined,
+                      fontId: palette.stdNamesDateFontId || undefined,
+                      bold: palette.stdNamesDateBold,
                     }}
-                    textAnimation={stdColors.stdNamesDateTextAnimation || undefined}
-                    className={cn("hs-overlay", stdAnimShow && "show", stdColors.stdNamesDateTextAnimation && `hs-anim-${stdColors.stdNamesDateTextAnimation}`)}
+                    textAnimation={palette.stdNamesDateTextAnimation || undefined}
+                    className={cn("hs-overlay", animShow && "show", palette.stdNamesDateTextAnimation && `hs-anim-${palette.stdNamesDateTextAnimation}`)}
                   />
                 </StudioPreview>
               </div>
@@ -2967,7 +2926,7 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                 label="Style d'affichage"
                 hint="S'applique à la vraie date du client, sous les prénoms. Les mises en page multi-lignes retombent sur une ligne à cet emplacement."
               >
-                <select value={stdColors.stdDateFormat} onChange={(e) => setStdColor("stdDateFormat", e.target.value)} className={studioInput}>
+                <select value={palette.stdDateFormat} onChange={(e) => setField("stdDateFormat", e.target.value)} className={studioInput}>
                   <option value="">12 juin 2027 (défaut)</option>
                   <optgroup label="Sur une ligne">
                     {HERO_DATE_FORMATS.filter((f) => !f.layout).map((f) => (
@@ -2981,9 +2940,9 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
                   </optgroup>
                 </select>
               </StudioField>
-              <div className="flex flex-col gap-1">
+              <div className="w-[160px] shrink-0 flex flex-col gap-1">
                 <span className="text-[11px] font-semibold text-neutral-500">Aperçu (12 juin 2027)</span>
-                <StudioPreview themeVars={stdThemeVars}>
+                <StudioPreview themeVars={themeVars}>
                   {stdDateFmt?.layout ? (
                     <HeroDateLayoutBlock
                       layout={{ id: stdDateFmt.id, fonts: stdDateFmt.layout.fonts, lines: stdDateFmt.layout.lines(STUDIO_DATE_PREVIEW) }}
@@ -3001,77 +2960,510 @@ function SaveTheDateEditor({ project }: { project: Project360 }) {
             </div>
           </div>
         </div>
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            disabled={saveStdColors.isPending}
-            onClick={submitStdColors}
-            className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 disabled:opacity-40"
-          >
-            {saveStdColors.isPending && <Loader2 size={14} className="animate-spin" />}
-            Enregistrer le style
-          </button>
+    </div>
+  );
+}
+
+function HeroTab({ project, draft }: { project: Project360; draft: StudioDraft }) {
+  const isStd = project.product === "SAVE_THE_DATE";
+  const preview = previewPropsFor(project);
+  return (
+    <section className="space-y-10">
+      <SectionJumps
+        items={[
+          { id: "hero-texte", label: "Texte et habillage" },
+          { id: "hero-timings", label: "Timings" },
+          ...(isStd ? [{ id: "hero-std", label: "Les 2 blocs" }] : []),
+          { id: "hero-blocs", label: "Blocs supplémentaires" },
+        ]}
+      />
+
+      <div>
+        <StudioSectionTitle
+          id="hero-texte"
+          title="Texte et habillage"
+          hint="Ce qui s'affiche par-dessus le film : couleurs du texte, police, animation, décor et filtre. L'aperçu se met à jour à chaque changement."
+        />
+        <div className="grid gap-6 min-[1400px]:grid-cols-[minmax(0,1fr)_280px]">
+          <HeroStyleFields draft={draft} isStd={isStd} />
+          <aside className="min-[1400px]:sticky min-[1400px]:top-4 min-[1400px]:self-start">
+            <PaletteLivePreview palette={draft.palette} mode="hero" {...preview} />
+          </aside>
         </div>
+      </div>
+
+      <div className="border-t border-neutral-200 pt-8">
+        <StudioSectionTitle
+          id="hero-timings"
+          title="Timings"
+          hint={
+            isStd
+              ? "Les instants où chaque bloc apparaît à l'image. Déplacez le curseur sur le film, puis « Caler » pour utiliser l'instant affiché."
+              : "Les instants où chaque chapitre apparaît à l'image ; le texte de chacun vient du questionnaire. Déplacez le curseur sur le film, puis « Caler » pour utiliser l'instant affiché."
+          }
+        />
+        <HeroTimingsEditor
+          project={project}
+          labels={isStd ? HERO_CHAPTER_LABELS_STD : HERO_CHAPTER_LABELS}
+          chapters={draft.chapters}
+          setChapters={draft.setChapters}
+        />
+      </div>
+
+      {isStd && (
+        <div className="border-t border-neutral-200 pt-8">
+          <StudioSectionTitle
+            id="hero-std"
+            title="Les 2 blocs du Save the Date"
+            hint="Taille, police, animation, couleurs et cadre, bloc par bloc. Vide = le réglage « Texte et habillage » ci-dessus, lui-même retombant sur le thème. Fond de carte vide = transparent."
+          />
+          <StdBlocksEditor project={project} draft={draft} />
+        </div>
+      )}
+
+      <div id="hero-blocs" className="scroll-mt-4">
+        <CustomCardsEditor project={project} cards={draft.cards} setCards={draft.setCards} palette={draft.palette} />
       </div>
     </section>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Onglet Studio complet
+// Onglet « Mise en ligne » — ambiance, vérifications, aperçu, activation
 // ---------------------------------------------------------------------------
-export default function StudioPanel({ project }: { project: Project360 }) {
-  const videoCount = project.videoVersions.length;
-  // Un save the date n'a pas de corps de page à activer/thématiser (hero +
-  // footer uniquement, cf. échange du 07/09/2026) — l'onglet "Faire-part"
-  // (template + activation) n'a pas de sens ici, remplacé par "Save the
-  // Date" (2 timings de hero, cf. SaveTheDateEditor). "Palette & Hero"
-  // reste commun aux deux : les couleurs de fond/accent du hero
-  // s'appliquent également à un save the date.
+const TEMPLATES = [
+  { id: "editorial" as const, label: "Éditorial" },
+  { id: "cinema" as const, label: "Cinéma" },
+  { id: "minimal" as const, label: "Minimal" },
+];
+
+type CheckLevel = "ok" | "warn" | "missing";
+
+function OnlineTab({ project, draft }: { project: Project360; draft: StudioDraft }) {
+  const utils = trpc.useUtils();
+  const [confirm, setConfirm] = useState(false);
   const isStd = project.product === "SAVE_THE_DATE";
-  const sections = useMemo(
-    () => [
-      { id: "scenarios", label: "Scénarios" },
-      { id: "video", label: `Vidéo${videoCount > 0 ? ` (v${project.videoVersions.at(0)?.version})` : ""}` },
-      isStd ? { id: "savethedate", label: "Save the Date" } : { id: "fairepart", label: "Faire-part" },
-      { id: "palette", label: "Palette & Hero" },
-    ],
-    [project.videoVersions, videoCount, isStd],
+  const productLabel = isStd ? "save the date" : "faire-part";
+  const delivered = project.status === "DELIVERED";
+  const publicUrl = `${window.location.origin}/faire-part/${project.slug}`;
+
+  // Même règle que la page publique (projects.getPublicInvite) : la 1re
+  // version sans filigrane, sinon une version envoyée ou finale. Sans
+  // aucune des deux, la page ne s'affiche pas du tout.
+  const publicVideo =
+    project.videoVersions.find((v) => !v.watermark) ??
+    project.videoVersions.find((v) => v.status === "sent" || v.status === "final");
+
+  const chaptersSet = draft.chapters.every((c) => c.toSec > c.fromSec);
+  const questionnaireDone = !!project.questionnaire?.submittedAt || (project.questionnaire?.completionPct ?? 0) >= 100;
+  const rsvpEnabled = !!(project as { rsvpConfig?: { enabled?: boolean } | null }).rsvpConfig?.enabled;
+
+  const checks: { level: CheckLevel; label: string; detail: string }[] = [
+    !publicVideo
+      ? { level: "missing", label: "Film", detail: "Aucun film affichable : la page ne s'ouvrira pas. Déposez une version dans l'onglet Vidéo." }
+      : publicVideo.watermark
+        ? { level: "warn", label: "Film", detail: `La v${publicVideo.version} affichée est encore filigranée. Publiez la version finale (onglet Vidéo).` }
+        : { level: "ok", label: "Film", detail: `v${publicVideo.version} sans filigrane.` },
+    chaptersSet
+      ? { level: "ok", label: "Timings du hero", detail: "Tous les textes ont leur moment à l'image." }
+      : { level: "warn", label: "Timings du hero", detail: "Certains textes n'ont pas d'instant réglé (onglet Hero)." },
+    project.palette
+      ? { level: "ok", label: "Couleurs", detail: "Palette enregistrée." }
+      : { level: "warn", label: "Couleurs", detail: isStd ? "Aucun réglage enregistré : les couleurs du thème s'appliquent." : "Aucune palette enregistrée : les couleurs par défaut s'appliquent (onglet Couleurs de la page)." },
+    questionnaireDone
+      ? { level: "ok", label: "Questionnaire", detail: "Complété par le couple." }
+      : { level: "warn", label: "Questionnaire", detail: `Rempli à ${project.questionnaire?.completionPct ?? 0} % : des infos peuvent manquer sur la page.` },
+    ...(!isStd
+      ? [
+          rsvpEnabled
+            ? ({ level: "ok", label: "RSVP", detail: "Les invités pourront répondre." } as const)
+            : ({ level: "warn", label: "RSVP", detail: "Désactivé : les invités ne pourront pas répondre en ligne." } as const),
+        ]
+      : []),
+    ...(draft.anyDirty
+      ? [{ level: "warn" as const, label: "Modifications", detail: "Des réglages ne sont pas encore enregistrés (barre en bas)." }]
+      : []),
+  ];
+  const blocking = checks.filter((c) => c.level === "missing");
+  const warnings = checks.filter((c) => c.level === "warn");
+
+  const setTemplate = trpc.projects.adminSetTemplate.useMutation({
+    onSuccess: () => {
+      utils.projects.adminGet.invalidate({ projectId: project.id });
+      toast.success("Ambiance du hero mise à jour");
+    },
+    onError: () => toast.error("Échec du changement d'ambiance"),
+  });
+  const activate = trpc.projects.adminUpdateStatus.useMutation({
+    onSuccess: () => {
+      utils.projects.adminGet.invalidate({ projectId: project.id });
+      utils.projects.adminList.invalidate();
+      utils.analytics.adminOverview.invalidate();
+      setConfirm(false);
+      toast.success(`${isStd ? "Save the date" : "Faire-part"} en ligne — le client est notifié`);
+    },
+    onError: () => toast.error("Échec de la mise en ligne"),
+  });
+
+  // Ambiance : aperçu de chaque thème sur une image du film du couple,
+  // plutôt que les anciennes vignettes d'exemple (d'autres couples, une mise
+  // en page qui n'est pas celle du faire-part) — le thème ne change que les
+  // couleurs du hero, c'est exactement ce que montrent ces aperçus.
+  const preview = previewPropsFor(project);
+  const darkBgForcesCinema = (() => {
+    const hex = draft.palette.bg?.match(/^#([0-9a-f]{6})$/i)?.[1];
+    if (!hex) return false;
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+    return 0.299 * r + 0.587 * g + 0.114 * b < 0.4;
+  })();
+  const nameParts = preview.coupleNames.split(/\s+(&|et)\s+/i);
+  const segments =
+    nameParts.length === 3
+      ? [{ text: nameParts[0] }, { text: nameParts[1], accent: true }, { text: nameParts[2] }]
+      : [{ text: preview.coupleNames }];
+  const heroFont = getHeroFont(draft.palette.heroFontId);
+
+  const copyLink = () => {
+    navigator.clipboard
+      .writeText(publicUrl)
+      .then(() => toast.success("Lien copié"))
+      .catch(() => toast.error("Impossible de copier — sélectionnez le lien à la main"));
+  };
+
+  return (
+    <section className="space-y-8">
+      {/* État + actions principales */}
+      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-neutral-200 bg-white p-5">
+        <span
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+            delivered ? "bg-success/15 text-success" : "bg-neutral-100 text-neutral-500",
+          )}
+        >
+          {delivered ? <Check size={18} /> : <Send size={16} />}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-semibold">
+            {delivered ? `Le ${productLabel} est en ligne` : `Le ${productLabel} n'est pas encore en ligne`}
+          </p>
+          <p className="truncate text-[12px] text-neutral-500">
+            <span className="tabular font-medium text-ink">{publicUrl}</span>
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {publicVideo ? (
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-4 py-2 text-[12px] font-semibold hover:border-terracotta-500 hover:text-terracotta-500"
+            >
+              {delivered ? "Ouvrir" : "Prévisualiser"} <ExternalLink size={12} />
+            </a>
+          ) : (
+            <span className="rounded-full border border-dashed border-neutral-200 px-4 py-2 text-[12px] text-neutral-500">
+              Aperçu disponible après le 1er film
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={copyLink}
+            className="rounded-full border border-neutral-200 px-4 py-2 text-[12px] font-semibold hover:border-terracotta-500 hover:text-terracotta-500"
+          >
+            Copier le lien
+          </button>
+          {!delivered && (
+            <button
+              type="button"
+              onClick={() => setConfirm(true)}
+              disabled={blocking.length > 0}
+              title={blocking.length > 0 ? "Un film est nécessaire pour mettre en ligne" : undefined}
+              className="rounded-full bg-terracotta-500 px-5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-terracotta-400 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Mettre en ligne
+            </button>
+          )}
+        </div>
+        {delivered && (
+          <div className="rounded-xl border border-neutral-200 bg-white p-2">
+            <QRCodeSVG value={publicUrl} size={72} fgColor="#232326" />
+          </div>
+        )}
+      </div>
+      {!delivered && (
+        <p className="-mt-5 text-[12px] text-neutral-500">
+          Avant la mise en ligne, l'aperçu s'affiche avec le bandeau « aperçu ». La mise en ligne passe le projet en
+          « Livré » et envoie au client l'email avec le lien et le QR code.
+        </p>
+      )}
+
+      {/* Vérifications */}
+      <div>
+        <StudioSectionTitle title="Avant de mettre en ligne" />
+        <ul className="divide-y divide-neutral-100 rounded-xl border border-neutral-200 bg-white">
+          {checks.map((c) => (
+            <li key={c.label} className="flex items-start gap-3 px-4 py-3">
+              <span
+                className={cn(
+                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
+                  c.level === "ok" && "bg-success/15 text-success",
+                  c.level === "warn" && "bg-pending/15 text-pending",
+                  c.level === "missing" && "bg-error/15 text-error",
+                )}
+                aria-label={c.level === "ok" ? "Prêt" : c.level === "warn" ? "À vérifier" : "Bloquant"}
+              >
+                {c.level === "ok" ? <Check size={12} /> : "!"}
+              </span>
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold">{c.label}</p>
+                <p className="text-[12px] leading-relaxed text-neutral-500">{c.detail}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Ambiance du hero */}
+      <div>
+        <StudioSectionTitle
+          title="Ambiance du hero"
+          hint="Couleurs de base du texte et du cadre sur le film, appliquées tout de suite (pas besoin d'enregistrer). Les couleurs réglées dans l'onglet Hero prennent le dessus."
+        />
+        {darkBgForcesCinema && (
+          <p className="mb-3 rounded-lg border border-pending/30 bg-pending/[0.06] px-3 py-2 text-[12px] text-ink">
+            Le fond de page de la palette est sombre : la page publique utilise automatiquement l'ambiance Cinéma,
+            quel que soit le choix ci-dessous.
+          </p>
+        )}
+        <div className="grid grid-cols-3 gap-3 sm:max-w-[560px]">
+          {TEMPLATES.map((t) => {
+            const theme = HERO_THEMES[t.id];
+            const active = (project.template ?? "cinema") === t.id;
+            const vars = {
+              "--hs-frame-bg": theme.frameBg,
+              "--hs-vignette": theme.vignette,
+              "--hs-accent": theme.accent,
+              "--hs-text-primary": draft.palette.heroTextColor || theme.textPrimary,
+              "--hs-text-secondary": draft.palette.heroTextColor || theme.textSecondary,
+              "--hs-card-bg": draft.palette.heroCardBg || "transparent",
+              "--hs-card-border": theme.cardBorder,
+              "--hs-card-shadow": theme.cardShadow,
+              "--hs-font-family": heroFont?.fontFamily || "'Fraunces', Georgia, serif",
+            } as CSSProperties;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                disabled={setTemplate.isPending}
+                onClick={() => !active && setTemplate.mutate({ projectId: project.id, template: t.id })}
+                aria-pressed={active}
+                className={cn(
+                  "overflow-hidden rounded-xl border-2 bg-white text-left transition-colors",
+                  active ? "border-terracotta-500" : "border-neutral-200 hover:border-neutral-500",
+                )}
+              >
+                <div
+                  className="relative w-full overflow-hidden"
+                  style={{ aspectRatio: "9/16", containerType: "inline-size", background: theme.frameBg, ...vars } as CSSProperties}
+                >
+                  {preview.posterSrc && <img src={preview.posterSrc} alt="" className="hs-video" />}
+                  <ChapterContent
+                    chapter={{ id: 0, kind: "text", from: 0, to: 1, segments, segmentLayout: "stack", titleSize: "lg" }}
+                    className="hs-overlay show"
+                  />
+                </div>
+                <p className="flex items-center justify-between px-3 py-2 text-[12px] font-semibold">
+                  {t.label}
+                  {active && <Check size={13} className="text-terracotta-500" />}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {confirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-anthracite-950/50 p-6 backdrop-blur-sm"
+            onClick={() => setConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+            >
+              <h3 className="font-display text-[20px] font-medium">
+                Mettre en ligne le {productLabel} de {preview.coupleNames} ?
+              </h3>
+              <p className="mt-2 text-[13px] leading-relaxed text-neutral-500">
+                Le projet passera au statut « Livré » et le client recevra l'email de livraison avec le lien et le QR
+                code.
+              </p>
+              {warnings.length > 0 && (
+                <ul className="mt-4 space-y-1.5 rounded-xl border border-pending/30 bg-pending/[0.06] p-3">
+                  {warnings.map((w) => (
+                    <li key={w.label} className="text-[12px] leading-relaxed">
+                      <span className="font-semibold">{w.label} :</span> {w.detail}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setConfirm(false)}
+                  className="rounded-full border border-neutral-200 px-5 py-2.5 text-[13px] font-semibold hover:border-neutral-500"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  disabled={activate.isPending}
+                  onClick={() => activate.mutate({ projectId: project.id, status: "DELIVERED" })}
+                  className="flex items-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-terracotta-400 disabled:opacity-40"
+                >
+                  {activate.isPending && <Loader2 size={14} className="animate-spin" />}
+                  {warnings.length > 0 ? "Mettre en ligne quand même" : "Mettre en ligne"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
-  const [section, setSection] = useState("scenarios");
+}
+
+// ---------------------------------------------------------------------------
+// Studio — onglets dans l'ordre de fabrication
+// ---------------------------------------------------------------------------
+type StudioTabId = "scenarios" | "video" | "hero" | "page" | "online";
+
+/** Onglet ouvert par défaut : celui de l'étape où en est le projet. */
+function defaultStudioTab(project: Project360): StudioTabId {
+  if (project.status === "DELIVERED") return "online";
+  if (project.status === "PRODUCTION" || project.status === "REVIEW") return "video";
+  return "scenarios";
+}
+
+/** Une ligne d'état sous chaque onglet — pour voir où en est le projet sans ouvrir chaque onglet. */
+function studioTabHint(id: StudioTabId, project: Project360, draft: StudioDraft): { text: string; attention: boolean } {
+  switch (id) {
+    case "scenarios": {
+      const chosen = project.scenarioProposals.find((s) => s.status === "chosen");
+      if (chosen) return { text: `Choisi : ${chosen.title}`, attention: false };
+      if (project.scenarioProposals.some((s) => s.status === "changes_requested")) return { text: "Retour du client", attention: true };
+      if (project.scenarioProposals.length === 3) return { text: "Envoyés, en attente", attention: false };
+      return { text: "À rédiger", attention: false };
+    }
+    case "video": {
+      const latest = project.videoVersions.at(0);
+      if (!latest) return { text: "Aucune version", attention: false };
+      const comments = (latest.clientComment as { comment: string }[] | null) ?? [];
+      if (comments.length > 0 && latest.status === "sent") return { text: `v${latest.version} · retour du client`, attention: true };
+      const label = { draft: "brouillon", sent: "envoyée", approved: "approuvée", final: "finale" }[latest.status] ?? latest.status;
+      return { text: `v${latest.version} · ${label}`, attention: latest.status === "approved" };
+    }
+    case "hero": {
+      if (draft.dirty.chapters || draft.dirty.cards || draft.dirty.palette) return { text: "Non enregistré", attention: true };
+      if (!draft.chapters.every((c) => c.toSec > c.fromSec)) return { text: "Timings à régler", attention: true };
+      return { text: "Réglé", attention: false };
+    }
+    case "page":
+      if (draft.dirty.palette) return { text: "Non enregistré", attention: true };
+      return project.palette ? { text: "Enregistrées", attention: false } : { text: "À faire", attention: false };
+    case "online":
+      return project.status === "DELIVERED" ? { text: "En ligne", attention: false } : { text: "Pas encore en ligne", attention: false };
+  }
+}
+
+export default function StudioPanel({ project }: { project: Project360 }) {
+  // `key` : changer de projet dans le tiroir repart d'un brouillon neuf,
+  // jamais des réglages du projet précédent.
+  return <StudioWorkspace key={project.id} project={project} />;
+}
+
+function StudioWorkspace({ project }: { project: Project360 }) {
+  const draft = useStudioDraft(project);
+  const isStd = project.product === "SAVE_THE_DATE";
+  const tabs: { id: StudioTabId; label: string }[] = [
+    { id: "scenarios", label: "Scénarios" },
+    { id: "video", label: "Vidéo" },
+    { id: "hero", label: "Hero" },
+    // Un save the date n'a pas de corps de page : pas de couleurs de sections.
+    ...(isStd ? [] : [{ id: "page" as const, label: "Couleurs de la page" }]),
+    { id: "online", label: "Mise en ligne" },
+  ];
+  const [tab, setTab] = useState<StudioTabId>(() => defaultStudioTab(project));
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-1 rounded-full border border-neutral-200 bg-white p-1">
-        {sections.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => setSection(s.id)}
-            className={cn(
-              "flex-1 rounded-full px-4 py-2 text-[12px] font-semibold transition-colors",
-              section === s.id ? "bg-anthracite-800 text-white" : "text-neutral-500 hover:text-ink",
-            )}
-          >
-            {s.label}
-          </button>
-        ))}
+      <div
+        role="tablist"
+        aria-label="Étapes du Studio"
+        className={cn("grid gap-1 rounded-2xl border border-neutral-200 bg-white p-1", isStd ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-5")}
+      >
+        {tabs.map((t, i) => {
+          const hint = studioTabHint(t.id, project, draft);
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "min-w-0 rounded-xl px-3 py-2 text-left transition-colors",
+                active ? "bg-anthracite-800 text-white" : "hover:bg-neutral-100",
+              )}
+            >
+              <span className={cn("block text-[12px] font-semibold", !active && "text-ink")}>
+                <span className={cn("tabular mr-1", active ? "text-white/60" : "text-neutral-500")}>{i + 1}.</span>
+                {t.label}
+              </span>
+              <span
+                className={cn(
+                  "block truncate text-[11px]",
+                  hint.attention ? (active ? "text-terracotta-300" : "text-terracotta-500") : active ? "text-white/70" : "text-neutral-500",
+                )}
+              >
+                {hint.text}
+              </span>
+            </button>
+          );
+        })}
       </div>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={section}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          {section === "scenarios" && <ScenarioEditor project={project} />}
-          {section === "video" && <VideoManager project={project} />}
-          {section === "fairepart" && <FairePartActivation project={project} />}
-          {section === "savethedate" && <SaveTheDateEditor project={project} />}
-          {section === "palette" && <PaletteHeroEditor project={project} />}
-        </motion.div>
-      </AnimatePresence>
+
+      {/* Tous les onglets restent montés (simplement masqués) : changer
+          d'onglet ne perd plus rien de ce qui est en cours. */}
+      <div role="tabpanel" hidden={tab !== "scenarios"}>
+        <ScenarioEditor project={project} />
+      </div>
+      <div role="tabpanel" hidden={tab !== "video"}>
+        <VideoManager project={project} />
+      </div>
+      <div role="tabpanel" hidden={tab !== "hero"}>
+        <HeroTab project={project} draft={draft} />
+      </div>
+      {!isStd && (
+        <div role="tabpanel" hidden={tab !== "page"}>
+          <PageColorsTab project={project} draft={draft} />
+        </div>
+      )}
+      <div role="tabpanel" hidden={tab !== "online"}>
+        <OnlineTab project={project} draft={draft} />
+      </div>
+
+      <StudioSaveBar draft={draft} />
     </div>
   );
 }
