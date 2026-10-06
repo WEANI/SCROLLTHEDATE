@@ -2,6 +2,11 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react'
 import { useCountdown, type ProgrammeItem } from './DetailsSombre'
 import type { RsvpTheme } from './PayloadSection'
+import {
+  SectionIllustrationFor,
+  SectionTitle,
+  SectionTitleInline,
+} from './SectionDecorParts'
 
 /**
  * Refonte bespoke de plusieurs sections de faire-part — date (lettres qui
@@ -165,6 +170,17 @@ export type BespokePalette = {
   heroTextAnimation: string
   heroFilter: string
   /**
+   * Habillage des sections du corps — identifiants des bibliothèques de
+   * sectionDecor.ts. Fond et illustration par section (dictionnaires
+   * indexés par id de section) ; séparateur, animation d'apparition et
+   * style de titre communs à toute la page. Tout vide = page inchangée.
+   */
+  sectionBgs: Record<string, string>
+  sectionIllus: Record<string, string>
+  sectionSeparator: string
+  sectionReveal: string
+  sectionTitleStyle: string
+  /**
    * Style d'affichage de la date d'un Save the Date "sur un modèle" — cf.
    * heroDecor.ts::HERO_DATE_FORMATS. Chaîne vide = format historique
    * inchangé ("12 juin 2027").
@@ -228,6 +244,11 @@ export const EW_PALETTE: BespokePalette = {
   heroFontId: '',
   heroTextAnimation: '',
   heroFilter: '',
+  sectionBgs: {},
+  sectionIllus: {},
+  sectionSeparator: '',
+  sectionReveal: '',
+  sectionTitleStyle: '',
   stdDateFormat: '',
 }
 
@@ -283,13 +304,21 @@ function usePalette() {
   return useContext(PaletteContext)
 }
 
-/** Titre de section (« La date », « Le Lieu », « RSVP »…) — même traitement visuel que « Le Programme », factorisé pour ne pas le répéter 4 fois. */
-function EwLabel({ children }: { children: string }) {
+/**
+ * Titre de section (« La date », « Le Lieu », « RSVP »…) — même traitement
+ * visuel que « Le Programme », factorisé pour ne pas le répéter 4 fois.
+ *
+ * `section` est l'identifiant de la section dans l'habillage du projet (cf.
+ * FAIRE_PART_SECTIONS, sectionDecor.ts) : c'est par lui que le titre
+ * retrouve son illustration et son surtitre. Le style du titre lui-même est
+ * commun à toute la page.
+ */
+function EwLabel({ children, section }: { children: string; section: string }) {
   const p = usePalette()
   return (
-    <p className="mb-7 text-center text-[19px] italic" style={{ color: p.sectionTitle }}>
+    <SectionTitle section={section} color={p.sectionTitle}>
       {children}
-    </p>
+    </SectionTitle>
   )
 }
 
@@ -565,7 +594,7 @@ export function ScatterDateCard({
 
   return (
     <>
-      <EwLabel>La date</EwLabel>
+      <EwLabel section="date">La date</EwLabel>
       <div className="rounded-2xl px-6 py-9 text-center" style={{ background: p.bgDate }}>
         <ScatterTitle text={title} revealed={revealed} reducedMotion={reducedMotion} />
 
@@ -680,9 +709,7 @@ export function HorizontalProgramme({
 
   const label = (
     <div style={reducedMotion ? undefined : { opacity: revealed ? 1 : 0, transform: revealed ? 'translateY(0)' : 'translateY(14px)', transition: 'opacity 0.6s cubic-bezier(.22,1,.36,1), transform 0.6s cubic-bezier(.22,1,.36,1)' }}>
-      <p className="mb-7 text-center text-[19px] italic" style={{ color: p.sectionTitle }}>
-        Le Programme
-      </p>
+      <EwLabel section="programme">Le Programme</EwLabel>
     </div>
   )
 
@@ -837,7 +864,7 @@ export function LieuMagnifier({
 
   return (
     <>
-      <EwLabel>Le Lieu</EwLabel>
+      <EwLabel section="lieu">Le Lieu</EwLabel>
       {/* Photo du lieu — fournie par la cliente, au-dessus de la carte
           dynamique (loupe magnétique). Même traitement visuel (rounded-2xl,
           même ratio) pour que les deux blocs s'enchaînent comme une seule
@@ -991,14 +1018,17 @@ export function NotreHistoire({
     // juste après Le Programme (cf. modifications a faire.md — remise à
     // cette position après un premier aller-retour côté client).
     <section className="relative ml-[calc(50%-50vw)] w-screen py-20" style={{ background: palette.bgHistoire || 'transparent' }}>
+      {/* L'illustration se pose AU-DESSUS du bouton, pas dedans : elle
+          n'est pas cliquable, et le titre reste la seule zone de clic. */}
+      <SectionIllustrationFor section="histoire" />
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="mx-auto mb-7 flex items-center justify-center gap-2 text-[19px] italic"
+        className="mx-auto mb-7 flex items-center justify-center gap-2"
         style={{ color: palette.sectionTitle }}
       >
-        Notre histoire
+        <SectionTitleInline>Notre histoire</SectionTitleInline>
         <svg
           width="14"
           height="14"
@@ -1307,7 +1337,7 @@ export function WaxSealRsvp({
 
   return (
     <>
-      <EwLabel>RSVP</EwLabel>
+      <EwLabel section="rsvp">RSVP</EwLabel>
       <p className="mb-6 text-center text-[15px] leading-[1.6]" style={{ color: `rgba(${p.inkRgb}, 0.75)` }}>
         Nous serions honorés de vous compter parmi nous pour partager ce moment unique de notre vie.
       </p>
@@ -1435,7 +1465,7 @@ export function FoireAuxQuestions({ items = EW_FAQ_ITEMS }: { items?: { q: strin
 
   return (
     <section>
-      <EwLabel>Foire aux questions</EwLabel>
+      <EwLabel section="faq">Foire aux questions</EwLabel>
       <p className="mb-8 text-center text-[13px]" style={{ color: `rgba(${p.inkRgb}, 0.55)` }}>
         Tout ce que vous devez savoir
       </p>
@@ -1535,7 +1565,7 @@ export function DressCodeCard({
   const p = usePalette()
   return (
     <section className="rounded-2xl px-6 py-8 text-center" style={{ background: p.bgDressCode || 'transparent' }}>
-      <EwLabel>Dress Code</EwLabel>
+      <EwLabel section="dresscode">Dress Code</EwLabel>
       <p className="text-[15px] leading-[1.6]" style={{ color: `rgba(${p.inkRgb}, 0.75)` }}>
         {dressCode}
       </p>
@@ -1577,7 +1607,7 @@ export function LodgingCascadeCard({
   const p = usePalette()
   return (
     <section className="text-center">
-      <EwLabel>Hébergements</EwLabel>
+      <EwLabel section="hebergements">Hébergements</EwLabel>
       <div className="mx-auto flex max-w-[420px] flex-col gap-3">
         {lodging.map((item, i) => {
           const match = /^(.+?)\s*\((.+)\)$/.exec(item)
@@ -1678,14 +1708,17 @@ export function MenuDuDiner({
 
   return (
     <section className="rounded-2xl px-6 py-8 text-center" style={{ background: p.bgMenu || 'transparent' }}>
+      {/* L'illustration se pose AU-DESSUS du bouton, pas dedans : elle
+          n'est pas cliquable, et le titre reste la seule zone de clic. */}
+      <SectionIllustrationFor section="menu" />
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="mx-auto mb-7 flex items-center justify-center gap-2 text-[19px] italic"
+        className="mx-auto mb-7 flex items-center justify-center gap-2"
         style={{ color: p.sectionTitle }}
       >
-        Menu du dîner
+        <SectionTitleInline>Menu du dîner</SectionTitleInline>
         <svg
           width="14"
           height="14"
@@ -1735,7 +1768,7 @@ export function ListeDeMariage({
   const p = usePalette()
   return (
     <section className="text-center">
-      <EwLabel>Liste de mariage</EwLabel>
+      <EwLabel section="listemariage">Liste de mariage</EwLabel>
       <p className="mx-auto max-w-[34ch] text-[14.5px] leading-[1.7]" style={{ color: `rgba(${p.inkRgb}, 0.75)` }}>
         {message}
       </p>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Loader2 } from 'lucide-react'
 import { trpc } from '@/providers/trpc'
@@ -7,6 +7,8 @@ import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import PhotoSplitCinematique from '@/components/faire-part/PhotoSplitCinematique'
 import DetailsSombre, { parseFaqItem, parseProgrammeItem } from '@/components/faire-part/DetailsSombre'
+import { sectionDecorFromPalette, sectionDecorRootProps } from '@/components/faire-part/sectionDecor'
+import { SectionDecorProvider } from '@/components/faire-part/SectionDecorParts'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { HERO_THEMES } from '@/components/hero-scrub/themes'
 import type { HeroChapter } from '@/components/hero-scrub/types'
@@ -159,6 +161,10 @@ export default function FairePart() {
 
   // Si la palette bespoke définit un fond, il prévaut sur le pageBg du thème
   const effectivePageBg = palette.bg && palette.bg !== EW_PALETTE.bg ? palette.bg : theme.pageBg
+  // Mémorisés : `decor` est une valeur de contexte, un objet neuf à chaque
+  // rendu ferait re-rendre toutes les sections pour rien.
+  const decorRoot = useMemo(() => sectionDecorRootProps(palette, effectivePageBg), [palette, effectivePageBg])
+  const sectionDecor = useMemo(() => sectionDecorFromPalette(palette), [palette])
 
   // Texte overlay du hero (Studio → Palette & Hero) : `heroCardBg` prévaut
   // sur `theme.cardBg`, avec `transparent` en dernier repli — plus de fond
@@ -783,7 +789,12 @@ export default function FairePart() {
 
   return (
     <BespokePaletteProvider palette={palette}>
-    <div style={{ background: effectivePageBg }}>
+    {/* L'habillage des sections (fonds, illustrations, séparateur, animation
+        d'apparition, style de titre) vient de la palette, et ses couleurs se
+        posent ici en variables CSS : une seule fois pour toute la page, cf.
+        sectionDecorRootProps. */}
+    <SectionDecorProvider decor={sectionDecor}>
+    <div style={{ background: effectivePageBg, ...decorRoot.style }} className={decorRoot.className}>
       <EwEffectsStyles />
       <header className="absolute inset-x-0 top-0 z-40 flex items-center justify-center px-6 py-5">
         <Link to="/" aria-label="Scroll The Date — accueil" className="rounded-full bg-black/25 px-4 py-2 backdrop-blur-sm">
@@ -942,6 +953,7 @@ export default function FairePart() {
         />
       </div>
     </div>
+    </SectionDecorProvider>
     </BespokePaletteProvider>
   )
 }

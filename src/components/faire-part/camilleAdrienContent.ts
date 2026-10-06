@@ -293,6 +293,11 @@ export const CA_PALETTE: BespokePalette = {
   heroFontId: '',
   heroTextAnimation: '',
   heroFilter: '',
+  sectionBgs: {},
+  sectionIllus: {},
+  sectionSeparator: '',
+  sectionReveal: '',
+  sectionTitleStyle: '',
   stdDateFormat: '',
 }
 

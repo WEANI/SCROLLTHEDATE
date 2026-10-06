@@ -166,6 +166,11 @@ export function suggestPaletteFromColors(
     // Idem : animation de texte / filtre vidéo, jamais suggérés.
     heroTextAnimation: "",
     heroFilter: "",
+    sectionBgs: {},
+    sectionIllus: {},
+    sectionSeparator: "",
+    sectionReveal: "",
+    sectionTitleStyle: "",
     stdDateFormat: "",
   };
 }

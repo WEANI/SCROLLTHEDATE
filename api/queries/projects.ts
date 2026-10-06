@@ -172,13 +172,15 @@ export async function updateProjectTemplate(
 
 /**
  * Palette bespoke posée à la main par le studio (cf. commentaire sur la
- * colonne, db/schema.ts). `string | boolean` (pas juste `string`) depuis
- * l'ajout de `heroClosingEnabled` — seul champ non-couleur de
- * BespokePaletteInput.
+ * colonne, db/schema.ts). Les valeurs ne sont pas toutes des couleurs :
+ * `heroClosingEnabled` est un booléen, et `sectionBgs`/`sectionIllus` sont
+ * des dictionnaires d'identifiants d'habillage indexés par section (cf.
+ * contracts/bespokePalette.ts). La colonne est du JSON, le type reste donc
+ * volontairement large ici — c'est `bespokePaletteSchema` qui valide.
  */
 export async function updateProjectPalette(
   projectId: number,
-  palette: Record<string, string | boolean>,
+  palette: Record<string, string | boolean | Record<string, string>>,
 ) {
   await getDb().update(projects).set({ palette }).where(eq(projects.id, projectId));
 }

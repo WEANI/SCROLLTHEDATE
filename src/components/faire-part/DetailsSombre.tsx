@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
+import { backgroundLayerClass, useSectionDecor } from './sectionDecor'
+import { DefaultDivider, SectionSeparator, SectionTitle } from './SectionDecorParts'
 
 /**
  * DetailsSombre — bloc « détails » du faire-part en thème sombre (noir/
@@ -117,25 +119,39 @@ const DEFAULT_DETAILS_THEME: DetailsSombreTheme = {
  * se fondre dans la page — un choix délibéré, pas une valeur à varier par
  * couple.
  */
+/**
+ * Un bloc du corps du faire-part. `id` est l'identifiant de section
+ * (FAIRE_PART_SECTIONS dans sectionDecor.ts) : c'est par lui que la section
+ * retrouve son fond et son illustration dans l'habillage du projet.
+ */
+type DetailsBlock = { id: string; render: (revealed: boolean, reducedMotion: boolean) => ReactNode }
+
 const CARD_DARK_BG = '#1A1211'
 
+/**
+ * Séparateur entre deux sections. L'habillage du projet peut le remplacer
+ * (filet fin, cœur, alliances, nœud, perles, sceau de cire — cf.
+ * SECTION_SEPARATORS) ; sans choix, c'est le filet et ses trois losanges
+ * d'origine, qui reste dessiné ici parce qu'il dépend de la couleur du
+ * thème passé à DetailsSombre, pas de la palette.
+ */
 function Divider({ color }: { color: string }) {
-  return (
-    <div className="my-16 flex items-center justify-center gap-2.5" style={{ color }} aria-hidden>
-      <span className="h-px max-w-24 flex-1" style={{ background: `linear-gradient(to right, transparent, currentColor 45%, currentColor 55%, transparent)` }} />
-      <span className="h-[5px] w-[5px] rotate-45" style={{ background: 'currentColor' }} />
-      <span className="h-[9px] w-[9px] rotate-45" style={{ background: 'currentColor' }} />
-      <span className="h-[5px] w-[5px] rotate-45" style={{ background: 'currentColor' }} />
-      <span className="h-px max-w-24 flex-1" style={{ background: `linear-gradient(to left, transparent, currentColor 45%, currentColor 55%, transparent)` }} />
-    </div>
-  )
+  const { separator } = useSectionDecor()
+  if (separator) return <SectionSeparator id={separator} />
+  return <DefaultDivider color={color} />
 }
 
-function SectionLabel({ children, accent }: { children: ReactNode; accent: string }) {
+/**
+ * Titre d'une section des blocs de repli (ceux rendus quand FairePart.tsx
+ * ne fournit pas de `renderX` — aperçus de modèles). Les sections d'un vrai
+ * faire-part passent par `EwLabel` dans edwigeWilfriedEffects.tsx, qui
+ * applique exactement le même habillage.
+ */
+function SectionLabel({ children, accent, section }: { children: string; accent: string; section: string }) {
   return (
-    <p className="mb-7 text-center text-[19px] italic" style={{ color: accent }}>
+    <SectionTitle section={section} color={accent}>
       {children}
-    </p>
+    </SectionTitle>
   )
 }
 
@@ -205,10 +221,52 @@ function staggerStyle(
   }
 }
 
-/** Porte l'IntersectionObserver d'un bloc et fournit `revealed`/`reducedMotion` à son contenu, pour que ses éléments internes puissent cascader. */
-function RevealBlock({ children }: { children: (revealed: boolean, reducedMotion: boolean) => ReactNode }) {
+/**
+ * Sections dont l'apparition est pilotée par le scroll (défilement
+ * horizontal du programme, panoramique de Notre histoire) : elles
+ * débordent en pleine largeur et animent déjà leur contenu au doigt. Une
+ * animation d'apparition en `clip-path` par-dessus les tronquerait, donc
+ * elles gardent la cascade d'origine quel que soit le réglage de la page.
+ */
+const SCROLL_DRIVEN_SECTIONS = new Set(['programme', 'histoire'])
+
+/**
+ * Cadre d'une section : porte son IntersectionObserver, son calque de fond
+ * et son animation d'apparition.
+ *
+ * Fournit `revealed`/`reducedMotion` à son contenu pour que ses éléments
+ * internes puissent cascader (cf. staggerStyle) — c'est le comportement
+ * d'origine, conservé tel quel quand l'habillage ne choisit pas d'autre
+ * animation.
+ */
+function RevealBlock({
+  section,
+  children,
+}: {
+  section: string
+  children: (revealed: boolean, reducedMotion: boolean) => ReactNode
+}) {
   const { ref, revealed, reducedMotion } = useRevealOnScroll()
-  return <div ref={ref}>{children(revealed, reducedMotion)}</div>
+  const decor = useSectionDecor()
+  const layer = backgroundLayerClass(decor.bgs[section] ?? '')
+  const reveal = SCROLL_DRIVEN_SECTIONS.has(section) ? '' : decor.reveal
+  return (
+    <div
+      ref={ref}
+      className={[
+        'fpd-sec',
+        layer ? 'has-bg' : '',
+        reveal ? `fpd-rv-${reveal}` : '',
+        revealed ? 'is-in' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {layer ? <span className={layer} aria-hidden /> : null}
+      {reveal === 'line' ? <span className="fpd-rule" aria-hidden /> : null}
+      <div className="fpd-body">{children(revealed, reducedMotion)}</div>
+    </div>
+  )
 }
 
 /** Bronze du cachet de cire de l'ouverture (charte FELICITI) — réutilisé comme 3e couleur des confettis, pas une couleur inventée pour l'occasion. */
@@ -690,21 +748,24 @@ export default function DetailsSombre({
   // fonction (revealed, reducedMotion) => JSX plutôt que du JSX déjà rendu
   // — il lui faut ces deux valeurs pour faire cascader ses propres
   // éléments internes (cf. staggerStyle).
-  const blocks: ((revealed: boolean, reducedMotion: boolean) => ReactNode)[] = [
-    (revealed, reducedMotion) =>
+  const blocks: DetailsBlock[] = []
+  const push = (id: string, render: DetailsBlock['render']) => blocks.push({ id, render })
+
+  push('date', (revealed, reducedMotion) =>
       renderDate ? (
         renderDate(t.accent, revealed, reducedMotion)
       ) : (
         <DateCountdownCard weddingDateTime={weddingDateTime} accent={t.accent} revealed={revealed} reducedMotion={reducedMotion} />
-      ),
+      )
+  )
 
-    (revealed, reducedMotion) =>
+  push('lieu', (revealed, reducedMotion) =>
       renderLieu ? (
         renderLieu({ venueName, venueAddress, mapsUrl, accent: t.accent }, revealed, reducedMotion)
       ) : (
         <section>
           <div style={staggerStyle(0, revealed, reducedMotion)}>
-            <SectionLabel accent={t.accent}>Le Lieu</SectionLabel>
+            <SectionLabel accent={t.accent} section="lieu">Le Lieu</SectionLabel>
           </div>
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-7">
             <div className="w-full sm:w-[46%]" style={staggerStyle(1, revealed, reducedMotion)}>
@@ -732,17 +793,17 @@ export default function DetailsSombre({
             </div>
           </div>
         </section>
-      ),
-  ]
+      )
+  )
 
   if (programme && programme.length > 0) {
-    blocks.push((revealed, reducedMotion) =>
+    push('programme', (revealed, reducedMotion) =>
       renderProgramme ? (
         renderProgramme(programme, t.accent, revealed, reducedMotion)
       ) : (
         <section>
           <div style={staggerStyle(0, revealed, reducedMotion)}>
-            <SectionLabel accent={t.accent}>Le Programme</SectionLabel>
+            <SectionLabel accent={t.accent} section="programme">Le Programme</SectionLabel>
           </div>
           <div className="relative">
             {/* rail — toujours visible, sert de piste au remplissage */}
@@ -787,17 +848,17 @@ export default function DetailsSombre({
   // fixes des 4 blocs additionnels. Poussé ICI, pas en fin de liste comme
   // avant (déplacement demandé par le client, cf. modifications a faire.md).
   if (renderBeforeRsvp) {
-    blocks.push((revealed, reducedMotion) => renderBeforeRsvp(revealed, reducedMotion))
+    push('histoire', (revealed, reducedMotion) => renderBeforeRsvp(revealed, reducedMotion))
   }
 
   if (dressCode) {
-    blocks.push((revealed, reducedMotion) =>
+    push('dresscode', (revealed, reducedMotion) =>
       renderDressCode ? (
         renderDressCode(dressCode, t.accent, revealed, reducedMotion)
       ) : (
         <section>
           <div style={staggerStyle(0, revealed, reducedMotion)}>
-            <SectionLabel accent={t.accent}>Dress code</SectionLabel>
+            <SectionLabel accent={t.accent} section="dresscode">Dress code</SectionLabel>
           </div>
           <p className="text-center text-[16px]" style={{ color: t.ink, ...staggerStyle(1, revealed, reducedMotion) }}>
             {dressCode}
@@ -809,17 +870,17 @@ export default function DetailsSombre({
 
   // "Menu du dîner" : juste après Dress code.
   if (renderMenu) {
-    blocks.push((revealed, reducedMotion) => renderMenu(revealed, reducedMotion))
+    push('menu', (revealed, reducedMotion) => renderMenu(revealed, reducedMotion))
   }
 
   if (lodging && lodging.length > 0) {
-    blocks.push((revealed, reducedMotion) =>
+    push('hebergements', (revealed, reducedMotion) =>
       renderLodging ? (
         renderLodging(lodging, t.accent, revealed, reducedMotion)
       ) : (
         <section>
           <div style={staggerStyle(0, revealed, reducedMotion)}>
-            <SectionLabel accent={t.accent}>Hébergements</SectionLabel>
+            <SectionLabel accent={t.accent} section="hebergements">Hébergements</SectionLabel>
           </div>
           <ul className="list-none p-0 text-center">
             {lodging.map((item, i) => (
@@ -836,20 +897,20 @@ export default function DetailsSombre({
 
   // "Liste de mariage" : juste avant la FAQ.
   if (renderBeforeFaq) {
-    blocks.push((revealed, reducedMotion) => renderBeforeFaq(revealed, reducedMotion))
+    push('listemariage', (revealed, reducedMotion) => renderBeforeFaq(revealed, reducedMotion))
   }
 
   if (renderBeforeRsvp2) {
-    blocks.push((revealed, reducedMotion) => renderBeforeRsvp2(revealed, reducedMotion))
+    push('faq', (revealed, reducedMotion) => renderBeforeRsvp2(revealed, reducedMotion))
   }
 
-  blocks.push((revealed, reducedMotion) =>
+  push('rsvp', (revealed, reducedMotion) =>
     renderRsvp ? (
       renderRsvp({ label: rsvpCtaLabel, accent: t.accent, onClick: openRsvp }, revealed, reducedMotion)
     ) : (
       <section>
         <div style={staggerStyle(0, revealed, reducedMotion)}>
-          <SectionLabel accent={t.accent}>RSVP</SectionLabel>
+          <SectionLabel accent={t.accent} section="rsvp">RSVP</SectionLabel>
         </div>
         <p className="mb-4 text-center text-[15px] leading-[1.6]" style={{ color: t.inkSoft, ...staggerStyle(1, revealed, reducedMotion) }}>
           {rsvpText}
@@ -863,10 +924,10 @@ export default function DetailsSombre({
 
   return (
     <div className="mx-auto max-w-[420px] text-left">
-      {blocks.map((renderBlock, i) => (
-        <div key={i}>
+      {blocks.map((block) => (
+        <div key={block.id}>
           <Divider color={t.accent} />
-          <RevealBlock>{renderBlock}</RevealBlock>
+          <RevealBlock section={block.id}>{block.render}</RevealBlock>
         </div>
       ))}
     </div>

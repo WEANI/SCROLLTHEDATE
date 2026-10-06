@@ -1,0 +1,461 @@
+/*
+ * Habillage des sections du faire-part — fonds, séparateurs, titres et
+ * animations d'apparition. Catalogue et répartition : sectionDecor.ts.
+ * Rendu React : SectionDecorParts.tsx.
+ *
+ * Tout est peint à partir de huit variables, posées une seule fois sur le
+ * conteneur de la page (cf. sectionDecorVars() dans SectionDecorParts.tsx) :
+ *   --fpd-bg    fond de la page            --fpd-acc   accent principal
+ *   --fpd-card  fond des cartes            --fpd-acc2  accent secondaire
+ *   --fpd-ink   texte                      --fpd-warm  le plus chaud des deux
+ *   --fpd-soft  texte atténué              --fpd-line  filets
+ * Conséquence : aucune couleur en dur, aucune image à télécharger, et un
+ * changement de palette au studio repeint tout l'habillage.
+ *
+ * Les formes complexes (pétales, cœurs, confettis, feuilles, paillettes)
+ * sont des MASQUES SVG remplis par une couleur de la palette : la forme est
+ * figée, la couleur suit le couple.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Charpente                                                           */
+/*                                                                     */
+/* Le fond est un calque à part, en position absolue et PLEINE LARGEUR  */
+/* (left/width comme le `ml-[calc(50%-50vw)] w-screen` déjà utilisé par  */
+/* le programme et Notre histoire), pendant que le texte reste dans sa   */
+/* colonne de 420 px. Deux raisons de ne pas mettre le fond sur la        */
+/* section elle-même : il faut `overflow:hidden` pour que les pétales ne  */
+/* débordent pas de la page, et ce clipping couperait justement ces deux  */
+/* sections pleine largeur.                                              */
+/* ------------------------------------------------------------------ */
+/*
+ * Le conteneur de la page. `overflow-x: clip` est indispensable : le calque
+ * de fond fait 100vw, or 100vw compte la barre de défilement sur un
+ * ordinateur — sans lui, chaque section habillée ajouterait une quinzaine de
+ * pixels de défilement horizontal à toute la page. `clip` et pas `hidden` :
+ * `hidden` créerait un conteneur de défilement, ce qui casserait le
+ * `position: sticky` du programme et de Notre histoire.
+ */
+.fpd-page { overflow-x: clip; }
+
+.fpd-sec { position: relative; }
+/* Respiration verticale seulement quand il y a un fond à voir. */
+.fpd-sec.has-bg { padding-block: 34px; }
+.fpd-body { position: relative; z-index: 1; }
+.fpd-layer {
+  position: absolute;
+  inset-block: 0;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  /* Les tuiles des motifs sont dimensionnées en cqw : elles suivent la
+     largeur de l'écran, donc un pétale a la même taille sur téléphone que
+     sur ordinateur. */
+  container-type: inline-size;
+}
+
+/* Masques des motifs — repris tels quels de la maquette d'habillage. */
+.fpd-layer {
+  --m-petals: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Cellipse cx='16' cy='14' rx='8' ry='4.4' transform='rotate(-28 16 14)'/%3E%3Cellipse cx='58' cy='8' rx='6.5' ry='3.6' transform='rotate(22 58 8)'/%3E%3Cellipse cx='86' cy='26' rx='7.4' ry='4' transform='rotate(-14 86 26)'/%3E%3Cellipse cx='34' cy='40' rx='6' ry='3.3' transform='rotate(46 34 40)'/%3E%3Cellipse cx='70' cy='52' rx='8.2' ry='4.5' transform='rotate(-38 70 52)'/%3E%3Cellipse cx='10' cy='62' rx='6.8' ry='3.7' transform='rotate(12 10 62)'/%3E%3Cellipse cx='44' cy='74' rx='7.6' ry='4.2' transform='rotate(-52 44 74)'/%3E%3Cellipse cx='88' cy='84' rx='6.2' ry='3.4' transform='rotate(30 88 84)'/%3E%3Cellipse cx='22' cy='92' rx='7' ry='3.9' transform='rotate(-18 22 92)'/%3E%3Cellipse cx='62' cy='96' rx='5.8' ry='3.2' transform='rotate(8 62 96)'/%3E%3C/g%3E%3C/svg%3E");
+  --m-hearts: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3Cpath id='h' d='M5 9.3C-.6 5.2.2 1.2 2.6 1.2 3.9 1.2 4.7 2.1 5 2.9 5.3 2.1 6.1 1.2 7.4 1.2 9.8 1.2 10.6 5.2 5 9.3Z'/%3E%3C/defs%3E%3Cg fill='%23fff'%3E%3Cuse href='%23h' transform='translate(10 7) rotate(-16 5 5) scale(1.4)'/%3E%3Cuse href='%23h' transform='translate(54 3) rotate(12 5 5) scale(.9)'/%3E%3Cuse href='%23h' transform='translate(80 20) rotate(-8 5 5) scale(1.15)'/%3E%3Cuse href='%23h' transform='translate(30 34) rotate(22 5 5) scale(.75)'/%3E%3Cuse href='%23h' transform='translate(64 46) rotate(-20 5 5) scale(1.3)'/%3E%3Cuse href='%23h' transform='translate(6 56) rotate(10 5 5) scale(1)'/%3E%3Cuse href='%23h' transform='translate(40 70) rotate(-14 5 5) scale(1.2)'/%3E%3Cuse href='%23h' transform='translate(84 78) rotate(18 5 5) scale(.8)'/%3E%3Cuse href='%23h' transform='translate(18 88) rotate(-6 5 5) scale(1.05)'/%3E%3C/g%3E%3C/svg%3E");
+  --m-stars: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3Cpath id='s' d='M5 0C5.4 3.3 6.7 4.6 10 5 6.7 5.4 5.4 6.7 5 10 4.6 6.7 3.3 5.4 0 5 3.3 4.6 4.6 3.3 5 0Z'/%3E%3C/defs%3E%3Cg fill='%23fff'%3E%3Cuse href='%23s' transform='translate(12 10) scale(1.5)'/%3E%3Cuse href='%23s' transform='translate(58 4) scale(.9)'/%3E%3Cuse href='%23s' transform='translate(82 24) scale(1.2)'/%3E%3Cuse href='%23s' transform='translate(32 30) scale(.7)'/%3E%3Cuse href='%23s' transform='translate(68 48) scale(1.35)'/%3E%3Cuse href='%23s' transform='translate(8 52) scale(.85)'/%3E%3Cuse href='%23s' transform='translate(44 66) scale(1.1)'/%3E%3Cuse href='%23s' transform='translate(88 72) scale(.75)'/%3E%3Cuse href='%23s' transform='translate(22 84) scale(1.25)'/%3E%3Cuse href='%23s' transform='translate(62 90) scale(.8)'/%3E%3Ccircle cx='40' cy='16' r='1'/%3E%3Ccircle cx='74' cy='36' r='.8'/%3E%3Ccircle cx='20' cy='44' r='1.1'/%3E%3Ccircle cx='54' cy='58' r='.9'/%3E%3Ccircle cx='92' cy='56' r='1'/%3E%3Ccircle cx='34' cy='76' r='.8'/%3E%3Ccircle cx='78' cy='86' r='1.1'/%3E%3Ccircle cx='6' cy='74' r='.9'/%3E%3C/g%3E%3C/svg%3E");
+  --m-confetti: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Crect width='8' height='3.4' rx='1.5' transform='translate(8 8) rotate(28)'/%3E%3Crect width='6' height='3' rx='1.4' transform='translate(46 4) rotate(-42)'/%3E%3Crect width='9' height='3.6' rx='1.6' transform='translate(76 16) rotate(14)'/%3E%3Crect width='5.5' height='2.8' rx='1.3' transform='translate(26 26) rotate(-18)'/%3E%3Crect width='8.5' height='3.4' rx='1.5' transform='translate(60 34) rotate(56)'/%3E%3Crect width='6.5' height='3' rx='1.4' transform='translate(6 44) rotate(-62)'/%3E%3Crect width='9' height='3.6' rx='1.6' transform='translate(88 46) rotate(32)'/%3E%3Crect width='5.5' height='2.8' rx='1.3' transform='translate(38 56) rotate(8)'/%3E%3Crect width='8' height='3.4' rx='1.5' transform='translate(70 68) rotate(-34)'/%3E%3Crect width='6' height='3' rx='1.4' transform='translate(16 72) rotate(46)'/%3E%3Crect width='9' height='3.6' rx='1.6' transform='translate(48 86) rotate(-12)'/%3E%3Crect width='5.5' height='2.8' rx='1.3' transform='translate(84 90) rotate(66)'/%3E%3C/g%3E%3C/svg%3E");
+  --m-leaves: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3Cpath id='l' d='M0 0Q6-4.6 12 0 6 4.6 0 0Z'/%3E%3C/defs%3E%3Cg fill='%23fff'%3E%3Cuse href='%23l' transform='translate(10 12) rotate(-32)'/%3E%3Cuse href='%23l' transform='translate(52 6) rotate(18) scale(.8)'/%3E%3Cuse href='%23l' transform='translate(80 22) rotate(-12) scale(1.1)'/%3E%3Cuse href='%23l' transform='translate(28 34) rotate(54) scale(.7)'/%3E%3Cuse href='%23l' transform='translate(62 46) rotate(-44) scale(1.15)'/%3E%3Cuse href='%23l' transform='translate(6 56) rotate(24) scale(.9)'/%3E%3Cuse href='%23l' transform='translate(42 68) rotate(-58) scale(1.05)'/%3E%3Cuse href='%23l' transform='translate(86 76) rotate(36) scale(.75)'/%3E%3Cuse href='%23l' transform='translate(20 88) rotate(-20) scale(1)'/%3E%3Cuse href='%23l' transform='translate(60 94) rotate(8) scale(.85)'/%3E%3C/g%3E%3C/svg%3E");
+  --fpd-deckle: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%20preserveAspectRatio%3D'none'%3E%3Cpath%20d%3D'M0%201.20%20L2%202.61%20L4%201.09%20L6%200.91%20L8%202.15%20L10%201.68%20L12%201.19%20L14%202.20%20L16%202.21%20L18%201.70%20L20%202.04%20L22%201.93%20L24%202.36%20L26%200.98%20L28%201.30%20L30%202.10%20L32%202.08%20L34%200.53%20L36%202.04%20L38%201.52%20L40%202.61%20L42%202.34%20L44%200.69%20L46%201.63%20L48%202.62%20L50%202.05%20L52%201.95%20L54%201.79%20L56%202.59%20L58%202.58%20L60%201.29%20L62%201.20%20L64%202.41%20L66%201.20%20L68%200.77%20L70%201.11%20L72%201.43%20L74%201.11%20L76%202.65%20L78%201.74%20L80%202.15%20L82%202.51%20L84%200.54%20L86%201.06%20L88%201.75%20L90%201.62%20L92%201.41%20L94%200.86%20L96%202.58%20L98%200.53%20L100%201.28%20L100%20100%20L100%2098.23%20L98%2098.99%20L96%2099.62%20L94%2098.64%20L92%2097.80%20L90%2098.37%20L88%2098.08%20L86%2098.27%20L84%2098.42%20L82%2098.20%20L80%2098.68%20L78%2098.87%20L76%2097.96%20L74%2099.58%20L72%2098.50%20L70%2099.47%20L68%2098.92%20L66%2098.92%20L64%2098.64%20L62%2098.61%20L60%2099.05%20L58%2099.65%20L56%2098.35%20L54%2099.10%20L52%2098.00%20L50%2098.81%20L48%2098.24%20L46%2098.19%20L44%2098.34%20L42%2099.31%20L40%2099.51%20L38%2097.67%20L36%2099.37%20L34%2097.59%20L32%2098.38%20L30%2097.77%20L28%2097.59%20L26%2099.79%20L24%2097.93%20L22%2098.92%20L20%2097.75%20L18%2098.50%20L16%2098.82%20L14%2097.73%20L12%2099.61%20L10%2099.52%20L8%2099.54%20L6%2099.52%20L4%2099.58%20L2%2099.23%20L0%2098.06%20Z'%20fill%3D'%23000'%2F%3E%3C%2Fsvg%3E");
+  --fpd-noise: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'160'%20height%3D'160'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'.85'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20values%3D'0%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200.11%200'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20filter%3D'url(%23n)'%2F%3E%3C%2Fsvg%3E");
+}
+.fpd-dark .fpd-layer { --fpd-noise: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'160'%20height%3D'160'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'.85'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20values%3D'0%200%200%200%201%200%200%200%200%201%200%200%200%200%201%200%200%200%200.09%200'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20filter%3D'url(%23n)'%2F%3E%3C%2Fsvg%3E"); }
+
+/* ------------------------------------------------------------------ */
+/* Fonds fixes                                                         */
+/* ------------------------------------------------------------------ */
+
+/* Aquarelle — deux taches de couleur très diluées, en diagonale. */
+.fpd-bg-aquarelle {
+  background:
+    radial-gradient(60% 45% at 16% 12%, color-mix(in srgb, var(--fpd-acc2) 36%, transparent), transparent 70%),
+    radial-gradient(55% 42% at 88% 90%, color-mix(in srgb, var(--fpd-acc) 24%, transparent), transparent 70%),
+    var(--fpd-noise), var(--fpd-bg);
+}
+
+/* Dégradé d'aube — le fond se teinte vers le bas. */
+.fpd-bg-aube {
+  background: linear-gradient(180deg, var(--fpd-bg) 25%, color-mix(in srgb, var(--fpd-acc2) 28%, var(--fpd-bg)) 100%);
+}
+
+/* Halo — une lumière douce derrière le texte, pour le détacher du fond. */
+.fpd-bg-halo {
+  background: radial-gradient(72% 56% at 50% 44%,
+    color-mix(in srgb, var(--fpd-acc2) 16%, var(--fpd-card)) 0%,
+    color-mix(in srgb, var(--fpd-card) 45%, var(--fpd-bg)) 48%,
+    var(--fpd-bg) 82%);
+}
+
+/* Bord déchiré — une feuille frangée en haut et en bas, grain de papier
+   compris. Le masque découpe le calque : le bord suit donc la largeur. */
+.fpd-bg-dechire {
+  background: var(--fpd-noise), color-mix(in srgb, var(--fpd-acc2) 16%, var(--fpd-card));
+  -webkit-mask: var(--fpd-deckle) center / 100% 100% no-repeat;
+  mask: var(--fpd-deckle) center / 100% 100% no-repeat;
+}
+
+/* Satin drapé — plis de soie réguliers et un reflet en travers. */
+.fpd-bg-satin {
+  background:
+    linear-gradient(104deg, transparent 18%, color-mix(in srgb, var(--fpd-warm) 22%, transparent) 46%, transparent 72%),
+    repeating-linear-gradient(104deg,
+      var(--fpd-bg) 0 3%,
+      color-mix(in srgb, var(--fpd-card) 80%, var(--fpd-bg)) 6.5%,
+      var(--fpd-card) 9%,
+      color-mix(in srgb, var(--fpd-card) 55%, var(--fpd-bg)) 12.5%,
+      var(--fpd-bg) 17%, var(--fpd-bg) 21%),
+    var(--fpd-bg);
+}
+
+/* Lueur de bougies — des halos flous, dont deux cerclés comme un vrai flou
+   d'objectif. C'est ce mélange qui évite l'effet « ronds dégradés ». */
+.fpd-bg-bougies {
+  background:
+    radial-gradient(circle 9cqw at 18% 20%, color-mix(in srgb, var(--fpd-warm) 55%, transparent), transparent 70%),
+    radial-gradient(circle 12cqw at 63% 36%, transparent 52%, color-mix(in srgb, var(--fpd-warm) 32%, transparent) 72%, transparent 76%),
+    radial-gradient(circle 6cqw at 78% 13%, color-mix(in srgb, var(--fpd-warm) 46%, transparent), transparent 70%),
+    radial-gradient(circle 5cqw at 33% 57%, color-mix(in srgb, var(--fpd-warm) 52%, transparent), transparent 70%),
+    radial-gradient(circle 8cqw at 88% 61%, transparent 50%, color-mix(in srgb, var(--fpd-warm) 36%, transparent) 72%, transparent 76%),
+    radial-gradient(circle 4cqw at 11% 76%, color-mix(in srgb, var(--fpd-warm) 55%, transparent), transparent 70%),
+    radial-gradient(circle 10cqw at 52% 86%, color-mix(in srgb, var(--fpd-warm) 28%, transparent), transparent 70%),
+    radial-gradient(circle 6cqw at 82% 92%, color-mix(in srgb, var(--fpd-warm) 40%, transparent), transparent 70%),
+    var(--fpd-bg);
+}
+
+/* Anneaux en filigrane — deux alliances entrelacées, très estompées. */
+.fpd-bg-anneaux { background: var(--fpd-bg); }
+.fpd-bg-anneaux::before,
+.fpd-bg-anneaux::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 128px;
+  height: 128px;
+  margin-top: -64px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--fpd-acc) 28%, transparent);
+}
+.fpd-bg-anneaux::before { margin-left: -110px; }
+.fpd-bg-anneaux::after { margin-left: -18px; }
+
+/* ------------------------------------------------------------------ */
+/* Fonds ANIMÉS                                                        */
+/*                                                                     */
+/* Principe : un calque masqué, plus large que le cadre, qu'on fait      */
+/* glisser d'EXACTEMENT une tuile. Au bout de la boucle l'image est      */
+/* identique à celle du départ : la chute ne saute jamais. Deux calques  */
+/* à des vitesses différentes donnent la profondeur.                    */
+/* ------------------------------------------------------------------ */
+@keyframes fpdChute {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(var(--sway), calc(var(--dist) * .25)); }
+  50%  { transform: translate(0, calc(var(--dist) * .5)); }
+  75%  { transform: translate(calc(var(--sway) * -1), calc(var(--dist) * .75)); }
+  100% { transform: translate(0, var(--dist)); }
+}
+@keyframes fpdMonte {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(var(--sway), calc(var(--dist) * -.25)); }
+  50%  { transform: translate(0, calc(var(--dist) * -.5)); }
+  75%  { transform: translate(calc(var(--sway) * -1), calc(var(--dist) * -.75)); }
+  100% { transform: translate(0, calc(var(--dist) * -1)); }
+}
+
+/* Gabarit commun des deux calques de tout fond animé. */
+.fpd-bg-anim { background: var(--fpd-bg); }
+.fpd-bg-anim::before,
+.fpd-bg-anim::after { content: ""; position: absolute; left: -70px; right: -70px; }
+.fpd-bg-anim.fpd-fall::before,
+.fpd-bg-anim.fpd-fall::after { bottom: 0; top: calc(-1 * var(--dist)); animation: fpdChute linear infinite; }
+.fpd-bg-anim.fpd-rise::before,
+.fpd-bg-anim.fpd-rise::after { top: 0; bottom: calc(-1 * var(--dist)); animation: fpdMonte linear infinite; }
+
+/* Pétales qui tombent — la pluie de pétales de la sortie d'église. */
+.fpd-bg-petales::before {
+  --dist: 128px; --sway: 6px; animation-duration: 13s;
+  background: var(--fpd-acc); opacity: .26;
+  -webkit-mask: var(--m-petals) repeat 0 0 / 128px 128px; mask: var(--m-petals) repeat 0 0 / 128px 128px;
+}
+.fpd-bg-petales::after {
+  --dist: 80px; --sway: -5px; animation-duration: 8.5s;
+  background: var(--fpd-acc2); opacity: .22;
+  -webkit-mask: var(--m-petals) repeat 40px 0 / 80px 80px; mask: var(--m-petals) repeat 40px 0 / 80px 80px;
+}
+
+/* Petits cœurs — discrets, ils descendent en se balançant. */
+.fpd-bg-coeurs::before {
+  --dist: 124px; --sway: 5.5px; animation-duration: 14s;
+  background: var(--fpd-acc); opacity: .24;
+  -webkit-mask: var(--m-hearts) repeat 0 0 / 124px 124px; mask: var(--m-hearts) repeat 0 0 / 124px 124px;
+}
+.fpd-bg-coeurs::after {
+  --dist: 78px; --sway: -4.5px; animation-duration: 9s;
+  background: var(--fpd-acc2); opacity: .2;
+  -webkit-mask: var(--m-hearts) repeat 39px 0 / 78px 78px; mask: var(--m-hearts) repeat 39px 0 / 78px 78px;
+}
+
+/* Confettis — festif : plutôt pour la fin de page (RSVP, liste de mariage). */
+.fpd-bg-confettis::before {
+  --dist: 120px; --sway: 6.5px; animation-duration: 7s;
+  background: var(--fpd-acc); opacity: .32;
+  -webkit-mask: var(--m-confetti) repeat 0 0 / 120px 120px; mask: var(--m-confetti) repeat 0 0 / 120px 120px;
+}
+.fpd-bg-confettis::after {
+  --dist: 80px; --sway: -5.5px; animation-duration: 4.8s;
+  background: var(--fpd-warm); opacity: .3;
+  -webkit-mask: var(--m-confetti) repeat 40px 0 / 80px 80px; mask: var(--m-confetti) repeat 40px 0 / 80px 80px;
+}
+
+/* Feuilles qui tombent — feuillage léger, esprit bohème. */
+.fpd-bg-feuilles::before {
+  --dist: 124px; --sway: 7px; animation-duration: 15s;
+  background: var(--fpd-acc); opacity: .24;
+  -webkit-mask: var(--m-leaves) repeat 0 0 / 124px 124px; mask: var(--m-leaves) repeat 0 0 / 124px 124px;
+}
+.fpd-bg-feuilles::after {
+  --dist: 78px; --sway: -5.5px; animation-duration: 9.5s;
+  background: var(--fpd-acc2); opacity: .2;
+  -webkit-mask: var(--m-leaves) repeat 39px 0 / 78px 78px; mask: var(--m-leaves) repeat 39px 0 / 78px 78px;
+}
+
+/* Poussière dorée — de fines paillettes qui montent. */
+.fpd-bg-poussiere::before {
+  --dist: 96px; --sway: 4.5px; animation-duration: 16s;
+  background: var(--fpd-warm); opacity: .48;
+  -webkit-mask: var(--m-stars) repeat 0 0 / 96px 96px; mask: var(--m-stars) repeat 0 0 / 96px 96px;
+}
+.fpd-bg-poussiere::after {
+  --dist: 66px; --sway: -4px; animation-duration: 10s;
+  background: var(--fpd-warm); opacity: .32;
+  -webkit-mask: var(--m-stars) repeat 33px 0 / 66px 66px; mask: var(--m-stars) repeat 33px 0 / 66px 66px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Illustrations (SVG) et séparateurs                                  */
+/* ------------------------------------------------------------------ */
+.fpd-orn {
+  display: block;
+  width: 142px;
+  max-width: 62%;
+  height: auto;
+  margin: 0 auto 16px;
+  color: var(--fpd-acc);
+}
+
+/* Les séparateurs remplacent le filet-et-losanges d'origine, entre deux
+   sections. Même boîte pour tous : marges verticales identiques. */
+.fpd-sep { display: flex; align-items: center; justify-content: center; margin-block: 4rem; }
+.fpd-sep-filet { width: 56px; height: 1px; background: var(--fpd-line); }
+.fpd-sep-losange { gap: 8px; }
+.fpd-sep-losange i { width: 30px; height: 1px; background: var(--fpd-line); }
+.fpd-sep-losange b { width: 6px; height: 6px; transform: rotate(45deg); border: 1px solid var(--fpd-acc); }
+.fpd-sep-svg { display: block; height: auto; color: var(--fpd-acc); }
+
+/* ------------------------------------------------------------------ */
+/* Styles de titre de section                                          */
+/*                                                                     */
+/* Le style d'origine (italique centré) reste `.fpd-ti` seul : les autres */
+/* ne font que le remplacer, pour qu'un projet déjà livré ne bouge pas.  */
+/* ------------------------------------------------------------------ */
+.fpd-ti { margin-bottom: 1.75rem; text-align: center; font-size: 19px; font-style: italic; color: var(--fpd-title, var(--fpd-acc)); }
+
+.fpd-ti-capitales {
+  font-style: normal;
+  font-family: 'Jost', system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: .42em;
+  /* La dernière lettre traîne son espacement : on le reprend pour que le
+     bloc reste optiquement centré. */
+  margin-right: -.42em;
+  text-transform: uppercase;
+}
+.fpd-ti-calli { font-style: normal; font-family: 'Great Vibes', 'Snell Roundhand', cursive; font-size: 38px; line-height: 1; }
+.fpd-ti-filets { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.fpd-ti-filets::before,
+.fpd-ti-filets::after { content: ""; width: 30px; height: 1px; background: var(--fpd-line); flex: none; }
+.fpd-ti-surtitre { font-style: normal; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.fpd-ti-surtitre .fpd-k {
+  font-family: 'Jost', system-ui, sans-serif;
+  font-size: 9.5px;
+  font-weight: 300;
+  letter-spacing: .34em;
+  margin-right: -.34em;
+  text-transform: uppercase;
+  color: var(--fpd-soft);
+}
+.fpd-ti-surtitre .fpd-n { font-size: 26px; font-style: italic; }
+.fpd-ti-initiale { position: relative; display: grid; place-items: center; }
+/* L'initiale géante est purement décorative : hors du flux, donc elle
+   n'ajoute pas de hauteur, et `aria-hidden` côté React. */
+.fpd-ti-initiale .fpd-big {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -54%);
+  font-size: 104px;
+  font-style: normal;
+  line-height: 1;
+  opacity: .14;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Animations d'apparition                                             */
+/*                                                                     */
+/* « Cascade » est le comportement d'origine (chaque élément décalé via  */
+/* staggerStyle dans DetailsSombre) : pas de classe, rien à faire ici.   */
+/* Les autres remplacent cette entrée par une animation de bloc, posée   */
+/* sur .fpd-body dès que la section entre dans l'écran (.is-in).         */
+/*                                                                     */
+/* Les clips horizontaux sont volontairement généreux (-100vw de chaque  */
+/* côté) : un `inset(0 0 0 0)` au repos couperait le programme et Notre   */
+/* histoire, qui débordent en pleine largeur.                           */
+/* ------------------------------------------------------------------ */
+@keyframes fpdFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fpdUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fpdBlur { from { opacity: 0; filter: blur(8px); } to { opacity: 1; filter: blur(0); } }
+@keyframes fpdCurtain { from { clip-path: inset(0 -100vw 100% -100vw); } to { clip-path: inset(0 -100vw 0 -100vw); } }
+@keyframes fpdInk { from { clip-path: circle(0% at 50% 42%); } to { clip-path: circle(150% at 50% 42%); } }
+@keyframes fpdLetter { from { opacity: 0; transform: translateY(.45em); } to { opacity: 1; transform: none; } }
+@keyframes fpdLine { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Au repos, le bloc est caché — sinon il apparaîtrait d'abord en clair,
+   puis rejouerait son entrée une fois à l'écran. */
+.fpd-rv-blur > .fpd-body,
+.fpd-rv-curtain > .fpd-body,
+.fpd-rv-ink > .fpd-body,
+.fpd-rv-line > .fpd-body { opacity: 0; }
+
+.fpd-rv-blur.is-in > .fpd-body { animation: fpdBlur 1s ease both; }
+.fpd-rv-curtain.is-in > .fpd-body { animation: fpdCurtain 1.1s cubic-bezier(.65, 0, .35, 1) both, fpdFade .4s ease both; }
+.fpd-rv-ink.is-in > .fpd-body { animation: fpdInk 1.2s cubic-bezier(.65, 0, .35, 1) both, fpdFade .3s ease both; }
+
+/* Lettre par lettre : le bloc apparaît vite, le titre s'écrit par-dessus. */
+.fpd-rv-letters.is-in > .fpd-body { animation: fpdFade .35s ease both; }
+.fpd-rv-letters .fpd-ch { display: inline-block; opacity: 0; }
+.fpd-rv-letters.is-in .fpd-ch { animation: fpdLetter .5s cubic-bezier(.22, 1, .36, 1) both; animation-delay: calc(var(--j) * 45ms); }
+
+/* Filet puis texte : le trait se dessine d'abord, le bloc suit. */
+.fpd-rv-line > .fpd-rule { width: 56px; height: 1px; margin: 0 auto 18px; background: var(--fpd-line); transform: scaleX(0); }
+.fpd-rv-line.is-in > .fpd-rule { animation: fpdLine .7s cubic-bezier(.65, 0, .35, 1) both; }
+.fpd-rv-line.is-in > .fpd-body { animation: fpdUp .6s .55s cubic-bezier(.22, 1, .36, 1) both; }
+
+/* ------------------------------------------------------------------ */
+/* Réglage système « moins d'animations » : tout se fige, rien ne        */
+/* disparaît — un invité qui a coupé les animations doit voir la page    */
+/* complète, pas une page vide.                                         */
+/* ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .fpd-bg-anim::before,
+  .fpd-bg-anim::after { animation: none !important; }
+  .fpd-sec > .fpd-body { animation: none !important; opacity: 1 !important; clip-path: none !important; filter: none !important; }
+  .fpd-sec .fpd-ch { animation: none !important; opacity: 1 !important; }
+  .fpd-rv-line > .fpd-rule { animation: none !important; transform: none !important; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Titre en ligne — Notre histoire et Menu du dîner, dont le titre est  */
+/* un bouton dépliant (cf. SectionTitleInline). Mêmes polices et mêmes  */
+/* graisses que ci-dessus, mais aucune mise en page de bloc : pas de    */
+/* marge, pas de centrage, rien qui désaligne le chevron du bouton.     */
+/* ------------------------------------------------------------------ */
+.fpd-tib { font-size: 19px; font-style: italic; }
+.fpd-tib-capitales {
+  font-style: normal;
+  font-family: 'Jost', system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: .42em;
+  margin-right: -.42em;
+  text-transform: uppercase;
+}
+.fpd-tib-calli { font-style: normal; font-family: 'Great Vibes', 'Snell Roundhand', cursive; font-size: 34px; line-height: 1; }
+.fpd-tib-filets { display: inline-flex; align-items: center; gap: 10px; }
+.fpd-tib-filets::before,
+.fpd-tib-filets::after { content: ""; width: 24px; height: 1px; background: var(--fpd-line); flex: none; }
+.fpd-tib-initiale { position: relative; display: inline-grid; place-items: center; }
+.fpd-tib-initiale .fpd-big {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -54%);
+  font-size: 76px;
+  font-style: normal;
+  line-height: 1;
+  opacity: .14;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Vignette d'aperçu du studio (cf. SectionDecorPreview) — le cadre et  */
+/* les deux lignes de texte d'exemple. Tout le reste de l'habillage est */
+/* rendu par les classes ci-dessus, celles de la vraie page.            */
+/* ------------------------------------------------------------------ */
+.fpd-preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  aspect-ratio: 4 / 5;
+  text-align: center;
+  container-type: inline-size;
+}
+/* La vignette rejoue l'habillage en miniature : les tailles de la page
+   (titre à 19 px, illustration à 142 px) y seraient hors d'échelle. Mises à
+   l'échelle une par une, plutôt qu'avec un `zoom` ou un `transform: scale`
+   sur le cadre : le second demanderait une taille fixe, et les deux
+   rendraient les bordures et les filets de 1 px flous. */
+.fpd-preview .fpd-orn { width: 88px; max-width: 58%; margin-bottom: 9px; }
+.fpd-preview .fpd-ti { margin-bottom: .7rem; font-size: 13px; }
+.fpd-preview .fpd-ti-capitales { font-size: 8px; }
+.fpd-preview .fpd-ti-calli { font-size: 25px; }
+.fpd-preview .fpd-ti-filets { gap: 7px; }
+.fpd-preview .fpd-ti-filets::before,
+.fpd-preview .fpd-ti-filets::after { width: 19px; }
+.fpd-preview .fpd-ti-surtitre { gap: 5px; }
+.fpd-preview .fpd-ti-surtitre .fpd-k { font-size: 7px; }
+.fpd-preview .fpd-ti-surtitre .fpd-n { font-size: 17px; }
+.fpd-preview .fpd-ti-initiale .fpd-big { font-size: 68px; }
+/* Dans la vignette, le fond épouse le cadre au lieu de filer en pleine
+   largeur : il n'y a pas de page autour. */
+.fpd-preview .fpd-layer { left: 0; width: 100%; }
+.fpd-preview .fpd-sec { width: 100%; padding-inline: 9px; }
+/* Un titre long (« Questions fréquentes ») doit passer à la ligne dans une
+   vignette, pas déborder du cadre. */
+.fpd-preview .fpd-ti { text-wrap: balance; overflow-wrap: anywhere; }
+.fpd-preview .fpd-ti-surtitre .fpd-k { letter-spacing: .2em; margin-right: -.2em; }
+.fpd-preview .fpd-sep { margin-block: 1.25rem; }
+/* Cadre nu (cf. DecorChip du studio) : il montre UN élément, pas une section,
+   donc les marges verticales d'un séparateur de page n'ont pas lieu d'être. */
+.fpd-chip { position: relative; container-type: inline-size; }
+.fpd-chip .fpd-sep { margin-block: 0; }
+.fpd-preview .fpd-body { max-width: 100%; }
+.fpd-preview-l1 { margin-top: 2px; font-size: 12px; font-style: italic; line-height: 1.2; text-wrap: balance; }
+.fpd-preview-l2 { margin-top: 4px; font-size: 8px; line-height: 1.3; opacity: .62; text-wrap: balance; }
+
+@container (max-width: 150px) {
+  .fpd-preview .fpd-orn { width: 56px; margin-bottom: 5px; }
+  .fpd-preview .fpd-ti { margin-bottom: .4rem; font-size: 9px; }
+  .fpd-preview .fpd-ti-capitales { font-size: 6px; letter-spacing: .3em; margin-right: -.3em; }
+  .fpd-preview .fpd-ti-calli { font-size: 17px; }
+  .fpd-preview .fpd-ti-filets { gap: 4px; }
+  .fpd-preview .fpd-ti-filets::before,
+  .fpd-preview .fpd-ti-filets::after { width: 10px; }
+  .fpd-preview .fpd-ti-surtitre { gap: 3px; }
+  .fpd-preview .fpd-ti-surtitre .fpd-k { font-size: 5px; }
+  .fpd-preview .fpd-ti-surtitre .fpd-n { font-size: 11px; }
+  .fpd-preview .fpd-ti-initiale .fpd-big { font-size: 44px; }
+  .fpd-preview .fpd-sec { padding-inline: 5px; }
+  .fpd-preview-l1 { font-size: 8px; }
+  .fpd-preview-l2 { font-size: 6px; }
+}

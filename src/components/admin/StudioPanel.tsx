@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Check, CloudUpload, ExternalLink, FileVideo, Loader2, Plus, Send, Sparkles, Upload, Wand2, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -51,6 +51,23 @@ import {
   type Project360,
 } from "@/components/admin/shared";
 import { supabase } from "@/lib/supabaseClient";
+import {
+  FAIRE_PART_SECTIONS,
+  SECTION_BACKGROUNDS,
+  SECTION_ILLUSTRATIONS,
+  SECTION_REVEALS,
+  SECTION_SEPARATORS,
+  SECTION_TITLES,
+  sectionDecorFromPalette,
+  sectionDecorRootProps,
+  type SectionDecor,
+} from "@/components/faire-part/sectionDecor";
+import {
+  DefaultDivider,
+  SectionDecorPreview,
+  SectionIllustration,
+  SectionSeparator,
+} from "@/components/faire-part/SectionDecorParts";
 
 // ---------------------------------------------------------------------------
 // Éditeur de scénarios — 3 propositions
@@ -957,6 +974,11 @@ const BLANK_PALETTE: BespokePaletteInput = {
   heroFontId: "",
   heroTextAnimation: "",
   heroFilter: "",
+  sectionBgs: {},
+  sectionIllus: {},
+  sectionSeparator: "",
+  sectionReveal: "",
+  sectionTitleStyle: "",
   stdDateFormat: "",
 };
 
@@ -1902,6 +1924,20 @@ function useStudioDraft(project: Project360) {
   const setField = (key: keyof BespokePaletteInput, value: string | boolean) =>
     setPalette((prev) => ({ ...prev, [key]: value }));
 
+  /**
+   * Habillage d'UNE section : `sectionBgs`/`sectionIllus` sont des
+   * dictionnaires indexés par id de section. Une valeur vide retire la clé
+   * au lieu de l'enregistrer à "" — la palette reste lisible, et « aucun
+   * fond » se relit comme l'absence de réglage, pas comme un réglage vide.
+   */
+  const setSectionField = (key: "sectionBgs" | "sectionIllus", section: string, value: string) =>
+    setPalette((prev) => {
+      const next = { ...(prev[key] ?? {}) };
+      if (value) next[section] = value;
+      else delete next[section];
+      return { ...prev, [key]: next };
+    });
+
   const savePaletteM = trpc.projects.adminSetPalette.useMutation();
   const saveChaptersM = trpc.projects.adminSetHeroChapters.useMutation();
   const saveCardsM = trpc.projects.adminSetHeroCustomCards.useMutation();
@@ -1960,7 +1996,7 @@ function useStudioDraft(project: Project360) {
     setCards(JSON.parse(baseline.cards) as HeroCustomCard[]);
   };
 
-  return { palette, setPalette, setField, chapters, setChapters, cards, setCards, dirty, anyDirty, saving, save, reset };
+  return { palette, setPalette, setField, setSectionField, chapters, setChapters, cards, setCards, dirty, anyDirty, saving, save, reset };
 }
 type StudioDraft = ReturnType<typeof useStudioDraft>;
 
@@ -2272,6 +2308,291 @@ function onlyGeneratedKeys(p: BespokePaletteInput): Partial<BespokePaletteInput>
 // ---------------------------------------------------------------------------
 // Onglet « Couleurs de la page » — faire-part seulement
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Habillage des sections — fonds, illustrations, séparateur, animation, titre
+// ---------------------------------------------------------------------------
+
+/**
+ * Cadre d'aperçu brut : il ne pose que les variables de couleur de
+ * l'habillage et le fond de la page, et laisse son contenu se peindre tout
+ * seul. Sert aux vignettes qui ne montrent pas une section entière (un
+ * séparateur seul, par exemple).
+ */
+function DecorChip({
+  palette,
+  pageBg,
+  className,
+  children,
+}: {
+  palette: BespokePaletteInput;
+  pageBg: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const root = sectionDecorRootProps(palette, pageBg);
+  return (
+    <div
+      className={cn("fpd-chip flex items-center justify-center overflow-hidden rounded-lg", root.className, className)}
+      style={{ ...root.style, background: pageBg, color: palette.ink }}
+      aria-hidden
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Une vignette cliquable d'une bibliothèque : l'aperçu, le nom, la description en infobulle. */
+function DecorOptionButton({
+  active,
+  label,
+  desc,
+  badge,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  desc: string;
+  badge?: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={desc}
+      aria-pressed={active}
+      className={cn(
+        "flex flex-col gap-1.5 rounded-xl border p-1.5 text-center transition-colors",
+        active ? "border-terracotta-500 bg-terracotta-500/5" : "border-neutral-200 hover:border-terracotta-300",
+      )}
+    >
+      {children}
+      <span className="text-[10px] font-medium leading-tight text-ink">
+        {label}
+        {badge ? <span className="ml-1 font-normal text-neutral-400">{badge}</span> : null}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Habillage du corps du faire-part — les 5 bibliothèques retenues le
+ * 05/10/2026 (cf. src/components/faire-part/sectionDecor.ts).
+ *
+ * Deux parties, qui suivent la façon dont les réglages agissent :
+ *  - « Identité de la page » : séparateur, animation d'apparition et style
+ *    de titre, communs aux 10 sections. Choix en galerie, parce qu'il n'y en
+ *    a qu'un de chaque et qu'il faut le voir.
+ *  - « Section par section » : fond et illustration. En listes déroulantes,
+ *    pas en galerie — 13 fonds × 10 sections feraient 130 vignettes. La
+ *    vignette de chaque ligne montre le résultat, et les deux galeries de
+ *    référence juste au-dessus montrent à quoi correspond chaque nom.
+ *
+ * Toutes les vignettes montent les composants et les classes de la vraie
+ * page (cf. SectionDecorPreview) : rien à maintenir en double.
+ */
+function SectionDecorEditor({ draft }: { draft: StudioDraft }) {
+  const { palette, setField, setSectionField } = draft;
+  const decor = sectionDecorFromPalette(palette);
+  // Même repli que la page publique : la palette sert de fond de page dès
+  // qu'elle est renseignée (cf. effectivePageBg dans FairePart.tsx).
+  const pageBg = palette.bg || "#1A1211";
+  // Rejouer les animations d'apparition : remonter les vignettes suffit à
+  // relancer leurs animations CSS, d'où ce compteur dans leur `key`.
+  const [replay, setReplay] = useState(0);
+
+  const tile = (over: Partial<SectionDecor>, section: string, title: string) => (
+    <SectionDecorPreview palette={palette} pageBg={pageBg} decor={{ ...decor, ...over }} section={section} title={title} />
+  );
+
+  return (
+    <section className="space-y-6">
+      <div>
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+          Identité de la page
+        </h3>
+        <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
+          Un seul réglage pour les 10 sections : c'est lui qui fait l'unité de la page. Tout est dessiné à partir
+          de la palette ci-dessus — change une couleur et l'habillage suit.
+        </p>
+      </div>
+
+      {/* Séparateur */}
+      <div>
+        <p className="mb-2 text-[11px] font-semibold text-neutral-500">
+          Séparateur entre deux sections <span className="font-normal">— « Actuel » = filet et trois losanges</span>
+        </p>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+          {SECTION_SEPARATORS.map((o) => (
+            <DecorOptionButton
+              key={o.id || "actuel"}
+              active={decor.separator === o.id}
+              label={o.label}
+              desc={o.desc}
+              onClick={() => setField("sectionSeparator", o.id)}
+            >
+              <DecorChip palette={palette} pageBg={pageBg} className="h-[46px] w-full">
+                {o.id ? <SectionSeparator id={o.id} /> : <DefaultDivider color={palette.gold} />}
+              </DecorChip>
+            </DecorOptionButton>
+          ))}
+        </div>
+      </div>
+
+      {/* Animation d'apparition */}
+      <div>
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-[11px] font-semibold text-neutral-500">
+            Apparition d'une section <span className="font-normal">— quand l'invité arrive dessus</span>
+          </p>
+          <button
+            type="button"
+            onClick={() => setReplay((v) => v + 1)}
+            className="text-[11px] text-terracotta-500 underline-offset-2 hover:underline"
+          >
+            Rejouer les aperçus
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+          {SECTION_REVEALS.map((o) => (
+            <DecorOptionButton
+              key={o.id || "cascade"}
+              active={decor.reveal === o.id}
+              label={o.label}
+              desc={o.desc}
+              onClick={() => setField("sectionReveal", o.id)}
+            >
+              <div key={replay} className="w-full">
+                {tile({ reveal: o.id }, "lieu", "Le Lieu")}
+              </div>
+            </DecorOptionButton>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] leading-relaxed text-neutral-500">
+          Le programme et Notre histoire gardent la cascade dans tous les cas : ils débordent en pleine largeur et
+          s'animent déjà au doigt, une apparition par-dessus les tronquerait.
+        </p>
+      </div>
+
+      {/* Style de titre */}
+      <div>
+        <p className="mb-2 text-[11px] font-semibold text-neutral-500">
+          Style des titres de section <span className="font-normal">— « La date », « Le Lieu », « RSVP »…</span>
+        </p>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+          {SECTION_TITLES.map((o) => (
+            <DecorOptionButton
+              key={o.id || "actuel"}
+              active={decor.titleStyle === o.id}
+              label={o.label}
+              desc={o.desc}
+              onClick={() => setField("sectionTitleStyle", o.id)}
+            >
+              {tile({ titleStyle: o.id }, "lieu", "Le Lieu")}
+            </DecorOptionButton>
+          ))}
+        </div>
+      </div>
+
+      <div className="border-t border-neutral-100 pt-6">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+          Section par section
+        </h3>
+        <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
+          Le fond et l'illustration se choisissent section par section : le dress code et le RSVP n'ont pas la même
+          ambiance. Laisse « Aucun » pour garder le fond de page actuel.
+        </p>
+      </div>
+
+      {/* Galeries de référence — à quoi ressemble chaque nom de la liste */}
+      <details className="rounded-xl border border-neutral-200 bg-white p-3">
+        <summary className="cursor-pointer text-[12px] font-semibold text-ink">
+          Les 12 fonds, en images <span className="font-normal text-neutral-500">(5 sont animés)</span>
+        </summary>
+        <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-7">
+          {SECTION_BACKGROUNDS.filter((o) => o.id).map((o) => (
+            <div key={o.id} className="flex flex-col gap-1.5 text-center">
+              {tile({ bgs: { apercu: o.id } }, "apercu", "Le Lieu")}
+              <span className="text-[10px] font-medium leading-tight text-ink">
+                {o.label}
+                {o.animated ? <span className="ml-1 font-normal text-neutral-400">animé</span> : null}
+              </span>
+            </div>
+          ))}
+        </div>
+      </details>
+
+      <details className="rounded-xl border border-neutral-200 bg-white p-3">
+        <summary className="cursor-pointer text-[12px] font-semibold text-ink">Les 8 illustrations, en images</summary>
+        <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-8">
+          {SECTION_ILLUSTRATIONS.filter((o) => o.id).map((o) => (
+            <div key={o.id} className="flex flex-col gap-1.5 text-center">
+              <DecorChip palette={palette} pageBg={pageBg} className="aspect-[4/3] w-full px-2">
+                <SectionIllustration id={o.id} />
+              </DecorChip>
+              <span className="text-[10px] font-medium leading-tight text-ink">{o.label}</span>
+            </div>
+          ))}
+        </div>
+      </details>
+
+      {/* Les 10 sections */}
+      <div className="divide-y divide-neutral-100 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+        {FAIRE_PART_SECTIONS.map((sec) => {
+          const bgId = decor.bgs[sec.id] ?? "";
+          const illuId = decor.illus[sec.id] ?? "";
+          return (
+            <div key={sec.id} className="flex flex-wrap items-center gap-3 p-3">
+              <div className="w-[92px] shrink-0">
+                {tile({}, sec.id, sec.label)}
+              </div>
+              <p className="w-[130px] shrink-0 text-[13px] font-semibold text-ink">{sec.label}</p>
+              <label className="flex min-w-[150px] flex-1 flex-col gap-1">
+                <span className="text-[11px] font-semibold text-neutral-500">Fond</span>
+                <select
+                  value={bgId}
+                  onChange={(e) => setSectionField("sectionBgs", sec.id, e.target.value)}
+                  className="rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-terracotta-500"
+                >
+                  {SECTION_BACKGROUNDS.map((o) => (
+                    <option key={o.id || "aucun"} value={o.id}>
+                      {o.label}
+                      {o.animated ? " (animé)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex min-w-[150px] flex-1 flex-col gap-1">
+                <span className="text-[11px] font-semibold text-neutral-500">Illustration</span>
+                <select
+                  value={illuId}
+                  onChange={(e) => setSectionField("sectionIllus", sec.id, e.target.value)}
+                  className="rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-terracotta-500"
+                >
+                  {SECTION_ILLUSTRATIONS.map((o) => (
+                    <option key={o.id || "aucune"} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="w-full text-[11px] text-neutral-400 sm:w-auto sm:min-w-[160px] sm:flex-1">
+                {SECTION_BACKGROUNDS.find((o) => o.id === bgId)?.desc ?? ""}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[11px] leading-relaxed text-neutral-500">
+        Les fonds animés tournent en continu : une ou deux sections suffisent, sinon la page fatigue à la lecture.
+        Un invité qui a coupé les animations dans son système voit tout figé, et la page complète.
+      </p>
+    </section>
+  );
+}
+
 function PageColorsTab({ project, draft }: { project: Project360; draft: StudioDraft }) {
   const { palette, setPalette, setField } = draft;
   const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
@@ -2314,6 +2635,7 @@ function PageColorsTab({ project, draft }: { project: Project360; draft: StudioD
           { id: "page-client", label: "Indications du client" },
           { id: "page-depart", label: "Proposition de départ" },
           { id: "page-couleurs", label: "Couleurs" },
+          { id: "page-habillage", label: "Habillage des sections" },
         ]}
       />
       <div id="page-client" className="scroll-mt-4">
@@ -2562,6 +2884,10 @@ function PageColorsTab({ project, draft }: { project: Project360; draft: StudioD
         <aside className="min-[1400px]:sticky min-[1400px]:top-4 min-[1400px]:self-start">
           <PaletteLivePreview palette={palette} mode="page" {...preview} />
         </aside>
+      </div>
+
+      <div id="page-habillage" className="scroll-mt-4 border-t border-neutral-200 pt-8">
+        <SectionDecorEditor draft={draft} />
       </div>
     </section>
   );

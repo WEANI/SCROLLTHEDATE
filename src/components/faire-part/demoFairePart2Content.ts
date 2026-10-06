@@ -245,6 +245,11 @@ export const LAO_PALETTE: BespokePalette = {
   heroFontId: '',
   heroTextAnimation: '',
   heroFilter: '',
+  sectionBgs: {},
+  sectionIllus: {},
+  sectionSeparator: '',
+  sectionReveal: '',
+  sectionTitleStyle: '',
   stdDateFormat: '',
 }
 

@@ -161,6 +161,28 @@ export const bespokePaletteSchema = z.object({
   // tout le hero (pas par chapitre), comme heroOverlayGraphic/heroFontId.
   heroTextAnimation: z.string().default(""),
   heroFilter: z.string().default(""),
+  // Habillage des sections du corps du faire-part — bibliothèques de
+  // src/components/faire-part/sectionDecor.ts (catalogue retenu le
+  // 05/10/2026). Tout vide = page inchangée : fond de section uni, filet
+  // et trois losanges en séparateur, titre italique, apparition en
+  // cascade. Ce sont des IDENTIFIANTS, pas des couleurs : le dessin vient
+  // de section-decor.css et prend ses teintes dans la palette ci-dessus.
+  //
+  // Fond et illustration se règlent SECTION PAR SECTION (dictionnaires
+  // indexés par l'id de section, cf. FAIRE_PART_SECTIONS) : le dress code
+  // et le RSVP n'ont pas la même ambiance. Séparateur, animation et style
+  // de titre sont au contraire communs à toute la page — ce sont eux qui
+  // font son unité, les faire varier par section donnerait un patchwork.
+  //
+  // Dictionnaires plutôt que 20 champs à plat : la liste des sections
+  // bouge (le menu et la liste de mariage sont arrivés après coup), et une
+  // clé inconnue est simplement ignorée au rendu au lieu de casser
+  // l'enregistrement d'une palette plus ancienne ou plus récente.
+  sectionBgs: z.record(z.string(), z.string()).default({}),
+  sectionIllus: z.record(z.string(), z.string()).default({}),
+  sectionSeparator: z.string().default(""),
+  sectionReveal: z.string().default(""),
+  sectionTitleStyle: z.string().default(""),
 });
 
 export type BespokePaletteInput = z.infer<typeof bespokePaletteSchema>;
