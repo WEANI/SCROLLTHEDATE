@@ -3206,3 +3206,17 @@
   margin-top: 2cqw;
 }
 .hs-sc-ans .sc-t { font-size: 6.4cqw; line-height: 1.25; margin-top: 2cqw; }
+
+/* --------------------------------------------------------------------------
+   Blocs à largeur fixe dans une carte (correctif du 11/10/2026).
+   Ces blocs ont une largeur en `cqw` (84 % de la scène pour les prénoms, 82 %
+   pour la frise du programme, 76–78 % pour les scènes Jalons et Infos), mais
+   la carte qui les contient (`.hs-card`) fait au plus 88 % MOINS 2 × 32 px de
+   marge intérieure — sur un téléphone, environ 72 % de la scène. Plus larges
+   que leur conteneur, ils partaient de son bord gauche et débordaient à
+   droite : le bloc paraissait décalé (signalé sur « Esperluette géante »,
+   très visible avec une carte transparente). On les borne à la largeur
+   disponible ; le centrage de la carte fait le reste.
+   -------------------------------------------------------------------------- */
+.hs-nm, .hs-tl, .hs-sc-jalons, .hs-sc-infos { max-width: 100%; }
+.hs-nm-arc svg { max-width: 100%; }
