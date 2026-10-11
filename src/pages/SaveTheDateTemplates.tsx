@@ -55,7 +55,7 @@ export default function SaveTheDateTemplates() {
 
       <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {templates.map((tpl) => (
-          <TemplateCard key={tpl.slug} slug={tpl.slug} name={tpl.name} tagline={tpl.tagline} accent={tpl.theme.accent} posterSrc={tpl.posterSrc} videoSrc={tpl.desktopSrc} />
+          <TemplateCard key={tpl.slug} slug={tpl.slug} name={tpl.name} tagline={tpl.tagline} accent={tpl.theme.accent} posterSrc={tpl.cardPreview?.posterSrc ?? tpl.posterSrc} videoSrc={tpl.desktopSrc} previewFromSec={tpl.cardPreview?.fromSec ?? 0} />
         ))}
 
         {/* Case vide — annonce explicitement que la bibliothèque grandit, plutôt que de laisser une grille qui semble juste incomplète. */}
@@ -75,6 +75,7 @@ function TemplateCard({
   accent,
   posterSrc,
   videoSrc,
+  previewFromSec,
 }: {
   slug: string
   name: string
@@ -82,6 +83,8 @@ function TemplateCard({
   accent: string
   posterSrc: string
   videoSrc: string
+  /** Début de l'extrait en boucle (cf. SaveTheDateTemplate.cardPreview) — 0 = début du montage. */
+  previewFromSec: number
 }) {
   const { t } = useLanguage()
   const [failed, setFailed] = useState(false)
@@ -92,8 +95,9 @@ function TemplateCard({
   // natif (qui rejouerait la vidéo entière) : on ne veut jamais montrer la
   // fin du montage ici, seulement un avant-goût.
   function handleTimeUpdate(e: SyntheticEvent<HTMLVideoElement>) {
-    if (e.currentTarget.currentTime >= CARD_PREVIEW_SECONDS) {
-      e.currentTarget.currentTime = 0
+    const t = e.currentTarget.currentTime
+    if (t >= previewFromSec + CARD_PREVIEW_SECONDS || t < previewFromSec - 0.5) {
+      e.currentTarget.currentTime = previewFromSec
       void e.currentTarget.play()
     }
   }
@@ -116,6 +120,9 @@ function TemplateCard({
             muted
             playsInline
             onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={(e) => {
+              if (previewFromSec > 0) e.currentTarget.currentTime = previewFromSec
+            }}
             onError={() => setFailed(true)}
           />
         ) : (

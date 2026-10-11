@@ -156,21 +156,27 @@ const PARCHEMIN_BLANC_THEME: HeroTheme = {
   dotInactive: 'rgba(58, 46, 31, 0.14)',
 }
 
-/** Parchemin sur satin rose poudré, sceau couronne dorée — même famille que Parchemin Blanc, accent rosé plutôt que doré pur. */
-const PARCHEMIN_ROSE_THEME: HeroTheme = {
-  id: 'parchemin-rose',
-  label: 'Parchemin Rose',
+/**
+ * Allée des Roses — remplace Parchemin Rose le 11/10/2026. Le montage s'ouvre sur la porte rouge de
+ * Red Door mais se déroule ensuite dans des couloirs crème et or (voilages, bougies, arche
+ * lumineuse) : ambiance CLAIRE, texte bordeaux profond, accent rouge rose — l'or seul manquait de
+ * contraste sur ces fonds très lumineux. Le voile du bas éclaircit (au lieu d'assombrir) pour que
+ * les prénoms restent lisibles sur les marches de marbre du dernier plan.
+ */
+const ALLEE_DES_ROSES_THEME: HeroTheme = {
+  id: 'allee-des-roses',
+  label: 'Allée des Roses',
   colorScheme: 'light',
-  frameBg: '#F7E4DC',
-  pageBg: '#FBEFE9',
-  vignette: 'linear-gradient(180deg, rgba(74,46,40,0.10) 0%, rgba(74,46,40,0.02) 40%, rgba(74,46,40,0.55) 100%)',
-  accent: '#C08769',
-  textPrimary: '#4A2E28',
-  textSecondary: '#8A6459',
-  cardBg: 'rgba(251, 239, 233, 0.78)',
-  cardBorder: 'rgba(192, 135, 105, 0.28)',
-  cardShadow: '0 24px 60px rgba(74, 46, 40, 0.18)',
-  dotInactive: 'rgba(74, 46, 40, 0.14)',
+  frameBg: '#F3E4CF',
+  pageBg: '#FBF3E8',
+  vignette: 'linear-gradient(180deg, rgba(251,243,232,0.10) 0%, rgba(251,243,232,0) 40%, rgba(251,243,232,0.62) 100%)',
+  accent: '#9E1B24',
+  textPrimary: '#4A1518',
+  textSecondary: '#7E4A3E',
+  cardBg: 'rgba(251, 243, 232, 0.80)',
+  cardBorder: 'rgba(158, 27, 36, 0.22)',
+  cardShadow: '0 24px 60px rgba(74, 21, 24, 0.18)',
+  dotInactive: 'rgba(74, 21, 24, 0.14)',
 }
 
 export interface SaveTheDateTemplate {
@@ -197,6 +203,13 @@ export interface SaveTheDateTemplate {
   fontId?: string
   textAnimation?: string
   filter?: string
+  /**
+   * Extrait joué en boucle sur la carte du catalogue (5 s, cf. TemplateCard dans
+   * SaveTheDateTemplates.tsx) quand le début du montage ne suffit pas à le distinguer — Allée
+   * des Roses s'ouvre sur la même porte rouge que Red Door. `posterSrc` = image de cet extrait,
+   * affichée avant la lecture. Absent = les 5 premières secondes et le poster du montage.
+   */
+  cardPreview?: { fromSec: number; posterSrc: string }
 }
 
 /**
@@ -423,24 +436,31 @@ export const SAVE_THE_DATE_TEMPLATES: SaveTheDateTemplate[] = [
     ],
   },
   {
-    slug: 'parchemin-rose',
-    name: 'Parchemin Rose',
-    tagline: 'Un rouleau scellé, satin rose poudré et dorures.',
+    slug: 'allee-des-roses',
+    name: 'Allée des Roses',
+    tagline: 'Une porte, une pluie de pétales, et le chemin jusqu\'à vous.',
     description:
-      "Un parchemin scellé d'un sceau couronne doré se déroule sur satin rose poudré pour révéler l'annonce, avant de se refermer sur des roses crème et deux alliances — même mise en scène que Parchemin Blanc, dans une teinte plus romantique.",
-    theme: PARCHEMIN_ROSE_THEME,
-    frames: { baseUrl: '/parchemin-rose-frames/', count: 353, fps: 12 },
-    desktopSrc: '/parchemin-rose.mp4',
-    posterSrc: '/parchemin-rose-frames/00001.jpg',
+      "Une porte rouge sculptée s'ouvre sur une pluie de pétales ; la caméra traverse de longs couloirs habillés de voilages et de bougies, plonge dans un pétale de rose, découvre les alliances et la pièce montée, puis s'arrête sur les mariés sous l'arche lumineuse — un montage immersif, sans coupure.",
+    theme: ALLEE_DES_ROSES_THEME,
+    // Montage du 11/10/2026 (44 s, aucun texte incrusté), qui remplace Parchemin Rose — aucun
+    // projet ni réglage admin ne l'utilisait. Moments sans élément, prévus pour les textes :
+    // miroir 0,25–0,31 · couloir aux voilages 0,38–0,455 · couloir des alliances 0,61–0,655 ·
+    // arche lumineuse 0,77–0,81 · couple 0,91–1. Les deux blocs par défaut se posent sur les deux
+    // derniers (cf. LISEZMOI du montage pour le détail seconde par seconde).
+    frames: { baseUrl: '/allee-des-roses-frames/', count: 528, fps: 12 },
+    desktopSrc: '/allee-des-roses.mp4',
+    posterSrc: '/allee-des-roses-frames/00001.jpg',
+    // Couloir aux voilages → le pétale arrive, plongée, recul jusqu'aux alliances.
+    cardPreview: { fromSec: 19.6, posterSrc: '/allee-des-roses-frames/00236.jpg' },
     chapters: [
       {
         id: 0,
         kind: 'text',
-        from: 0.8,
-        to: 0.9,
+        from: 0.765,
+        to: 0.83,
         segments: [{ text: 'Save the date' }],
         titleSize: 'lg',
-        verticalAlign: 'bottom',
+        verticalAlign: 'middle',
       },
       {
         id: 1,

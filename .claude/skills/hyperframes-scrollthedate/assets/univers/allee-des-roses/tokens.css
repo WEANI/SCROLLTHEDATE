@@ -1,0 +1,20 @@
+/* Allée des Roses — univers du modèle de montage (AMBIANCE CLAIRE).
+   Valeurs RÉELLES : ALLEE_DES_ROSES_THEME dans contracts/saveTheDateTemplates.ts. */
+:root {
+  --brand-bg:         #F3E4CF;  /* frameBg */
+  --brand-surface:    rgba(251, 243, 232, 0.80);
+  --brand-ink:        #4A1518;  /* textPrimary — bordeaux profond */
+  --brand-ink-soft:   #7E4A3E;
+  --brand-primary:    #9E1B24;  /* rouge rose */
+  --brand-secondary:  #FBF3E8;
+  --brand-on-primary: #FFFFFF;
+
+  --brand-font-display: "Great Vibes", cursive;
+  --brand-font-body:    "Cormorant Garamond", Georgia, serif;
+  --brand-weight-display: 400;
+  --brand-weight-body:    400;
+
+  --brand-radius: 8px;
+  --brand-shadow: 0 24px 60px rgba(74, 21, 24, 0.18);
+  --brand-logo-url: "";
+}
