@@ -3,6 +3,7 @@ import type { HttpBindings } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import fs from "fs";
 import path from "path";
+import { buildPageHtml } from "./pageMeta";
 
 type App = Hono<{ Bindings: HttpBindings }>;
 
@@ -38,15 +39,30 @@ export function serveStaticFiles(app: App) {
     }
   });
 
+  /**
+   * Toute PAGE du site (pas un fichier, pas l'API) reçoit index.html enrichi
+   * de ses balises d'aperçu de partage (cf. pageMeta.ts) — y compris
+   * l'accueil, que serveStatic servait auparavant tel quel.
+   *
+   * Corrige aussi l'aperçu WhatsApp/Facebook cassé relevé à l'audit : la
+   * page n'était renvoyée qu'aux requêtes annonçant `Accept: text/html`.
+   * Les robots qui fabriquent les aperçus de lien envoient `Accept: *\/*`
+   * (ou rien) : ils recevaient une 404 en JSON au lieu de la page.
+   */
+  let baseHtml: string | null = null;
+  const isPage = (p: string) => !p.startsWith("/api/") && !p.startsWith("/assets/") && !/\.[a-z0-9]+$/i.test(p);
+  app.get("*", async (c, next) => {
+    if (!isPage(c.req.path)) return next();
+    baseHtml ??= fs.readFileSync(path.resolve(distPath, "index.html"), "utf-8");
+    const proto = (c.req.header("x-forwarded-proto") ?? "https").split(",")[0].trim();
+    const host = c.req.header("x-forwarded-host") ?? c.req.header("host") ?? "";
+    return c.html(await buildPageHtml(baseHtml, c.req.path, `${proto}://${host}`));
+  });
+
   app.use("*", serveStatic({ root: "./dist/public" }));
 
-  app.notFound((c) => {
-    const accept = c.req.header("accept") ?? "";
-    if (!accept.includes("text/html")) {
-      return c.json({ error: "Not Found" }, 404);
-    }
-    const indexPath = path.resolve(distPath, "index.html");
-    const content = fs.readFileSync(indexPath, "utf-8");
-    return c.html(content);
-  });
+  // Ce qui reste : un fichier absent (image, script…) — une vraie 404, jamais
+  // la page HTML (un script manquant servi en HTML casse le navigateur sans
+  // message clair).
+  app.notFound((c) => c.json({ error: "Not Found" }, 404));
 }

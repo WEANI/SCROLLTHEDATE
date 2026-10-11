@@ -5,6 +5,9 @@ import { LanguageProvider } from '@/i18n/LanguageContext'
 import { CartProvider } from '@/cart/CartContext'
 import './index.css'
 import App from './App.tsx'
+import { loadAnalytics } from '@/lib/analytics'
+
+loadAnalytics()
 
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>

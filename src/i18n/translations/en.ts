@@ -21,6 +21,7 @@ export const en: Translations = {
   footer: {
     tagline: 'Your story, told in images.',
     whatsapp: 'Message us on WhatsApp',
+    followUs: 'Follow us',
     navigation: 'Navigation',
     offers: 'Pricing',
     offerFairePart: 'Digital wedding invitation',
@@ -681,6 +682,13 @@ export const en: Translations = {
     s7Body2:
       "The only technical mechanism involved is the storage of your login session (maintained by our authentication provider, Supabase, via your browser's local storage — not even an HTTP cookie in the strict sense). It is only set when you create an account or log in, i.e. a service you explicitly request. In line with CNIL (the French data protection authority) guidance, trackers strictly necessary for a service expressly requested by the user — including authentication — are exempt from prior consent: this is why you don't see an \"Accept / Reject\" banner on this site — there is nothing to accept or reject.",
     s7Body3: 'Should an audience-measurement or advertising tool ever be added to the site, a compliant consent mechanism (rejection as simple as acceptance) would be put in place before its activation.',
+    // Variant used when Plausible audience measurement is active (see src/lib/analytics.ts).
+    s5ItemAnalyticsBold: 'Plausible Analytics',
+    s5ItemAnalyticsRest: '— cookieless audience measurement (anonymous visit statistics), hosted in the European Union.',
+    s7Body1SuffixAnalytics:
+      '(no advertising, no social network tracker). Site traffic is measured with Plausible Analytics, a tool that sets no cookie, does not follow visitors from one site to another and does not keep IP addresses: it only produces anonymous statistics (pages viewed, where visits come from).',
+    s7Body3Analytics:
+      'Should an advertising tool ever be added to the site, a compliant consent mechanism (rejection as simple as acceptance) would be put in place before its activation.',
     s8Title: 'Your rights',
     s8Body1Prefix:
       'In accordance with the General Data Protection Regulation (GDPR) and French data protection law, you have the right to access, rectify, erase, restrict, object to, and port your personal data. You can exercise these rights by writing to',

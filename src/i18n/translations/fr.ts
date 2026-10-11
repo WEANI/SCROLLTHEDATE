@@ -23,6 +23,7 @@ export const fr = {
   footer: {
     tagline: 'Votre histoire, racontée en images.',
     whatsapp: 'Nous écrire sur WhatsApp',
+    followUs: 'Suivez-nous',
     navigation: 'Navigation',
     offers: 'Offres',
     offerFairePart: 'Faire-part digital',
@@ -684,6 +685,13 @@ export const fr = {
     s7Body2:
       "Le seul mécanisme technique en jeu est le stockage de votre session de connexion (maintenu par notre prestataire d'authentification, Supabase, via le stockage local de votre navigateur — pas même un cookie HTTP au sens strict). Il n'est posé que lorsque vous créez un compte ou vous connectez, c'est-à-dire un service que vous demandez explicitement. Conformément aux recommandations de la CNIL, les traceurs strictement nécessaires à un service expressément demandé par l'utilisateur — dont l'authentification — sont exemptés de consentement préalable : c'est pourquoi vous ne voyez pas de bandeau \"Accepter / Refuser\" sur ce site, il n'y a rien à accepter ou refuser.",
     s7Body3: "Si un outil de mesure d'audience ou publicitaire venait à être ajouté au site, un recueil de consentement conforme (refus aussi simple que l'acceptation) serait mis en place avant son activation.",
+    // Variante utilisée quand la mesure d'audience Plausible est active (cf. src/lib/analytics.ts).
+    s5ItemAnalyticsBold: 'Plausible Analytics',
+    s5ItemAnalyticsRest: "— mesure d'audience sans cookie (statistiques anonymes de fréquentation), hébergée dans l'Union européenne.",
+    s7Body1SuffixAnalytics:
+      "(pas de publicité, pas de traceur de réseau social). La fréquentation du site est mesurée par Plausible Analytics, un outil qui ne dépose aucun cookie, ne suit pas les visiteurs d'un site à l'autre et ne conserve pas les adresses IP : il produit seulement des statistiques anonymes (pages vues, provenance des visites).",
+    s7Body3Analytics:
+      "Si un outil publicitaire venait à être ajouté au site, un recueil de consentement conforme (refus aussi simple que l'acceptation) serait mis en place avant son activation.",
     s8Title: 'Vos droits',
     s8Body1Prefix:
       "Conformément au Règlement général sur la protection des données (RGPD) et à la loi Informatique et Libertés, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation, d'opposition et de portabilité sur vos données personnelles. Vous pouvez exercer ces droits en écrivant à",

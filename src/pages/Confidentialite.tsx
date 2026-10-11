@@ -1,6 +1,7 @@
 import LegalLayout, { TodoBlock } from '@/components/legal/LegalLayout'
 import { useSeo } from '@/hooks/useSeo'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { analyticsEnabled } from '@/lib/analytics'
 
 /**
  * Politique de confidentialité — catégories de données et sous-traitants
@@ -92,6 +93,12 @@ export default function Confidentialite() {
           <li>
             <strong>{t('confidentialite.s5Item4Bold')}</strong> {t('confidentialite.s5Item4Rest')}
           </li>
+          {/* Seulement quand la mesure d'audience est allumée (src/lib/analytics.ts) : la page dit ce que le site fait réellement. */}
+          {analyticsEnabled && (
+            <li>
+              <strong>{t('confidentialite.s5ItemAnalyticsBold')}</strong> {t('confidentialite.s5ItemAnalyticsRest')}
+            </li>
+          )}
         </ul>
         <p>{t('confidentialite.s5Note')}</p>
       </section>
@@ -106,10 +113,10 @@ export default function Confidentialite() {
         <h2>{t('confidentialite.s7Title')}</h2>
         <p>
           {t('confidentialite.s7Body1Prefix')} <strong>{t('confidentialite.s7Body1Bold')}</strong>
-          {' '}{t('confidentialite.s7Body1Suffix')}
+          {' '}{t(analyticsEnabled ? 'confidentialite.s7Body1SuffixAnalytics' : 'confidentialite.s7Body1Suffix')}
         </p>
         <p>{t('confidentialite.s7Body2')}</p>
-        <p>{t('confidentialite.s7Body3')}</p>
+        <p>{t(analyticsEnabled ? 'confidentialite.s7Body3Analytics' : 'confidentialite.s7Body3')}</p>
       </section>
 
       <section>

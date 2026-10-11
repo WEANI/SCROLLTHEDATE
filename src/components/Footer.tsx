@@ -1,9 +1,13 @@
 import { Link } from 'react-router'
 import { Flag, HeartHandshake, Infinity as InfinityIcon, MessageCircle, ShieldCheck } from 'lucide-react'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { activeSocialProfiles } from '@contracts/brand'
 
 export default function Footer() {
   const { t } = useLanguage()
+  // Comptes de la marque — n'apparaissent qu'une fois leur adresse renseignée
+  // dans contracts/brand.ts (vides tant que les noms ne sont pas confirmés).
+  const socials = activeSocialProfiles()
 
   const NAVIGATION = [
     { key: 'concept', label: t('nav.concept'), href: '/#concept' },
@@ -45,6 +49,20 @@ export default function Footer() {
             <MessageCircle size={14} className="text-terracotta-500" />
             {t('footer.whatsapp')}
           </a>
+          {socials.length > 0 && (
+            <div>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">{t('footer.followUs')}</p>
+              <ul className="flex flex-wrap gap-x-4 gap-y-2">
+                {socials.map((s) => (
+                  <li key={s.id}>
+                    <a href={s.url} target="_blank" rel="noreferrer me" className="text-sm text-white/70 transition-colors hover:text-white">
+                      {s.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
@@ -103,7 +121,7 @@ export default function Footer() {
 
       <div className="border-t border-anthracite-700/50">
         <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 px-6 py-6 text-xs text-white/50 sm:flex-row lg:px-12">
-          <p>© {new Date().getFullYear()} Scroll The Date — scrollthedate.fr</p>
+          <p>© {new Date().getFullYear()} Scroll The Date — scrollthedate.com</p>
           <div className="flex gap-6">
             <Link to="/mentions-legales" className="transition-colors hover:text-white/80">
               {t('footer.legal')}
