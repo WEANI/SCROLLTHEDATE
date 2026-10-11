@@ -251,6 +251,7 @@ export const LAO_PALETTE: BespokePalette = {
   sectionReveal: '',
   sectionTitleStyle: '',
   stdDateFormat: '',
+  stdNamesHideDate: false,
 }
 
 export const LAO_HISTOIRE_TEXT =

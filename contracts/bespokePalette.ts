@@ -148,6 +148,11 @@ export const bespokePaletteSchema = z.object({
   // information affichée à plusieurs endroits, contrairement à la
   // couleur/police qui peuvent légitimement différer d'un bloc à l'autre).
   stdDateFormat: z.string().default(""),
+  // Masquer la date sous les prénoms du 2e bloc (Save the Date) — posé à la
+  // commande depuis le réglage du modèle (dateHidden, saveTheDateTemplates.ts),
+  // modifiable ensuite projet par projet au Studio. false = date affichée,
+  // comportement historique.
+  stdNamesHideDate: z.boolean().default(false),
   // Décor du hero — cf. src/components/hero-scrub/heroDecor.ts (bibliothèque
   // ajoutée le 10/09/2026). Chaîne vide = aucun décor / police du site
   // (Fraunces), comportement inchangé. `heroFontId` ne change QUE le titre

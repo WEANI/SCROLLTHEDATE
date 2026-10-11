@@ -172,6 +172,7 @@ export function suggestPaletteFromColors(
     sectionReveal: "",
     sectionTitleStyle: "",
     stdDateFormat: "",
+    stdNamesHideDate: false,
   };
 }
 

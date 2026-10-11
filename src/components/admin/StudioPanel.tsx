@@ -980,6 +980,7 @@ const BLANK_PALETTE: BespokePaletteInput = {
   sectionReveal: "",
   sectionTitleStyle: "",
   stdDateFormat: "",
+  stdNamesHideDate: false,
 };
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
@@ -3056,7 +3057,7 @@ function StdBlocksEditor({ project, draft }: { project: Project360; draft: Studi
     b: stdNamesB,
     family: palette.stdNamesFamily,
     verb: palette.stdNamesVerb,
-    dateShort: stdDateFmt ? stdDateFmt.format(STUDIO_DATE_PREVIEW) : "12 juin 2027",
+    dateShort: palette.stdNamesHideDate ? "" : stdDateFmt ? stdDateFmt.format(STUDIO_DATE_PREVIEW) : "12 juin 2027",
   };
   return (
     <div>
@@ -3247,6 +3248,17 @@ function StdBlocksEditor({ project, draft }: { project: Project360; draft: Studi
 
           <div>
             <p className="mb-2 text-[12px] font-semibold">Format de la date</p>
+            {/* Réglage du modèle repris à la commande (dateHidden → stdNamesHideDate),
+                modifiable ici pour ce couple seulement. */}
+            <label className="mb-3 flex items-center gap-2 text-[12.5px] text-ink">
+              <input
+                type="checkbox"
+                checked={!palette.stdNamesHideDate}
+                onChange={(e) => setField("stdNamesHideDate", !e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
+              />
+              Afficher la date sous les prénoms
+            </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <StudioField
                 label="Style d'affichage"

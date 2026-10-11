@@ -378,8 +378,13 @@ function ModeleStdDetailForm({
     b: namesPreviewB,
     family: o.chapter2NamesFamily,
     verb: o.chapter2NamesVerb,
-    dateShort: o.dateBlockEnabled ? "" : o.exampleDate || "12 juin 2027",
+    dateShort: o.dateBlockEnabled || o.dateHidden ? "" : o.exampleDate || "12 juin 2027",
   };
+  // Où vit la date — un seul choix à trois issues, posé sur deux champs
+  // (dateHidden prime sur dateBlockEnabled, cf. saveTheDateTemplates.ts).
+  const datePlacement: "sub" | "block" | "none" = o.dateHidden ? "none" : o.dateBlockEnabled ? "block" : "sub";
+  const setDatePlacement = (p: "sub" | "block" | "none") =>
+    update({ dateHidden: p === "none", dateBlockEnabled: p === "block" });
   // Contexte passé aux scènes (bibliothèque HERO_SCENES) — le couple
   // d'exemple de ce modèle, jamais un vrai client : cette page règle le
   // modèle générique, chaque projet réinjectera ses propres prénoms/date.
@@ -445,8 +450,8 @@ function ModeleStdDetailForm({
   const TABS: { id: string; label: string }[] = [
     { id: "general", label: "Général" },
     { id: "bloc1", label: "1er bloc" },
-    { id: "bloc2", label: "2e bloc" },
-    { id: "bloc3", label: "3e bloc" },
+    { id: "bloc2", label: "2e bloc · prénoms & date" },
+    { id: "bloc3", label: "3e bloc · date à part" },
     { id: "logo", label: "Logo" },
     { id: "extra", label: "Blocs supp." },
     { id: "decor", label: "Décor & style" },
@@ -693,14 +698,10 @@ function ModeleStdDetailForm({
             <Panel>
               <PanelTitle title="2e bloc — prénoms & date" hint="Un vrai client verra ses prénoms et sa date à la place de l'exemple." />
               <div className="p-6">
-                <div className="grid gap-3 md:grid-cols-5">
+                <div className="grid gap-3 md:grid-cols-4">
                   <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                     Prénoms d'exemple
                     <input value={o.exampleNames} onChange={(e) => update({ exampleNames: e.target.value })} className={inputClass} />
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Date d'exemple
-                    <input value={o.exampleDate} onChange={(e) => update({ exampleDate: e.target.value })} className={inputClass} />
                   </label>
                   <TimecodeField
                     label="Apparaît à (s)"
@@ -728,6 +729,90 @@ function ModeleStdDetailForm({
                       <option value="bottom">Bas</option>
                     </select>
                   </label>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-neutral-200 p-4">
+                  <p className="text-xs font-semibold text-ink">La date</p>
+                  <p className="mt-0.5 text-[11px] text-neutral-500">
+                    Un vrai client verra sa propre date de mariage, dans le format choisi ici.
+                  </p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Où afficher la date">
+                    {(
+                      [
+                        { id: "sub", label: "Sous les prénoms", desc: "Dans le même bloc, sous un filet (par défaut)" },
+                        { id: "block", label: "Dans un bloc à part", desc: "Son propre moment, sa position et son style" },
+                        { id: "none", label: "Ne pas l'afficher", desc: "Les prénoms seuls, sans date" },
+                      ] as const
+                    ).map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={datePlacement === p.id}
+                        onClick={() => setDatePlacement(p.id)}
+                        className={cn(
+                          "rounded-xl border p-3 text-left transition-colors",
+                          datePlacement === p.id ? "border-terracotta-500 bg-terracotta-500/5" : "border-neutral-200 hover:border-terracotta-300",
+                        )}
+                      >
+                        <span className="block text-[12.5px] font-semibold text-ink">{p.label}</span>
+                        <span className="mt-0.5 block text-[11px] leading-snug text-neutral-500">{p.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {datePlacement !== "none" && (
+                    <div className="mt-4 grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1.2fr)]">
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Date d'exemple
+                        <input value={o.exampleDate} onChange={(e) => update({ exampleDate: e.target.value })} className={inputClass} />
+                        <span className="font-normal text-neutral-400">Pour la page d'aperçu du modèle seulement.</span>
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                        Format de la date
+                        <select value={o.dateFormat} onChange={(e) => update({ dateFormat: e.target.value })} className={inputClass}>
+                          <option value="">12 juin 2027 (défaut)</option>
+                          <optgroup label="Sur une ligne">
+                            {HERO_DATE_FORMATS.filter((f) => !f.layout).map((f) => (
+                              <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Sur plusieurs lignes (bloc à part seulement)">
+                            {HERO_DATE_FORMATS.filter((f) => f.layout).map((f) => (
+                              <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
+                            ))}
+                          </optgroup>
+                        </select>
+                        {selectedDateFormat?.layout && datePlacement === "sub" && (
+                          <span className="font-normal text-terracotta-500">
+                            Sous les prénoms, ce format s'affiche sur une seule ligne. Choisis « Dans un bloc à part » pour le voir en entier.
+                          </span>
+                        )}
+                      </label>
+                      <PreviewStage themeVars={themeVars}>
+                        {selectedDateFormat?.layout && datePlacement === "block" ? (
+                          <HeroDateLayoutBlock
+                            layout={{ id: selectedDateFormat.id, fonts: selectedDateFormat.layout.fonts, lines: selectedDateFormat.layout.lines(DATE_FORMAT_PREVIEW_DATE) }}
+                          />
+                        ) : (
+                          <p
+                            className="px-4 text-center text-[22px] font-light"
+                            style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)", fontStyle: fontPreview?.italic ? "italic" : undefined }}
+                          >
+                            {selectedDateFormat?.format(DATE_FORMAT_PREVIEW_DATE) ?? "12 juin 2027"}
+                          </p>
+                        )}
+                      </PreviewStage>
+                    </div>
+                  )}
+                  {datePlacement === "block" && (
+                    <p className="mt-3 text-[11px] text-neutral-500">
+                      Moment d'apparition, position et style du bloc date :{" "}
+                      <button type="button" onClick={() => setActiveTab("bloc3")} className="font-medium text-terracotta-500 underline-offset-2 hover:underline">
+                        onglet « 3e bloc · date à part »
+                      </button>
+                    </p>
+                  )}
                 </div>
 
                 <div className="mt-4">
@@ -865,8 +950,8 @@ function ModeleStdDetailForm({
                   <label className="flex items-center gap-2 text-[12.5px] font-medium text-neutral-500">
                     <input
                       type="checkbox"
-                      checked={o.dateBlockEnabled}
-                      onChange={(e) => update({ dateBlockEnabled: e.target.checked })}
+                      checked={datePlacement === "block"}
+                      onChange={(e) => setDatePlacement(e.target.checked ? "block" : "sub")}
                       className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
                     />
                     Bloc activé
@@ -874,9 +959,11 @@ function ModeleStdDetailForm({
                 }
               />
               <div className="p-6">
-                {!o.dateBlockEnabled ? (
+                {datePlacement !== "block" ? (
                   <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
-                    Désactivé — la date reste affichée sous les prénoms, comme aujourd'hui (comportement historique).
+                    {datePlacement === "none"
+                      ? "Désactivé — la date est masquée (réglage « Ne pas l'afficher », onglet 2e bloc)."
+                      : "Désactivé — la date reste affichée sous les prénoms (par défaut)."}
                   </p>
                 ) : (
                   <>
@@ -1557,38 +1644,13 @@ function ModeleStdDetailForm({
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                    Format de la date
-                    <select value={o.dateFormat} onChange={(e) => update({ dateFormat: e.target.value })} className={inputClass}>
-                      <option value="">12 juin 2027 (défaut)</option>
-                      <optgroup label="Sur une ligne">
-                        {HERO_DATE_FORMATS.filter((f) => !f.layout).map((f) => (
-                          <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="Mises en page multi-lignes (bloc date indépendant)">
-                        {HERO_DATE_FORMATS.filter((f) => f.layout).map((f) => (
-                          <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
-                        ))}
-                      </optgroup>
-                    </select>
-                  </label>
-                  <PreviewStage themeVars={themeVars}>
-                    {selectedDateFormat?.layout ? (
-                      <HeroDateLayoutBlock
-                        layout={{ id: selectedDateFormat.id, fonts: selectedDateFormat.layout.fonts, lines: selectedDateFormat.layout.lines(DATE_FORMAT_PREVIEW_DATE) }}
-                      />
-                    ) : (
-                      <p
-                        className="px-4 text-center text-[22px] font-light"
-                        style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)", fontStyle: fontPreview?.italic ? "italic" : undefined }}
-                      >
-                        {selectedDateFormat?.format(DATE_FORMAT_PREVIEW_DATE) ?? "12 juin 2027"}
-                      </p>
-                    )}
-                  </PreviewStage>
+                  <p className="text-xs font-medium text-neutral-500">Format de la date</p>
                   <p className="rounded-lg border border-dashed border-neutral-200 p-3 text-[11px] text-neutral-500">
-                    S'applique à la vraie date du client sur une commande passée sur ce modèle (sous les prénoms, ou dans le 3e bloc si activé ; les mises en page multi-lignes ne s'affichent que dans le 3e bloc, sous les prénoms elles retombent sur une ligne) ; la page d'aperçu publique du modèle l'applique aussi, à la date d'exemple du 12 juin 2027.
+                    Se règle avec l'emplacement de la date, dans l'onglet{" "}
+                    <button type="button" onClick={() => setActiveTab("bloc2")} className="font-medium text-terracotta-500 underline-offset-2 hover:underline">
+                      « 2e bloc · prénoms & date »
+                    </button>
+                    .
                   </p>
                 </div>
               </div>

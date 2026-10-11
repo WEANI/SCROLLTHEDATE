@@ -338,6 +338,9 @@ export default function FairePart() {
   // bas) — jamais répétée sous les prénoms via `subLines` du chapitre 2
   // (baseChapters ci-dessous).
   const hasDateBlock = (invite.heroCustomCards ?? []).some((c) => c.kind === 'date')
+  // Date sous les prénoms : ni déplacée dans le bloc indépendant, ni masquée
+  // (réglage « Ne pas l'afficher » du modèle, palette.stdNamesHideDate).
+  const dateUnderNames = weddingDateShort && !hasDateBlock && !palette.stdNamesHideDate ? weddingDateShort : ''
   // Mise en page des prénoms du 2e bloc des Save the Date (bibliothèque
   // HERO_NAMES_LAYOUTS, cf. heroDecor.ts) — vide ou 'ligne' = rendu
   // historique conservé (`segments` + `fitOneLine`, la date en `subLines`) :
@@ -353,14 +356,14 @@ export default function FairePart() {
           b: nameParts.length === 3 ? nameParts[2] : '',
           family: palette.stdNamesFamily,
           verb: palette.stdNamesVerb,
-          dateShort: weddingDateShort && !hasDateBlock ? weddingDateShort : '',
+          dateShort: dateUnderNames,
         },
       }
     : {
         segments,
         fitOneLine: true,
         rule: true,
-        subLines: weddingDateShort && !hasDateBlock ? [weddingDateShort] : undefined,
+        subLines: dateUnderNames ? [dateUnderNames] : undefined,
         subSize: 'md',
       }
   // Jour/mois/année séparés — chapitre "Détails pratiques" du hero (cf.

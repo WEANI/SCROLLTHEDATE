@@ -299,6 +299,7 @@ export const CA_PALETTE: BespokePalette = {
   sectionReveal: '',
   sectionTitleStyle: '',
   stdDateFormat: '',
+  stdNamesHideDate: false,
 }
 
 /**

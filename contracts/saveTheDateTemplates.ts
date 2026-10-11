@@ -321,6 +321,15 @@ export interface SaveTheDateTemplateOverride {
    * "blocs supplémentaires" ci-dessus.
    */
   dateBlockEnabled: boolean
+  /**
+   * Ne pas afficher la date du tout — ni sous les prénoms, ni dans le 3e bloc
+   * (cf. échange du 11/10/2026 : « l'option de la faire apparaître sous les
+   * prénoms ou pas »). Prime sur `dateBlockEnabled`. Facultatif : absent des
+   * réglages enregistrés avant ce jour, et absent = date affichée, donc aucun
+   * modèle déjà réglé ne change. Côté vraie commande, voyage jusqu'à la page
+   * par `palette.stdNamesHideDate` (cf. buildFulfillmentData).
+   */
+  dateHidden?: boolean
   dateBlockFromSec: number
   dateBlockToSec: number
   dateBlockPosition: HeroVerticalAlign
@@ -679,6 +688,7 @@ export function defaultOverrideFor(template: SaveTheDateTemplate): SaveTheDateTe
     extraCards: [],
     // Désactivé par défaut — cf. doc du champ sur SaveTheDateTemplateOverride.
     dateBlockEnabled: false,
+    dateHidden: false,
     dateBlockFromSec: Math.round((ch2?.to ?? 1) * duration * 10) / 10,
     dateBlockToSec: Math.round(duration * 10) / 10,
     dateBlockPosition: 'bottom',
@@ -746,10 +756,10 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         segments: nameSegments(override.exampleNames || EXAMPLE_NAMES),
         fitOneLine: true,
         rule: true,
-        // La date ne vit sous les prénoms QUE si le bloc indépendant n'est
-        // pas activé — jamais les deux à la fois, cf. doc de
-        // dateBlockEnabled sur SaveTheDateTemplateOverride.
-        subLines: override.dateBlockEnabled ? undefined : [override.exampleDate || EXAMPLE_DATE],
+        // La date ne vit sous les prénoms QUE si elle n'est ni masquée ni
+        // déplacée dans le bloc indépendant — jamais les deux à la fois, cf.
+        // doc de dateBlockEnabled/dateHidden sur SaveTheDateTemplateOverride.
+        subLines: override.dateBlockEnabled || override.dateHidden ? undefined : [override.exampleDate || EXAMPLE_DATE],
         subSize: 'md',
         verticalAlign: override.chapter2Position,
         textColorOverride: override.chapter2TextColor || undefined,
@@ -769,7 +779,7 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         namesFamily: override.chapter2NamesFamily || undefined,
         namesVerb: override.chapter2NamesVerb || undefined,
       },
-      ...(override.dateBlockEnabled
+      ...(override.dateBlockEnabled && !override.dateHidden
         ? [
             {
               id: 2,
@@ -904,6 +914,7 @@ export function buildFulfillmentData(
       heroTextAnimation: o.textAnimation || '',
       heroFilter: o.filter || '',
       stdDateFormat: o.dateFormat || '',
+      stdNamesHideDate: !!o.dateHidden,
     },
     heroChapters: [
       { fromSec: o.chapter1FromSec, toSec: o.chapter1ToSec, position: o.chapter1Position },
@@ -917,7 +928,7 @@ export function buildFulfillmentData(
     // heroCustomCardSchema, bespokePalette.ts).
     heroCustomCards: [
       ...(o.extraCards ?? []),
-      ...(o.dateBlockEnabled
+      ...(o.dateBlockEnabled && !o.dateHidden
         ? [
             {
               ...blankHeroCustomCard('date-block', 'date', 'Date'),
