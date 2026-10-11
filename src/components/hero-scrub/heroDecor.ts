@@ -624,7 +624,15 @@ function resolveOneDateFormat(ch: TemplateHeroChapter, fmt: HeroDateFormatOption
       ? ({ ...ch, segments: undefined, dateLayout: { id: fmt.id, fonts: fmt.layout.fonts, lines: fmt.layout.lines(example) } } as HeroChapter)
       : ({ ...ch, segments: [{ text: fmt.format(example) }] } as HeroChapter)
   }
-  if (ch.dateSlot === 'sub' && ch.subLines) return { ...ch, subLines: [fmt.format(example)] } as HeroChapter
+  if (ch.dateSlot === 'sub' && ch.subLines) {
+    // Mise en page sur plusieurs lignes : affichée en entier sous les prénoms
+    // (subDateLayout) plutôt que ramenée à une ligne. `subLines` est retiré,
+    // donc une mise en page de prénoms (resolveNamesLayout, juste après) ne
+    // répète pas la date dans son propre bloc.
+    return fmt.layout
+      ? ({ ...ch, subLines: undefined, subDateLayout: { id: fmt.id, fonts: fmt.layout.fonts, lines: fmt.layout.lines(example) } } as HeroChapter)
+      : ({ ...ch, subLines: [fmt.format(example)] } as HeroChapter)
+  }
   return ch as HeroChapter
 }
 

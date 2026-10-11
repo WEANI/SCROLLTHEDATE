@@ -3262,7 +3262,7 @@ function StdBlocksEditor({ project, draft }: { project: Project360; draft: Studi
             <div className="grid gap-3 sm:grid-cols-2">
               <StudioField
                 label="Style d'affichage"
-                hint="S'applique à la vraie date du client, sous les prénoms. Les mises en page multi-lignes retombent sur une ligne à cet emplacement."
+                hint="S'applique à la vraie date du client, sous les prénoms (ou dans le bloc date à part s'il existe). Les mises en page sur plusieurs lignes s'affichent en entier."
               >
                 <select value={palette.stdDateFormat} onChange={(e) => setField("stdDateFormat", e.target.value)} className={studioInput}>
                   <option value="">12 juin 2027 (défaut)</option>
@@ -3271,7 +3271,7 @@ function StdBlocksEditor({ project, draft }: { project: Project360; draft: Studi
                       <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
                     ))}
                   </optgroup>
-                  <optgroup label="Mises en page multi-lignes">
+                  <optgroup label="Sur plusieurs lignes">
                     {HERO_DATE_FORMATS.filter((f) => f.layout).map((f) => (
                       <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
                     ))}

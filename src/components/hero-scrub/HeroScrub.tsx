@@ -1202,6 +1202,12 @@ export function ChapterContent({
           </div>
         )}
 
+        {chapter.subDateLayout && (
+          <div className="hs-sub-dl">
+            <HeroDateLayoutBlock layout={chapter.subDateLayout} />
+          </div>
+        )}
+
         {/* `sub` reste TOUJOURS à la taille discrète (14px), même quand
             `subSize: 'md'` agrandit `subLines` juste au-dessus — usage
             attesté : dress code après heure/lieu (Léa & Olivier), le sous-

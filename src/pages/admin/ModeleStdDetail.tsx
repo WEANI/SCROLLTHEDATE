@@ -762,47 +762,19 @@ function ModeleStdDetailForm({
                   </div>
 
                   {datePlacement !== "none" && (
-                    <div className="mt-4 grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1.2fr)]">
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+                    <div className="mt-4 flex flex-col gap-4">
+                      <label className="flex max-w-[260px] flex-col gap-1 text-xs font-medium text-neutral-500">
                         Date d'exemple
                         <input value={o.exampleDate} onChange={(e) => update({ exampleDate: e.target.value })} className={inputClass} />
                         <span className="font-normal text-neutral-400">Pour la page d'aperçu du modèle seulement.</span>
                       </label>
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Format de la date
-                        <select value={o.dateFormat} onChange={(e) => update({ dateFormat: e.target.value })} className={inputClass}>
-                          <option value="">12 juin 2027 (défaut)</option>
-                          <optgroup label="Sur une ligne">
-                            {HERO_DATE_FORMATS.filter((f) => !f.layout).map((f) => (
-                              <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="Sur plusieurs lignes (bloc à part seulement)">
-                            {HERO_DATE_FORMATS.filter((f) => f.layout).map((f) => (
-                              <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
-                            ))}
-                          </optgroup>
-                        </select>
-                        {selectedDateFormat?.layout && datePlacement === "sub" && (
-                          <span className="font-normal text-terracotta-500">
-                            Sous les prénoms, ce format s'affiche sur une seule ligne. Choisis « Dans un bloc à part » pour le voir en entier.
-                          </span>
-                        )}
-                      </label>
-                      <PreviewStage themeVars={themeVars}>
-                        {selectedDateFormat?.layout && datePlacement === "block" ? (
-                          <HeroDateLayoutBlock
-                            layout={{ id: selectedDateFormat.id, fonts: selectedDateFormat.layout.fonts, lines: selectedDateFormat.layout.lines(DATE_FORMAT_PREVIEW_DATE) }}
-                          />
-                        ) : (
-                          <p
-                            className="px-4 text-center text-[22px] font-light"
-                            style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)", fontStyle: fontPreview?.italic ? "italic" : undefined }}
-                          >
-                            {selectedDateFormat?.format(DATE_FORMAT_PREVIEW_DATE) ?? "12 juin 2027"}
-                          </p>
-                        )}
-                      </PreviewStage>
+                      <div>
+                        <p className="mb-2 text-xs font-medium text-neutral-500">
+                          Mise en page de la date{" "}
+                          <span className="font-normal text-neutral-400">— sous les prénoms comme dans un bloc à part</span>
+                        </p>
+                        <DateFormatGallery value={o.dateFormat} onChange={(id) => update({ dateFormat: id })} themeVars={themeVars} />
+                      </div>
                     </div>
                   )}
                   {datePlacement === "block" && (
@@ -967,6 +939,13 @@ function ModeleStdDetailForm({
                   </p>
                 ) : (
                   <>
+                    <div className="mb-5">
+                      <p className="mb-2 text-xs font-medium text-neutral-500">
+                        Mise en page de la date{" "}
+                        <span className="font-normal text-neutral-400">— la même que dans l'onglet 2e bloc, un seul réglage</span>
+                      </p>
+                      <DateFormatGallery value={o.dateFormat} onChange={(id) => update({ dateFormat: id })} themeVars={themeVars} />
+                    </div>
                     <div className="grid gap-3 md:grid-cols-3">
                       <TimecodeField
                         label="Apparaît à (s)"
@@ -1670,6 +1649,78 @@ function ModeleStdDetailForm({
 }
 
 /** Petite vignette 9:16 sombre, contexte de container-query (cqw) pour que le vrai composant HeroScrub s'y affiche à l'identique de la page publique. */
+/**
+ * Galerie des formats de date (HERO_DATE_FORMATS) — une vignette par format,
+ * comme la galerie des mises en page de prénoms, au lieu d'une liste
+ * déroulante où les mises en page sur plusieurs lignes passaient inaperçues
+ * (cf. échange du 11/10/2026). Les vignettes montent les vrais blocs du hero
+ * (`HeroDateLayoutBlock`), réduits par `zoom` : leurs tailles en `clamp(px)`
+ * sont pensées pour la vidéo, trop grandes pour une vignette.
+ */
+function DateFormatGallery({
+  value,
+  onChange,
+  themeVars,
+}: {
+  value: string;
+  onChange: (id: string) => void;
+  themeVars: CSSProperties;
+}) {
+  const groups: { title: string; items: { id: string; label: string; layout?: (typeof HERO_DATE_FORMATS)[number]["layout"]; text: string }[] }[] = [
+    {
+      title: "Sur une ligne",
+      items: [
+        { id: "", label: "Par défaut", text: "12 juin 2027" },
+        ...HERO_DATE_FORMATS.filter((f) => !f.layout).map((f) => ({ id: f.id, label: f.label, text: f.format(DATE_FORMAT_PREVIEW_DATE) })),
+      ],
+    },
+    {
+      title: "Sur plusieurs lignes",
+      items: HERO_DATE_FORMATS.filter((f) => f.layout).map((f) => ({ id: f.id, label: f.label, layout: f.layout, text: "" })),
+    },
+  ];
+  return (
+    <div className="flex flex-col gap-3">
+      {groups.map((g) => (
+        <div key={g.title}>
+          <p className="mb-1.5 text-[11px] font-medium text-neutral-500">{g.title}</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {g.items.map((f) => (
+              <button
+                key={f.id || "defaut"}
+                type="button"
+                onClick={() => onChange(f.id)}
+                title={f.label}
+                aria-pressed={value === f.id}
+                className={cn(
+                  "flex flex-col gap-1.5 rounded-xl border p-1.5 text-center transition-colors",
+                  value === f.id ? "border-terracotta-500 bg-terracotta-500/5" : "border-neutral-200 hover:border-terracotta-300",
+                )}
+              >
+                <div
+                  className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950 px-1"
+                  style={{ aspectRatio: "16 / 10", containerType: "inline-size", ...themeVars } as CSSProperties}
+                >
+                  {f.layout ? (
+                    <div style={{ zoom: 0.55 }}>
+                      <HeroDateLayoutBlock layout={{ id: f.id, fonts: f.layout.fonts, lines: f.layout.lines(DATE_FORMAT_PREVIEW_DATE) }} />
+                    </div>
+                  ) : (
+                    <span className="px-1 text-[11px] font-light leading-tight" style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)" }}>
+                      {f.text}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-medium leading-tight text-ink">{f.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PreviewStage({ themeVars, children }: { themeVars: CSSProperties; children: React.ReactNode }) {
   return (
     <div

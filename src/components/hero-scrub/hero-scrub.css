@@ -3220,3 +3220,10 @@
    -------------------------------------------------------------------------- */
 .hs-nm, .hs-tl, .hs-sc-jalons, .hs-sc-infos { max-width: 100%; }
 .hs-nm-arc svg { max-width: 100%; }
+
+/* Date en plusieurs lignes SOUS les prénoms (HeroChapter.subDateLayout,
+   11/10/2026). Mêmes mises en page que le bloc date à part (`.hs-dl-*`),
+   un peu resserrées : sous des prénoms, elles ne doivent pas leur voler la
+   vedette. */
+.hs-sub-dl { margin-top: 6px; }
+.hs-sub-dl .hs-dl { transform: scale(0.82); transform-origin: top center; margin-bottom: -6%; }

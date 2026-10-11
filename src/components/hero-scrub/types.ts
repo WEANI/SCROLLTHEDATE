@@ -95,6 +95,13 @@ export interface HeroChapter {
    */
   dateLayout?: HeroDateLayout
   /**
+   * Même date en plusieurs lignes, mais rendue SOUS le titre du bloc (les
+   * prénoms d'un Save the Date), à la place de `subLines` — cf. échange du
+   * 11/10/2026 : les mises en page de date n'étaient accessibles que dans le
+   * bloc date à part. Rendu après le filet, comme `subLines`.
+   */
+  subDateLayout?: HeroDateLayout
+  /**
    * Compte à rebours en direct jusqu'à `targetIso` (ISO 8601) — style parmi
    * HERO_COUNTDOWN_STYLES, cf. HeroDateBlocks.tsx. Ajouté le 23/09/2026.
    */
