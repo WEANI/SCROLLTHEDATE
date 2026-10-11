@@ -116,8 +116,8 @@ export function HeroSceneCardEditor({
                     )}
                   >
                     <div
-                      className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950"
-                      style={{ aspectRatio: "16 / 10", containerType: "inline-size", ...themeVars } as CSSProperties}
+                      className="relative flex w-full items-center justify-center overflow-hidden rounded-lg ring-1 ring-inset ring-neutral-200"
+                      style={{ background: "var(--hs-frame-bg, #1B1B1E)", aspectRatio: "16 / 10", containerType: "inline-size", ...themeVars } as CSSProperties}
                     >
                       <HeroSceneBlock s={heroScenePreview(s, ctx)} />
                     </div>

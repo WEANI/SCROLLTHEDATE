@@ -804,8 +804,8 @@ function ModeleStdDetailForm({
                         )}
                       >
                         <div
-                          className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950 px-1"
-                          style={{ aspectRatio: "16 / 10", containerType: "inline-size", ...themeVars } as CSSProperties}
+                          className="relative flex w-full items-center justify-center overflow-hidden rounded-lg ring-1 ring-inset ring-neutral-200 px-1"
+                          style={{ background: "var(--hs-frame-bg, #1B1B1E)", aspectRatio: "16 / 10", containerType: "inline-size", ...themeVars } as CSSProperties}
                         >
                           {l.id === "ligne" ? (
                             // Pas de classe hero pour le titre (il est stylé en
@@ -1072,8 +1072,8 @@ function ModeleStdDetailForm({
                             )}
                           >
                             <div
-                              className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950"
-                              style={{ aspectRatio: "1", containerType: "inline-size", ...themeVars, ...(monoFont ? { "--hs-font-family": monoFont.fontFamily } : null) } as CSSProperties}
+                              className="relative flex w-full items-center justify-center overflow-hidden rounded-lg ring-1 ring-inset ring-neutral-200"
+                              style={{ background: "var(--hs-frame-bg, #1B1B1E)", aspectRatio: "1", containerType: "inline-size", ...themeVars, ...(monoFont ? { "--hs-font-family": monoFont.fontFamily } : null) } as CSSProperties}
                             >
                               <HeroMonogramBlock m={{ ...monoData, layout: l.id }} size="sm" fontId={o.monogramFontId} />
                             </div>
@@ -1698,8 +1698,8 @@ function DateFormatGallery({
                 )}
               >
                 <div
-                  className="relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-anthracite-950 px-1"
-                  style={{ aspectRatio: "16 / 10", containerType: "inline-size", ...themeVars } as CSSProperties}
+                  className="relative flex w-full items-center justify-center overflow-hidden rounded-lg ring-1 ring-inset ring-neutral-200 px-1"
+                  style={{ background: "var(--hs-frame-bg, #1B1B1E)", aspectRatio: "16 / 10", containerType: "inline-size", ...themeVars } as CSSProperties}
                 >
                   {f.layout ? (
                     <div style={{ zoom: 0.55 }}>
@@ -1724,8 +1724,8 @@ function DateFormatGallery({
 function PreviewStage({ themeVars, children }: { themeVars: CSSProperties; children: React.ReactNode }) {
   return (
     <div
-      className="relative mx-auto w-full max-w-[200px] overflow-hidden rounded-lg bg-anthracite-950"
-      style={{ aspectRatio: "9/16", containerType: "inline-size", ...themeVars } as CSSProperties}
+      className="relative mx-auto w-full max-w-[200px] overflow-hidden rounded-lg ring-1 ring-inset ring-neutral-200"
+      style={{ background: "var(--hs-frame-bg, #1B1B1E)", aspectRatio: "9/16", containerType: "inline-size", ...themeVars } as CSSProperties}
     >
       {children}
     </div>
