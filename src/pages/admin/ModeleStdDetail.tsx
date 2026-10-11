@@ -39,6 +39,7 @@ import {
   getHeroFont,
   getHeroDateFormat,
   useGoogleFont,
+  useGoogleFonts,
 } from "@/components/hero-scrub/heroDecor";
 import { HeroOverlayGraphic, HeroFilterLayer, ChapterContent } from "@/components/hero-scrub/HeroScrub";
 import { HeroDateLayoutBlock, HeroMonogramBlock, HeroNamesBlock } from "@/components/hero-scrub/HeroDateBlocks";
@@ -301,6 +302,19 @@ function ModeleStdDetailForm({
   // ---- aperçu "police" : charge la police choisie à la volée ----
   useGoogleFont(o?.fontId);
   const fontPreview = getHeroFont(o?.fontId);
+  // …et les polices choisies BLOC PAR BLOC (1er, 2e, bloc date, monogramme,
+  // blocs supplémentaires). Sans ce chargement, l'aperçu recevait bien le nom
+  // de la police mais le navigateur ne l'avait pas : il retombait sur une
+  // police par défaut, et changer de police ne changeait rien à l'écran
+  // (signalé le 11/10/2026). Même liste que les vraies commandes, cf.
+  // FairePart.tsx.
+  useGoogleFonts([
+    o?.chapter1FontId,
+    o?.chapter2FontId,
+    o?.dateBlockFontId,
+    o?.monogramFontId,
+    ...(o?.extraCards ?? []).map((c) => c.fontId),
+  ]);
 
   // ---- aperçu "animation du texte" : rejoue en boucle (toggle show) ----
   const [animShow, setAnimShow] = useState(true);
@@ -443,6 +457,14 @@ function ModeleStdDetailForm({
     "--hs-card-shadow": template.theme.cardShadow,
     "--hs-font-family": fontPreview?.fontFamily || "'Fraunces', Georgia, serif",
   } as CSSProperties;
+  // Vignettes qui doivent montrer la police DU BLOC, pas celle du hero : les
+  // mises en page des prénoms et la date sous les prénoms suivent la police du
+  // 2e bloc, la galerie de l'onglet 3e bloc celle du bloc date. Vide = police
+  // du hero, comme au rendu (cf. HeroScrub.tsx, `--hs-font-family` par bloc).
+  const chapter2Font = getHeroFont(o.chapter2FontId);
+  const namesThemeVars = (chapter2Font ? { ...themeVars, "--hs-font-family": chapter2Font.fontFamily } : themeVars) as CSSProperties;
+  const dateBlockFont = getHeroFont(o.dateBlockFontId);
+  const dateBlockThemeVars = (dateBlockFont ? { ...themeVars, "--hs-font-family": dateBlockFont.fontFamily } : themeVars) as CSSProperties;
 
   // ---- onglets — un espace par bloc, vidéo/timeline toujours visible
   // (échange du 28/09/2026 : "plus ergonomique avec un onglet par bloc tout
@@ -773,7 +795,7 @@ function ModeleStdDetailForm({
                           Mise en page de la date{" "}
                           <span className="font-normal text-neutral-400">— sous les prénoms comme dans un bloc à part</span>
                         </p>
-                        <DateFormatGallery value={o.dateFormat} onChange={(id) => update({ dateFormat: id })} themeVars={themeVars} />
+                        <DateFormatGallery value={o.dateFormat} onChange={(id) => update({ dateFormat: id })} themeVars={namesThemeVars} />
                       </div>
                     </div>
                   )}
@@ -805,7 +827,7 @@ function ModeleStdDetailForm({
                       >
                         <div
                           className="relative flex w-full items-center justify-center overflow-hidden rounded-lg ring-1 ring-inset ring-neutral-200 px-1"
-                          style={{ background: "var(--hs-frame-bg, #1B1B1E)", aspectRatio: "16 / 10", containerType: "inline-size", ...themeVars } as CSSProperties}
+                          style={{ background: "var(--hs-frame-bg, #1B1B1E)", aspectRatio: "16 / 10", containerType: "inline-size", ...namesThemeVars } as CSSProperties}
                         >
                           {l.id === "ligne" ? (
                             // Pas de classe hero pour le titre (il est stylé en
@@ -944,7 +966,7 @@ function ModeleStdDetailForm({
                         Mise en page de la date{" "}
                         <span className="font-normal text-neutral-400">— la même que dans l'onglet 2e bloc, un seul réglage</span>
                       </p>
-                      <DateFormatGallery value={o.dateFormat} onChange={(id) => update({ dateFormat: id })} themeVars={themeVars} />
+                      <DateFormatGallery value={o.dateFormat} onChange={(id) => update({ dateFormat: id })} themeVars={dateBlockThemeVars} />
                     </div>
                     <div className="grid gap-3 md:grid-cols-3">
                       <TimecodeField

@@ -4,7 +4,7 @@ import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/providers/trpc'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
-import { getHeroFont, useGoogleFont } from '@/components/hero-scrub/heroDecor'
+import { getHeroFont, useGoogleFont, useGoogleFonts } from '@/components/hero-scrub/heroDecor'
 import { useSeo } from '@/hooks/useSeo'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { formatEuros } from '@/components/commerce/pricing'
@@ -75,6 +75,10 @@ export default function SaveTheDateTemplatePreview() {
   // vide/absent.
   const heroFont = getHeroFont(template?.fontId)
   useGoogleFont(template?.fontId)
+  // Polices choisies bloc par bloc dans l'admin (chapitres, bloc date,
+  // monogramme, blocs supplémentaires) — jusqu'ici jamais chargées sur cette
+  // page : elles retombaient sur une police par défaut.
+  useGoogleFonts((template?.chapters ?? []).map((c) => c.fontId))
 
   useSeo({
     title: template ? `Modèle ${template.name} — Save the Date · Scroll The Date` : t('saveTheDateTemplatePreview.notFoundSeoTitle'),
