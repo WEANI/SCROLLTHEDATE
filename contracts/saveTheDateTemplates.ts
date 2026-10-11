@@ -157,7 +157,27 @@ const PARCHEMIN_BLANC_THEME: HeroTheme = {
 }
 
 /**
- * Allée des Roses — remplace Parchemin Rose le 11/10/2026. Le montage s'ouvre sur la porte rouge de
+ * Parchemin sur satin rose gold, sceau couronne doré — même famille que Parchemin Blanc, accent
+ * cuivré plutôt que doré pur. Réintroduit le 11/10/2026 avec un nouveau montage (cf. catalogue).
+ */
+const PARCHEMIN_ROSE_THEME: HeroTheme = {
+  id: 'parchemin-rose',
+  label: 'Parchemin Rose',
+  colorScheme: 'light',
+  frameBg: '#F7E4DC',
+  pageBg: '#FBEFE9',
+  vignette: 'linear-gradient(180deg, rgba(74,46,40,0.10) 0%, rgba(74,46,40,0.02) 40%, rgba(74,46,40,0.55) 100%)',
+  accent: '#C08769',
+  textPrimary: '#4A2E28',
+  textSecondary: '#8A6459',
+  cardBg: 'rgba(251, 239, 233, 0.78)',
+  cardBorder: 'rgba(192, 135, 105, 0.28)',
+  cardShadow: '0 24px 60px rgba(74, 46, 40, 0.18)',
+  dotInactive: 'rgba(74, 46, 40, 0.14)',
+}
+
+/**
+ * Allée des Roses — ajouté le 11/10/2026. Le montage s'ouvre sur la porte rouge de
  * Red Door mais se déroule ensuite dans des couloirs crème et or (voilages, bougies, arche
  * lumineuse) : ambiance CLAIRE, texte bordeaux profond, accent rouge rose — l'or seul manquait de
  * contraste sur ces fonds très lumineux. Le voile du bas éclaircit (au lieu d'assombrir) pour que
@@ -436,14 +456,53 @@ export const SAVE_THE_DATE_TEMPLATES: SaveTheDateTemplate[] = [
     ],
   },
   {
+    slug: 'parchemin-rose',
+    name: 'Parchemin Rose',
+    tagline: 'Un rouleau scellé, satin rose gold et coucher de soleil.',
+    description:
+      "Un parchemin scellé d'un sceau couronne doré se déroule sur satin rose gold pour révéler l'annonce, puis s'efface en poussière dorée sur des roses crème et deux alliances ; la caméra plonge dans un pétale et ressort au coucher du soleil, sur les mariés réunis sous l'arche de fleurs.",
+    theme: PARCHEMIN_ROSE_THEME,
+    // Montage « Parchemin Rose Gold » du 11/10/2026 (42,8 s), qui remplace celui de septembre
+    // (29 s). Il contient « Save the Date » écrit sur le parchemin (≈ 12–19 s), comme Parchemin
+    // Blanc. Les blocs par défaut se posent EN HAUT, dans le ciel vide de la scène finale au
+    // coucher du soleil (≈ 34–43 s) — en bas, l'allée et les chaises sont trop chargées.
+    frames: { baseUrl: '/parchemin-rose-frames/', count: 514, fps: 12 },
+    desktopSrc: '/parchemin-rose.mp4',
+    posterSrc: '/parchemin-rose-frames/00001.jpg',
+    chapters: [
+      {
+        id: 0,
+        kind: 'text',
+        from: 0.8,
+        to: 0.9,
+        segments: [{ text: 'Save the date' }],
+        // 'sm' : carte plus compacte, qui reste au-dessus de l'arche de fleurs. En 'lg' ou 'md',
+        // elle descendait jusque sur l'arche.
+        titleSize: 'sm',
+        verticalAlign: 'top',
+      },
+      {
+        id: 1,
+        kind: 'text',
+        from: 0.9,
+        to: 1,
+        segments: nameSegments(EXAMPLE_NAMES),
+        fitOneLine: true,
+        rule: true,
+        subLines: [EXAMPLE_DATE],
+        subSize: 'md',
+        verticalAlign: 'top',
+      },
+    ],
+  },
+  {
     slug: 'allee-des-roses',
     name: 'Allée des Roses',
     tagline: 'Une porte, une pluie de pétales, et le chemin jusqu\'à vous.',
     description:
       "Une porte rouge sculptée s'ouvre sur une pluie de pétales ; la caméra traverse de longs couloirs habillés de voilages et de bougies, plonge dans un pétale de rose, découvre les alliances et la pièce montée, puis s'arrête sur les mariés sous l'arche lumineuse — un montage immersif, sans coupure.",
     theme: ALLEE_DES_ROSES_THEME,
-    // Montage du 11/10/2026 (44 s, aucun texte incrusté), qui remplace Parchemin Rose — aucun
-    // projet ni réglage admin ne l'utilisait. Moments sans élément, prévus pour les textes :
+    // Montage du 11/10/2026 (44 s, aucun texte incrusté). Moments sans élément, prévus pour les textes :
     // miroir 0,25–0,31 · couloir aux voilages 0,38–0,455 · couloir des alliances 0,61–0,655 ·
     // arche lumineuse 0,77–0,81 · couple 0,91–1. Les deux blocs par défaut se posent sur les deux
     // derniers (cf. LISEZMOI du montage pour le détail seconde par seconde).

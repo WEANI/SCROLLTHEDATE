@@ -2,7 +2,7 @@
 
 **Modèle** : `allee-des-roses` · 44 s · 528 frames à 12 fps · ambiance CLAIRE.
 **Description catalogue** : « Une porte, une pluie de pétales, et le chemin jusqu'à vous. »
-Remplace Parchemin Rose depuis le 11/10/2026.
+Ajouté le 11/10/2026.
 
 ## Ton visuel
 Ouverture reprise de Red Door (porte rouge sculptée, pluie de pétales), puis tout se passe dans des

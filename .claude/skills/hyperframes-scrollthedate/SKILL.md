@@ -77,7 +77,8 @@ Les templates de composition sont **agnostiques** : aucune couleur en dur, ils l
 | `scrollthedate` | Vidéos marketing : site, Instagram, publicité | Terracotta sur anthracite, Fraunces |
 | `red-door` | Montage / teaser du modèle Red Door | Rouge profond, dorures, opulent |
 | `parchemin-blanc` | Modèle Parchemin Blanc | Ivoire, satin, or discret — clair |
-| `allee-des-roses` | Modèle Allée des Roses (remplace Parchemin Rose) | Crème, or et roses rouges, bordeaux — clair |
+| `parchemin-rose` | Modèle Parchemin Rose | Satin rose gold, cuivre — clair |
+| `allee-des-roses` | Modèle Allée des Roses | Crème, or et roses rouges, bordeaux — clair |
 
 Les valeurs des trois univers de modèles sont **exactement** celles de
 `contracts/saveTheDateTemplates.ts` (`RED_DOOR_THEME` et consorts) : un teaser doit être

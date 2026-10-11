@@ -42,6 +42,7 @@ template tombera sur une variable vide.
 | `scrollthedate` | Marketing (site, Instagram, pub) | `#1B1B1E` | `#C96F5A` | sombre |
 | `red-door` | Modèle Red Door | `#1A0A0A` | `#D4AF6A` | sombre |
 | `parchemin-blanc` | Modèle Parchemin Blanc | `#F5EEDE` | `#B8934A` | **clair** |
+| `parchemin-rose` | Modèle Parchemin Rose | `#F7E4DC` | `#C08769` | **clair** |
 | `allee-des-roses` | Modèle Allée des Roses | `#F3E4CF` | `#9E1B24` | **clair** |
 
 **Piège à ne pas rater** : deux des trois modèles sont CLAIRS. Un texte ivoire, parfait sur Red
@@ -50,9 +51,9 @@ jamais supposer « fond sombre, texte clair ».
 
 ## Source de vérité
 
-Les trois univers de modèles reprennent **exactement** les `HeroTheme` de
+Les quatre univers de modèles reprennent **exactement** les `HeroTheme` de
 `contracts/saveTheDateTemplates.ts` (`RED_DOOR_THEME`, `PARCHEMIN_BLANC_THEME`,
-`ALLEE_DES_ROSES_THEME`). Un teaser doit être indiscernable de la page publique du modèle.
+`PARCHEMIN_ROSE_THEME`, `ALLEE_DES_ROSES_THEME`). Un teaser doit être indiscernable de la page publique du modèle.
 
 Correspondance des noms :
 
