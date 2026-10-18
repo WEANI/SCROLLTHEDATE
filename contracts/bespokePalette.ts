@@ -153,6 +153,11 @@ export const bespokePaletteSchema = z.object({
   // modifiable ensuite projet par projet au Studio. false = date affichée,
   // comportement historique.
   stdNamesHideDate: z.boolean().default(false),
+  // Texte du 1er bloc du hero à blocs — vide = « Save the date » pour un save
+  // the date, « Nous nous marions » pour un faire-part. Un retour à la ligne
+  // tapé = une ligne forcée à l'affichage (même règle que chapter1Text des
+  // modèles, cf. saveTheDateTemplates.ts).
+  stdSaveTheDateText: z.string().default(""),
   // Décor du hero — cf. src/components/hero-scrub/heroDecor.ts (bibliothèque
   // ajoutée le 10/09/2026). Chaîne vide = aucun décor / police du site
   // (Fraunces), comportement inchangé. `heroFontId` ne change QUE le titre
@@ -231,6 +236,31 @@ const heroChaptersSaveTheDateSchema = z.tuple([heroChapterTimingSchema, heroChap
 export const heroChaptersSchema = z.union([heroChaptersFairePartSchema, heroChaptersSaveTheDateSchema]);
 
 export type HeroChaptersInput = z.infer<typeof heroChaptersSchema>;
+
+/**
+ * Hero « à blocs » ou ancien hero faire-part à 3 chapitres.
+ *
+ * Depuis le 18/10/2026, un faire-part se règle comme un modèle Save the Date
+ * (cf. échange du jour : « retire les blocs ouverture, détails pratiques et
+ * clôture, remplace-les par les mêmes configurations que dans Paramètres →
+ * Save the Date ») : 2 blocs (texte libre, prénoms & date), plus la date à
+ * part, le logo et les blocs supplémentaires portés par `heroCustomCards`.
+ *
+ * Un faire-part dont les 3 anciens chapitres sont déjà réglés garde son hero
+ * d'origine tant que l'admin ne le bascule pas depuis le Studio : deux
+ * faire-parts livrés l'utilisent, leurs invités ne doivent rien voir changer
+ * sans décision. Un faire-part livré SANS timings (rendu par défaut) reste
+ * aussi sur l'ancien rendu, pour la même raison.
+ */
+export function isLegacyFairePartHero(
+  product: string | null | undefined,
+  heroChapters: unknown,
+  status: string | null | undefined,
+): boolean {
+  if (product !== "FAIRE_PART") return false;
+  if (Array.isArray(heroChapters)) return heroChapters.length === 3;
+  return status === "DELIVERED";
+}
 /** Variante à 3 éléments — typage précis pour l'éditeur de timings faire-part (StudioPanel), qui indexe jusqu'à `[2]`. */
 export type HeroChaptersFairePartInput = z.infer<typeof heroChaptersFairePartSchema>;
 /** Variante à 2 éléments — typage précis pour l'éditeur de timings save the date (StudioPanel). */

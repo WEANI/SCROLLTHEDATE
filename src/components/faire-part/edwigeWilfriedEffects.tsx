@@ -188,6 +188,8 @@ export type BespokePalette = {
   stdDateFormat: string
   /** Masquer la date sous les prénoms du 2e bloc d'un Save the Date — cf. bespokePalette.ts. */
   stdNamesHideDate: boolean
+  /** Texte du 1er bloc du hero à blocs — vide = texte par défaut du produit, cf. bespokePalette.ts. */
+  stdSaveTheDateText: string
 }
 
 export const EW_PALETTE: BespokePalette = {
@@ -253,6 +255,7 @@ export const EW_PALETTE: BespokePalette = {
   sectionTitleStyle: '',
   stdDateFormat: '',
   stdNamesHideDate: false,
+  stdSaveTheDateText: '',
 }
 
 function darken(hex: string, amount: number): string {

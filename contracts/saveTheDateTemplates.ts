@@ -891,6 +891,9 @@ export function buildFulfillmentData(
       // automatique sur le thème partagé "cinema" (sombre) + fond de page
       // — sans jamais toucher au catalogue de thèmes partagé.
       bg: template.theme.frameBg,
+      // Texte du 1er bloc tel que réglé dans le modèle — jusqu'ici jamais
+      // repris sur la commande, qui affichait toujours « Save the date ».
+      stdSaveTheDateText: o.chapter1Text && o.chapter1Text !== 'Save the date' ? o.chapter1Text : '',
       stdSaveTheDateTextColor: o.chapter1TextColor || '',
       stdSaveTheDateCardBg: o.chapter1CardBg || '',
       stdSaveTheDateTitleSize: o.chapter1TitleSize || '',

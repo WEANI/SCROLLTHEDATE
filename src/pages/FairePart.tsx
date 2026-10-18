@@ -7,6 +7,7 @@ import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
 import PhotoSplitCinematique from '@/components/faire-part/PhotoSplitCinematique'
 import DetailsSombre, { parseFaqItem, parseProgrammeItem } from '@/components/faire-part/DetailsSombre'
+import { isLegacyFairePartHero } from '@contracts/bespokePalette'
 import { sectionDecorFromPalette, sectionDecorRootProps } from '@/components/faire-part/sectionDecor'
 import { SectionDecorProvider } from '@/components/faire-part/SectionDecorParts'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
@@ -190,7 +191,11 @@ export default function FairePart() {
   // 2 chapitres pour un save the date ("Save the date" / prénoms+date), 3
   // pour un faire-part (ouverture / détails pratiques / clôture) — cf.
   // contracts/bespokePalette.ts::heroChaptersSchema.
-  const expectedChapterCount = isStd ? 2 : 3
+  // Hero « à blocs » (comme les modèles Save the Date) pour un save the date
+  // et pour tout faire-part qui n'est pas resté sur l'ancien hero à 3
+  // chapitres — cf. isLegacyFairePartHero (contracts/bespokePalette.ts).
+  const blocksHero = !!invite && !isLegacyFairePartHero(invite.product, invite.heroChapters, invite.status)
+  const expectedChapterCount = blocksHero ? 2 : 3
   const studioChapters =
     invite?.heroChapters && Array.isArray(invite.heroChapters) && invite.heroChapters.length === expectedChapterCount
       ? (invite.heroChapters as HeroChapterTiming[])
@@ -425,7 +430,16 @@ export default function FairePart() {
     invite.menuPlat.length > 0 ||
     invite.menuDessert.length > 0
 
-  const baseChapters: HeroChapter[] = isStd
+  // Texte du 1er bloc : réglé au Studio, sinon celui du produit. Un retour à
+  // la ligne tapé = une ligne forcée (même règle que les modèles).
+  const block1Lines = (palette.stdSaveTheDateText || (isStd ? 'Save the date' : 'Nous nous marions'))
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+  const block1Text: Pick<HeroChapter, 'segments' | 'segmentLayout'> =
+    block1Lines.length > 1 ? { segments: block1Lines.map((text) => ({ text })), segmentLayout: 'stack' } : { segments: [{ text: block1Lines[0] ?? '' }] }
+
+  const baseChapters: HeroChapter[] = blocksHero
     ? // Save the date — 2 chapitres fixes (cf. échange du 07/09/2026) :
       // "Save the date" seul, puis les prénoms (une ligne, "&") + la date
       // juste en dessous. Pas de repli à 1 chapitre unique quand les
@@ -439,7 +453,7 @@ export default function FairePart() {
             from: studioChapters[0].fromSec / videoDuration,
             to: studioChapters[0].toSec / videoDuration,
             verticalAlign: studioChapters[0].position,
-            segments: [{ text: 'Save the date' }],
+            ...block1Text,
             // 'sm'/'md'/'lg' (Studio → Save the Date, cf. échange du
             // 21/09/2026) — vide = 'lg', comportement historique.
             titleSize: (palette.stdSaveTheDateTitleSize || 'lg') as HeroChapter['titleSize'],
@@ -489,7 +503,7 @@ export default function FairePart() {
             kind: 'text',
             from: 0.8,
             to: 0.9,
-            segments: [{ text: 'Save the date' }],
+            ...block1Text,
             // 'sm'/'md'/'lg' (Studio → Save the Date, cf. échange du
             // 21/09/2026) — vide = 'lg', comportement historique.
             titleSize: (palette.stdSaveTheDateTitleSize || 'lg') as HeroChapter['titleSize'],

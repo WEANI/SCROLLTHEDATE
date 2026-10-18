@@ -392,11 +392,15 @@ export const projectsRouter = createRouter({
       // bug client) s'enregistre tel quel — cf. bug reproduit le
       // 08/09/2026 (commande 25).
       const product = await findProjectProduct(input.projectId);
-      const expectedCount = product === "SAVE_THE_DATE" ? 2 : 3;
-      if (input.heroChapters.length !== expectedCount) {
+      // Save the date : 2 blocs, toujours. Faire-part : 2 blocs (hero à
+      // blocs, depuis le 18/10/2026) ou 3 chapitres (ancien hero, conservé
+      // pour les faire-parts déjà réglés ainsi — cf. isLegacyFairePartHero,
+      // contracts/bespokePalette.ts).
+      const allowed = product === "SAVE_THE_DATE" ? [2] : [2, 3];
+      if (!allowed.includes(input.heroChapters.length)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Ce projet attend ${expectedCount} chapitres, reçu ${input.heroChapters.length}.`,
+          message: `Ce projet attend ${allowed.join(" ou ")} chapitres, reçu ${input.heroChapters.length}.`,
         });
       }
       await updateProjectHeroChapters(input.projectId, input.heroChapters);

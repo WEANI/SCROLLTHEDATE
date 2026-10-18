@@ -13,7 +13,6 @@ import {
   HERO_FILTERS,
   HERO_CARD_FRAMES,
   HERO_COUNTDOWN_STYLES,
-  HERO_DATE_FORMATS,
   HERO_MONOGRAM_LAYOUTS,
   HERO_MONOGRAM_FONT_IDS,
   HERO_NAMES_LAYOUTS,
@@ -31,14 +30,16 @@ import {
 } from "@/components/hero-scrub/heroDecor";
 import { HERO_THEMES } from "@/components/hero-scrub/themes";
 import { ChapterContent } from "@/components/hero-scrub/HeroScrub";
-import { HeroDateLayoutBlock, HeroMonogramBlock, HeroNamesBlock, HeroProgrammeBlock } from "@/components/hero-scrub/HeroDateBlocks";
+import { HeroMonogramBlock, HeroNamesBlock, HeroProgrammeBlock } from "@/components/hero-scrub/HeroDateBlocks";
 import { HeroSceneCardEditor } from "@/components/admin/HeroSceneCardEditor";
 import { PaletteLivePreview } from "@/components/admin/PaletteLivePreview";
+import { DateFormatGallery } from "@/components/admin/DateFormatGallery";
 import { getHeroScene, heroSceneFromCard, type HeroSceneContext } from "@/components/hero-scrub/heroScenes";
 import type { HeroNames } from "@/components/hero-scrub/heroDecor";
 import type { HeroChapter } from "@/components/hero-scrub/types";
 import {
   blankHeroCustomCard,
+  isLegacyFairePartHero,
   type BespokePaletteInput,
   type HeroChaptersFairePartInput,
   type HeroChaptersSaveTheDateInput,
@@ -981,6 +982,7 @@ const BLANK_PALETTE: BespokePaletteInput = {
   sectionTitleStyle: "",
   stdDateFormat: "",
   stdNamesHideDate: false,
+  stdSaveTheDateText: "",
 };
 
 const HERO_CHAPTER_LABELS = ["Ouverture", "Détails pratiques", "Clôture"] as const;
@@ -994,6 +996,8 @@ const BLANK_HERO_CHAPTERS: HeroChaptersFairePartInput = [
 // ("Save the date" / prénoms+date), pas de "détails pratiques" ni de
 // "clôture" (page dédiée bien plus courte, hero + footer uniquement).
 const HERO_CHAPTER_LABELS_STD = ["Save the date", "Prénoms & date"] as const;
+/** Faire-part réglé comme un modèle Save the Date (hero à blocs, 18/10/2026) : le 1er bloc porte un texte libre. */
+const HERO_CHAPTER_LABELS_BLOCKS = ["1er bloc", "Prénoms & date"] as const;
 const BLANK_HERO_CHAPTERS_STD: HeroChaptersSaveTheDateInput = [
   { fromSec: 0, toSec: 0, position: "middle" },
   { fromSec: 0, toSec: 0, position: "middle" },
@@ -1351,7 +1355,7 @@ function CustomCardsEditor({
         Blocs overlay personnalisés
       </h3>
       <p className="mb-4 text-[12px] text-neutral-500">
-        En plus des chapitres fixes ci-dessus — texte libre, compte à rebours, monogramme des mariés ou scène de la
+        En plus des blocs du hero ci-dessus — texte libre, compte à rebours, monogramme des mariés ou scène de la
         bibliothèque (37 mises en page : formule d'annonce, jalons, lieu, dress code, billet, calendrier…), chacun avec
         ses propres police, taille, couleurs, cadre et animation (mêmes réglages que les modèles Save the Date).
         Repérez l'instant sur l'aperçu vidéo plus haut, puis saisissez-le ici.
@@ -1760,6 +1764,35 @@ function CustomCardsEditor({
                   </StudioPreview>
                 </div>
               </div>
+            ) : card.kind === "date" ? (
+              <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[12px] font-semibold text-ink">Date — bloc à part</p>
+                    <p className="text-[11.5px] text-neutral-500">
+                      Affiche la date du mariage dans la mise en page choisie plus haut (« La date »).
+                    </p>
+                  </div>
+                  {removeButton(card)}
+                </div>
+                {timingFields(card)}
+                <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                  <StudioField label="Taille de police">
+                    <StudioSizeSelect value={card.titleSize} onChange={(v) => updateCard(card.id, { titleSize: v })} />
+                  </StudioField>
+                  <StudioField label="Police — ce bloc">
+                    <StudioFontSelect value={card.fontId} onChange={(v) => updateCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
+                  </StudioField>
+                  <StudioField label="Animation — ce bloc">
+                    <StudioAnimSelect value={card.textAnimation} onChange={(v) => updateCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
+                  </StudioField>
+                  <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateCard(card.id, { textColor: v })} />
+                  <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateCard(card.id, { cardBg: v })} />
+                  <StudioField label="Cadre (décor)">
+                    <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
+                  </StudioField>
+                </div>
+              </div>
             ) : (
               <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
                 <div className="flex items-start gap-3">
@@ -1879,12 +1912,15 @@ function initialChapters(project: Project360): HeroChaptersFairePartInput | Hero
   // dont les timings ont été réglés au mauvais format (3 chapitres pour un
   // save the date, ou l'inverse) repart des valeurs vides plutôt que
   // d'envoyer un tableau incohérent — cf. commande 25 (08/09/2026).
-  const isStd = project.product === "SAVE_THE_DATE";
-  const expected = isStd ? 2 : 3;
+  // 2 blocs (hero à blocs) pour un save the date et pour un faire-part, sauf
+  // un faire-part resté sur l'ancien hero à 3 chapitres (cf.
+  // isLegacyFairePartHero) : il garde ses 3 chapitres jusqu'à la bascule.
+  const legacy = isLegacyFairePartHero(project.product, project.heroChapters, project.status);
+  const expected = legacy ? 3 : 2;
   if (Array.isArray(project.heroChapters) && project.heroChapters.length === expected) {
     return project.heroChapters as HeroChaptersFairePartInput | HeroChaptersSaveTheDateInput;
   }
-  return isStd ? BLANK_HERO_CHAPTERS_STD : BLANK_HERO_CHAPTERS;
+  return legacy ? BLANK_HERO_CHAPTERS : BLANK_HERO_CHAPTERS_STD;
 }
 function initialCards(project: Project360): HeroCustomCard[] {
   return (project.heroCustomCards as HeroCustomCard[] | null) ?? [];
@@ -3036,7 +3072,32 @@ function HeroStyleFields({ draft, isStd }: { draft: StudioDraft; isStd: boolean 
 
 /** Les 2 blocs fixes du save the date (« Save the date », prénoms & date) et le format de la date. */
 function StdBlocksEditor({ project, draft }: { project: Project360; draft: StudioDraft }) {
-  const { palette, setField } = draft;
+  const { palette, setField, cards, setCards } = draft;
+  const isStd = project.product === "SAVE_THE_DATE";
+  // Texte du 1er bloc : libre (un retour à la ligne = une ligne), vide = le
+  // texte par défaut du produit — mêmes règles que FairePart.tsx (block1Text).
+  const block1Default = isStd ? "Save the date" : "Nous nous marions";
+  const block1Lines = (palette.stdSaveTheDateText || block1Default)
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  // Placement de la date — mêmes 3 choix que Paramètres → Save the Date :
+  // sous les prénoms, dans un bloc à part (carte « date » des blocs
+  // supplémentaires), ou nulle part.
+  const hasDateCard = cards.some((c) => c.kind === "date");
+  const datePlacement: "names" | "block" | "hidden" = hasDateCard
+    ? "block"
+    : palette.stdNamesHideDate
+      ? "hidden"
+      : "names";
+  const setDatePlacement = (v: "names" | "block" | "hidden") => {
+    setField("stdNamesHideDate", v !== "names");
+    if (v === "block") {
+      if (!hasDateCard) setCards((prev) => [...prev, blankCustomCard("date", "Date")]);
+    } else {
+      setCards((prev) => prev.filter((c) => c.kind !== "date"));
+    }
+  };
   const themeVars = studioThemeVars(project, palette);
   const animShow = useAnimReplay(undefined);
   useGoogleFonts([palette.stdSaveTheDateFontId, palette.stdNamesDateFontId]);
@@ -3063,7 +3124,19 @@ function StdBlocksEditor({ project, draft }: { project: Project360; draft: Studi
     <div>
         <div className="space-y-5">
           <div>
-            <p className="mb-2 text-[12px] font-semibold">Bloc 1 — "Save the date"</p>
+            <p className="mb-2 text-[12px] font-semibold">Bloc 1 — {isStd ? "« Save the date »" : "texte d'ouverture"}</p>
+            <div className="mb-3">
+              <StudioField label="Texte" hint={`Vide = « ${block1Default} ». Un retour à la ligne = une ligne de plus.`}>
+                <textarea
+                  value={palette.stdSaveTheDateText}
+                  onChange={(e) => setField("stdSaveTheDateText", e.target.value)}
+                  placeholder={block1Default}
+                  rows={2}
+                  maxLength={120}
+                  className={cn(studioInput, "resize-y")}
+                />
+              </StudioField>
+            </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <StudioField label="Taille de police">
                 <StudioSizeSelect value={palette.stdSaveTheDateTitleSize} onChange={(v) => setField("stdSaveTheDateTitleSize", v)} />
@@ -3101,7 +3174,8 @@ function StdBlocksEditor({ project, draft }: { project: Project360; draft: Studi
                       kind: "text",
                       from: 0,
                       to: 1,
-                      segments: [{ text: "Save the date" }],
+                      segments: block1Lines.map((text) => ({ text })),
+                      segmentLayout: block1Lines.length > 1 ? "stack" : undefined,
                       titleSize: (palette.stdSaveTheDateTitleSize || "sm") as HeroChapter["titleSize"],
                       textColorOverride: palette.stdSaveTheDateTextColor || undefined,
                       cardBgOverride: palette.stdSaveTheDateCardBg || "transparent",
@@ -3247,55 +3321,46 @@ function StdBlocksEditor({ project, draft }: { project: Project360; draft: Studi
           </div>
 
           <div>
-            <p className="mb-2 text-[12px] font-semibold">Format de la date</p>
+            <p className="mb-2 text-[12px] font-semibold">La date</p>
             {/* Réglage du modèle repris à la commande (dateHidden → stdNamesHideDate),
                 modifiable ici pour ce couple seulement. */}
-            <label className="mb-3 flex items-center gap-2 text-[12.5px] text-ink">
-              <input
-                type="checkbox"
-                checked={!palette.stdNamesHideDate}
-                onChange={(e) => setField("stdNamesHideDate", !e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
-              />
-              Afficher la date sous les prénoms
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <StudioField
-                label="Style d'affichage"
-                hint="S'applique à la vraie date du client, sous les prénoms (ou dans le bloc date à part s'il existe). Les mises en page sur plusieurs lignes s'affichent en entier."
-              >
-                <select value={palette.stdDateFormat} onChange={(e) => setField("stdDateFormat", e.target.value)} className={studioInput}>
-                  <option value="">12 juin 2027 (défaut)</option>
-                  <optgroup label="Sur une ligne">
-                    {HERO_DATE_FORMATS.filter((f) => !f.layout).map((f) => (
-                      <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Sur plusieurs lignes">
-                    {HERO_DATE_FORMATS.filter((f) => f.layout).map((f) => (
-                      <option key={f.id} value={f.id}>{f.label} — {f.example}</option>
-                    ))}
-                  </optgroup>
-                </select>
-              </StudioField>
-              <div className="w-[160px] shrink-0 flex flex-col gap-1">
-                <span className="text-[11px] font-semibold text-neutral-500">Aperçu (12 juin 2027)</span>
-                <StudioPreview themeVars={themeVars}>
-                  {stdDateFmt?.layout ? (
-                    <HeroDateLayoutBlock
-                      layout={{ id: stdDateFmt.id, fonts: stdDateFmt.layout.fonts, lines: stdDateFmt.layout.lines(STUDIO_DATE_PREVIEW) }}
-                    />
-                  ) : (
-                    <p
-                      className="px-3 text-center text-[18px] font-light"
-                      style={{ color: "var(--hs-text-primary)", fontFamily: "var(--hs-font-family)" }}
-                    >
-                      {stdDateFmt?.format(STUDIO_DATE_PREVIEW) ?? "12 juin 2027"}
-                    </p>
+            <div className="mb-4 flex flex-wrap gap-2" role="radiogroup" aria-label="Où afficher la date">
+              {([
+                ["names", "Sous les prénoms"],
+                ["block", "Dans un bloc à part"],
+                ["hidden", "Ne pas l'afficher"],
+              ] as const).map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="radio"
+                  aria-checked={datePlacement === v}
+                  onClick={() => setDatePlacement(v)}
+                  className={cn(
+                    "rounded-full border px-4 py-1.5 text-[12.5px] transition-colors",
+                    datePlacement === v
+                      ? "border-terracotta-500 bg-terracotta-500/10 font-semibold text-ink"
+                      : "border-neutral-200 text-neutral-600 hover:border-terracotta-300",
                   )}
-                </StudioPreview>
-              </div>
+                >
+                  {label}
+                </button>
+              ))}
             </div>
+            {datePlacement === "block" && (
+              <p className="mb-3 text-[12px] text-neutral-500">
+                Le bloc « Date » est ajouté aux blocs supplémentaires ci-dessous : réglez-y son instant, sa police et son
+                cadre.
+              </p>
+            )}
+            {datePlacement !== "hidden" && (
+              <>
+                <p className="mb-2 text-[11px] font-semibold text-neutral-500">
+                  Mise en page de la date <span className="font-normal">— appliquée à la vraie date du couple</span>
+                </p>
+                <DateFormatGallery value={palette.stdDateFormat} onChange={(v) => setField("stdDateFormat", v)} themeVars={themeVars} />
+              </>
+            )}
           </div>
         </div>
     </div>
@@ -3304,6 +3369,10 @@ function StdBlocksEditor({ project, draft }: { project: Project360; draft: Studi
 
 function HeroTab({ project, draft }: { project: Project360; draft: StudioDraft }) {
   const isStd = project.product === "SAVE_THE_DATE";
+  // Hero à blocs : save the date, ou faire-part dont le brouillon a 2 blocs
+  // (nouveau projet, ou ancien hero basculé ci-dessous).
+  const blocks = isStd || draft.chapters.length === 2;
+  const delivered = project.status === "DELIVERED";
   const preview = previewPropsFor(project);
   return (
     <section className="space-y-10">
@@ -3311,7 +3380,7 @@ function HeroTab({ project, draft }: { project: Project360; draft: StudioDraft }
         items={[
           { id: "hero-texte", label: "Texte et habillage" },
           { id: "hero-timings", label: "Timings" },
-          ...(isStd ? [{ id: "hero-std", label: "Les 2 blocs" }] : []),
+          ...(blocks ? [{ id: "hero-std", label: "Les 2 blocs" }] : []),
           { id: "hero-blocs", label: "Blocs supplémentaires" },
         ]}
       />
@@ -3323,7 +3392,7 @@ function HeroTab({ project, draft }: { project: Project360; draft: StudioDraft }
           hint="Ce qui s'affiche par-dessus le film : couleurs du texte, police, animation, décor et filtre. L'aperçu se met à jour à chaque changement."
         />
         <div className="grid gap-6 min-[1400px]:grid-cols-[minmax(0,1fr)_280px]">
-          <HeroStyleFields draft={draft} isStd={isStd} />
+          <HeroStyleFields draft={draft} isStd={blocks} />
           <aside className="min-[1400px]:sticky min-[1400px]:top-4 min-[1400px]:self-start">
             <PaletteLivePreview palette={draft.palette} mode="hero" {...preview} />
           </aside>
@@ -3335,24 +3404,44 @@ function HeroTab({ project, draft }: { project: Project360; draft: StudioDraft }
           id="hero-timings"
           title="Timings"
           hint={
-            isStd
+            blocks
               ? "Les instants où chaque bloc apparaît à l'image. Déplacez le curseur sur le film, puis « Caler » pour utiliser l'instant affiché."
               : "Les instants où chaque chapitre apparaît à l'image ; le texte de chacun vient du questionnaire. Déplacez le curseur sur le film, puis « Caler » pour utiliser l'instant affiché."
           }
         />
+        {!blocks && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-terracotta-500/40 bg-terracotta-500/5 p-4">
+            <p className="max-w-[640px] text-[12.5px] leading-relaxed text-ink">
+              Ce faire-part utilise l'<strong>ancien hero à 3 chapitres</strong> (ouverture, détails pratiques, clôture)
+              {delivered ? ", et c'est ce que voient ses invités aujourd'hui" : ""}. Le hero à blocs se règle comme les
+              modèles Save the Date : texte libre, prénoms et date, date à part, logo, blocs supplémentaires. La bascule
+              ne s'applique qu'à l'enregistrement, et les timings sont à refaire.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                draft.setChapters(BLANK_HERO_CHAPTERS_STD);
+                toast.message("Hero à blocs prêt — réglez les timings, puis enregistrez.");
+              }}
+              className="shrink-0 rounded-full bg-anthracite-800 px-4 py-2 text-[12px] font-semibold text-white hover:bg-anthracite-700"
+            >
+              Passer au hero à blocs
+            </button>
+          </div>
+        )}
         <HeroTimingsEditor
           project={project}
-          labels={isStd ? HERO_CHAPTER_LABELS_STD : HERO_CHAPTER_LABELS}
+          labels={blocks ? (isStd ? HERO_CHAPTER_LABELS_STD : HERO_CHAPTER_LABELS_BLOCKS) : HERO_CHAPTER_LABELS}
           chapters={draft.chapters}
           setChapters={draft.setChapters}
         />
       </div>
 
-      {isStd && (
+      {blocks && (
         <div className="border-t border-neutral-200 pt-8">
           <StudioSectionTitle
             id="hero-std"
-            title="Les 2 blocs du Save the Date"
+            title={isStd ? "Les 2 blocs du Save the Date" : "Les 2 blocs du hero"}
             hint="Taille, police, animation, couleurs et cadre, bloc par bloc. Vide = le réglage « Texte et habillage » ci-dessus, lui-même retombant sur le thème. Fond de carte vide = transparent."
           />
           <StdBlocksEditor project={project} draft={draft} />
