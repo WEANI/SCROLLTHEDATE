@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { ProductId } from '@/components/commerce/pricing'
+import { trackEvent } from '@/lib/analytics'
 
 /**
  * Panier réel — cf. échange du 22/09/2026 ("je voudrais qu'il ai un vrai
@@ -70,11 +71,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => ({
       items,
       count: items.length,
-      addOrReplace: (line) =>
+      addOrReplace: (line) => {
+        trackEvent('add_to_cart', line.templateSlug ? `${line.product} · ${line.templateSlug}` : line.product)
         setItems((prev) => {
           const rest = prev.filter((l) => l.product !== line.product)
           return [...rest, line]
-        }),
+        })
+      },
       removeProduct: (product) => setItems((prev) => prev.filter((l) => l.product !== product)),
       updateOptions: (product, optionIds) =>
         setItems((prev) => prev.map((l) => (l.product === product ? { ...l, optionIds } : l))),

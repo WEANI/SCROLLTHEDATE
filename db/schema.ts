@@ -603,3 +603,58 @@ export const inviteViews = pgTable(
 
 export type InviteView = typeof inviteViews.$inferSelect;
 export type InsertInviteView = typeof inviteViews.$inferInsert;
+
+/**
+ * Fréquentation du site vitrine (accueil, offres, modèles, commande…) —
+ * mesure d'audience MAISON, sans Plausible ni aucun service tiers, ajoutée
+ * le 18/10/2026. Même parti pris que `inviteViews` ci-dessus : aucun
+ * cookie, rien déposé sur l'appareil du visiteur, aucune donnée
+ * personnelle conservée (`visitorHash` = sha256(sel du jour + IP +
+ * user-agent), le sel change chaque jour). Une « visite » = un visiteur
+ * sur une journée.
+ *
+ * Une ligne par événement :
+ *  - `pageview`   : une page affichée (`path`, sans paramètres d'URL) ;
+ *  - `engagement` : en quittant une page, temps passé visible (`seconds`)
+ *                   et profondeur de lecture (`depth`, % de la page) ;
+ *  - `click`      : un lien ou un bouton cliqué (`name` = link / outbound /
+ *                   button, `target` = adresse ou libellé du bouton) ;
+ *  - `event`      : une étape du tunnel de vente (`name` = add_to_cart,
+ *                   checkout_start, payment_success ; `target` = produit).
+ * Les pages /admin, /espace, /login et les faire-part publiés ne sont pas
+ * mesurées ici (les faire-part ont `inviteViews`).
+ */
+export const siteEvents = pgTable(
+  "site_events",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    kind: varchar("kind", { length: 16 }).notNull(),
+    name: varchar("name", { length: 40 }),
+    path: varchar("path", { length: 200 }).notNull(),
+    target: varchar("target", { length: 300 }),
+    visitorHash: varchar("visitorHash", { length: 64 }).notNull(),
+    /** Domaine du site d'où vient le visiteur (instagram.com…), seulement sur la 1re page affichée. */
+    referrerHost: varchar("referrerHost", { length: 120 }),
+    utmSource: varchar("utmSource", { length: 80 }),
+    utmMedium: varchar("utmMedium", { length: 80 }),
+    utmCampaign: varchar("utmCampaign", { length: 120 }),
+    device: varchar("device", { length: 10 }),
+    browser: varchar("browser", { length: 20 }),
+    os: varchar("os", { length: 20 }),
+    /** Langue du navigateur (« fr », « en »…). */
+    lang: varchar("lang", { length: 10 }),
+    /** Fuseau horaire du navigateur (« Europe/Paris ») — sert d'indication de pays, sans géolocalisation. */
+    tz: varchar("tz", { length: 60 }),
+    seconds: integer("seconds"),
+    depth: integer("depth"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    createdIdx: index("site_events_created_idx").on(table.createdAt),
+    visitorIdx: index("site_events_visitor_idx").on(table.visitorHash),
+    servicePolicy: serviceRoleFullAccess(),
+  }),
+).enableRLS();
+
+export type SiteEvent = typeof siteEvents.$inferSelect;
+export type InsertSiteEvent = typeof siteEvents.$inferInsert;

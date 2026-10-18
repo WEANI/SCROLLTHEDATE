@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { X } from 'lucide-react'
-import { analyticsEnabled } from '@/lib/analytics'
 
 const DISMISS_KEY = 'std_cookie_notice_dismissed_v1'
 
@@ -55,10 +54,9 @@ export default function CookieNotice() {
       className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-xl flex-col gap-3 rounded-2xl border border-anthracite-700 bg-anthracite-900 p-5 shadow-2xl sm:flex-row sm:items-center sm:gap-4"
     >
       <p className="flex-1 text-[13px] leading-[1.6] text-white/70">
-        {/* Deux textes, selon que la mesure d'audience sans cookie (Plausible) est allumée ou non — cf. src/lib/analytics.ts. */}
-        {analyticsEnabled
-          ? "Ce site utilise uniquement des cookies strictement nécessaires à son fonctionnement (connexion à votre compte) et une mesure d'audience sans cookie — aucun traceur publicitaire."
-          : "Ce site utilise uniquement des cookies strictement nécessaires à son fonctionnement (connexion à votre compte) — aucun traceur publicitaire ou de mesure d'audience."}{' '}
+        {/* La mesure d'audience maison (sans cookie) est toujours active — cf. src/lib/analytics.ts. */}
+        Ce site utilise uniquement des cookies strictement nécessaires à son fonctionnement (connexion à votre compte)
+        et une mesure d'audience anonyme sans cookie — aucun traceur publicitaire.{' '}
         <Link to="/confidentialite#cookies" className="underline underline-offset-2 hover:text-terracotta-300">
           En savoir plus
         </Link>

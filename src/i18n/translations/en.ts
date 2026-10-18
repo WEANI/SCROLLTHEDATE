@@ -678,15 +678,13 @@ export const en: Translations = {
     s7Title: 'Cookies and trackers',
     s7Body1Prefix: 'The site does not place',
     s7Body1Bold: 'any cookie or tracker subject to consent',
-    s7Body1Suffix: '(no audience measurement, no advertising, no social network tracker — verified in the site\'s code, not merely a stated intention).',
     s7Body2:
       "The only technical mechanism involved is the storage of your login session (maintained by our authentication provider, Supabase, via your browser's local storage — not even an HTTP cookie in the strict sense). It is only set when you create an account or log in, i.e. a service you explicitly request. In line with CNIL (the French data protection authority) guidance, trackers strictly necessary for a service expressly requested by the user — including authentication — are exempt from prior consent: this is why you don't see an \"Accept / Reject\" banner on this site — there is nothing to accept or reject.",
-    s7Body3: 'Should an audience-measurement or advertising tool ever be added to the site, a compliant consent mechanism (rejection as simple as acceptance) would be put in place before its activation.',
     // Variant used when Plausible audience measurement is active (see src/lib/analytics.ts).
     s5ItemAnalyticsBold: 'Plausible Analytics',
     s5ItemAnalyticsRest: '— cookieless audience measurement (anonymous visit statistics), hosted in the European Union.',
     s7Body1SuffixAnalytics:
-      '(no advertising, no social network tracker). Site traffic is measured with Plausible Analytics, a tool that sets no cookie, does not follow visitors from one site to another and does not keep IP addresses: it only produces anonymous statistics (pages viewed, where visits come from).',
+      "(no advertising, no social network tracker). Site traffic is measured in-house, without cookies and without storing anything on your device: your IP address is never kept — it is only used, mixed with a key that changes every day, so the same visit is not counted twice in a day. Nothing allows you to be identified or followed from one day to the next or from one site to another: only anonymous statistics are produced (pages viewed, links clicked, where visits come from, type of device).",
     s7Body3Analytics:
       'Should an advertising tool ever be added to the site, a compliant consent mechanism (rejection as simple as acceptance) would be put in place before its activation.',
     s8Title: 'Your rights',

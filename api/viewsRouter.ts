@@ -10,6 +10,7 @@ import {
   visitorFingerprint,
 } from "./queries/inviteViews";
 import { findProjectBySlug } from "./queries/projects";
+import { findSiteStats } from "./queries/siteEvents";
 import { findProjectForUser } from "./queries/helpers";
 
 /**
@@ -64,6 +65,11 @@ export const viewsRouter = createRouter({
       if (!project) return null;
       return findProjectViewStats(project.id);
     }),
+
+  /** Fréquentation du site vitrine (mesure maison, cf. table siteEvents). */
+  adminSiteStats: adminQuery
+    .input(z.object({ days: z.number().int().min(1).max(365).default(30) }).optional())
+    .query(async ({ input }) => findSiteStats(input?.days ?? 30)),
 
   /** Vue d'ensemble admin, tous projets confondus. */
   adminOverview: adminQuery

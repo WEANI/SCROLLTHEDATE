@@ -113,10 +113,10 @@ export default function Confidentialite() {
         <h2>{t('confidentialite.s7Title')}</h2>
         <p>
           {t('confidentialite.s7Body1Prefix')} <strong>{t('confidentialite.s7Body1Bold')}</strong>
-          {' '}{t(analyticsEnabled ? 'confidentialite.s7Body1SuffixAnalytics' : 'confidentialite.s7Body1Suffix')}
+          {' '}{t('confidentialite.s7Body1SuffixAnalytics')}
         </p>
         <p>{t('confidentialite.s7Body2')}</p>
-        <p>{t(analyticsEnabled ? 'confidentialite.s7Body3Analytics' : 'confidentialite.s7Body3')}</p>
+        <p>{t('confidentialite.s7Body3Analytics')}</p>
       </section>
 
       <section>

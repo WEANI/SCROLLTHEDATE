@@ -13,6 +13,7 @@ import { ensureVideosBucket, MAX_VIDEO_BYTES, uploadVideo, uploadVideoFrames } f
 import { extractFrames } from "./lib/videoFrames";
 import { supabaseAdmin } from "./lib/supabaseAdmin";
 import { findUserByAuthId } from "./queries/users";
+import { handleSiteEvent } from "./siteEventsRoute";
 
 bootstrapDatabase();
 ensureVideosBucket();
@@ -119,6 +120,15 @@ app.post(
       );
     }
   },
+);
+
+// Mesure d'audience maison (cf. table siteEvents) — route brute : le
+// navigateur l'appelle avec navigator.sendBeacon, qui envoie un corps texte,
+// pas une requête tRPC. Corps limité à 4 Ko.
+app.post(
+  "/api/t",
+  bodyLimit({ maxSize: 4 * 1024, onError: (c) => c.body(null, 413) }),
+  handleSiteEvent,
 );
 
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));

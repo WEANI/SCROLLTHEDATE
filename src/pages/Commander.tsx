@@ -27,6 +27,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { LOGIN_PATH } from '@/const'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { useCart } from '@/cart/CartContext'
+import { trackEvent } from '@/lib/analytics'
 import { stripePromise } from '@/lib/stripeClient'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
 import AnimatedAmount from '@/components/commerce/AnimatedAmount'
@@ -228,6 +229,7 @@ export default function Commander() {
     setPreparing(true)
     setPayError(null)
     setAccountExists(false)
+    trackEvent('checkout_start', cart.items.map((l) => l.templateSlug || l.product).join(' + '))
     try {
       const result = await checkout.mutateAsync({
         items: cart.items.map((line) => ({
@@ -764,6 +766,7 @@ function StripePaymentForm({
       return
     }
 
+    trackEvent('payment_success', `${(totalCents / 100).toFixed(0)} €`)
     onPaid()
     navigate(returnUrl.replace(window.location.origin, ''))
   }

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
+  Activity,
   Eye,
   Bell,
   CheckCheck,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { LOGIN_PATH } from "@/const";
+import { markAdminBrowser } from "@/lib/analytics";
 import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
@@ -31,6 +33,7 @@ const NAV = [
   { to: "/admin/clients", label: "Clients", icon: Users },
   { to: "/admin/formulaires", label: "Formulaires", icon: ClipboardList },
   { to: "/admin/analytique", label: "Analytique", icon: BarChart3 },
+  { to: "/admin/frequentation", label: "Fréquentation", icon: Activity },
   { to: "/admin/statistiques", label: "Statistiques", icon: Eye },
   { to: "/admin/messages", label: "Messages", icon: MessageSquare },
   { to: "/admin/parametres", label: "Paramètres", icon: Settings },
@@ -187,6 +190,10 @@ export default function AdminShell() {
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  // Les visites d'un administrateur ne comptent pas dans la fréquentation du site.
+  useEffect(() => {
+    if (user?.role === "admin") markAdminBrowser();
+  }, [user]);
 
   if (isLoading) {
     return (

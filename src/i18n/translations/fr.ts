@@ -681,15 +681,13 @@ export const fr = {
     s7Title: 'Cookies et traceurs',
     s7Body1Prefix: 'Le site ne dépose',
     s7Body1Bold: 'aucun cookie ni traceur soumis à consentement',
-    s7Body1Suffix: '(pas de mesure d\'audience, pas de publicité, pas de traceur de réseau social — vérifié dans le code du site, pas une simple déclaration d\'intention).',
     s7Body2:
       "Le seul mécanisme technique en jeu est le stockage de votre session de connexion (maintenu par notre prestataire d'authentification, Supabase, via le stockage local de votre navigateur — pas même un cookie HTTP au sens strict). Il n'est posé que lorsque vous créez un compte ou vous connectez, c'est-à-dire un service que vous demandez explicitement. Conformément aux recommandations de la CNIL, les traceurs strictement nécessaires à un service expressément demandé par l'utilisateur — dont l'authentification — sont exemptés de consentement préalable : c'est pourquoi vous ne voyez pas de bandeau \"Accepter / Refuser\" sur ce site, il n'y a rien à accepter ou refuser.",
-    s7Body3: "Si un outil de mesure d'audience ou publicitaire venait à être ajouté au site, un recueil de consentement conforme (refus aussi simple que l'acceptation) serait mis en place avant son activation.",
-    // Variante utilisée quand la mesure d'audience Plausible est active (cf. src/lib/analytics.ts).
+    // s5ItemAnalytics* : seulement si Plausible est aussi activé (cf. src/lib/analytics.ts). s7*Analytics : toujours (mesure maison).
     s5ItemAnalyticsBold: 'Plausible Analytics',
     s5ItemAnalyticsRest: "— mesure d'audience sans cookie (statistiques anonymes de fréquentation), hébergée dans l'Union européenne.",
     s7Body1SuffixAnalytics:
-      "(pas de publicité, pas de traceur de réseau social). La fréquentation du site est mesurée par Plausible Analytics, un outil qui ne dépose aucun cookie, ne suit pas les visiteurs d'un site à l'autre et ne conserve pas les adresses IP : il produit seulement des statistiques anonymes (pages vues, provenance des visites).",
+      "(pas de publicité, pas de traceur de réseau social). La fréquentation du site est mesurée par nos soins, sans cookie et sans rien enregistrer sur votre appareil : votre adresse IP n'est jamais conservée — elle sert seulement, mélangée à une clé qui change chaque jour, à ne pas compter deux fois la même visite dans la journée. Rien ne permet de vous identifier ni de vous suivre d'un jour à l'autre ou d'un site à l'autre : seules des statistiques anonymes sont produites (pages vues, liens cliqués, provenance des visites, type d'appareil).",
     s7Body3Analytics:
       "Si un outil publicitaire venait à être ajouté au site, un recueil de consentement conforme (refus aussi simple que l'acceptation) serait mis en place avant son activation.",
     s8Title: 'Vos droits',

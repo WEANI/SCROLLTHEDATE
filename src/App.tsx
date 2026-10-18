@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router'
-import { Suspense, lazy, useLayoutEffect } from 'react'
+import { Suspense, lazy, useEffect, useLayoutEffect } from 'react'
+import { startSiteTracking, trackPageview } from '@/lib/analytics'
 import Layout from '@/components/Layout'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
@@ -58,6 +59,7 @@ const AdminClients = lazy(() => import('@/pages/admin/Clients'))
 const AdminFormulaires = lazy(() => import('@/pages/admin/Formulaires'))
 const AdminAnalytique = lazy(() => import('@/pages/admin/Analytique'))
 const AdminStatistiques = lazy(() => import('@/pages/admin/Statistiques'))
+const AdminFrequentation = lazy(() => import('@/pages/admin/Frequentation'))
 const AdminMessages = lazy(() => import('@/pages/admin/Messages'))
 const AdminParametres = lazy(() => import('@/pages/admin/Parametres'))
 const AdminModeleStdDetail = lazy(() => import('@/pages/admin/ModeleStdDetail'))
@@ -110,6 +112,16 @@ function ScrollToTop() {
   return null
 }
 
+/** Mesure d'audience maison : une page vue à chaque changement d'adresse (cf. src/lib/analytics.ts). */
+function SiteTracker() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    startSiteTracking()
+    trackPageview(pathname)
+  }, [pathname])
+  return null
+}
+
 /**
  * Routage Scroll The Date.
  * - Layout public (Navbar + Footer, Outlet) : uniquement les pages publiques.
@@ -120,6 +132,7 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
+      <SiteTracker />
       <Routes>
         {/* Pages publiques — shell commun Navbar/Footer */}
         <Route element={<Layout />}>
@@ -200,6 +213,7 @@ export default function App() {
           <Route path="formulaires" element={<AdminFormulaires />} />
           <Route path="analytique" element={<AdminAnalytique />} />
           <Route path="statistiques" element={<AdminStatistiques />} />
+          <Route path="frequentation" element={<AdminFrequentation />} />
           <Route path="messages" element={<AdminMessages />} />
           <Route path="parametres" element={<AdminParametres />} />
           <Route path="parametres/modeles-std/:slug" element={<AdminModeleStdDetail />} />
