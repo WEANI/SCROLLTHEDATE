@@ -73,7 +73,7 @@ export const fr = {
     },
     concept: {
       kicker: 'Le concept',
-      titleWords: ['Un', 'faire-part', 'unique', 'qui', 'raconte', 'votre', 'histoire.'],
+      titleWords: ['Un', 'moyen', 'unique', 'et', 'original', 'pour', 'annoncer', 'votre', 'mariage.'],
       copy1:
         'Scroll The Date crée des faire-parts de mariage digitaux uniques. Vous racontez votre histoire dans un questionnaire guidé et une note vocale — vos mots, vos photos, votre ton.',
       copy2Lead: 'Nous en faisons une',
