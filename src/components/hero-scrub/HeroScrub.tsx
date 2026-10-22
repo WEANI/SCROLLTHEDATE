@@ -833,12 +833,27 @@ function FitOneLineText({ children, className, style }: { children: ReactNode; c
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(outer)
-    return () => ro.disconnect()
+    // Remesure une fois les polices chargées : mesuré avec la police de
+    // repli (plus étroite), le texte grandissait ensuite au chargement de la
+    // vraie police et sa dernière lettre était coupée (Parchemin Rose,
+    // relevé le 11/10/2026).
+    const fonts = typeof document !== 'undefined' ? document.fonts : undefined
+    let alive = true
+    fonts?.ready.then(() => alive && measure())
+    fonts?.addEventListener('loadingdone', measure)
+    return () => {
+      alive = false
+      ro.disconnect()
+      fonts?.removeEventListener('loadingdone', measure)
+    }
   })
 
   return (
     <div ref={outerRef} className="w-full overflow-hidden">
-      <p ref={innerRef} className={cn(className, 'inline-block whitespace-nowrap')} style={style}>
+      {/* Marge latérale de 0,12 em comptée dans la mesure : les polices
+          calligraphiées débordent de leur boîte (jambage de la dernière
+          lettre), que `overflow-hidden` coupait. */}
+      <p ref={innerRef} className={cn(className, 'inline-block whitespace-nowrap')} style={{ paddingInline: '0.12em', ...style }}>
         {children}
       </p>
     </div>

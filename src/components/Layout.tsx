@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from 'react'
+import { Suspense, memo, useEffect, useRef } from 'react'
 import { Outlet } from 'react-router'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -103,7 +103,9 @@ export default function Layout() {
       <Cursor />
       <Navbar />
       <main className="pt-20">
-        <Outlet />
+        <Suspense fallback={<div className="min-h-[70vh]" />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
       <CookieNotice />

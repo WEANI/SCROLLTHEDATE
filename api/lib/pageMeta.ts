@@ -29,7 +29,24 @@ interface PageMeta {
   description?: string;
   image?: string;
   noindex?: boolean;
+  /** Adresse inexistante : réponse 404 (la page « introuvable » s'affiche quand même). */
+  notFound?: boolean;
 }
+
+/**
+ * Adresses qui existent dans l'application (cf. <Routes> de src/App.tsx) —
+ * à garder synchronisé. Toute autre adresse reçoit le code 404 et
+ * `noindex` : auparavant elle répondait « 200 OK », et Google pouvait
+ * indexer des pages « introuvable » (audit du 19/10/2026).
+ */
+const KNOWN_PAGES = [
+  /^\/$/,
+  /^\/(offres|faire-part-digital|save-the-date-digital|save-the-date-modeles|commander|merci|demo|demo\/infos|demofairepart|mentions-legales|cgv|confidentialite|login|definir-mot-de-passe)\/?$/,
+  /^\/save-the-date-modeles\/[^/]+\/?$/,
+  /^\/faire-part\/[^/]+\/?$/,
+  /^\/(espace|admin)(\/.*)?$/,
+];
+export const isKnownPage = (pathname: string) => KNOWN_PAGES.some((re) => re.test(pathname));
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -40,7 +57,7 @@ async function routeMeta(pathname: string): Promise<PageMeta> {
   const fp = pathname.match(/^\/faire-part\/([^/]+)\/?$/);
   if (fp) {
     const project = await findProjectBySlug(decodeURIComponent(fp[1]));
-    if (!project) return { noindex: true };
+    if (!project) return { noindex: true, notFound: !/^demo-faire-part-[12]$|^camille-adrien$/.test(fp[1]) };
     const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
     const names = typeof answers["couple.prenoms"] === "string" ? (answers["couple.prenoms"] as string).trim() : "";
     const isStd = project.product === "SAVE_THE_DATE";
@@ -66,13 +83,15 @@ async function routeMeta(pathname: string): Promise<PageMeta> {
         image: template.cardPreview?.posterSrc ?? template.posterSrc,
       };
     }
+    return { notFound: true, noindex: true };
   }
   return {};
 }
 
-/** index.html enrichi pour une page donnée. `origin` = schéma + hôte de la requête (le domaine par lequel le lien a été partagé). */
-export async function buildPageHtml(baseHtml: string, pathname: string, origin: string): Promise<string> {
-  let meta: PageMeta = {};
+/** index.html enrichi pour une page donnée, et son code de réponse. `origin` = schéma + hôte de la requête (le domaine par lequel le lien a été partagé). */
+export async function buildPageHtml(baseHtml: string, pathname: string, origin: string): Promise<{ html: string; status: 200 | 404 }> {
+  let meta: PageMeta = isKnownPage(pathname) ? {} : { notFound: true, noindex: true };
+  if (meta.notFound) return { html: render(baseHtml, pathname, origin, meta), status: 404 };
   try {
     meta = await routeMeta(pathname);
   } catch (err) {
@@ -81,6 +100,10 @@ export async function buildPageHtml(baseHtml: string, pathname: string, origin: 
   // Un faire-part n'est jamais indexé, même quand ses données n'ont pas pu
   // être lues (base indisponible) : c'est l'adresse qui le rend privé.
   if (pathname.startsWith("/faire-part/")) meta.noindex = true;
+  return { html: render(baseHtml, pathname, origin, meta), status: meta.notFound ? 404 : 200 };
+}
+
+function render(baseHtml: string, pathname: string, origin: string, meta: PageMeta): string {
   let html = baseHtml;
   const image = absolute(origin, meta.image || "/og-image.jpg");
 

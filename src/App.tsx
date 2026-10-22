@@ -3,26 +3,33 @@ import { Suspense, lazy, useEffect, useLayoutEffect } from 'react'
 import { startSiteTracking, trackPageview } from '@/lib/analytics'
 import Layout from '@/components/Layout'
 import Home from '@/pages/Home'
-import Login from '@/pages/Login'
-import DefinirMotDePasse from '@/pages/DefinirMotDePasse'
-import NotFound from '@/pages/NotFound'
-import Offres from '@/pages/Offres'
-import FairePartDigital from '@/pages/FairePartDigital'
-import SaveTheDateDigital from '@/pages/SaveTheDateDigital'
-import SaveTheDateTemplates from '@/pages/SaveTheDateTemplates'
-import SaveTheDateTemplatePreview from '@/pages/SaveTheDateTemplatePreview'
-import Commander from '@/pages/Commander'
-import Merci from '@/pages/Merci'
-import MentionsLegales from '@/pages/MentionsLegales'
-import CGV from '@/pages/CGV'
-import Confidentialite from '@/pages/Confidentialite'
-import Demo from '@/pages/Demo'
-import DemoInfos from '@/pages/DemoInfos'
-import DemoFairePart from '@/pages/DemoFairePart'
-import DemoFairePart1 from '@/pages/DemoFairePart1'
-import DemoFairePart2 from '@/pages/DemoFairePart2'
-import FairePartCamilleAdrien from '@/pages/FairePartCamilleAdrien'
-import FairePart from '@/pages/FairePart'
+/**
+ * Pages publiques chargées à la demande, sauf l'accueil (22/10/2026) : le
+ * bundle initial pesait encore 1,7 Mo — paiement Stripe, hero des
+ * faire-part, démos, textes légaux — téléchargés par chaque visiteur avant
+ * de voir l'accueil. Les Suspense sont posés dans Layout (Navbar et Footer
+ * restent affichés) et autour de <Routes> pour les pages hors Layout.
+ */
+const Login = lazy(() => import('@/pages/Login'))
+const DefinirMotDePasse = lazy(() => import('@/pages/DefinirMotDePasse'))
+const NotFound = lazy(() => import('@/pages/NotFound'))
+const Offres = lazy(() => import('@/pages/Offres'))
+const FairePartDigital = lazy(() => import('@/pages/FairePartDigital'))
+const SaveTheDateDigital = lazy(() => import('@/pages/SaveTheDateDigital'))
+const SaveTheDateTemplates = lazy(() => import('@/pages/SaveTheDateTemplates'))
+const SaveTheDateTemplatePreview = lazy(() => import('@/pages/SaveTheDateTemplatePreview'))
+const Commander = lazy(() => import('@/pages/Commander'))
+const Merci = lazy(() => import('@/pages/Merci'))
+const MentionsLegales = lazy(() => import('@/pages/MentionsLegales'))
+const CGV = lazy(() => import('@/pages/CGV'))
+const Confidentialite = lazy(() => import('@/pages/Confidentialite'))
+const Demo = lazy(() => import('@/pages/Demo'))
+const DemoInfos = lazy(() => import('@/pages/DemoInfos'))
+const DemoFairePart = lazy(() => import('@/pages/DemoFairePart'))
+const DemoFairePart1 = lazy(() => import('@/pages/DemoFairePart1'))
+const DemoFairePart2 = lazy(() => import('@/pages/DemoFairePart2'))
+const FairePartCamilleAdrien = lazy(() => import('@/pages/FairePartCamilleAdrien'))
+const FairePart = lazy(() => import('@/pages/FairePart'))
 
 /**
  * /espace/* et /admin/* chargés à la demande (`React.lazy`) plutôt que dans
@@ -37,7 +44,7 @@ import FairePart from '@/pages/FairePart'
  * `LegacyRedirect` (export nommé de ProductSpace, pas un composant de page)
  * reste un import normal — lazy() ne s'applique qu'à des exports par défaut.
  */
-import ClientShell from '@/components/espace/ClientShell'
+const ClientShell = lazy(() => import('@/components/espace/ClientShell'))
 const TableauDeBord = lazy(() => import('@/pages/espace/TableauDeBord'))
 const Questionnaire = lazy(() => import('@/pages/espace/Questionnaire'))
 const Projet = lazy(() => import('@/pages/espace/Projet'))
@@ -51,7 +58,7 @@ const LegacyRedirect = lazy(() =>
   import('@/pages/espace/ProductSpace').then((m) => ({ default: m.LegacyRedirect })),
 )
 const StatistiquesClient = lazy(() => import('@/pages/espace/Statistiques'))
-import AdminShell from '@/components/admin/AdminShell'
+const AdminShell = lazy(() => import('@/components/admin/AdminShell'))
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
 const AdminCommandes = lazy(() => import('@/pages/admin/Commandes'))
 const AdminProjets = lazy(() => import('@/pages/admin/Projets'))
@@ -133,6 +140,7 @@ export default function App() {
     <>
       <ScrollToTop />
       <SiteTracker />
+      <Suspense fallback={<div className="min-h-[100dvh]" />}>
       <Routes>
         {/* Pages publiques — shell commun Navbar/Footer */}
         <Route element={<Layout />}>
@@ -222,6 +230,7 @@ export default function App() {
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
     </>
   )
 }

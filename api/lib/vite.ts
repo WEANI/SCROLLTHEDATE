@@ -4,6 +4,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import fs from "fs";
 import path from "path";
 import { buildPageHtml } from "./pageMeta";
+import { buildRobots, buildSitemap } from "./seoFiles";
 
 type App = Hono<{ Bindings: HttpBindings }>;
 
@@ -49,6 +50,14 @@ export function serveStaticFiles(app: App) {
    * Les robots qui fabriquent les aperçus de lien envoient `Accept: *\/*`
    * (ou rien) : ils recevaient une 404 en JSON au lieu de la page.
    */
+  const originOf = (c: { req: { header: (n: string) => string | undefined } }) => {
+    const proto = (c.req.header("x-forwarded-proto") ?? "https").split(",")[0].trim();
+    return `${proto}://${c.req.header("x-forwarded-host") ?? c.req.header("host") ?? ""}`;
+  };
+  // Générés à la volée (cf. seoFiles.ts) — avant serveStatic.
+  app.get("/sitemap.xml", (c) => c.body(buildSitemap(originOf(c)), 200, { "Content-Type": "application/xml; charset=utf-8" }));
+  app.get("/robots.txt", (c) => c.text(buildRobots(originOf(c))));
+
   let baseHtml: string | null = null;
   const isPage = (p: string) => !p.startsWith("/api/") && !p.startsWith("/assets/") && !/\.[a-z0-9]+$/i.test(p);
   app.get("*", async (c, next) => {
@@ -56,7 +65,8 @@ export function serveStaticFiles(app: App) {
     baseHtml ??= fs.readFileSync(path.resolve(distPath, "index.html"), "utf-8");
     const proto = (c.req.header("x-forwarded-proto") ?? "https").split(",")[0].trim();
     const host = c.req.header("x-forwarded-host") ?? c.req.header("host") ?? "";
-    return c.html(await buildPageHtml(baseHtml, c.req.path, `${proto}://${host}`));
+    const page = await buildPageHtml(baseHtml, c.req.path, `${proto}://${host}`);
+    return c.html(page.html, page.status);
   });
 
   app.use("*", serveStatic({ root: "./dist/public" }));
