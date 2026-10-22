@@ -38,9 +38,9 @@ export const en: Translations = {
   },
   home: {
     seo: {
-      title: 'Scroll The Date — Cinematic digital wedding invitations',
+      title: "Wedding video invitations & digital save the dates | Scroll The Date",
       description:
-        'Scroll The Date — cinematic digital wedding invitations. Tell your story in a personalised video that opens your invitation.',
+        "Wedding invitations and save the dates as interactive videos: your story in pictures, with schedule, venue and built-in RSVP. Original, shared by WhatsApp or email.",
     },
     hero: {
       kicker: 'Scroll The Date — Cinematic digital invitations',
@@ -51,7 +51,7 @@ export const en: Translations = {
       beat3Brand: 'invitation',
       beat3Tail: 'no one forgets.',
       heading:
-        "Your story, told in images — the digital wedding invitation your guests won't forget",
+        "Wedding video invitations and digital save the dates: your story in pictures, revealed as your guests scroll",
       ctaCreate: 'Create our invitation',
       ctaDemo: 'See the demo',
     },
@@ -204,9 +204,9 @@ export const en: Translations = {
   },
   offres: {
     seo: {
-      title: 'Pricing — Save the Date & digital wedding invitation · Scroll The Date',
+      title: "Digital wedding invitation & video save the date prices | Scroll The Date",
       description:
-        'Digital Save the Date (€149) and digital wedding invitation (€299): personalised cinematic video, full page, built-in RSVP. One price, however many guests.',
+        "Custom video save the date €149 or from a template €99, digital wedding invitation €299 with built-in RSVP. One price, unlimited guests.",
     },
     hero: {
       kicker: 'Pricing',
@@ -406,9 +406,9 @@ export const en: Translations = {
   },
   saveTheDateDigital: {
     seo: {
-      title: 'Digital Save the Date €149 — Announce the date on video · Scroll The Date',
+      title: "Video save the date for your wedding — €149 | Scroll The Date",
       description:
-        "Scroll The Date's digital Save the Date: a short 45 s video built from your story, and an announcement page with your date and venue. €149, one price.",
+        "Announce your wedding date with a personalised video save the date, shared by WhatsApp, text or email. Custom €149, or from a template from €99.",
     },
     hero: {
       kicker: 'Digital Save the Date',
@@ -454,9 +454,9 @@ export const en: Translations = {
   },
   fairePartDigital: {
     seo: {
-      title: 'Digital Wedding Invitation €299 — Cinematic video & full page · Scroll The Date',
+      title: "Digital video wedding invitation — €299 | Scroll The Date",
       description:
-        "Scroll The Date's digital wedding invitation: a cinematic video that tells YOUR story, and a full page with schedule, venue, dress code and built-in RSVP. €299, one price.",
+        "An online wedding invitation that tells your story in video, with schedule, venue, accommodation, dress code and built-in RSVP. €299, unlimited guests.",
     },
     hero: {
       kicker: 'Digital wedding invitation',
@@ -528,9 +528,9 @@ export const en: Translations = {
   },
   saveTheDateTemplates: {
     seo: {
-      title: 'Save the Date templates — Scroll The Date',
+      title: "Video save the date templates for weddings — €99 | Scroll The Date",
       description:
-        "Scroll The Date's library of Save the Date templates: ready-made films where only your names and your date change.",
+        "Pick a video save the date template for your wedding: your names and date added, ready to share with your guests. €99, delivered as soon as you pay.",
     },
     kicker: 'From a template',
     title: 'The Save the Date templates',

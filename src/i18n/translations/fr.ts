@@ -40,9 +40,9 @@ export const fr = {
   },
   home: {
     seo: {
-      title: 'Scroll The Date — Faire-parts de mariage digitaux cinématiques',
+      title: "Faire-part de mariage vidéo & Save the Date digital | Scroll The Date",
       description:
-        'Scroll The Date — faire-parts de mariage digitaux cinématiques. Racontez votre histoire dans une vidéo personnalisée qui ouvre votre faire-part.',
+        "Faire-part de mariage et save the date en vidéo interactive : votre histoire mise en images, avec programme, lieu et RSVP intégré. Original, à partager par WhatsApp ou e-mail.",
     },
     hero: {
       kicker: 'Scroll The Date — Faire-parts digitaux cinématiques',
@@ -53,7 +53,7 @@ export const fr = {
       beat3Brand: 'faire-part',
       beat3Tail: "que personne n'oublie.",
       heading:
-        "Votre histoire, racontée en images — le faire-part de mariage digital que vos invités n'oublieront pas",
+        "Faire-part de mariage vidéo et Save the Date digital : votre histoire mise en images, que vos invités découvrent en faisant défiler leur écran",
       ctaCreate: 'Créer notre faire-part',
       ctaDemo: 'Voir la démo',
     },
@@ -207,9 +207,9 @@ export const fr = {
   },
   offres: {
     seo: {
-      title: 'Nos offres — Save the Date & Faire-part digital · Scroll The Date',
+      title: "Prix faire-part de mariage digital & save the date vidéo | Scroll The Date",
       description:
-        'Save the Date digital (149 €) et Faire-part digital (299 €) : vidéo cinématique personnalisée, page complète, RSVP intégré. Prix unique, quel que soit le nombre d\'invités.',
+        "Save the date vidéo sur mesure à 149 € ou sur modèle à 99 €, faire-part de mariage digital à 299 € avec RSVP intégré. Prix unique, invités illimités.",
     },
     hero: {
       kicker: 'Nos offres',
@@ -409,9 +409,9 @@ export const fr = {
   },
   saveTheDateDigital: {
     seo: {
-      title: 'Save the Date digital 149 € — Annoncez la date en vidéo · Scroll The Date',
+      title: "Save the Date vidéo pour votre mariage — 149 € | Scroll The Date",
       description:
-        "Le Save the Date digital Scroll The Date : une vidéo courte de 45 s issue de votre histoire, et une page d'annonce avec votre date et votre lieu. 149 €, prix unique.",
+        "Annoncez la date de votre mariage avec un save the date vidéo personnalisé, à partager par WhatsApp, SMS ou e-mail. Sur mesure 149 €, ou sur modèle dès 99 €.",
     },
     hero: {
       kicker: 'Save the Date digital',
@@ -457,9 +457,9 @@ export const fr = {
   },
   fairePartDigital: {
     seo: {
-      title: 'Faire-part digital 299 € — Vidéo cinématique & page complète · Scroll The Date',
+      title: "Faire-part de mariage digital en vidéo — 299 € | Scroll The Date",
       description:
-        "Le faire-part digital Scroll The Date : une vidéo cinématique qui raconte VOTRE histoire, et une page complète avec programme, lieu, dress code et RSVP intégré. 299 €, prix unique.",
+        "Un faire-part de mariage en ligne qui raconte votre histoire en vidéo, avec programme, lieu, hébergements, dress code et RSVP intégré. 299 €, invités illimités.",
     },
     hero: {
       kicker: 'Faire-part digital',
@@ -531,9 +531,9 @@ export const fr = {
   },
   saveTheDateTemplates: {
     seo: {
-      title: 'Modèles Save the Date — Scroll The Date',
+      title: "Modèles de save the date vidéo pour mariage — 99 € | Scroll The Date",
       description:
-        'La bibliothèque de modèles Save the Date Scroll The Date : des montages déjà prêts, où seuls vos prénoms et votre date changent.',
+        "Choisissez un modèle de save the date vidéo pour votre mariage : vos prénoms et votre date ajoutés, prêt à partager à vos invités. 99 €, livré dès le paiement.",
     },
     kicker: 'Sur un modèle',
     title: 'Les modèles Save the Date',

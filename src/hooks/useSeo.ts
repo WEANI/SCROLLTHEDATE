@@ -1,16 +1,13 @@
 import { useEffect } from 'react'
 
 /**
- * Domaine canonique utilisé pour les URLs absolues (balises canonical,
- * sitemap.xml). scrollthedate.fr/.com ne résolvent pas encore en DNS
- * (cf. audit SEO du 27/08/2026, action P0 #1 — brancher un vrai domaine) :
- * pointé sur le sous-domaine Railway actuel, seul domaine qui sert
- * réellement le site aujourd'hui. À mettre à jour ici UNE FOIS le domaine
- * définitif branché — garder synchronisé avec public/robots.txt et
- * public/sitemap.xml (mêmes valeurs, dupliquées côté fichiers statiques
- * faute de pouvoir importer une constante TS dans du XML/texte brut).
+ * Domaine des adresses absolues (balise canonical) : celui par lequel le
+ * site est appelé — plus d'adresse Railway figée ici (22/10/2026), qui
+ * aurait continué de désigner l'ancien domaine une fois scrollthedate.com
+ * branché. Le serveur pose la même balise dès le HTML (api/lib/pageMeta.ts),
+ * le sitemap et le robots.txt suivent la même règle (api/lib/seoFiles.ts).
  */
-export const SITE_URL = 'https://scrollthedate-production.up.railway.app'
+const siteOrigin = () => (typeof window === 'undefined' ? '' : window.location.origin)
 
 function upsertMeta(name: string, content: string) {
   let el = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)
@@ -38,7 +35,7 @@ function upsertCanonical(href: string) {
  * identiques sur `/` et `/offres` (repli sur les valeurs par défaut
  * d'index.html, jamais surchargées), et aucune balise canonical nulle
  * part sur le site. `path` = chemin de la route (ex. "/offres"), utilisé
- * pour construire l'URL absolue de la canonical avec `SITE_URL`.
+ * pour construire l'URL absolue de la canonical avec le domaine courant.
  *
  * N'écrase rien au démontage (pas de fonction de nettoyage) : contrairement
  * à FairePart.tsx (page rendue dans un contexte où "revenir à un titre
@@ -50,6 +47,6 @@ export function useSeo({ title, description, path }: { title: string; descriptio
   useEffect(() => {
     document.title = title
     upsertMeta('description', description)
-    upsertCanonical(`${SITE_URL}${path}`)
+    upsertCanonical(`${siteOrigin()}${path}`)
   }, [title, description, path])
 }

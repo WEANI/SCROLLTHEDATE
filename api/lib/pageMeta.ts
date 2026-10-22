@@ -2,6 +2,28 @@ import { BRAND_NAME, activeSocialProfiles } from "../../contracts/brand";
 import { getSaveTheDateTemplate } from "../../contracts/saveTheDateTemplates";
 import { findProjectBySlug } from "../queries/projects";
 import { findVideosByProject } from "../queries/domain";
+import { fr } from "../../src/i18n/translations/fr";
+
+/**
+ * Titre, description et image de partage des pages vitrine, servis dès le
+ * HTML (22/10/2026) — mêmes textes que useSeo côté navigateur (source
+ * unique : le dictionnaire français). Avant, WhatsApp/Facebook/Pinterest
+ * montraient l'aperçu générique de l'accueil pour toutes ces pages.
+ */
+const STATIC_PAGES: Record<string, PageMeta> = {
+  "/": { title: fr.home.seo.title, description: fr.home.seo.description },
+  "/offres": { title: fr.offres.seo.title, description: fr.offres.seo.description },
+  "/save-the-date-digital": {
+    title: fr.saveTheDateDigital.seo.title,
+    description: fr.saveTheDateDigital.seo.description,
+    image: "/save-the-date-sur-mesure-demo-poster.jpg",
+  },
+  "/faire-part-digital": { title: fr.fairePartDigital.seo.title, description: fr.fairePartDigital.seo.description },
+  "/save-the-date-modeles": { title: fr.saveTheDateTemplates.seo.title, description: fr.saveTheDateTemplates.seo.description },
+  "/cgv": { title: fr.cgv.seoTitle, description: fr.cgv.seoDescription },
+  "/mentions-legales": { title: fr.mentionsLegales.seoTitle, description: fr.mentionsLegales.seoDescription },
+  "/confidentialite": { title: fr.confidentialite.seoTitle, description: fr.confidentialite.seoDescription },
+};
 
 /**
  * Balises d'aperçu de partage (Open Graph) et fiche d'identité de la marque,
@@ -54,6 +76,8 @@ const esc = (s: string) =>
 const absolute = (origin: string, url: string) => (/^https?:\/\//i.test(url) ? url : `${origin}${url.startsWith("/") ? "" : "/"}${url}`);
 
 async function routeMeta(pathname: string): Promise<PageMeta> {
+  const page = STATIC_PAGES[pathname.replace(/(.)\/$/, "$1")];
+  if (page) return { ...page };
   const fp = pathname.match(/^\/faire-part\/([^/]+)\/?$/);
   if (fp) {
     const project = await findProjectBySlug(decodeURIComponent(fp[1]));
@@ -130,6 +154,10 @@ function render(baseHtml: string, pathname: string, origin: string, meta: PageMe
   };
   const extra = [
     `<meta property="og:url" content="${esc(origin + pathname)}" />`,
+    // Adresse de référence = le domaine par lequel le site est appelé (plus
+    // d'adresse Railway figée : elle aurait survécu au branchement de
+    // scrollthedate.com). Jamais sur une page exclue de l'index.
+    meta.noindex ? "" : `<link rel="canonical" href="${esc(origin + (pathname.replace(/(.)\/$/, "$1")))}" />`,
     `<meta property="og:site_name" content="${BRAND_NAME}" />`,
     `<meta property="og:locale" content="fr_FR" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
