@@ -74,12 +74,13 @@ export const fr = {
     concept: {
       kicker: 'Le concept',
       titleWords: ['Un', 'moyen', 'unique', 'et', 'original', 'pour', 'annoncer', 'votre', 'mariage.'],
-      copy1:
-        'Scroll The Date crée des faire-parts de mariage digitaux uniques. Vous racontez votre histoire dans un questionnaire guidé et une note vocale — vos mots, vos photos, votre ton.',
-      copy2Lead: 'Nous en faisons une',
-      copy2Em: 'vidéo cinématique',
-      copy2Tail:
-        'qui ouvre votre faire-part : un film court, écrit et monté pour vous, que vos invités découvrent en scrollant.',
+      // Un élément = un paragraphe (texte fourni le 22/10/2026).
+      copyParagraphs: [
+        'Scroll The Date crée des save the date et des faire-part de mariage digitaux, sous forme de vidéo interactive.',
+        'Le save the date annonce la date des mois à l’avance, en quelques secondes d’images.',
+        'Le faire-part est entièrement personnalisé. Vous nous racontez votre histoire, et nous la mettons en images pour vous. Elle se déroule ensuite sous les yeux de vos invités à mesure qu’ils font défiler leur écran, jusqu’à l’invitation.',
+        'Programme, lieu, hébergements, dress code : tout y est, et vos invités vous répondent en un clic grâce au RSVP intégré.',
+      ],
       copy3: 'Accompagnement humain de A à Z — une vraie équipe, pas un générateur.',
       imgAlt: "Silhouette d'un couple face à la mer au crépuscule",
     },

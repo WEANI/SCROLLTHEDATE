@@ -70,13 +70,11 @@ export default function Concept() {
             ))}
           </h2>
           <div className="concept-copy-wrap mt-10 flex max-w-xl flex-col gap-6">
-            <p className="concept-copy text-[16px] leading-[1.65] text-white/70">
-              {t('home.concept.copy1')}
-            </p>
-            <p className="concept-copy text-[16px] leading-[1.65] text-white/70">
-              {t('home.concept.copy2Lead')} <em className="font-display italic text-terracotta-300">{t('home.concept.copy2Em')}</em>{' '}
-              {t('home.concept.copy2Tail')}
-            </p>
+            {tArray('home.concept.copyParagraphs').map((para) => (
+              <p key={para} className="concept-copy text-[16px] leading-[1.65] text-white/70">
+                {para}
+              </p>
+            ))}
             <p className="concept-copy border-l-2 border-terracotta-500 pl-5 text-[15px] font-medium leading-relaxed text-white">
               {t('home.concept.copy3')}
             </p>
