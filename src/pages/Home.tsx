@@ -5,6 +5,7 @@ import type { ScrubHeroBeat } from '@/components/ScrubHero'
 import { useSeo } from '@/hooks/useSeo'
 import { useLanguage } from '@/i18n/LanguageContext'
 import Concept from '@/components/home/Concept'
+import SurpriseGuests from '@/components/home/SurpriseGuests'
 import TemplatesRing from '@/components/home/TemplatesRing'
 import HowItWorks from '@/components/home/HowItWorks'
 import RsvpTeaser from '@/components/home/RsvpTeaser'
@@ -177,11 +178,12 @@ export default function Home() {
           durationVh={280}
         />
       </div>
-      {/* Ordre de la page (demande du 25/10/2026) : concept → comment ça marche (qui reprend
+      {/* Ordre de la page (demande du 25/10/2026) : concept → surprenez vos invités (26/10/2026) → comment ça marche (qui reprend
           « compris dans chaque création ») → save the date (le cercle des modèles) → nos offres (fil rouge) → RSVP → appel final → FAQ.
           SocialProof, Included, Advantages et Gallery ne sont plus affichés ; leurs composants
           restent dans src/components/home/ pour un retour éventuel. */}
       <Concept />
+      <SurpriseGuests />
       <HowItWorks />
       <TemplatesRing />
       <Products />
