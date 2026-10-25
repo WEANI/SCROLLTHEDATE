@@ -70,6 +70,7 @@ const AdminFrequentation = lazy(() => import('@/pages/admin/Frequentation'))
 const AdminMessages = lazy(() => import('@/pages/admin/Messages'))
 const AdminParametres = lazy(() => import('@/pages/admin/Parametres'))
 const AdminModeleStdDetail = lazy(() => import('@/pages/admin/ModeleStdDetail'))
+const AdminApercu1025 = lazy(() => import('@/pages/admin/Apercu1025'))
 
 /** Fallback pendant le chargement d'un chunk /espace ou /admin — même motif que le spinner de chargement de session d'AdminShell.tsx, pour qu'il n'y ait aucun flash visuel entre les deux. */
 function RouteLoadingFallback() {
@@ -213,6 +214,8 @@ export default function App() {
         </Route>
 
         {/* Admin — shell dense dédié (hors Layout public) — même principe de `Suspense` que /espace ci-dessus. */}
+        {/* Aperçu privé plein écran (hors AdminShell, même garde admin) — cf. Apercu1025.tsx */}
+        <Route path="/admin/apercu/1025" element={<AdminApercu1025 />} />
         <Route path="/admin" element={<Suspense fallback={<RouteLoadingFallback />}><AdminShell /></Suspense>}>
           <Route index element={<AdminDashboard />} />
           <Route path="commandes" element={<AdminCommandes />} />
