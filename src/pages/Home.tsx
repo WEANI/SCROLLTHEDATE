@@ -180,7 +180,7 @@ export default function Home() {
         />
       </div>
       {/* Ordre de la page (demande du 25/10/2026) : concept → comment ça marche → surprenez vos invités →
-          compris dans chaque création → save the date (le cercle des modèles) → RSVP → appel final → nos offres (fil rouge) → FAQ.
+          compris dans chaque création → save the date (le cercle des modèles) → RSVP → nos offres (fil rouge) → appel final → FAQ.
           SocialProof, Included, Advantages et Gallery ne sont plus affichés ; leurs composants
           restent dans src/components/home/ pour un retour éventuel. */}
       <Concept />
@@ -189,8 +189,8 @@ export default function Home() {
       <IncludedStrip />
       <TemplatesRing />
       <RsvpTeaser />
-      <FinalCta />
       <Products />
+      <FinalCta />
       <Faq />
     </>
   )
