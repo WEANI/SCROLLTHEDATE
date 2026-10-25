@@ -96,6 +96,12 @@ export const en: Translations = {
       item4Title: 'Link and QR code',
       item4Text: 'A unique link to share, or a QR code to print on your paper stationery.',
     },
+    templatesRing: {
+      kicker: 'Our templates',
+      title: 'Choose your mood',
+      text: 'Ready-made films: your names, your date, and it’s yours. Save the date from a template from',
+      cta: 'See all templates',
+    },
     howItWorks: {
       kicker: 'How it works',
       titleLead: '4 steps,',

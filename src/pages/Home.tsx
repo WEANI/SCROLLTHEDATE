@@ -6,6 +6,7 @@ import { useSeo } from '@/hooks/useSeo'
 import { useLanguage } from '@/i18n/LanguageContext'
 import SocialProof from '@/components/home/SocialProof'
 import Concept from '@/components/home/Concept'
+import TemplatesRing from '@/components/home/TemplatesRing'
 import Included from '@/components/home/Included'
 import HowItWorks from '@/components/home/HowItWorks'
 import Advantages from '@/components/home/Advantages'
@@ -182,6 +183,7 @@ export default function Home() {
       </div>
       <SocialProof />
       <Concept />
+      <TemplatesRing />
       <Products />
       <HowItWorks />
       <Included />

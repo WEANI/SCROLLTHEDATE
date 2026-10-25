@@ -99,6 +99,12 @@ export const fr = {
       item4Title: 'Lien et QR code',
       item4Text: 'Un lien unique à partager, ou un QR code à imprimer sur vos supports papier.',
     },
+    templatesRing: {
+      kicker: 'Nos modèles',
+      title: 'Choisissez votre ambiance',
+      text: 'Des films déjà prêts : vos prénoms, votre date, et c’est à vous. Save the date sur modèle dès',
+      cta: 'Voir tous les modèles',
+    },
     howItWorks: {
       kicker: 'Comment ça marche',
       titleLead: '4 étapes,',
