@@ -82,6 +82,7 @@ export const fr = {
         'Programme, lieu, hébergements, dress code : tout y est, et vos invités vous répondent en un clic grâce au RSVP intégré.',
       ],
       copy3: 'Vos invités s’attendaient à du papier. Ils reçoivent un film.',
+      cta: 'Découvrir nos offres',
       imgAlt: "Une mariée de dos, son long voile soulevé par le vent, face au marié sur un chemin de dunes au crépuscule",
     },
     included: {

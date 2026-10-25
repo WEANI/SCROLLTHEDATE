@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { Link } from 'react-router'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -78,6 +79,12 @@ export default function Concept() {
             <p className="concept-copy border-l-2 border-terracotta-500 pl-5 text-[15px] font-medium leading-relaxed text-white">
               {t('home.concept.copy3')}
             </p>
+            <Link
+              to="/offres"
+              className="concept-copy mt-2 inline-flex self-start rounded-full bg-terracotta-500 px-9 py-4 text-sm font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
+            >
+              {t('home.concept.cta')}
+            </Link>
           </div>
         </div>
 

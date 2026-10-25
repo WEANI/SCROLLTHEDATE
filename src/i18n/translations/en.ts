@@ -79,6 +79,7 @@ export const en: Translations = {
         'Schedule, venue, accommodation, dress code: it’s all there, and your guests reply in one click with the built-in RSVP.',
       ],
       copy3: 'Your guests were expecting paper. They get a film.',
+      cta: 'Discover our offers',
       imgAlt: 'A bride seen from behind, her long veil lifted by the wind, facing the groom on a dune path at dusk',
     },
     included: {
