@@ -3,16 +3,18 @@ import { Link } from 'react-router'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
-import { Check } from 'lucide-react'
+import { Check, Clapperboard, Infinity as InfinityIcon, CalendarHeart, Users, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PRODUCTS } from '@/components/home/productsCatalog'
+import { formatEuros, getProduct, TEMPLATE_PRICE_CENTS, usePricing } from '@/components/commerce/pricing'
 import { useLanguage } from '@/i18n/LanguageContext'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
-/** Les deux produits — cards calmes sur fond anthracite-900. */
+/** Les trois offres (Save the Date sur modèle, sur mesure, Faire-part) — cards calmes sur fond anthracite-900. */
 export default function Products() {
   const { t } = useLanguage()
+  const { products } = usePricing()
   const rootRef = useRef<HTMLElement>(null)
 
   // Texte traduit par produit, superposé à `PRODUCTS` (cf.
@@ -32,6 +34,17 @@ export default function Products() {
         t('home.products.saveTheDate.feature5'),
       ],
     },
+    TEMPLATE: {
+      name: t('home.products.template.name'),
+      tagline: t('home.products.template.tagline'),
+      features: [
+        t('home.products.template.feature1'),
+        t('home.products.template.feature2'),
+        t('home.products.template.feature3'),
+        t('home.products.template.feature4'),
+        t('home.products.template.feature5'),
+      ],
+    },
     FAIRE_PART: {
       name: t('home.products.fairePart.name'),
       tagline: t('home.products.fairePart.tagline'),
@@ -44,6 +57,34 @@ export default function Products() {
       ],
     },
   }
+
+  // Prix réels (base de données) ; le catalogue partagé ne donne que des prix indicatifs.
+  const CARDS = [
+    {
+      id: 'TEMPLATE' as const,
+      price: formatEuros(TEMPLATE_PRICE_CENTS),
+      cta: '/save-the-date-modeles',
+      ctaLabel: t('home.products.ctaTemplate'),
+      recommended: false,
+      showDemo: false,
+      features: [
+        { icon: Clapperboard, label: 'modèle' },
+        { icon: CalendarHeart, label: 'prénoms' },
+        { icon: Zap, label: 'rapide' },
+        { icon: InfinityIcon, label: 'lien' },
+        { icon: Users, label: 'invités' },
+      ],
+    },
+    ...PRODUCTS.map((product) => ({
+      id: product.id,
+      price: formatEuros(getProduct(products, product.id).priceCents),
+      cta: product.cta,
+      ctaLabel: t('home.products.ctaOrder'),
+      recommended: product.recommended,
+      showDemo: true,
+      features: product.features,
+    })),
+  ]
 
   useGSAP(
     () => {
@@ -84,8 +125,8 @@ export default function Products() {
           {t('home.products.titleLead')} <em className="italic text-terracotta-300">{t('home.products.titleEm')}</em>.
         </h2>
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-2">
-          {PRODUCTS.map((product) => {
+        <div className="mt-16 grid gap-8 lg:grid-cols-3">
+          {CARDS.map((product) => {
             const text = PRODUCT_TEXT[product.id]
             return (
               <article
@@ -102,17 +143,16 @@ export default function Products() {
                     product.recommended ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100',
                   )}
                 />
-                {product.recommended && (
-                  // Bloc normal au-dessus du titre sur mobile (jamais de
-                  // chevauchement possible, quelle que soit la largeur du
-                  // titre) ; repasse en pastille flottante en haut à droite
-                  // à partir de lg, où la carte est assez large pour ça.
-                  <span className="animate-badge-pulse mb-4 inline-block self-start rounded-full bg-terracotta-500 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white lg:absolute lg:right-8 lg:top-8 lg:mb-0">
-                    {t('home.products.badgeRecommended')}
-                  </span>
-                )}
+                {/* Ligne réservée au badge dans chaque carte : les trois titres restent alignés. */}
+                <div className="mb-4 h-7">
+                  {product.recommended && (
+                    <span className="animate-badge-pulse inline-block rounded-full bg-terracotta-500 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white">
+                      {t('home.products.badgeRecommended')}
+                    </span>
+                  )}
+                </div>
 
-                <h3 className="font-display text-3xl font-medium tracking-[-0.01em] text-white lg:text-4xl">
+                <h3 className="font-display text-2xl font-medium tracking-[-0.01em] text-white lg:min-h-[2.4em] xl:min-h-0 xl:text-[1.4rem]">
                   {text.name}
                 </h3>
                 <p className="font-display tabular mt-4 text-5xl font-light text-terracotta-300">
@@ -129,7 +169,7 @@ export default function Products() {
                   ))}
                 </ul>
 
-                <p className="mt-8 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-white/50">
+                <p className="mt-auto flex items-center gap-2 pt-8 text-xs font-medium uppercase tracking-[0.12em] text-white/50">
                   <Check size={14} className="text-terracotta-500" />
                   {t('home.products.uniquePriceLine')}
                 </p>
@@ -139,15 +179,17 @@ export default function Products() {
                     to={product.cta}
                     className="rounded-full bg-terracotta-500 px-7 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
                   >
-                    {t('home.products.ctaOrder')}
+                    {product.ctaLabel}
                   </Link>
-                  <Link
-                    to="/demofairepart"
-                    className="group/link relative text-[13px] font-semibold uppercase tracking-[0.1em] text-white/80 transition-colors hover:text-white"
-                  >
-                    {t('home.products.ctaDemo')}
-                    <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-terracotta-500 transition-transform duration-300 group-hover/link:scale-x-100" />
-                  </Link>
+                  {product.showDemo && (
+                    <Link
+                      to="/demofairepart"
+                      className="group/link relative text-[13px] font-semibold uppercase tracking-[0.1em] text-white/80 transition-colors hover:text-white"
+                    >
+                      {t('home.products.ctaDemo')}
+                      <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-terracotta-500 transition-transform duration-300 group-hover/link:scale-x-100" />
+                    </Link>
+                  )}
                 </div>
               </article>
             )
