@@ -86,7 +86,7 @@ export default function Concept() {
           <div aria-hidden className="absolute -right-4 -top-4 h-full w-full rounded-md border border-terracotta-300/60" />
           <div className="relative overflow-hidden rounded-md">
             <img
-              src="/gallery-2.jpg"
+              src="/concept-voile-dunes.jpg"
               alt={t('home.concept.imgAlt')}
               className="concept-img aspect-[16/10] w-full scale-110 object-cover will-change-transform"
               loading="lazy"

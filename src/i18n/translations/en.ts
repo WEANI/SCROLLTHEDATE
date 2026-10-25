@@ -78,8 +78,8 @@ export const en: Translations = {
         'The invitation is fully personalised: you tell us your story and we turn it into a unique video that unfolds before your guests’ eyes as they scroll on their screens, all the way to the invitation.',
         'Schedule, venue, accommodation, dress code: it’s all there, and your guests reply in one click with the built-in RSVP.',
       ],
-      copy3: 'Human support from start to finish — a real team, not a generator.',
-      imgAlt: 'Silhouette of a couple facing the sea at dusk',
+      copy3: 'Your guests were expecting paper. They get a film.',
+      imgAlt: 'A bride seen from behind, her long veil lifted by the wind, facing the groom on a dune path at dusk',
     },
     included: {
       title: 'Included in every creation',
