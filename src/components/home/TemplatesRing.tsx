@@ -68,6 +68,7 @@ export default function TemplatesRing() {
       if (!root) return
       const els = gsap.utils.toArray<HTMLElement>('[data-ring-card]', root)
       const copy = root.querySelector<HTMLElement>('[data-ring-copy]')
+      const copyWrap = copy?.parentElement
       if (!copy || els.length === 0) return
       const N = els.length
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -79,8 +80,10 @@ export default function TemplatesRing() {
 
       const render = () => {
         const { peel, p } = state
-        const W = window.innerWidth
-        const H = window.innerHeight
+        // Taille réelle de la section (et non de la fenêtre) : sur iPhone, les barres
+        // de Safari rendent la fenêtre plus haute que la zone visible.
+        const W = root.clientWidth || window.innerWidth
+        const H = root.clientHeight || window.innerHeight
         const mobile = W < 768
         const cw = els[0].offsetWidth
 
@@ -90,9 +93,15 @@ export default function TemplatesRing() {
 
         // Centre de l'anneau : sous la barre de navigation ; sur mobile, plus bas pour laisser le texte en haut.
         const cx = W / 2
-        const cy = mobile ? H * 0.665 : H / 2 + 28
+        // Sur mobile, le texte est en haut : l'anneau occupe l'espace libre en dessous,
+        // calculé d'après la position réelle du bas du texte (titre sur 1 ou 2 lignes).
+        const ch = cw / 0.82
+        const copyBottom = mobile
+          ? (copyWrap?.getBoundingClientRect().bottom ?? H * 0.4) - root.getBoundingClientRect().top + 14
+          : 0
+        const cy = mobile ? (copyBottom + H) / 2 : H / 2 + 28
         const rx = mobile ? Math.max(40, (W - cw) / 2 - 8) : Math.min(W * 0.36, 540)
-        const ry = mobile ? H * 0.2 : Math.min(H * 0.3, 280)
+        const ry = mobile ? Math.max(24, (H - copyBottom) / 2 - ch * 0.72) : Math.min(H * 0.3, 280)
 
         els.forEach((el, i) => {
           const rise = seg(peel, i * 0.045, i * 0.045 + 0.6)
@@ -243,10 +252,10 @@ export default function TemplatesRing() {
       </ul>
 
       {/* Texte au centre de l'anneau (en haut sur téléphone) */}
-      <div className="pointer-events-none absolute left-1/2 top-[11%] z-[2000] w-[min(26rem,calc(100%-48px))] -translate-x-1/2 md:top-[calc(50%+28px)] md:-translate-y-1/2">
+      <div className="pointer-events-none absolute left-1/2 top-[92px] z-[2000] w-[min(26rem,calc(100%-48px))] -translate-x-1/2 md:top-[calc(50%+28px)] md:-translate-y-1/2">
         <div data-ring-copy className="invisible text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-terracotta-300">{t('home.templatesRing.kicker')}</p>
-          <h2 id="ring-title" className="font-display mt-3 text-[clamp(1.7rem,3vw,2.5rem)] font-light italic leading-[1.05] text-white">
+          <h2 id="ring-title" className="font-display mt-3 text-[clamp(1.7rem,3vw,2.5rem)] font-light italic leading-[1.05] text-white max-md:text-[1.6rem]">
             {t('home.templatesRing.title')}
           </h2>
           <p className="mx-auto mt-3 max-w-[19rem] text-[14px] leading-relaxed text-white/65">
@@ -254,7 +263,7 @@ export default function TemplatesRing() {
           </p>
           <Link
             to="/save-the-date-modeles"
-            className="pointer-events-auto mt-5 inline-flex rounded-full bg-terracotta-500 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
+            className="pointer-events-auto mt-5 inline-flex max-md:mt-4 max-md:py-3 rounded-full bg-terracotta-500 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
           >
             {t('home.templatesRing.cta')}
           </Link>
