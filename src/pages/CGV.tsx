@@ -82,6 +82,7 @@ export default function CGV() {
         <ul>
           <li>{t('cgv.s4Item1')}</li>
           <li>{t('cgv.s4Item2')}</li>
+          <li>{t('cgv.s4Item3')}</li>
         </ul>
         <p>{t('cgv.s4Note')}</p>
       </section>
