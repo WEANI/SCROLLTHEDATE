@@ -73,7 +73,7 @@ export const fr = {
     },
     concept: {
       kicker: 'Le concept',
-      titleWords: ['Un', 'moyen', 'unique', 'et', 'original', 'pour', 'annoncer', 'votre', 'mariage.'],
+      titleWords: ['Choisissez', 'l’originalité', 'pour', 'annoncer', 'votre', 'mariage\u00a0!'],
       // Un élément = un paragraphe (texte fourni le 22/10/2026).
       copyParagraphs: [
         'Scroll The Date crée des invitations de mariage digitales uniques sous forme de vidéo interactive.',

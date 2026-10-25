@@ -71,7 +71,7 @@ export const en: Translations = {
     },
     concept: {
       kicker: 'The concept',
-      titleWords: ['A', 'unique', 'and', 'original', 'way', 'to', 'announce', 'your', 'wedding.'],
+      titleWords: ['Choose', 'originality', 'to', 'announce', 'your', 'wedding!'],
       copyParagraphs: [
         'Scroll The Date creates unique digital wedding invitations as interactive videos.',
         'The save the date announces your date months in advance, in a few seconds of footage.',
