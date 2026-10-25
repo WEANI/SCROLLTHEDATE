@@ -120,8 +120,8 @@ export const fr = {
     },
     howItWorks: {
       kicker: 'Comment ça marche',
-      titleLead: '4 étapes,',
-      titleEm: 'sans complications',
+      titleLead: 'Votre faire-part en',
+      titleEm: '4 étapes',
       step1Title: 'Commandez',
       step1Text: 'Choisissez votre formule, en quelques minutes. Paiement sécurisé.',
       step2Title: 'Racontez',

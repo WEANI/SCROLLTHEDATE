@@ -116,8 +116,8 @@ export const en: Translations = {
     },
     howItWorks: {
       kicker: 'How it works',
-      titleLead: '4 steps,',
-      titleEm: 'no hassle',
+      titleLead: 'Your invitation in',
+      titleEm: '4 steps',
       step1Title: 'Order',
       step1Text: 'Choose your package in a few minutes. Secure payment.',
       step2Title: 'Tell your story',
