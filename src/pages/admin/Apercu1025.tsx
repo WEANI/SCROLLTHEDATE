@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link, Navigate, useLocation } from 'react-router'
+import { Navigate, useLocation } from 'react-router'
 import HeroScrub from '@/components/hero-scrub/HeroScrub'
 import { useAuth } from '@/hooks/useAuth'
 import { LOGIN_PATH } from '@/const'
@@ -49,13 +49,6 @@ export default function Apercu1025() {
 
   return (
     <div className="bg-anthracite-950">
-      <div className="fixed left-4 top-4 z-50 flex items-center gap-3 rounded-full bg-black/60 px-4 py-2 text-[12px] text-white/80 backdrop-blur">
-        <span className="h-2 w-2 rounded-full bg-terracotta-500" aria-hidden />
-        Aperçu privé · 1025
-        <Link to="/admin" className="font-semibold text-terracotta-300 hover:text-white">
-          Admin
-        </Link>
-      </div>
       <HeroScrub
         theme={theme}
         chapters={[]}
