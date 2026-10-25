@@ -384,6 +384,54 @@ export interface SaveTheDateTemplateOverride {
   monogramTextAnimation: string
 }
 
+const THE_RING_THEME: HeroTheme = {
+  id: 'the-ring',
+  label: 'The Ring',
+  colorScheme: 'light',
+  frameBg: '#EFE5D3',
+  pageBg: '#F8F2E6',
+  vignette: 'linear-gradient(180deg, rgba(248,242,230,0.10) 0%, rgba(248,242,230,0) 40%, rgba(248,242,230,0.60) 100%)',
+  accent: '#A8812F',
+  textPrimary: '#34401F',
+  textSecondary: '#6B6A45',
+  cardBg: 'rgba(248, 242, 230, 0.80)',
+  cardBorder: 'rgba(168, 129, 47, 0.28)',
+  cardShadow: '0 24px 60px rgba(52, 64, 31, 0.18)',
+  dotInactive: 'rgba(52, 64, 31, 0.14)',
+}
+
+const RECEPTION_ROOM_THEME: HeroTheme = {
+  id: 'reception-room',
+  label: 'Reception Room',
+  colorScheme: 'light',
+  frameBg: '#EFE3D0',
+  pageBg: '#FAF4EA',
+  vignette: 'linear-gradient(180deg, rgba(250,244,234,0.10) 0%, rgba(250,244,234,0) 40%, rgba(250,244,234,0.62) 100%)',
+  accent: '#B58F4C',
+  textPrimary: '#4A3822',
+  textSecondary: '#8A7253',
+  cardBg: 'rgba(250, 244, 234, 0.80)',
+  cardBorder: 'rgba(181, 143, 76, 0.28)',
+  cardShadow: '0 24px 60px rgba(74, 56, 34, 0.18)',
+  dotInactive: 'rgba(74, 56, 34, 0.14)',
+}
+
+const BLACK_AND_WHITE_THEME: HeroTheme = {
+  id: 'black-and-white',
+  label: 'Black & White',
+  colorScheme: 'dark',
+  frameBg: '#0C0C0D',
+  pageBg: '#0A0A0B',
+  vignette: 'linear-gradient(180deg, rgba(10,10,11,0.18) 0%, rgba(10,10,11,0.04) 40%, rgba(10,10,11,0.82) 100%)',
+  accent: '#CFCFCF',
+  textPrimary: '#F4F4F2',
+  textSecondary: '#B5B5B2',
+  cardBg: 'rgba(10, 10, 11, 0.55)',
+  cardBorder: 'rgba(244, 244, 242, 0.22)',
+  cardShadow: '0 24px 60px rgba(0, 0, 0, 0.5)',
+  dotInactive: 'rgba(244, 244, 242, 0.14)',
+}
+
 // Couple d'exemple repris à l'identique du reste du site (récap /commander,
 // URL de démonstration) — jamais un vrai client, toujours "Anna & Théo".
 const EXAMPLE_NAMES = 'Anna & Théo'
@@ -526,6 +574,114 @@ export const SAVE_THE_DATE_TEMPLATES: SaveTheDateTemplate[] = [
         kind: 'text',
         from: 0.765,
         to: 0.83,
+        segments: [{ text: 'Save the date' }],
+        titleSize: 'lg',
+        verticalAlign: 'middle',
+      },
+      {
+        id: 1,
+        kind: 'text',
+        from: 0.9,
+        to: 1,
+        segments: nameSegments(EXAMPLE_NAMES),
+        fitOneLine: true,
+        rule: true,
+        subLines: [EXAMPLE_DATE],
+        subSize: 'md',
+        verticalAlign: 'bottom',
+      },
+    ],
+  },
+  {
+    slug: 'the-ring',
+    name: 'The Ring',
+    tagline: 'Une alliance qui se dresse, et tout commence.',
+    description:
+      "Une enveloppe vert olive nouée d'un ruban s'ouvre sur une alliance qui se dresse sur un sol crème, parsemé de pétales ; la caméra plonge dans l'anneau d'or, puis se pose sur le coussin des alliances — un montage doré, sans texte incrusté.",
+    theme: THE_RING_THEME,
+    // Montage ajouté le 25/10/2026 (29 s, sans texte ni son). Moments dégagés : l'alliance dressée sur le sol crème 0,28–0,40 · le coussin des alliances, en haut de l'image, 0,88–1.
+    frames: { baseUrl: '/the-ring-frames/', count: 353, fps: 12 },
+    desktopSrc: '/the-ring.mp4',
+    posterSrc: '/the-ring-frames/00001.jpg',
+    cardPreview: { fromSec: 12.5, posterSrc: '/the-ring-frames/00151.jpg' },
+    chapters: [
+      {
+        id: 0,
+        kind: 'text',
+        from: 0.28,
+        to: 0.4,
+        segments: [{ text: 'Save the date' }],
+        titleSize: 'lg',
+        verticalAlign: 'top',
+      },
+      {
+        id: 1,
+        kind: 'text',
+        from: 0.88,
+        to: 1,
+        segments: nameSegments(EXAMPLE_NAMES),
+        fitOneLine: true,
+        rule: true,
+        subLines: [EXAMPLE_DATE],
+        subSize: 'md',
+        verticalAlign: 'top',
+      },
+    ],
+  },
+  {
+    slug: 'reception-room',
+    name: 'Reception Room',
+    tagline: 'Une salle de réception, et vos invités déjà dedans.',
+    description:
+      "La caméra écarte des voilages dorés et entre dans une immense salle de réception crème et or : colonnes, tables dressées, bouquets de fleurs blanches, jusqu'à l'autel fleuri au fond de la nef — un travelling immersif, sans coupure.",
+    theme: RECEPTION_ROOM_THEME,
+    // Montage ajouté le 25/10/2026 (22,5 s utiles, coupé avant le fondu au noir de fin ; sans texte ni son). Moments dégagés : les voilages 0,04–0,16 · le sol de la nef, en bas de l'image, 0,88–1.
+    frames: { baseUrl: '/reception-room-frames/', count: 270, fps: 12 },
+    desktopSrc: '/reception-room.mp4',
+    posterSrc: '/reception-room-frames/00001.jpg',
+    cardPreview: { fromSec: 5.5, posterSrc: '/reception-room-frames/00070.jpg' },
+    chapters: [
+      {
+        id: 0,
+        kind: 'text',
+        from: 0.04,
+        to: 0.16,
+        segments: [{ text: 'Save the date' }],
+        titleSize: 'lg',
+        verticalAlign: 'middle',
+      },
+      {
+        id: 1,
+        kind: 'text',
+        from: 0.88,
+        to: 1,
+        segments: nameSegments(EXAMPLE_NAMES),
+        fitOneLine: true,
+        rule: true,
+        subLines: [EXAMPLE_DATE],
+        subSize: 'md',
+        verticalAlign: 'bottom',
+      },
+    ],
+  },
+  {
+    slug: 'black-and-white',
+    name: 'Black & White',
+    tagline: 'En noir et blanc, rien que vous deux.',
+    description:
+      "Des portes sombres s'ouvrent sur un rai de lumière ; deux mains se cherchent, s'enlacent, une bague accroche la lumière, puis le couple se retrouve, vu de dos — un film en noir et blanc, intime et intemporel, sans texte incrusté.",
+    theme: BLACK_AND_WHITE_THEME,
+    // Montage ajouté le 25/10/2026 (27,5 s utiles, coupé avant le fondu au noir de fin ; sans texte ni son). Moments dégagés : les portes sombres 0,03–0,12 · le costume du marié, en bas de l'image, 0,90–1.
+    frames: { baseUrl: '/black-and-white-frames/', count: 330, fps: 12 },
+    desktopSrc: '/black-and-white.mp4',
+    posterSrc: '/black-and-white-frames/00001.jpg',
+    cardPreview: { fromSec: 10.5, posterSrc: '/black-and-white-frames/00139.jpg' },
+    chapters: [
+      {
+        id: 0,
+        kind: 'text',
+        from: 0.03,
+        to: 0.12,
         segments: [{ text: 'Save the date' }],
         titleSize: 'lg',
         verticalAlign: 'middle',
