@@ -101,7 +101,7 @@ export const fr = {
     },
     templatesRing: {
       kicker: 'Save the date',
-      title: 'Choisissez votre ambiance',
+      title: 'Choisissez votre Save The Date',
       text: 'Des films déjà prêts : vos prénoms, votre date, et c’est à vous.',
       cta: 'Voir tous les modèles',
     },
