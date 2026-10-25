@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { Flag, HeartHandshake, Infinity as InfinityIcon, MessageCircle, ShieldCheck } from 'lucide-react'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { activeSocialProfiles } from '@contracts/brand'
+import SocialIcon from '@/components/SocialIcon'
 
 export default function Footer() {
   const { t } = useLanguage()
@@ -52,11 +53,18 @@ export default function Footer() {
           {socials.length > 0 && (
             <div>
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">{t('footer.followUs')}</p>
-              <ul className="flex flex-wrap gap-x-4 gap-y-2">
+              <ul className="flex flex-wrap gap-3">
                 {socials.map((s) => (
                   <li key={s.id}>
-                    <a href={s.url} target="_blank" rel="noreferrer me" className="text-sm text-white/70 transition-colors hover:text-white">
-                      {s.label}
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noreferrer me"
+                      aria-label={s.label}
+                      title={s.label}
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/70 transition-all hover:-translate-y-0.5 hover:border-terracotta-500 hover:text-white"
+                    >
+                      <SocialIcon id={s.id} size={18} />
                     </a>
                   </li>
                 ))}
