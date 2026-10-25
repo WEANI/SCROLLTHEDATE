@@ -219,8 +219,19 @@ export const fr = {
       intro:
         "Prix unique, nombre d'invités illimité, accompagnement humain inclus. Vous choisissez l'objet — nous mettons la même exigence de cinéma.",
     },
+    saveTheDateModele: {
+      kicker: 'Pour annoncer · sur modèle',
+      name: 'Save the Date sur modèle',
+      tagline: 'Un film déjà prêt, à votre nom.',
+      feature1: 'Choisissez parmi nos modèles vidéo : Red Door, Parchemin, Allée des Roses…',
+      feature2: 'Vos prénoms, votre date et votre lieu ajoutés par-dessus',
+      feature3: 'Prêt en quelques minutes, dès le paiement',
+      feature4: "Un lien à partager par WhatsApp, SMS ou e-mail, pour autant d'invités que vous voulez",
+      ctaLabel: 'Choisir un modèle',
+      visualAlt: 'Aperçu de trois modèles de Save the Date : Parchemin Rose, Red Door et Allée des Roses',
+    },
     saveTheDate: {
-      kicker: 'Pour annoncer',
+      kicker: 'Pour annoncer · sur mesure',
       tagline: 'Annoncez la date comme au cinéma.',
       feature1: 'Vidéo personnalisée 30 s, issue de votre questionnaire',
       feature2: "Page d'annonce : vos noms, la date, le lieu",

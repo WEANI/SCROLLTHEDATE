@@ -20,9 +20,11 @@ import {
   formatEuros,
   getProduct,
   productSlug,
+  TEMPLATE_PRICE_CENTS,
   usePricing,
   type ProductId,
 } from '@/components/commerce/pricing'
+import { SAVE_THE_DATE_TEMPLATES } from '@contracts/saveTheDateTemplates'
 
 /* -------------------------------------------------------------------------- */
 /* Helpers locaux                                                             */
@@ -189,6 +191,11 @@ export default function Offres() {
   ]
 
   const { products, options } = usePricing()
+  // Aperçus des 3 modèles montrés sur la carte « sur modèle » (ordre : gauche, centre, droite).
+  const modelePosters = ['parchemin-rose', 'red-door', 'allee-des-roses']
+    .map((slug) => SAVE_THE_DATE_TEMPLATES.find((tpl) => tpl.slug === slug))
+    .filter((tpl): tpl is NonNullable<typeof tpl> => !!tpl)
+    .map((tpl) => tpl.cardPreview?.posterSrc ?? tpl.posterSrc)
   const fairePart = getProduct(products, 'FAIRE_PART')
   const saveTheDate = getProduct(products, 'SAVE_THE_DATE')
   const [selectedOptions, setSelectedOptions] = useState<string[]>([])
@@ -249,7 +256,7 @@ export default function Offres() {
       </section>
 
       {/* ------------------------------------------------------------ */}
-      {/* Section 2 — Les deux formules                                 */}
+      {/* Section 2 — Les trois offres                                  */}
       {/* ------------------------------------------------------------ */}
       <section className="bg-anthracite-900 px-6 py-24 lg:px-12 lg:py-36">
         <motion.div
@@ -259,7 +266,41 @@ export default function Offres() {
           viewport={{ once: true, margin: '-10%' }}
           variants={{ hidden: {}, show: { transition: { staggerChildren: 0.2 } } }}
         >
-          {/* Card A — Save the Date */}
+          {/* Card A — Save the Date sur modèle (99 €, livré dès le paiement) */}
+          <FormulaCard
+            kicker={t('offres.saveTheDateModele.kicker')}
+            name={t('offres.saveTheDateModele.name')}
+            priceCents={TEMPLATE_PRICE_CENTS}
+            tagline={t('offres.saveTheDateModele.tagline')}
+            features={[
+              t('offres.saveTheDateModele.feature1'),
+              t('offres.saveTheDateModele.feature2'),
+              t('offres.saveTheDateModele.feature3'),
+              t('offres.saveTheDateModele.feature4'),
+            ]}
+            ctaLabel={t('offres.saveTheDateModele.ctaLabel')}
+            ctaHref="/save-the-date-modeles"
+            visual={
+              <div className="group relative mx-auto h-[440px] max-w-md sm:h-[500px]" role="img" aria-label={t('offres.saveTheDateModele.visualAlt')}>
+                {modelePosters.map((src, i) => (
+                  <img
+                    key={src}
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    className={cn(
+                      'absolute w-[44%] aspect-[9/16] rounded-lg border border-anthracite-700 object-cover shadow-[0_24px_80px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-[1.03]',
+                      i === 0 && 'left-0 top-8 -rotate-[7deg]',
+                      i === 1 && 'left-1/2 top-0 z-10 -translate-x-1/2',
+                      i === 2 && 'right-0 top-8 rotate-[7deg]',
+                    )}
+                  />
+                ))}
+              </div>
+            }
+          />
+
+          {/* Card B — Save the Date sur mesure */}
           <FormulaCard
             kicker={t('offres.saveTheDate.kicker')}
             name={saveTheDate.name}
@@ -279,6 +320,7 @@ export default function Offres() {
             // de choix de formule/vidéo démo), on renvoie donc vers
             // SaveTheDateDigital.tsx, qui a son propre bouton de commande.
             ctaHref="/save-the-date-digital"
+            reversed
             visual={
               <div className="mx-auto max-w-sm transition-transform duration-500 hover:scale-[1.03]">
                 <BrowserFrame
@@ -290,14 +332,13 @@ export default function Offres() {
             }
           />
 
-          {/* Card B — Faire-part */}
+          {/* Card C — Faire-part */}
           <FormulaCard
             kicker={t('offres.fairePart.kicker')}
             name={fairePart.name}
             priceCents={fairePart.priceCents}
             badge={t('offres.fairePart.badge')}
             tagline={t('offres.fairePart.tagline')}
-            reversed
             features={[
               t('offres.fairePart.feature1'),
               t('offres.fairePart.feature2'),

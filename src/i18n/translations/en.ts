@@ -216,8 +216,19 @@ export const en: Translations = {
       intro:
         "One price, unlimited guests, real human support included. You choose the object — we bring the same cinematic standard.",
     },
+    saveTheDateModele: {
+      kicker: 'To announce · from a template',
+      name: 'Save the Date from a template',
+      tagline: 'A ready-made film, with your names.',
+      feature1: 'Pick one of our video templates: Red Door, Parchemin, Allée des Roses…',
+      feature2: 'Your names, date and venue added on top',
+      feature3: 'Ready in minutes, as soon as you pay',
+      feature4: 'A link to share by WhatsApp, text or email, for as many guests as you like',
+      ctaLabel: 'Choose a template',
+      visualAlt: 'Preview of three Save the Date templates: Parchemin Rose, Red Door and Allée des Roses',
+    },
     saveTheDate: {
-      kicker: 'To announce',
+      kicker: 'To announce · custom',
       tagline: 'Announce the date, cinema-style.',
       feature1: 'Personalised 30 s video, built from your questionnaire',
       feature2: 'Announcement page: your names, the date, the venue',
