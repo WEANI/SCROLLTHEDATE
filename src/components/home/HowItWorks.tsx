@@ -64,7 +64,9 @@ export default function HowItWorks() {
       <div className="mx-auto max-w-[660px] text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">{t('home.howItWorks.kicker')}</p>
         <h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.2rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-          {t('home.howItWorks.titleLead')} <em className="italic text-terracotta-300">{t('home.howItWorks.titleEm')}</em>.
+          {t('home.howItWorks.titleLead')}
+          <br />
+          <em className="italic text-terracotta-300">{t('home.howItWorks.titleEm')}</em>.
         </h2>
       </div>
 
