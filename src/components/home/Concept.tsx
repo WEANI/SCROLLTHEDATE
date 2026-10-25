@@ -73,7 +73,16 @@ export default function Concept() {
           <div className="concept-copy-wrap mt-10 flex max-w-xl flex-col gap-6">
             {tArray('home.concept.copyParagraphs').map((para) => (
               <p key={para} className="concept-copy text-[16px] leading-[1.65] text-white/70">
-                {para}
+                {/* **mot** → majuscules, gras, terracotta */}
+                {para.split('**').map((part, i) =>
+                  i % 2 === 1 ? (
+                    <strong key={i} className="font-semibold uppercase tracking-[0.04em] text-terracotta-500">
+                      {part}
+                    </strong>
+                  ) : (
+                    part
+                  ),
+                )}
               </p>
             ))}
             <p className="concept-copy border-l-2 border-terracotta-500 pl-5 text-[15px] font-medium leading-relaxed text-white">

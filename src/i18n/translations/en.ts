@@ -74,9 +74,8 @@ export const en: Translations = {
       titleWords: ['Choose', 'originality', 'to', 'announce', 'your', 'wedding!'],
       copyParagraphs: [
         'Scroll The Date creates unique digital wedding invitations as interactive videos.',
-        'The save the date announces your date months in advance, in a few seconds of footage.',
-        'The invitation is fully personalised: you tell us your story and we turn it into a unique video that unfolds before your guests’ eyes as they scroll on their screens, all the way to the invitation.',
-        'Schedule, venue, accommodation, dress code: it’s all there, and your guests reply in one click with the built-in RSVP.',
+        'The **save the date** to announce your date months in advance.',
+        'The fully personalised **wedding invitation**: schedule, venue, accommodation, dress code — it’s all there, and your guests reply in one click with the built-in RSVP.',
       ],
       copy3: 'Your guests were expecting paper. They get a film.',
       cta: 'Discover our offers',
