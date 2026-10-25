@@ -113,9 +113,9 @@ export const en: Translations = {
       videoAlt: 'Offers presentation video: a terracotta envelope opens onto the template Save the Date, the custom Save the Date and the digital invitation.',
     },
     templatesRing: {
-      kicker: 'Our templates',
+      kicker: 'Save the date',
       title: 'Choose your mood',
-      text: 'Ready-made films: your names, your date, and it’s yours. Save the date from a template from',
+      text: 'Ready-made films: your names, your date, and it’s yours.',
       cta: 'See all templates',
     },
     howItWorks: {

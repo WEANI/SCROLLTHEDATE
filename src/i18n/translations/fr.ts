@@ -116,9 +116,9 @@ export const fr = {
       videoAlt: 'Vidéo de présentation des offres : une enveloppe terracotta s’ouvre sur le Save the Date sur modèle, le Save the Date sur mesure et le faire-part digital.',
     },
     templatesRing: {
-      kicker: 'Nos modèles',
+      kicker: 'Save the date',
       title: 'Choisissez votre ambiance',
-      text: 'Des films déjà prêts : vos prénoms, votre date, et c’est à vous. Save the date sur modèle dès',
+      text: 'Des films déjà prêts : vos prénoms, votre date, et c’est à vous.',
       cta: 'Voir tous les modèles',
     },
     howItWorks: {

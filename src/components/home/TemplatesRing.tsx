@@ -4,7 +4,6 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { useLanguage } from '@/i18n/LanguageContext'
-import { formatEuros, TEMPLATE_PRICE_CENTS } from '@/components/commerce/pricing'
 import { SAVE_THE_DATE_TEMPLATES } from '@contracts/saveTheDateTemplates'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
@@ -251,7 +250,7 @@ export default function TemplatesRing() {
             {t('home.templatesRing.title')}
           </h2>
           <p className="mx-auto mt-3 max-w-[19rem] text-[14px] leading-relaxed text-white/65">
-            {t('home.templatesRing.text')} {formatEuros(TEMPLATE_PRICE_CENTS)}.
+            {t('home.templatesRing.text')}
           </p>
           <Link
             to="/save-the-date-modeles"
