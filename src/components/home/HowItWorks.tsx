@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
+import { CalendarHeart, LayoutDashboard, QrCode, Rss } from 'lucide-react'
 import { useLanguage } from '@/i18n/LanguageContext'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
@@ -35,6 +36,14 @@ export default function HowItWorks() {
     { key: '02', num: '02', title: t('home.howItWorks.step2Title'), text: t('home.howItWorks.step2Text') },
     { key: '03', num: '03', title: t('home.howItWorks.step3Title'), text: t('home.howItWorks.step3Text') },
     { key: '04', num: '04', title: t('home.howItWorks.step4Title'), text: t('home.howItWorks.step4Text') },
+  ]
+
+  // « Compris dans chaque création », en raccourci : une icône et une ligne chacun.
+  const INCLUDED = [
+    { key: 'page', icon: CalendarHeart, title: t('home.howItWorks.included1Title'), text: t('home.howItWorks.included1Text') },
+    { key: 'rsvp', icon: Rss, title: t('home.howItWorks.included2Title'), text: t('home.howItWorks.included2Text') },
+    { key: 'dashboard', icon: LayoutDashboard, title: t('home.howItWorks.included3Title'), text: t('home.howItWorks.included3Text') },
+    { key: 'link', icon: QrCode, title: t('home.howItWorks.included4Title'), text: t('home.howItWorks.included4Text') },
   ]
 
   useGSAP(
@@ -80,6 +89,23 @@ export default function HowItWorks() {
             <p className="mt-3 max-w-md text-[15px] leading-[1.65] text-white/70">{step.text}</p>
           </article>
         ))}
+      </div>
+
+      <div className="mx-auto max-w-[1100px] border-t border-anthracite-700 pt-14">
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
+          {t('home.howItWorks.includedTitle')}
+        </p>
+        <ul className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
+          {INCLUDED.map((item) => (
+            <li key={item.key} className="flex flex-col items-center text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full border border-terracotta-500/40 text-terracotta-500">
+                <item.icon size={20} strokeWidth={1.5} aria-hidden />
+              </span>
+              <p className="font-display mt-4 text-[17px] font-medium leading-snug text-white">{item.title}</p>
+              <p className="mt-1.5 max-w-[15rem] text-[13.5px] leading-[1.55] text-white/55">{item.text}</p>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   )

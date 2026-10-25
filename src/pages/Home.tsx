@@ -4,15 +4,11 @@ import ScrubHero from '@/components/ScrubHero'
 import type { ScrubHeroBeat } from '@/components/ScrubHero'
 import { useSeo } from '@/hooks/useSeo'
 import { useLanguage } from '@/i18n/LanguageContext'
-import SocialProof from '@/components/home/SocialProof'
 import Concept from '@/components/home/Concept'
 import TemplatesRing from '@/components/home/TemplatesRing'
-import Included from '@/components/home/Included'
 import HowItWorks from '@/components/home/HowItWorks'
-import Advantages from '@/components/home/Advantages'
 import RsvpTeaser from '@/components/home/RsvpTeaser'
 import Products from '@/components/home/Products'
-import Gallery from '@/components/home/Gallery'
 import Faq from '@/components/home/Faq'
 import FinalCta from '@/components/home/FinalCta'
 
@@ -181,15 +177,15 @@ export default function Home() {
           durationVh={280}
         />
       </div>
-      <SocialProof />
+      {/* Ordre de la page (demande du 25/10/2026) : concept → comment ça marche (qui reprend
+          « compris dans chaque création ») → nos modèles → nos offres → RSVP → FAQ.
+          SocialProof, Included, Advantages et Gallery ne sont plus affichés ; leurs composants
+          restent dans src/components/home/ pour un retour éventuel. */}
       <Concept />
+      <HowItWorks />
       <TemplatesRing />
       <Products />
-      <HowItWorks />
-      <Included />
       <RsvpTeaser />
-      <Advantages />
-      <Gallery />
       <Faq />
       <FinalCta />
     </>
