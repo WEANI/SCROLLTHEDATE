@@ -11,11 +11,18 @@ import { useLanguage } from '@/i18n/LanguageContext'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
+const seg = (p: number, a: number, b: number) => {
+  const t = clamp01((p - a) / (b - a))
+  return t * t * (3 - 2 * t)
+}
+
 /** Les trois offres (Save the Date sur modèle, sur mesure, Faire-part) — cards calmes sur fond anthracite-900. */
-export default function Products({ showHeading = true }: { showHeading?: boolean }) {
+export default function Products() {
   const { t } = useLanguage()
   const { products } = usePricing()
   const rootRef = useRef<HTMLElement>(null)
+  const stepsRef = useRef<HTMLDivElement>(null)
 
   // Texte traduit par produit, superposé à `PRODUCTS` (cf.
   // productsCatalog.ts — non touché ici : partagé avec FairePartDigital.tsx/
@@ -86,31 +93,94 @@ export default function Products({ showHeading = true }: { showHeading?: boolean
     })),
   ]
 
+  // « Fil rouge » (26/10/2026) : un fil terracotta se dessine au défilement et
+  // serpente d'une offre à l'autre ; chaque carte s'éclaire quand il l'atteint,
+  // puis le fil finit sur le point d'arrivée (prix unique + lien vers les offres).
   useGSAP(
     () => {
-      gsap.fromTo(
-        '.product-card',
-        { y: 60, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          stagger: 0.15,
-          duration: 0.9,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: rootRef.current, start: 'top 75%' },
-        },
-      )
+      const root = rootRef.current
+      const wrap = stepsRef.current
+      if (!root || !wrap) return
+      const path = wrap.querySelector<SVGPathElement>('[data-thread]')
+      const ghost = wrap.querySelector<SVGPathElement>('[data-thread-ghost]')
+      const steps = gsap.utils.toArray<HTMLElement>('[data-offer-step]', wrap)
+      const knots = steps.map((st) => st.querySelector<HTMLElement>('[data-offer-knot]'))
+      const endEl = root.querySelector<HTMLElement>('[data-offer-end]')
+      const endKnot = root.querySelector<HTMLElement>('[data-offer-end-knot]')
+      if (!path || !ghost || !endEl || !endKnot || knots.some((k) => !k)) return
+
       gsap.fromTo(
         '.products-title',
         { y: 40, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.9,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: rootRef.current, start: 'top 80%' },
-        },
+        { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', scrollTrigger: { trigger: root, start: 'top 80%' } },
       )
+
+      let len = 1
+      let marks: number[] = []
+      const build = () => {
+        const box = wrap.getBoundingClientRect()
+        const centre = (el: HTMLElement): [number, number] => {
+          const r = el.getBoundingClientRect()
+          return [r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top]
+        }
+        const pts = [...knots.map((k) => centre(k as HTMLElement)), centre(endKnot)]
+        const start: [number, number] = [window.innerWidth >= 1024 ? box.width / 2 : pts[0][0], -70]
+        let d = `M ${start[0]} ${start[1]}`
+        let prev = start
+        for (const pt of pts) {
+          const my = (prev[1] + pt[1]) / 2
+          d += ` C ${prev[0]} ${my}, ${pt[0]} ${my}, ${pt[0]} ${pt[1]}`
+          prev = pt
+        }
+        path.setAttribute('d', d)
+        ghost.setAttribute('d', d)
+        len = path.getTotalLength() || 1
+        path.style.strokeDasharray = `${len}`
+        // Part de la longueur du fil à laquelle il atteint chaque nœud.
+        marks = pts.map(([x, y]) => {
+          let best = 0
+          let bestDist = Infinity
+          for (let k = 0; k <= 200; k++) {
+            const q = path.getPointAtLength((len * k) / 200)
+            const dist = Math.hypot(q.x - x, q.y - y)
+            if (dist < bestDist) {
+              bestDist = dist
+              best = k / 200
+            }
+          }
+          return best
+        })
+      }
+      const render = (p: number) => {
+        path.style.strokeDashoffset = `${len * (1 - p)}`
+        steps.forEach((st, i) => {
+          const v = seg(p, marks[i] - 0.08, marks[i] + 0.02)
+          gsap.set(st, { autoAlpha: 0.18 + 0.82 * v, y: (1 - v) * 30 })
+        })
+        const last = marks[marks.length - 1]
+        const e = seg(p, last - 0.04, last)
+        gsap.set(endEl, { autoAlpha: e, y: (1 - e) * 20 })
+      }
+
+      build()
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        render(1)
+        return
+      }
+      render(0)
+      ScrollTrigger.create({
+        trigger: wrap,
+        start: 'top 70%',
+        endTrigger: endEl,
+        end: 'top 65%',
+        scrub: 0.5,
+        invalidateOnRefresh: true,
+        onRefresh: (st) => {
+          build()
+          render(st.progress)
+        },
+        onUpdate: (st) => render(st.progress),
+      })
     },
     { scope: rootRef },
   )
@@ -118,27 +188,38 @@ export default function Products({ showHeading = true }: { showHeading?: boolean
   return (
     <section ref={rootRef} className="grain bg-anthracite-900 py-32 lg:py-44">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-12">
-        {/* Titre masqué quand la section est ouverte par le téléphone (OffersPhone), qui porte déjà « Nos offres ». */}
-        {showHeading && (
-          <>
-        <p className="products-title mb-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
-          {t('home.products.kicker')}
-        </p>
-        <h2 className="products-title font-display max-w-3xl text-[clamp(2.4rem,5vw,4.5rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
-          {t('home.products.titleLead')} <em className="italic text-terracotta-300">{t('home.products.titleEm')}</em>.
-        </h2>
-          </>
-        )}
+        <div className="text-center">
+          <p className="products-title mb-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
+            {t('home.products.kicker')}
+          </p>
+          <h2 className="products-title font-display mx-auto max-w-3xl text-[clamp(2.4rem,5vw,4.5rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
+            {t('home.products.titleLead')} <em className="italic text-terracotta-300">{t('home.products.titleEm')}</em>.
+          </h2>
+        </div>
 
-        <div className={cn('grid gap-8 lg:grid-cols-3', showHeading && 'mt-16')}>
-          {CARDS.map((product) => {
+        <div ref={stepsRef} className="relative mx-auto mt-28 flex max-w-[1100px] flex-col gap-20 max-lg:pl-9 lg:gap-24">
+          <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
+            <path data-thread-ghost fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={2} strokeDasharray="4 7" />
+            <path data-thread fill="none" stroke="#C96F5A" strokeWidth={2} strokeLinecap="round" />
+          </svg>
+          {CARDS.map((product, i) => {
             const text = PRODUCT_TEXT[product.id]
             return (
-              <article
-                key={product.id}
+             <div
+              key={product.id}
+              data-offer-step
+              className={cn('relative lg:w-[min(560px,56%)]', i % 2 === 0 ? 'lg:self-start' : 'lg:self-end')}
+             >
+              <span
+                aria-hidden
+                data-offer-knot
                 className={cn(
-                  'product-card group relative flex flex-col overflow-hidden rounded-lg bg-anthracite-800 p-8 transition-transform duration-500 hover:-translate-y-1.5 lg:p-10',
+                  'absolute top-12 z-[2] h-3.5 w-3.5 rounded-full border-2 border-terracotta-500 bg-anthracite-900 max-lg:-left-[29px]',
+                  i % 2 === 0 ? 'lg:-right-[37px]' : 'lg:-left-[37px]',
                 )}
+              />
+              <article
+                className="product-card group relative flex flex-col overflow-hidden rounded-lg border border-white/[0.06] bg-anthracite-800 p-8 transition-transform duration-500 hover:-translate-y-1.5 lg:p-10"
               >
                 {/* Liseré haut terracotta sur la recommandée */}
                 <span
@@ -157,7 +238,7 @@ export default function Products({ showHeading = true }: { showHeading?: boolean
                   )}
                 </div>
 
-                <h3 className="font-display text-2xl font-medium tracking-[-0.01em] text-white lg:min-h-[2.4em] xl:min-h-0 xl:text-[1.4rem]">
+                <h3 className="font-display text-2xl font-medium tracking-[-0.01em] text-white lg:text-3xl">
                   {text.name}
                 </h3>
                 <p className="font-display tabular mt-4 text-5xl font-light text-terracotta-300">
@@ -174,12 +255,7 @@ export default function Products({ showHeading = true }: { showHeading?: boolean
                   ))}
                 </ul>
 
-                <p className="mt-auto flex items-center gap-2 pt-8 text-xs font-medium uppercase tracking-[0.12em] text-white/50">
-                  <Check size={14} className="text-terracotta-500" />
-                  {t('home.products.uniquePriceLine')}
-                </p>
-
-                <div className="mt-8 flex flex-wrap items-center gap-5">
+                <div className="mt-auto flex flex-wrap items-center gap-5 pt-9">
                   <Link
                     to={product.cta}
                     className="rounded-full bg-terracotta-500 px-7 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:bg-terracotta-400 active:scale-[0.97]"
@@ -197,8 +273,24 @@ export default function Products({ showHeading = true }: { showHeading?: boolean
                   )}
                 </div>
               </article>
+             </div>
             )
           })}
+        </div>
+
+        {/* Point d'arrivée du fil */}
+        <div data-offer-end className="relative mx-auto mt-24 flex max-w-xl flex-col items-center text-center">
+          <span aria-hidden data-offer-end-knot className="h-4 w-4 rounded-full bg-terracotta-500 shadow-[0_0_0_7px_rgba(201,111,90,0.18)]" />
+          <p className="mt-8 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-white/60">
+            <Check size={14} className="text-terracotta-500" />
+            {t('home.products.uniquePriceLine')}
+          </p>
+          <Link
+            to="/offres"
+            className="mt-7 inline-flex rounded-full border border-terracotta-500/60 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-white transition-all hover:-translate-y-0.5 hover:border-terracotta-500 hover:bg-terracotta-500"
+          >
+            {t('home.products.ctaAll')}
+          </Link>
         </div>
       </div>
     </section>

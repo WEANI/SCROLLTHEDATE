@@ -9,7 +9,6 @@ import TemplatesRing from '@/components/home/TemplatesRing'
 import HowItWorks from '@/components/home/HowItWorks'
 import RsvpTeaser from '@/components/home/RsvpTeaser'
 import Products from '@/components/home/Products'
-import OffersPhone from '@/components/home/OffersPhone'
 import Faq from '@/components/home/Faq'
 import FinalCta from '@/components/home/FinalCta'
 
@@ -184,8 +183,7 @@ export default function Home() {
           restent dans src/components/home/ pour un retour éventuel. */}
       <Concept />
       <HowItWorks />
-      <OffersPhone />
-      <Products showHeading={false} />
+      <Products />
       <TemplatesRing />
       <RsvpTeaser />
       <FinalCta />
