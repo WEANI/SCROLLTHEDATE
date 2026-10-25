@@ -9,6 +9,7 @@ import TemplatesRing from '@/components/home/TemplatesRing'
 import HowItWorks from '@/components/home/HowItWorks'
 import RsvpTeaser from '@/components/home/RsvpTeaser'
 import Products from '@/components/home/Products'
+import OffersPhone from '@/components/home/OffersPhone'
 import Faq from '@/components/home/Faq'
 import FinalCta from '@/components/home/FinalCta'
 
@@ -184,7 +185,8 @@ export default function Home() {
       <Concept />
       <HowItWorks />
       <TemplatesRing />
-      <Products />
+      <OffersPhone />
+      <Products showHeading={false} />
       <RsvpTeaser />
       <Faq />
       <FinalCta />

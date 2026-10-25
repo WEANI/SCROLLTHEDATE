@@ -12,7 +12,7 @@ import { useLanguage } from '@/i18n/LanguageContext'
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 /** Les trois offres (Save the Date sur modèle, sur mesure, Faire-part) — cards calmes sur fond anthracite-900. */
-export default function Products() {
+export default function Products({ showHeading = true }: { showHeading?: boolean }) {
   const { t } = useLanguage()
   const { products } = usePricing()
   const rootRef = useRef<HTMLElement>(null)
@@ -118,14 +118,19 @@ export default function Products() {
   return (
     <section ref={rootRef} className="grain bg-anthracite-900 py-32 lg:py-44">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-12">
+        {/* Titre masqué quand la section est ouverte par le téléphone (OffersPhone), qui porte déjà « Nos offres ». */}
+        {showHeading && (
+          <>
         <p className="products-title mb-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">
           {t('home.products.kicker')}
         </p>
         <h2 className="products-title font-display max-w-3xl text-[clamp(2.4rem,5vw,4.5rem)] font-light leading-[1.05] tracking-[-0.015em] text-white">
           {t('home.products.titleLead')} <em className="italic text-terracotta-300">{t('home.products.titleEm')}</em>.
         </h2>
+          </>
+        )}
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-3">
+        <div className={cn('grid gap-8 lg:grid-cols-3', showHeading && 'mt-16')}>
           {CARDS.map((product) => {
             const text = PRODUCT_TEXT[product.id]
             return (
