@@ -106,7 +106,7 @@ export const en: Translations = {
       step3Title: 'They scroll',
       step3Text: 'Your film moves at the pace of their finger, all the way to the invitation.',
       hint: 'Scroll',
-      videoAlt: 'Screen recording: a Scroll The Date link received on WhatsApp, opened, then the video being scrolled.',
+      videoAlt: 'Screen recording: a Scroll The Date save the date opened on a phone, then the video being scrolled.',
     },
     templatesRing: {
       kicker: 'Save the date',

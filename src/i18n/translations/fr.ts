@@ -110,7 +110,7 @@ export const fr = {
       step3Title: 'Ils font défiler',
       step3Text: 'Votre film avance au rythme de leur doigt, jusqu’à l’invitation.',
       hint: 'Faites défiler',
-      videoAlt: 'Enregistrement d’écran : un lien Scroll The Date reçu sur WhatsApp, ouvert, puis la vidéo qu’on fait défiler.',
+      videoAlt: 'Enregistrement d’écran : un save the date Scroll The Date ouvert sur un téléphone, puis la vidéo qu’on fait défiler.',
     },
     templatesRing: {
       kicker: 'Save the date',
