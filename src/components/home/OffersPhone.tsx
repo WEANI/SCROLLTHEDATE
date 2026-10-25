@@ -13,6 +13,9 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
  * diffuse la vidéo de présentation des offres (enveloppe terracotta qui s'ouvre,
  * puis les trois offres), image par image au rythme du défilement — comme le
  * haut de page. Des étiquettes reprennent chaque offre à côté du téléphone.
+ * Sur mobile (< 820 px), pas de cadre de téléphone : la vidéo occupe tout l'écran
+ * sous la barre de navigation (un téléphone dans le téléphone la rendait illisible),
+ * et le titre comme les étiquettes sont masqués — la vidéo les contient déjà.
  *
  * Source : « Videos marketing/offres-enveloppe » (composition HTML rendue en
  * 25 s, 9:16) ; séquence 12 im/s dans public/nos-offres-frames. ⚠️ Les prix
@@ -132,7 +135,7 @@ export default function OffersPhone() {
 
   return (
     <section ref={rootRef} id="offres" aria-labelledby="offers-title" className="relative h-[100svh] overflow-hidden bg-anthracite-900">
-      <div className="pointer-events-none absolute inset-x-0 top-[96px] px-6 text-center">
+      <div className="pointer-events-none absolute inset-x-0 top-[96px] px-6 text-center max-[819px]:hidden">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-terracotta-300">{t('home.offersPhone.kicker')}</p>
         <h2 id="offers-title" className="font-display mt-3 text-[clamp(2rem,3.6vw,3rem)] font-light leading-[1.05] text-white">
           {t('home.offersPhone.titleLead')} <em className="italic text-terracotta-300">{t('home.offersPhone.titleEm')}</em>.
@@ -143,7 +146,7 @@ export default function OffersPhone() {
         <div
           key={i}
           className={
-            'absolute max-[819px]:bottom-[4.5%] max-[819px]:left-1/2 max-[819px]:w-[86vw] max-[819px]:-translate-x-1/2 min-[820px]:w-60 ' +
+            'absolute max-[819px]:hidden min-[820px]:w-60 ' +
             (l.side === 'left' ? 'min-[820px]:right-[calc(50%+190px)]' : 'min-[820px]:left-[calc(50%+190px)]') +
             ' ' +
             ['min-[820px]:top-[44%]', 'min-[820px]:top-[52%]', 'min-[820px]:top-[44%]', 'min-[820px]:top-[58%]'][i]
@@ -166,10 +169,10 @@ export default function OffersPhone() {
         </div>
       ))}
 
-      <div className="absolute left-1/2 top-[calc(50%+70px)] -translate-x-1/2 -translate-y-1/2 max-[819px]:top-[calc(50%+24px)]">
-        <div className="relative aspect-[9/19.2] w-[min(290px,60vw,calc((100svh-290px)*9/19.2))] rounded-[44px] bg-[#0d0d0f] p-[11px] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.85),inset_0_0_0_1.5px_rgba(255,255,255,0.08)] max-[819px]:w-[min(230px,56vw,calc((100svh-300px)*9/19.2))]">
-          <span aria-hidden className="absolute left-1/2 top-[18px] z-[5] h-[22px] w-[84px] -translate-x-1/2 rounded-xl bg-[#0d0d0f]" />
-          <div className="relative h-full w-full overflow-hidden rounded-[34px] bg-[#FBF6EE]">
+      <div className="absolute left-1/2 top-[calc(50%+70px)] -translate-x-1/2 -translate-y-1/2 max-[819px]:inset-x-0 max-[819px]:bottom-0 max-[819px]:top-20 max-[819px]:left-0 max-[819px]:translate-x-0 max-[819px]:translate-y-0">
+        <div className="relative aspect-[9/19.2] w-[min(290px,60vw,calc((100svh-290px)*9/19.2))] rounded-[44px] bg-[#0d0d0f] p-[11px] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.85),inset_0_0_0_1.5px_rgba(255,255,255,0.08)] max-[819px]:aspect-auto max-[819px]:h-full max-[819px]:w-full max-[819px]:rounded-none max-[819px]:bg-transparent max-[819px]:p-0 max-[819px]:shadow-none">
+          <span aria-hidden className="absolute left-1/2 top-[18px] z-[5] h-[22px] w-[84px] -translate-x-1/2 rounded-xl bg-[#0d0d0f] max-[819px]:hidden" />
+          <div className="relative h-full w-full overflow-hidden rounded-[34px] bg-[#FBF6EE] max-[819px]:rounded-none">
             <canvas className="block h-full w-full" role="img" aria-label={t('home.offersPhone.videoAlt')} />
           </div>
         </div>
