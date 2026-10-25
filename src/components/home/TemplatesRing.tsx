@@ -16,9 +16,9 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
  *
  *   avant l'épinglage  : les cartes montent du bas de l'écran en une pile
  *   0   – 0,30         : la pile monte jusqu'au centre
- *   0,18 – 0,50        : la pile s'ouvre en anneau (ellipse vue en perspective)
+ *   0,04 – 0,38        : la pile s'ouvre en anneau en montant (ellipse vue en perspective)
  *   0,42 – 1           : l'anneau tourne d'un quart de tour
- *   0,78 – 0,95        : le texte et le bouton apparaissent au centre
+ *   dès l'arrivée      : le texte et le bouton sont visibles (avant l'épinglage)
  *   > 0,92             : les cartes réagissent au survol et sont cliquables
  *
  * Toutes les positions sont calculées ici (trigonométrie) à chaque image, puis
@@ -89,7 +89,7 @@ export default function TemplatesRing() {
         const cw = els[0].offsetWidth
 
         const v = seg(p, 0, 0.3) // la pile monte
-        const b = seg(p, mobile ? 0.15 : 0.18, mobile ? 0.45 : 0.5) // l'anneau s'ouvre
+        const b = seg(p, mobile ? 0.15 : 0.04, mobile ? 0.45 : 0.38) // l'anneau s'ouvre (pendant la montée sur ordinateur)
         const x = seg(p, mobile ? 0.3 : 0.42, 1) // l'anneau tourne
 
         // Centre de l'anneau : sous la barre de navigation ; sur mobile, plus bas pour laisser le texte en haut.
@@ -117,7 +117,9 @@ export default function TemplatesRing() {
           const d = Math.sin(angle) // > 0 : devant, < 0 : au fond
           const pileX = ((i % 3) - 1) * 9 * (1 - b)
           const pileY = -i * 3 * (1 - b)
-          const lift = (1 - v) * H * 0.16 // la pile attend plus bas, puis monte
+          // La pile attend plus bas, puis monte. Sur ordinateur, elle attend en bas de l'écran
+          // (en partie hors champ) pour ne jamais recouvrir le texte, affiché dès l'arrivée.
+          const lift = (1 - v) * H * (mobile ? 0.16 : 0.36)
           // Centre voulu de la carte ; les cartes sont ancrées au milieu de la section (left/top 50 %).
           const X = cx + Math.cos(angle) * rx * b + pileX
           const Y = cy + Math.sin(angle) * ry * b + pileY + lift + (1 - rise) * H * 0.55
@@ -143,7 +145,8 @@ export default function TemplatesRing() {
           })
         })
 
-        const c = seg(p, 0.78, 0.95)
+        // Texte et bouton : visibles dès que la section arrive à l'écran (et non après la rotation).
+        const c = seg(peel, 0.35, 0.85)
         gsap.set(copy, { autoAlpha: c, y: (1 - c) * 22 })
         root.classList.toggle('is-ready', p > 0.92)
       }
