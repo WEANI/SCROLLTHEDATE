@@ -38,7 +38,7 @@ const STATIC_PAGES: Record<string, PageMeta> = {
  *
  * Trois règles :
  *  - l'image d'aperçu est toujours une adresse COMPLÈTE (une adresse
- *    relative, « /og-image.jpg », est ignorée par plusieurs réseaux) ;
+ *    relative, « /og-scrollthedate.jpg », est ignorée par plusieurs réseaux) ;
  *  - un faire-part montre les prénoms du couple, sa date et l'image de son
  *    film, et porte `noindex` : c'est un lien privé, envoyé aux invités, qui
  *    n'a rien à faire dans les résultats de recherche ;
@@ -129,7 +129,7 @@ export async function buildPageHtml(baseHtml: string, pathname: string, origin: 
 
 function render(baseHtml: string, pathname: string, origin: string, meta: PageMeta): string {
   let html = baseHtml;
-  const image = absolute(origin, meta.image || "/og-image.jpg");
+  const image = absolute(origin, meta.image || "/og-scrollthedate.jpg");
 
   html = html.replace(/<meta property="og:image" content="[^"]*" \/>/, `<meta property="og:image" content="${esc(image)}" />`);
   if (meta.title) {
