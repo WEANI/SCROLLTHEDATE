@@ -208,16 +208,17 @@ export default function Offres() {
       selectedOptions.length ? `&options=${selectedOptions.join(',')}` : ''
     }`
 
-  const compareRows: { key: string; label: string; std: Cell; fp: Cell }[] = [
-    { key: 'video', label: t('offres.compare.row1'), std: ck, fp: ck },
-    { key: 'duration', label: t('offres.compare.row2'), std: tx('30 s'), fp: tx('60 s') },
-    { key: 'page', label: t('offres.compare.row3'), std: tx(t('offres.compare.row3Std')), fp: tx(t('offres.compare.row3Fp')) },
-    { key: 'rsvp', label: t('offres.compare.row4'), std: da, fp: ck },
-    { key: 'scenarios', label: t('offres.compare.row5'), std: da, fp: ck },
-    { key: 'revisions', label: t('offres.compare.row6'), std: tx(t('offres.compare.row6Value')), fp: tx(t('offres.compare.row6Value')) },
-    { key: 'link', label: t('offres.compare.row7'), std: ck, fp: ck },
-    { key: 'delay', label: t('offres.compare.row8'), std: tx('~72 h'), fp: tx('~72 h') },
-    { key: 'price', label: t('offres.compare.row9'), std: tx(formatEuros(saveTheDate.priceCents)), fp: tx(formatEuros(fairePart.priceCents)) },
+  // Trois offres comparées : Save the Date sur modèle, sur mesure, Faire-part.
+  const compareRows: { key: string; label: string; tpl: Cell; std: Cell; fp: Cell }[] = [
+    { key: 'video', label: t('offres.compare.row1'), tpl: tx(t('offres.compare.row1Tpl')), std: ck, fp: ck },
+    { key: 'duration', label: t('offres.compare.row2'), tpl: tx(t('offres.compare.row2Tpl')), std: tx('30 s'), fp: tx('60 s') },
+    { key: 'page', label: t('offres.compare.row3'), tpl: tx(t('offres.compare.row3Std')), std: tx(t('offres.compare.row3Std')), fp: tx(t('offres.compare.row3Fp')) },
+    { key: 'rsvp', label: t('offres.compare.row4'), tpl: da, std: da, fp: ck },
+    { key: 'scenarios', label: t('offres.compare.row5'), tpl: da, std: da, fp: ck },
+    { key: 'revisions', label: t('offres.compare.row6'), tpl: da, std: tx(t('offres.compare.row6Value')), fp: tx(t('offres.compare.row6Value')) },
+    { key: 'link', label: t('offres.compare.row7'), tpl: tx(t('offres.compare.row7Tpl')), std: ck, fp: ck },
+    { key: 'delay', label: t('offres.compare.row8'), tpl: tx(t('offres.compare.row8Tpl')), std: tx('~72 h'), fp: tx('~72 h') },
+    { key: 'price', label: t('offres.compare.row9'), tpl: tx(formatEuros(TEMPLATE_PRICE_CENTS)), std: tx(formatEuros(saveTheDate.priceCents)), fp: tx(formatEuros(fairePart.priceCents)) },
   ]
 
   return (
@@ -354,19 +355,23 @@ export default function Offres() {
             // ci-dessus (cf. échange du 13/09/2026).
             ctaHref="/faire-part-digital"
             visual={
-              <div className="group relative mx-auto h-[420px] max-w-md sm:h-[480px]">
-                <img
-                  src="/template-cinema.jpg"
-                  alt={t('offres.fairePart.visualAltCinema')}
-                  loading="lazy"
-                  className="absolute bottom-0 right-0 w-[58%] rotate-[5deg] rounded-lg border border-anthracite-700 object-cover shadow-[0_24px_80px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-[1.03]"
-                />
-                <img
-                  src="/template-editorial.jpg"
-                  alt={t('offres.fairePart.visualAltEditorial')}
-                  loading="lazy"
-                  className="absolute left-0 top-0 w-[58%] -rotate-[4deg] rounded-lg border border-anthracite-700 object-cover shadow-[0_24px_80px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-[1.03]"
-                />
+              // Captures de la démo du faire-part, juste après la photo d'ouverture
+              // (invitation + date + compte à rebours, puis le lieu), dans des cadres de téléphone.
+              <div className="group relative mx-auto h-[460px] max-w-md sm:h-[520px]">
+                {[
+                  { src: '/offres-faire-part-demo-1.jpg', alt: t('offres.fairePart.visualAltCinema'), cls: 'left-0 top-0 -rotate-[4deg]' },
+                  { src: '/offres-faire-part-demo-2.jpg', alt: t('offres.fairePart.visualAltEditorial'), cls: 'bottom-0 right-0 rotate-[5deg]' },
+                ].map((shot) => (
+                  <div
+                    key={shot.src}
+                    className={cn(
+                      'absolute w-[54%] rounded-[30px] bg-[#0d0d0f] p-[7px] shadow-[0_24px_80px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(255,255,255,0.08)] transition-transform duration-500 group-hover:scale-[1.03]',
+                      shot.cls,
+                    )}
+                  >
+                    <img src={shot.src} alt={shot.alt} loading="lazy" className="block aspect-[9/19.5] w-full rounded-[24px] object-cover object-top" />
+                  </div>
+                ))}
               </div>
             }
           />
@@ -395,14 +400,17 @@ export default function Offres() {
                 className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/4 rounded-2xl bg-[radial-gradient(70%_60%_at_50%_40%,rgba(201,111,90,0.08),transparent_75%)] sm:block"
               />
               <div role="table" aria-label={t('offres.compare.kicker')} className="relative">
-                <div role="row" className="grid grid-cols-[1.4fr_1fr_1fr] items-end gap-2 border-b border-anthracite-700 pb-5 sm:grid-cols-[2fr_1fr_1fr]">
+                <div role="row" className="grid grid-cols-[1.25fr_1fr_1fr_1fr] items-end gap-2 border-b border-anthracite-700 pb-5 sm:grid-cols-[1.8fr_1fr_1fr_1fr]">
                   <span role="columnheader" className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
                     &nbsp;
                   </span>
-                  <span role="columnheader" className="text-center text-[12px] font-semibold uppercase tracking-[0.14em] text-white/70">
+                  <span role="columnheader" className="text-center text-[10.5px] font-semibold uppercase tracking-[0.1em] text-white/70 sm:text-[12px] sm:tracking-[0.14em]">
+                    {t('offres.compare.colTpl')}
+                  </span>
+                  <span role="columnheader" className="text-center text-[10.5px] font-semibold uppercase tracking-[0.1em] text-white/70 sm:text-[12px] sm:tracking-[0.14em]">
                     {t('offres.compare.colStd')}
                   </span>
-                  <span role="columnheader" className="text-center text-[12px] font-semibold uppercase tracking-[0.14em] text-terracotta-300">
+                  <span role="columnheader" className="text-center text-[10.5px] font-semibold uppercase tracking-[0.1em] text-terracotta-300 sm:text-[12px] sm:tracking-[0.14em]">
                     {t('offres.compare.colFp')}
                   </span>
                 </div>
@@ -421,12 +429,15 @@ export default function Offres() {
                         show: { opacity: 1, x: 0, transition: { duration: 0.5, ease: EASE_EDITORIAL } },
                       }}
                       className={cn(
-                        'grid grid-cols-[1.4fr_1fr_1fr] items-center gap-2 px-4 py-4 sm:grid-cols-[2fr_1fr_1fr]',
+                        'grid grid-cols-[1.25fr_1fr_1fr_1fr] items-center gap-2 px-3 py-4 sm:grid-cols-[1.8fr_1fr_1fr_1fr] sm:px-4',
                         i % 2 === 0 && 'rounded-lg bg-anthracite-800/60',
                       )}
                     >
                       <span role="rowheader" className="text-sm font-medium text-white/85">
                         {row.label}
+                      </span>
+                      <span role="cell" className="text-center">
+                        <CompareCell cell={row.tpl} />
                       </span>
                       <span role="cell" className="text-center">
                         <CompareCell cell={row.std} />
