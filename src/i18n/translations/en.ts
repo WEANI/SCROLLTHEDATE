@@ -179,7 +179,7 @@ export const en: Translations = {
     products: {
       kicker: 'Pricing',
       titleLead: 'Three ways to',
-      titleEm: 'surprise',
+      titleEm: 'announce it',
       badgeRecommended: 'Most popular',
       uniquePriceLine: 'One price — however many guests you invite',
       ctaOrder: 'Order',

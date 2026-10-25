@@ -183,7 +183,7 @@ export const fr = {
     products: {
       kicker: 'Nos offres',
       titleLead: 'Trois façons de',
-      titleEm: 'surprendre',
+      titleEm: 'l’annoncer',
       badgeRecommended: 'Le plus choisi',
       uniquePriceLine: "Prix unique — quel que soit le nombre d'invités",
       ctaOrder: 'Commander',
