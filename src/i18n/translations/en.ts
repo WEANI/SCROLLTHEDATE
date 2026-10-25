@@ -110,7 +110,7 @@ export const en: Translations = {
     },
     templatesRing: {
       kicker: 'Save the date',
-      title: 'Choose your Save The Date',
+      title: 'Choose your\nSave The Date',
       text: 'Ready-made films: your names, your date, and it’s yours.',
       cta: 'See all templates',
     },

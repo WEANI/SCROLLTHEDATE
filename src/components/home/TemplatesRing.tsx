@@ -38,6 +38,8 @@ const COVERS: Record<string, string> = {
 }
 /** Ordre autour de l'anneau : on alterne les ambiances (sombre / claire) pour que deux voisines se ressemblent peu. */
 const ORDER = ['red-door', 'parchemin-rose', 'black-and-white', 'the-ring', 'allee-des-roses', 'parchemin-blanc', 'reception-room']
+/** Sur mobile, 5 cartes seulement (7 se chevauchaient sur un écran étroit) — des ambiances bien différentes. */
+const MOBILE_SET = new Set(['red-door', 'the-ring', 'black-and-white', 'reception-room', 'parchemin-rose'])
 /** Inclinaison de chaque carte : [dans la pile, dans l'anneau] en degrés. */
 const TILTS: [number, number][] = [
   [-5, -2],
@@ -70,7 +72,6 @@ export default function TemplatesRing() {
       const copy = root.querySelector<HTMLElement>('[data-ring-copy]')
       const copyWrap = copy?.parentElement
       if (!copy || els.length === 0) return
-      const N = els.length
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
       const state = { peel: 0, p: 0 }
@@ -103,7 +104,14 @@ export default function TemplatesRing() {
         const rx = mobile ? Math.max(40, (W - cw) / 2 - 8) : Math.min(W * 0.36, 540)
         const ry = mobile ? Math.max(24, (H - copyBottom) / 2 - ch * 0.72) : Math.min(H * 0.3, 280)
 
-        els.forEach((el, i) => {
+        // Cartes affichées : toutes sur ordinateur, une sélection sur mobile ; les autres restent cachées.
+        const shown = mobile ? els.filter((el) => MOBILE_SET.has(el.dataset.slug ?? '')) : els
+        const N = shown.length
+        els.forEach((el) => {
+          if (!shown.includes(el)) gsap.set(el, { autoAlpha: 0 })
+        })
+        shown.forEach((el, i) => {
+          const hi = els.indexOf(el) // index d'origine : état de survol de la carte
           const rise = seg(peel, i * 0.045, i * 0.045 + 0.6)
           const angle = (i / N) * Math.PI * 2 - Math.PI / 2 + x * (Math.PI / 2)
           const d = Math.sin(angle) // > 0 : devant, < 0 : au fond
@@ -114,8 +122,8 @@ export default function TemplatesRing() {
           const X = cx + Math.cos(angle) * rx * b + pileX
           const Y = cy + Math.sin(angle) * ry * b + pileY + lift + (1 - rise) * H * 0.55
 
-          const hv = hover[i].v
-          const other = active >= 0 && active !== i ? 1 : 0
+          const hv = hover[hi].v
+          const other = active >= 0 && active !== hi ? 1 : 0
           const depthScale = 1 + 0.17 * d * b
           const scale = lerp(0.86, 1, b) * depthScale * (1 + 0.12 * hv) * lerp(0.7, 1, rise)
           const rotate = lerp(TILTS[i][0], TILTS[i][1], b) * (1 - hv)
@@ -225,7 +233,8 @@ export default function TemplatesRing() {
           <li
             key={tpl.slug}
             data-ring-card
-            className="invisible absolute left-1/2 top-1/2 will-change-transform [--card:clamp(100px,min(13vw,18vh),200px)] max-md:[--card:clamp(90px,26vw,140px)]"
+            data-slug={tpl.slug}
+            className="invisible absolute left-1/2 top-1/2 will-change-transform [--card:clamp(100px,min(13vw,18vh),200px)] max-md:[--card:clamp(80px,min(26vw,13svh),140px)]"
             style={{ width: 'var(--card)', marginLeft: 'calc(var(--card) / -2)', marginTop: 'calc(var(--card) / -2 * 1.22)' }}
           >
             <Link
@@ -255,7 +264,7 @@ export default function TemplatesRing() {
       <div className="pointer-events-none absolute left-1/2 top-[92px] z-[2000] w-[min(26rem,calc(100%-48px))] -translate-x-1/2 md:top-[calc(50%+28px)] md:-translate-y-1/2">
         <div data-ring-copy className="invisible text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-terracotta-300">{t('home.templatesRing.kicker')}</p>
-          <h2 id="ring-title" className="font-display mt-3 text-[clamp(1.7rem,3vw,2.5rem)] font-light italic leading-[1.05] text-white max-md:text-[1.6rem]">
+          <h2 id="ring-title" className="font-display mt-3 text-[clamp(1.7rem,3vw,2.5rem)] font-light italic leading-[1.05] text-white whitespace-pre-line max-md:text-[1.6rem]">
             {t('home.templatesRing.title')}
           </h2>
           <p className="mx-auto mt-3 max-w-[19rem] text-[14px] leading-relaxed text-white/65">
