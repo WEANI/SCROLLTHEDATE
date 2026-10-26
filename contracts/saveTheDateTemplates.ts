@@ -523,7 +523,8 @@ export const SAVE_THE_DATE_TEMPLATES: SaveTheDateTemplate[] = [
     // (29 s). Il contient « Save the Date » écrit sur le parchemin (≈ 12–19 s), comme Parchemin
     // Blanc. Les blocs par défaut se posent EN HAUT, dans le ciel vide de la scène finale au
     // coucher du soleil (≈ 34–43 s) — en bas, l'allée et les chaises sont trop chargées.
-    frames: { baseUrl: '/parchemin-rose-frames/', count: 514, fps: 12 },
+    // Remplacé le 26/10/2026 par le montage « parchemin rose def » (39,8 s, même déroulé).
+    frames: { baseUrl: '/parchemin-rose-frames/', count: 477, fps: 12 },
     desktopSrc: '/parchemin-rose.mp4',
     posterSrc: '/parchemin-rose-frames/00001.jpg',
     chapters: [

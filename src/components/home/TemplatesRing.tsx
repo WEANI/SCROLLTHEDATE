@@ -29,7 +29,7 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
 /** Image de couverture de chaque modèle (une image de la séquence, choisie pour sa lisibilité en petit). */
 const COVERS: Record<string, string> = {
   'red-door': '/red-door-frames/00030.jpg',
-  'parchemin-rose': '/parchemin-rose-frames/00154.jpg',
+  'parchemin-rose': '/parchemin-rose-frames/00200.jpg',
   'black-and-white': '/black-and-white-frames/00139.jpg',
   'the-ring': '/the-ring-frames/00151.jpg',
   'allee-des-roses': '/allee-des-roses-frames/00475.jpg',
