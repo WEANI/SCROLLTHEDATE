@@ -314,7 +314,10 @@ export function HeroProgrammeBlock({ p }: { p: HeroProgramme }) {
  * continue de passer par `segments`/`fitOneLine` dans ChapterContent, donc
  * un projet qui ne choisit rien garde exactement son rendu d'avant.
  */
-export function HeroNamesBlock({ n }: { n: HeroNames }) {
+/** Facteur de taille des prénoms selon le réglage Petit / Moyen / Grand de l'admin (titleSize). */
+const NAMES_SIZE_K: Record<string, number> = { sm: 0.82, md: 1, lg: 1.3 }
+
+export function HeroNamesBlock({ n, size }: { n: HeroNames; size?: string }) {
   const uid = useId().replace(/:/g, '')
   useEffect(() => {
     ensureGoogleFamilies('Playfair+Display:ital@1&family=Cinzel&family=Cinzel+Decorative&family=Great+Vibes&family=Montserrat:wght@300')
@@ -425,5 +428,10 @@ export function HeroNamesBlock({ n }: { n: HeroNames }) {
       inner = (<><span className="hs-nm-n">{A}<span className="hs-nm-amp">&amp;</span>{B}</span>{rule}{date}</>)
   }
 
-  return <div className={cn('hs-nm', `hs-nm-${layout}`)}>{inner}</div>
+  const k = NAMES_SIZE_K[size ?? 'md'] ?? 1
+  return (
+    <div className={cn('hs-nm', `hs-nm-${layout}`)} style={{ '--hs-nm-k': k } as CSSProperties}>
+      {inner}
+    </div>
+  )
 }
