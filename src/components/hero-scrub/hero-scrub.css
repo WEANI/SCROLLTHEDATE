@@ -64,7 +64,8 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 0 9%;
+  /* 4 % (au lieu de 9 %, élargi le 26/10/2026) : texte des blocs moins à l'étroit sur mobile. */
+  padding: 0 4%;
   opacity: 0;
   visibility: hidden;
   transform: translateY(16px);
@@ -105,7 +106,7 @@
      sert uniquement de contexte de positionnement aux pétales de l'animation
      "petals-in" (cf. plus bas, .hs-anim-petal), ajouté le 11/09/2026. */
   position: relative;
-  max-width: 88%;
+  max-width: 96%;
   background: var(--hs-card-bg);
   /* Flou en `var()` avec repli à 18px (comportement historique inchangé) —
      pilotable à 0 pour un mode "aucun fond visible" (cf. cardBgOverride
@@ -116,7 +117,7 @@
   -webkit-backdrop-filter: blur(var(--hs-card-blur, 18px)) saturate(var(--hs-card-saturate, 140%));
   border: 1px solid var(--hs-card-border);
   border-radius: 20px;
-  padding: 32px 32px;
+  padding: 32px clamp(16px, 5cqw, 32px);
   box-shadow: var(--hs-card-shadow);
 }
 

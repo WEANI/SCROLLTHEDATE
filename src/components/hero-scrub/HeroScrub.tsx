@@ -989,7 +989,9 @@ export function ChapterContent({
         {chapter.lead && (
           <p
             className={cn(
-              'mb-4 whitespace-pre-line text-center leading-relaxed',
+              'mb-4 whitespace-pre-line text-center',
+              // Interligne resserré pour les grandes tailles (Petit / Grand) — 26/10/2026.
+              chapter.titleSize === 'lg' || chapter.titleSize === 'sm' ? 'leading-[1.22]' : 'leading-relaxed',
               chapter.bold ? 'font-semibold' : 'font-light',
               // `titleSize` (échange du 23/09/2026, "blocs supplémentaires...
               // pouvoir tout gérer comme pour les autres blocs") — même
