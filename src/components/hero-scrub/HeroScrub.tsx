@@ -23,7 +23,11 @@ function findActiveChapterIndexes(chapters: HeroChapter[], p: number): number[] 
     // ne jamais l'activer (bug du 06/09/2026, bloc retiré qui « migrait »).
     if (ch.to <= ch.from) continue
     const isLast = i === chapters.length - 1
-    if (!(p >= ch.from && (p < ch.to || (isLast && p <= ch.to)))) continue
+    // Un bloc qui finit à (ou tout près de) la fin de la vidéo reste affiché
+    // jusqu'au bout, même s'il n'est pas le dernier de la liste — sinon il
+    // disparaissait sur la toute dernière image (compte à rebours, 26/10/2026).
+    const reachesEnd = ch.to >= 0.98
+    if (!(p >= ch.from && (p < ch.to || reachesEnd || (isLast && p <= ch.to)))) continue
     const pos = ch.verticalAlign || 'middle'
     if (taken.has(pos)) continue
     taken.add(pos)
