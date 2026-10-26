@@ -654,6 +654,8 @@ function resolveNamesLayout(src: TemplateHeroChapter, ch: HeroChapter): HeroChap
     ...ch,
     segments: undefined,
     subLines: undefined,
+    // Le bloc `names` pose déjà son propre filet : sans ça, 2 traits sous les prénoms (signalé le 26/10/2026).
+    rule: false,
     names: { layout, a, b, family: src.namesFamily ?? '', verb: src.namesVerb ?? '', dateShort: ch.subLines?.[0] ?? '' },
   }
 }

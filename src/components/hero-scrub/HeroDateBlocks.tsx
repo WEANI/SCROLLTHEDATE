@@ -330,7 +330,8 @@ export function HeroNamesBlock({ n, size, bold }: { n: HeroNames; size?: string;
   const layout = HERO_NAMES_LAYOUTS.some((l) => l.id === n.layout) ? n.layout : 'ligne'
   const [famA, famB] = n.family ? n.family.split(/\s+(?:&|et)\s+/i).map((x) => x.trim()) : ['', '']
   const date = n.dateShort ? <span className="hs-nm-dt">{n.dateShort}</span> : null
-  const rule = <span className="hs-nm-rule" />
+  // Filet seulement s'il annonce la date — sinon un trait isolé sous les prénoms.
+  const rule = date ? <span className="hs-nm-rule" /> : null
 
   let inner
   switch (layout) {
