@@ -1023,9 +1023,9 @@ export function ChapterContent({
 
         {chapter.monogram && <HeroMonogramBlock m={chapter.monogram} size={chapter.titleSize} fontId={chapter.fontId} />}
         {chapter.programme && <HeroProgrammeBlock p={chapter.programme} />}
-        {chapter.names && <HeroNamesBlock n={chapter.names} size={chapter.titleSize} />}
+        {chapter.names && <HeroNamesBlock n={chapter.names} size={chapter.titleSize} bold={chapter.bold} />}
       {chapter.scene && <HeroSceneBlock s={chapter.scene} />}
-        {chapter.dateLayout && <HeroDateLayoutBlock layout={chapter.dateLayout} />}
+        {chapter.dateLayout && <HeroDateLayoutBlock layout={chapter.dateLayout} size={chapter.titleSize} bold={chapter.bold} />}
         {chapter.countdown && <HeroCountdownBlock style={chapter.countdown.style} targetIso={chapter.countdown.targetIso} />}
 
         {chapter.eyebrow && (

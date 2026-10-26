@@ -20,12 +20,15 @@ import {
  * 23/09/2026. Style dans hero-scrub.css (`.hs-dl-*`, `.hs-cd-*`).
  */
 
-export function HeroDateLayoutBlock({ layout }: { layout: HeroDateLayout }) {
+/** Facteur de taille du bloc date selon le réglage Petit / Moyen / Grand (titleSize), 26/10/2026. */
+const DATE_SIZE_K: Record<string, number> = { sm: 0.85, md: 1, lg: 1.3 }
+
+export function HeroDateLayoutBlock({ layout, size, bold }: { layout: HeroDateLayout; size?: string; bold?: boolean }) {
   useEffect(() => {
     ensureGoogleFamilies(layout.fonts)
   }, [layout.fonts])
   return (
-    <div className={cn('hs-dl', `hs-dl-${layout.id}`)}>
+    <div className={cn('hs-dl', `hs-dl-${layout.id}`, bold && 'hs-bold')} style={{ '--hs-dl-k': DATE_SIZE_K[size ?? 'md'] ?? 1 } as CSSProperties}>
       {layout.lines.map((line, i) => (
         <span key={i} className={cn('hs-dl-line', `hs-dl-${line.cls}`)}>
           {line.text}
@@ -317,7 +320,7 @@ export function HeroProgrammeBlock({ p }: { p: HeroProgramme }) {
 /** Facteur de taille des prénoms selon le réglage Petit / Moyen / Grand de l'admin (titleSize). */
 const NAMES_SIZE_K: Record<string, number> = { sm: 0.82, md: 1, lg: 1.3 }
 
-export function HeroNamesBlock({ n, size }: { n: HeroNames; size?: string }) {
+export function HeroNamesBlock({ n, size, bold }: { n: HeroNames; size?: string; bold?: boolean }) {
   const uid = useId().replace(/:/g, '')
   useEffect(() => {
     ensureGoogleFamilies('Playfair+Display:ital@1&family=Cinzel&family=Cinzel+Decorative&family=Great+Vibes&family=Montserrat:wght@300')
@@ -430,7 +433,7 @@ export function HeroNamesBlock({ n, size }: { n: HeroNames; size?: string }) {
 
   const k = NAMES_SIZE_K[size ?? 'md'] ?? 1
   return (
-    <div className={cn('hs-nm', `hs-nm-${layout}`)} style={{ '--hs-nm-k': k } as CSSProperties}>
+    <div className={cn('hs-nm', `hs-nm-${layout}`)} style={{ '--hs-nm-k': k, ...(bold ? { fontWeight: 600 } : null) } as CSSProperties}>
       {inner}
     </div>
   )
