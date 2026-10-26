@@ -1000,7 +1000,7 @@ export function ChapterContent({
               // comportement possible avant ce champ — aucune régression sur
               // un bloc déjà en production qui ne le règle pas.
               chapter.titleSize === 'lg'
-                ? 'text-[clamp(19px,11cqw,32px)]'
+                ? 'text-[clamp(22px,14cqw,44px)]'
                 : chapter.titleSize === 'sm'
                   ? 'text-[clamp(12px,8cqw,20px)]'
                   : 'text-[15px]',
@@ -1049,7 +1049,7 @@ export function ChapterContent({
               // fait déborder "décembre" puis "Couleurs" sur desktop, où le
               // viewport est bien plus large que la colonne 9:16 réelle.
               chapter.titleSize === 'lg'
-                ? 'text-[clamp(32px,19cqw,56px)]'
+                ? 'text-[clamp(36px,23cqw,72px)]'
                 : chapter.titleSize === 'sm'
                   ? 'text-[clamp(20px,14cqw,36px)]'
                   : 'text-[clamp(28px,18cqw,46px)]',
