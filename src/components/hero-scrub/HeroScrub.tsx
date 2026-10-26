@@ -8,30 +8,28 @@ import { HeroSceneBlock } from './HeroSceneBlocks'
 import './hero-scrub.css'
 
 /**
- * Chapitre actif pour une progression donnée, d'après les fenêtres
- * [from, to] de chaque chapitre. Renvoie -1 en dehors de toute fenêtre
- * (avant le premier chapitre, ou dans un éventuel "silence" volontaire
- * entre deux chapitres) : aucun overlay ne s'affiche alors, la vidéo
- * respire seule.
+ * Blocs affichés EN MÊME TEMPS (demande du 26/10/2026, « superposer 2 blocs
+ * placés à des hauteurs différentes ») : au plus un bloc par position
+ * verticale (haut / milieu / bas). Sur une même position, c'est le premier
+ * bloc actif qui gagne — exactement le comportement d'avant, donc deux blocs
+ * qui se chevauchent sur la même position ne se recouvrent jamais.
  */
-function findActiveChapterIndex(chapters: HeroChapter[], p: number): number {
+function findActiveChapterIndexes(chapters: HeroChapter[], p: number): number[] {
+  const out: number[] = []
+  const taken = new Set<string>()
   for (let i = 0; i < chapters.length; i++) {
     const ch = chapters[i]
-    // Fenêtre dégénérée (`to <= from`) — timing pas encore réglé au studio
-    // (valeur par défaut {fromSec:0,toSec:0}, cf. BLANK_HERO_CHAPTERS dans
-    // StudioPanel.tsx). Sans ce garde-fou, le cas particulier "dernier
-    // chapitre" juste en dessous (`p <= ch.to`) matchait à p=0 dès que le
-    // DERNIER chapitre du tableau avait ce timing par défaut — le bloc
-    // suivant qu'on retirait migrait alors simplement sur celui-ci
-    // (constaté en conditions réelles le 06/09/2026 : après avoir retiré
-    // le chapitre de clôture, c'est le chapitre "détails pratiques" —
-    // devenu le nouveau dernier — qui s'est mis à apparaître au tout début
-    // à sa place). Un chapitre non configuré ne doit jamais s'activer.
+    // Fenêtre dégénérée (`to <= from`) = timing pas encore réglé au studio :
+    // ne jamais l'activer (bug du 06/09/2026, bloc retiré qui « migrait »).
     if (ch.to <= ch.from) continue
     const isLast = i === chapters.length - 1
-    if (p >= ch.from && (p < ch.to || (isLast && p <= ch.to))) return i
+    if (!(p >= ch.from && (p < ch.to || (isLast && p <= ch.to)))) continue
+    const pos = ch.verticalAlign || 'middle'
+    if (taken.has(pos)) continue
+    taken.add(pos)
+    out.push(i)
   }
-  return -1
+  return out
 }
 
 export interface HeroScrubProps {
@@ -116,7 +114,8 @@ export default function HeroScrub({
   const [videoFailed, setVideoFailed] = useState(false)
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
   const [progressPct, setProgressPct] = useState(0)
-  const [activeIdx, setActiveIdx] = useState(-1)
+  const [activeKey, setActiveKey] = useState('')
+  const activeSet = new Set(activeKey ? activeKey.split(',').map(Number) : [])
   const [showCue, setShowCue] = useState(true)
 
   // Overlay de diagnostic (?debug=1 dans l'URL uniquement) — un bug de
@@ -221,7 +220,7 @@ export default function HeroScrub({
     const applyProgress = (p: number) => {
       setProgressPct(p * 100)
       setShowCue(p < 0.03)
-      setActiveIdx(findActiveChapterIndex(chapters, p))
+      setActiveKey(findActiveChapterIndexes(chapters, p).join(','))
 
       // Mode "frames" — dessine directement l'image la plus proche de `p`,
       // aucune des subtilités de seek/buffering d'un <video> ci-dessous ne
@@ -489,7 +488,7 @@ export default function HeroScrub({
                 textAnimation={chAnim}
                 className={cn(
                   'hs-overlay',
-                  i === activeIdx && 'show',
+                  activeSet.has(i) && 'show',
                   ch.verticalAlign === 'top' && 'hs-valign-top',
                   ch.verticalAlign === 'bottom' && 'hs-valign-bottom',
                   chAnim && `hs-anim-${chAnim}`,
@@ -507,8 +506,8 @@ export default function HeroScrub({
                 key={ch.id}
                 className="block h-[5px] w-[5px] rounded-full transition-[background,transform] duration-300"
                 style={{
-                  backgroundColor: i === activeIdx ? theme.accent : theme.dotInactive,
-                  transform: i === activeIdx ? 'scale(1.4)' : 'scale(1)',
+                  backgroundColor: activeSet.has(i) ? theme.accent : theme.dotInactive,
+                  transform: activeSet.has(i) ? 'scale(1.4)' : 'scale(1)',
                 }}
               />
             ))}

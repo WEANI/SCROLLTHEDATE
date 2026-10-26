@@ -568,6 +568,9 @@ function ModeleStdDetailForm({
                     </div>
                     <span className="tabular">{fmtTimecode(videoDuration)}</span>
                   </div>
+                  <p className="mt-2 text-[11px] leading-snug text-neutral-500">
+                    Deux blocs peuvent s'afficher en même temps si leurs plages se chevauchent et qu'ils ont une position verticale différente (Haut / Milieu / Bas). Sur la même position, seul le premier s'affiche.
+                  </p>
                 </div>
               )}
             </div>
