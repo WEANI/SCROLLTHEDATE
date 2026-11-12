@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, Loader2, Plus, Save, X } from "lucide-react";
+import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { cn } from "@/lib/utils";
 import {
@@ -23,11 +23,8 @@ import {
 } from "@contracts/saveTheDateTemplates";
 import {
   HERO_OVERLAY_GRAPHICS,
-  HERO_FONTS,
-  HERO_TEXT_ANIMATIONS,
   HERO_FILTERS,
   HERO_CARD_FRAMES,
-  HERO_COUNTDOWN_STYLES,
   HERO_MONOGRAM_LAYOUTS,
   HERO_NAMES_LAYOUTS,
   splitCoupleNames,
@@ -42,12 +39,14 @@ import {
 } from "@/components/hero-scrub/heroDecor";
 import { HeroOverlayGraphic, HeroFilterLayer, ChapterContent } from "@/components/hero-scrub/HeroScrub";
 import { HeroMonogramBlock, HeroNamesBlock } from "@/components/hero-scrub/HeroDateBlocks";
-import { HeroSceneCardEditor } from "@/components/admin/HeroSceneCardEditor";
+import { HeroCardsEditor } from "@/components/admin/HeroCardsEditor";
+import { AnimSelect, BoldField, ColorField, FontSelect, PreviewStage, TimecodeField } from "@/components/admin/heroEditorFields";
+import { fmtTimecode } from "@/components/admin/heroEditorUtils";
 import { DateFormatGallery } from "@/components/admin/DateFormatGallery";
-import { getHeroScene, heroSceneFromCard, type HeroSceneContext } from "@/components/hero-scrub/heroScenes";
+import { type HeroSceneContext } from "@/components/hero-scrub/heroScenes";
 import type { HeroChapter } from "@/components/hero-scrub/types";
 import type { HeroNames } from "@/components/hero-scrub/heroDecor";
-import { blankHeroCustomCard, type HeroCustomCard } from "@contracts/bespokePalette";
+import { type HeroCustomCard } from "@contracts/bespokePalette";
 
 type Push = (kind: "success" | "error", text: string) => void;
 
@@ -58,118 +57,9 @@ function useSaveSetting(push: Push) {
   });
 }
 
-function ColorField({
-  label,
-  hint,
-  value,
-  onChange,
-  noneOption,
-}: {
-  label: string;
-  hint?: string;
-  value: string;
-  onChange: (v: string) => void;
-  /** Ajoute un bouton "Aucun fond" — sentinel 'none' (cf. doc de ChapterContent dans HeroScrub.tsx) : neutralise fond ET flou/bordure/ombre de la carte, pas juste un fond transparent. */
-  noneOption?: boolean;
-}) {
-  const isHex = /^#[0-9a-fA-F]{6}$/.test(value);
-  return (
-    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-      {label}
-      <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={isHex ? value : "#000000"}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-9 shrink-0 cursor-pointer rounded-[10px] border border-neutral-200 bg-transparent p-0"
-        />
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Vide = défaut"
-          className={cn(inputClass, "font-mono")}
-        />
-        {noneOption && (
-          <button
-            type="button"
-            onClick={() => onChange(value === "none" ? "" : "none")}
-            title="Aucun fond, aucun flou, aucune bordure — le texte seul"
-            className={cn(
-              "shrink-0 rounded-md border px-2 py-1.5 text-[10px] font-semibold whitespace-nowrap",
-              value === "none"
-                ? "border-terracotta-500 bg-terracotta-500/10 text-terracotta-500"
-                : "border-neutral-200 text-neutral-500 hover:bg-neutral-100",
-            )}
-          >
-            Aucun fond
-          </button>
-        )}
-      </div>
-      {hint && <span className="text-[10px] font-normal normal-case text-neutral-400">{hint}</span>}
-    </label>
-  );
-}
 
 /** Date fixe de référence pour l'aperçu du réglage "Format de la date" — même date que EXAMPLE_DATE (contracts/saveTheDateTemplates.ts, "12 juin 2027"), jamais la date en cours d'édition du template. */
 const DATE_FORMAT_PREVIEW_DATE = new Date(2027, 5, 12);
-
-/** Cible de l'aperçu du compte à rebours — 100 jours après le chargement de la page (jamais échue, contrairement à une date fixe). */
-const COUNTDOWN_PREVIEW_TARGET = new Date(Date.now() + 100 * 86400000).toISOString();
-
-function fmtTimecode(sec: number) {
-  const m = Math.floor(sec / 60);
-  const s = (sec % 60).toFixed(1).padStart(4, "0");
-  return `${m}:${s}`;
-}
-
-/** Sélecteur de police — factorisé, réutilisé pour le réglage hero-wide ET chaque réglage par bloc (échange du 21/09/2026). */
-function FontSelect({ value, onChange, defaultLabel }: { value: string; onChange: (v: string) => void; defaultLabel: string }) {
-  return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
-      <option value="">{defaultLabel}</option>
-      {Object.entries(
-        HERO_FONTS.reduce<Record<string, typeof HERO_FONTS>>((acc, f) => {
-          (acc[f.category] ??= []).push(f);
-          return acc;
-        }, {}),
-      ).map(([category, fonts]) => (
-        <optgroup key={category} label={category}>
-          {fonts.map((f) => (
-            <option key={f.id} value={f.id}>{f.label}</option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
-  );
-}
-
-/** Sélecteur d'animation — factorisé, même raisonnement que FontSelect ci-dessus. */
-function AnimSelect({ value, onChange, defaultLabel }: { value: string; onChange: (v: string) => void; defaultLabel: string }) {
-  return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
-      <option value="">{defaultLabel}</option>
-      {HERO_TEXT_ANIMATIONS.map((a) => (
-        <option key={a.id} value={a.id}>{a.label}</option>
-      ))}
-    </select>
-  );
-}
-
-/** Case à cocher "Gras" — factorisée, un bloc de texte à la fois (échange du 21/09/2026). */
-function BoldField({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <label className="flex items-center gap-2 self-end pb-2 text-[12.5px] font-medium text-neutral-500">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-neutral-300 text-terracotta-500 focus:ring-terracotta-500"
-      />
-      Gras
-    </label>
-  );
-}
 
 /**
  * Page de réglages d'UN modèle Save the Date — cf. doc de TabModelesStd
@@ -249,30 +139,6 @@ function ModeleStdDetailForm({
   // ---- blocs supplémentaires (extraCards) — mêmes opérations que
   // CustomCardsEditor (StudioPanel.tsx), même génération d'id. `?? []` :
   // défensif pour un override déjà enregistré avant l'ajout de ce champ.
-  const addExtraCard = () =>
-    update({
-      extraCards: [
-        ...(o?.extraCards ?? []),
-        blankHeroCustomCard(`card-${Date.now()}-${Math.round(Math.random() * 1000)}`, "text", ""),
-      ],
-    });
-  const addCountdownCard = () =>
-    update({
-      extraCards: [
-        ...(o?.extraCards ?? []),
-        blankHeroCustomCard(`card-${Date.now()}-${Math.round(Math.random() * 1000)}`, "countdown", "Compte à rebours"),
-      ],
-    });
-  const addSceneCard = () =>
-    update({
-      extraCards: [
-        ...(o?.extraCards ?? []),
-        blankHeroCustomCard(`card-${Date.now()}-${Math.round(Math.random() * 1000)}`, "scene", "Scène"),
-      ],
-    });
-  const removeExtraCard = (id: string) => update({ extraCards: (o?.extraCards ?? []).filter((c) => c.id !== id) });
-  const updateExtraCard = (id: string, patch: Partial<HeroCustomCard>) =>
-    update({ extraCards: (o?.extraCards ?? []).map((c) => (c.id === id ? { ...c, ...patch } : c)) });
 
   const persist = () => {
     if (!o || !template) return;
@@ -1265,317 +1131,16 @@ function ModeleStdDetailForm({
                 hint={'Généralistes — identiques pour tous les clients de ce modèle (pas de personnalisation), mais bien présents sur la vraie vidéo livrée.'}
               />
               <div className="flex flex-col gap-3 p-6">
-                {(o.extraCards ?? []).map((card) => card.kind === 'scene' ? (
-                  <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                        Scène{getHeroScene(card.sceneId) ? ` — ${getHeroScene(card.sceneId)!.label}` : ""}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => removeExtraCard(card.id)}
-                        aria-label="Retirer ce bloc"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                    <div className="mt-2 grid grid-cols-3 gap-3">
-                      <TimecodeField
-                        label="Apparaît à (s)"
-                        value={card.fromSec}
-                        max={duration}
-                        onChange={(v) => updateExtraCard(card.id, { fromSec: v })}
-                        onCaler={() => updateExtraCard(card.id, { fromSec: Math.round(currentTime * 10) / 10 })}
-                      />
-                      <TimecodeField
-                        label="Disparaît à (s)"
-                        value={card.toSec}
-                        max={duration}
-                        onChange={(v) => updateExtraCard(card.id, { toSec: v })}
-                        onCaler={() => updateExtraCard(card.id, { toSec: Math.round(currentTime * 10) / 10 })}
-                      />
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Position verticale
-                        <select value={card.position} onChange={(e) => updateExtraCard(card.id, { position: e.target.value as HeroCustomCard["position"] })} className={inputClass}>
-                          <option value="top">Haut</option>
-                          <option value="middle">Milieu</option>
-                          <option value="bottom">Bas</option>
-                        </select>
-                      </label>
-                    </div>
-                    <HeroSceneCardEditor
-                      card={card}
-                      onChange={(patch) => updateExtraCard(card.id, patch)}
-                      ctx={sceneCtx}
-                      themeVars={themeVars}
-                      inputClass={inputClass}
-                    />
-                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Police — ce bloc
-                        <FontSelect value={card.fontId} onChange={(v) => updateExtraCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
-                      </label>
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Animation — ce bloc
-                        <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
-                      </label>
-                      <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
-                      <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateExtraCard(card.id, { cardBg: v })} noneOption />
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Cadre (décor)
-                        <select value={card.cardFrame} onChange={(e) => updateExtraCard(card.id, { cardFrame: e.target.value })} className={inputClass}>
-                          <option value="">Aucun</option>
-                          {HERO_CARD_FRAMES.map((f) => (
-                            <option key={f.id} value={f.id}>{f.label}</option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-                    <div className="mt-2 flex flex-col gap-1">
-                      <span className="text-xs font-medium text-neutral-500">Aperçu</span>
-                      <PreviewStage themeVars={themeVars}>
-                        <ChapterContent
-                          chapter={{
-                            id: 3100,
-                            kind: "text",
-                            from: 0,
-                            to: 1,
-                            textColorOverride: card.textColor || undefined,
-                            cardBgOverride: card.cardBg || undefined,
-                            cardFrame: card.cardFrame || undefined,
-                            fontId: card.fontId || undefined,
-                            scene: heroSceneFromCard(card, sceneCtx),
-                          }}
-                          textAnimation={card.textAnimation || o.textAnimation || undefined}
-                          className={cn("hs-overlay", animShow && "show", (card.textAnimation || o.textAnimation) && `hs-anim-${card.textAnimation || o.textAnimation}`)}
-                        />
-                      </PreviewStage>
-                    </div>
-                  </div>
-                ) : card.kind === 'countdown' ? (
-                  <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                        Compte à rebours — jusqu'à la date du mariage du client
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => removeExtraCard(card.id)}
-                        aria-label="Retirer ce bloc"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                    <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 sm:col-span-2">
-                        Style
-                        <select value={card.countdownStyle || "boxes"} onChange={(e) => updateExtraCard(card.id, { countdownStyle: e.target.value })} className={inputClass}>
-                          {HERO_COUNTDOWN_STYLES.map((st) => (
-                            <option key={st.id} value={st.id}>{st.label}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <TimecodeField
-                        label="Apparaît à (s)"
-                        value={card.fromSec}
-                        max={duration}
-                        onChange={(v) => updateExtraCard(card.id, { fromSec: v })}
-                        onCaler={() => updateExtraCard(card.id, { fromSec: Math.round(currentTime * 10) / 10 })}
-                      />
-                      <TimecodeField
-                        label="Disparaît à (s)"
-                        value={card.toSec}
-                        max={duration}
-                        onChange={(v) => updateExtraCard(card.id, { toSec: v })}
-                        onCaler={() => updateExtraCard(card.id, { toSec: Math.round(currentTime * 10) / 10 })}
-                      />
-                    </div>
-                    <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Position verticale
-                        <select value={card.position} onChange={(e) => updateExtraCard(card.id, { position: e.target.value as HeroCustomCard["position"] })} className={inputClass}>
-                          <option value="top">Haut</option>
-                          <option value="middle">Milieu</option>
-                          <option value="bottom">Bas</option>
-                        </select>
-                      </label>
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Animation — ce bloc
-                        <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
-                      </label>
-                      <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
-                      <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateExtraCard(card.id, { cardBg: v })} noneOption />
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Cadre (décor)
-                        <select value={card.cardFrame} onChange={(e) => updateExtraCard(card.id, { cardFrame: e.target.value })} className={inputClass}>
-                          <option value="">Aucun</option>
-                          {HERO_CARD_FRAMES.map((f) => (
-                            <option key={f.id} value={f.id}>{f.label}</option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-                    <div className="mt-2 flex flex-col gap-1">
-                      <span className="text-xs font-medium text-neutral-500">Aperçu (décompte fictif de 100 jours)</span>
-                      <PreviewStage themeVars={themeVars}>
-                        <ChapterContent
-                          chapter={{
-                            id: 3000,
-                            kind: "text",
-                            from: 0,
-                            to: 1,
-                            countdown: { style: card.countdownStyle || "boxes", targetIso: COUNTDOWN_PREVIEW_TARGET },
-                            textColorOverride: card.textColor || undefined,
-                            cardBgOverride: card.cardBg || undefined,
-                            cardFrame: card.cardFrame || undefined,
-                          }}
-                          textAnimation={card.textAnimation || o.textAnimation || undefined}
-                          className={cn("hs-overlay", animShow && "show", (card.textAnimation || o.textAnimation) && `hs-anim-${card.textAnimation || o.textAnimation}`)}
-                        />
-                      </PreviewStage>
-                    </div>
-                  </div>
-                ) : (
-                  <div key={card.id} className="rounded-xl border border-neutral-200 bg-white p-3">
-                    <div className="flex items-start gap-3">
-                      <textarea
-                        value={card.text}
-                        onChange={(e) => updateExtraCard(card.id, { text: e.target.value })}
-                        placeholder="Votre texte…"
-                        rows={2}
-                        maxLength={280}
-                        className={cn(textareaClass, "flex-1")}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeExtraCard(card.id)}
-                        aria-label="Retirer ce bloc"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:text-error"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                    <div className="mt-2 grid grid-cols-3 gap-3">
-                      <TimecodeField
-                        label="Apparaît à (s)"
-                        value={card.fromSec}
-                        max={duration}
-                        onChange={(v) => updateExtraCard(card.id, { fromSec: v })}
-                        onCaler={() => updateExtraCard(card.id, { fromSec: Math.round(currentTime * 10) / 10 })}
-                      />
-                      <TimecodeField
-                        label="Disparaît à (s)"
-                        value={card.toSec}
-                        max={duration}
-                        onChange={(v) => updateExtraCard(card.id, { toSec: v })}
-                        onCaler={() => updateExtraCard(card.id, { toSec: Math.round(currentTime * 10) / 10 })}
-                      />
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Position verticale
-                        <select
-                          value={card.position}
-                          onChange={(e) => updateExtraCard(card.id, { position: e.target.value as HeroCustomCard["position"] })}
-                          className={inputClass}
-                        >
-                          <option value="top">Haut</option>
-                          <option value="middle">Milieu</option>
-                          <option value="bottom">Bas</option>
-                        </select>
-                      </label>
-                    </div>
-                    {/* Police/taille/couleur/cadre/animation/gras propres à CE
-                        bloc — vide = réglage hero-wide (cf. échanges des
-                        21/09/2026 et 23/09/2026, "pouvoir tout gérer comme pour
-                        les autres blocs") : même jeu complet de réglages que les
-                        3 blocs fixes ci-dessus, aperçu compris. */}
-                    <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Taille de police
-                        <select
-                          value={card.titleSize}
-                          onChange={(e) => updateExtraCard(card.id, { titleSize: e.target.value })}
-                          className={inputClass}
-                        >
-                          <option value="">Moyenne (défaut)</option>
-                          <option value="sm">Petite</option>
-                          <option value="md">Moyenne</option>
-                          <option value="lg">Grande</option>
-                        </select>
-                      </label>
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Police — ce bloc
-                        <FontSelect value={card.fontId} onChange={(v) => updateExtraCard(card.id, { fontId: v })} defaultLabel="Police du hero" />
-                      </label>
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Animation — ce bloc
-                        <AnimSelect value={card.textAnimation} onChange={(v) => updateExtraCard(card.id, { textAnimation: v })} defaultLabel="Animation du hero" />
-                      </label>
-                      <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateExtraCard(card.id, { textColor: v })} />
-                      <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateExtraCard(card.id, { cardBg: v })} noneOption />
-                      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-                        Cadre (décor)
-                        <select value={card.cardFrame} onChange={(e) => updateExtraCard(card.id, { cardFrame: e.target.value })} className={inputClass}>
-                          <option value="">Aucun</option>
-                          {HERO_CARD_FRAMES.map((f) => (
-                            <option key={f.id} value={f.id}>{f.label}</option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-
-                    <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-                      <BoldField checked={card.bold} onChange={(v) => updateExtraCard(card.id, { bold: v })} />
-                    </div>
-
-                    <div className="mt-2 flex flex-col gap-1">
-                      <span className="text-xs font-medium text-neutral-500">Aperçu</span>
-                      <PreviewStage themeVars={themeVars}>
-                        <ChapterContent
-                          chapter={{
-                            id: 2000,
-                            kind: "text",
-                            from: 0,
-                            to: 1,
-                            lead: card.text || "Votre texte…",
-                            titleSize: (card.titleSize || undefined) as HeroChapter["titleSize"],
-                            textColorOverride: card.textColor || undefined,
-                            cardBgOverride: card.cardBg || undefined,
-                            cardFrame: card.cardFrame || undefined,
-                            fontId: card.fontId || undefined,
-                            bold: card.bold,
-                          }}
-                          textAnimation={card.textAnimation || o.textAnimation || undefined}
-                          className={cn("hs-overlay", animShow && "show", (card.textAnimation || o.textAnimation) && `hs-anim-${card.textAnimation || o.textAnimation}`)}
-                        />
-                      </PreviewStage>
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={addCountdownCard}
-                  className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
-                >
-                  <Plus size={14} /> Ajouter un compte à rebours
-                </button>
-
-                <button
-                  type="button"
-                  onClick={addExtraCard}
-                  className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
-                >
-                  <Plus size={14} /> Ajouter un bloc
-                </button>
-                <button
-                  type="button"
-                  onClick={addSceneCard}
-                  className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dashed border-neutral-300 px-4 py-2 text-[12.5px] font-medium text-neutral-500 hover:border-terracotta-500 hover:text-terracotta-500"
-                >
-                  <Plus size={14} /> Ajouter une scène
-                </button>
+                <HeroCardsEditor
+                  cards={o.extraCards ?? []}
+                  onChange={(cards) => update({ extraCards: cards as HeroCustomCard[] })}
+                  currentTime={currentTime}
+                  duration={duration}
+                  themeVars={themeVars}
+                  heroAnimation={o.textAnimation}
+                  animShow={animShow}
+                  sceneCtx={sceneCtx}
+                />
               </div>
             </Panel>
           )}
@@ -1673,53 +1238,4 @@ function ModeleStdDetailForm({
   );
 }
 
-/** Petite vignette 9:16 sombre, contexte de container-query (cqw) pour que le vrai composant HeroScrub s'y affiche à l'identique de la page publique. */
-function PreviewStage({ themeVars, children }: { themeVars: CSSProperties; children: React.ReactNode }) {
-  return (
-    <div
-      className="relative mx-auto w-full max-w-[200px] overflow-hidden rounded-lg ring-1 ring-inset ring-neutral-200"
-      style={{ background: "var(--hs-frame-bg, #1B1B1E)", aspectRatio: "9/16", containerType: "inline-size", ...themeVars } as CSSProperties}
-    >
-      {children}
-    </div>
-  );
-}
 
-function TimecodeField({
-  label,
-  value,
-  max,
-  onChange,
-  onCaler,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  onChange: (v: number) => void;
-  onCaler: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
-      {label}
-      <div className="flex items-center gap-1.5">
-        <input
-          type="number"
-          min={0}
-          max={max}
-          step={0.1}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className={cn(inputClass, "tabular")}
-        />
-        <button
-          type="button"
-          onClick={onCaler}
-          title="Reprendre l'instant actuel de la vidéo"
-          className="shrink-0 rounded-md border border-neutral-200 px-2 py-1.5 text-[10px] font-semibold text-terracotta-500 hover:bg-terracotta-500/10"
-        >
-          Caler ici
-        </button>
-      </div>
-    </div>
-  );
-}

@@ -70,6 +70,7 @@ const AdminFrequentation = lazy(() => import('@/pages/admin/Frequentation'))
 const AdminMessages = lazy(() => import('@/pages/admin/Messages'))
 const AdminParametres = lazy(() => import('@/pages/admin/Parametres'))
 const AdminModeleStdDetail = lazy(() => import('@/pages/admin/ModeleStdDetail'))
+const AdminDemoHeroDetail = lazy(() => import('@/pages/admin/DemoHeroDetail'))
 const AdminApercu1025 = lazy(() => import('@/pages/admin/Apercu1025'))
 
 /** Fallback pendant le chargement d'un chunk /espace ou /admin — même motif que le spinner de chargement de session d'AdminShell.tsx, pour qu'il n'y ait aucun flash visuel entre les deux. */
@@ -228,6 +229,7 @@ export default function App() {
           <Route path="messages" element={<AdminMessages />} />
           <Route path="parametres" element={<AdminParametres />} />
           <Route path="parametres/modeles-std/:slug" element={<AdminModeleStdDetail />} />
+          <Route path="parametres/demos/:id" element={<AdminDemoHeroDetail />} />
         </Route>
 
         {/* 404 */}

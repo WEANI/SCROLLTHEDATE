@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router'
-import { trpc } from '@/providers/trpc'
+import { getDemoHero, useDemoHero } from '@/components/demo/demoHero'
 import PayloadSection from '@/components/faire-part/PayloadSection'
 import PhotosSection from '@/components/faire-part/PhotosSection'
 import ClosingSection from '@/components/faire-part/ClosingSection'
@@ -20,12 +20,10 @@ import {
   WaxSealRsvp,
 } from '@/components/faire-part/edwigeWilfriedEffects'
 import {
-  buildHeroChapters,
   CINEMA_ROUGE_THEME,
   CLOSING_THEME,
   DRESS_CODE,
   GALLERY_PHOTOS,
-  HERO_VIDEO,
   LAO_DRESS_CODE_COLORS,
   LAO_FAQ_ITEMS,
   LAO_HISTOIRE_KEYWORDS,
@@ -67,8 +65,9 @@ function computeInitials(names: string): string {
  * échange du 13/09/2026.
  */
 export default function DemoFairePart2() {
-  const namesQ = trpc.settings.get.useQuery({ key: 'demoFairePart2' })
-  const coupleNames = (namesQ.data?.value as { coupleNames?: string } | null)?.coupleNames?.trim() || FALLBACK_NAME
+  // Vidéo + blocs : réglés dans l'admin (Paramètres → Faire-part démo), sinon ceux d'origine — cf. demoHero.ts.
+  const hero = useDemoHero(getDemoHero('demo-faire-part-2')!)
+  const coupleNames = hero.coupleNames || FALLBACK_NAME
 
   useEffect(() => {
     document.title = `${coupleNames} · Scroll The Date`
@@ -101,14 +100,18 @@ export default function DemoFairePart2() {
         </Link>
       </header>
 
+      {hero.ready ? (
       <HeroScrub
         theme={CINEMA_ROUGE_THEME}
-        chapters={buildHeroChapters(coupleNames)}
-        video={HERO_VIDEO}
-        trackHeightVh={1060}
+        chapters={hero.chapters}
+        video={hero.video}
+        trackHeightVh={hero.trackHeightVh}
         tailVh={100}
         ariaLabel={`Faire-part — ${coupleNames}`}
       />
+      ) : (
+        <div className="h-[100svh]" aria-hidden />
+      )}
 
       {/* Le corps de page recouvre le plan final au lieu de s'enchaîner en
           dessous — cf. historique git (page d'origine, Edwige & Wilfried)

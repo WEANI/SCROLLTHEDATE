@@ -697,14 +697,22 @@ function TabFairePartDemo({ push }: { push: Push }) {
           title="Demo Faire Part 1"
           hint="Charte claire · Fraunces & filet or"
           action={
-            <a
-              href="/faire-part/demo-faire-part-1"
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
-            >
-              Voir la page publique →
-            </a>
+            <div className="flex items-center gap-4">
+              <Link
+                to="/admin/parametres/demos/demo-faire-part-1"
+                className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
+              >
+                Régler la vidéo et les blocs →
+              </Link>
+              <a
+                href="/faire-part/demo-faire-part-1"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
+              >
+                Voir la page publique →
+              </a>
+            </div>
           }
         />
         <div className="p-6">
@@ -725,14 +733,22 @@ function TabFairePartDemo({ push }: { push: Push }) {
           title="Demo Faire Part 2"
           hint="Charte sombre · Ambiance cinéma"
           action={
-            <a
-              href="/faire-part/demo-faire-part-2"
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
-            >
-              Voir la page publique →
-            </a>
+            <div className="flex items-center gap-4">
+              <Link
+                to="/admin/parametres/demos/demo-faire-part-2"
+                className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
+              >
+                Régler la vidéo et les blocs →
+              </Link>
+              <a
+                href="/faire-part/demo-faire-part-2"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
+              >
+                Voir la page publique →
+              </a>
+            </div>
           }
         />
         <div className="p-6">
