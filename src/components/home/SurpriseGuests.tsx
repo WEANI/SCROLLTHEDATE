@@ -8,30 +8,31 @@ import { useLanguage } from '@/i18n/LanguageContext'
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 /**
- * « Surprenez vos invités » — version 3 (12/11/2026) : le vrai site
- * www.scrollthedate.com filmé sur un écran de téléphone (390×741), qu'on fait
- * défiler — 4 Save the Date (Parchemin Rose, Red Door, The Ring, Black & White)
- * puis la Demo Faire Part 1, enchaînés par de courts fondus. Diffusé dans un
- * téléphone épinglé, image par image au rythme du défilement (séquence 12 im/s
- * dans public/surprenez-v3-frames ; vidéo complète dans « Modèles Save the
- * Date/sources-originales/surprenez-vos-invites-v3.mp4 »).
+ * « Surprenez vos invités » (26/10/2026) — un enregistrement d'écran réel :
+ * la page d'un save the date ouverte sur un téléphone, puis la vidéo qu'on fait
+ * défiler (version 2 de l'enregistrement, sans la conversation WhatsApp). Diffusé dans un téléphone épinglé, image par image au rythme du
+ * défilement (séquence 12 im/s dans public/surprenez-v2-frames, barre d'état et
+ * fin d'enregistrement retirées ; original dans « Modèles Save the Date/
+ * sources-originales »). Version « v2b » (12/11/2026) : même enregistrement,
+ * l'ancienne adresse de la barre Safari remplacée par « scrollthedate.com » ;
+ * la vidéo v3 (montage de plusieurs modèles) a été écartée à la demande.
  *
  * Sur ordinateur : texte et 3 étapes à gauche (l'étape en cours s'allume),
  * téléphone à droite. Sur mobile : titre en haut, téléphone le plus grand
  * possible dessous — pas d'étiquettes (un téléphone trop petit dans le
  * téléphone était illisible, cf. retour du 26/10/2026 sur « Nos offres »).
  */
-const FRAMES = { baseUrl: '/surprenez-v3-frames/', count: 377 }
-const DURATION = 31.4
+const FRAMES = { baseUrl: '/surprenez-v2b-frames/', count: 347 }
+const DURATION = 28.9
 /**
- * Étapes, en secondes d'enregistrement. La vidéo commence sur la page déjà
- * ouverte : « lien reçu » est donc franchie d'emblée, la page ouverte occupe
- * la première seconde, puis le défilement.
+ * Étapes, en secondes d'enregistrement. La version 2 (26/10/2026) commence sur
+ * la page déjà ouverte : « lien reçu » est donc franchie d'emblée, la page
+ * ouverte occupe les 2 premières secondes, puis le défilement.
  */
 const STEP_WINDOWS: [number, number][] = [
   [-1, 0],
-  [0, 1],
-  [1, DURATION + 1],
+  [0, 2],
+  [2, DURATION + 1],
 ]
 
 export default function SurpriseGuests() {
