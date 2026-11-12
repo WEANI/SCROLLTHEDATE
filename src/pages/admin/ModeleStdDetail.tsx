@@ -634,7 +634,7 @@ export function StdHeroForm({
                     </select>
                   </label>
                   {o.chapter1CardFrame && (
-                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.chapter1FrameColor ?? ""} onChange={(v) => update({ chapter1FrameColor: v })} />
+                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.chapter1FrameColor ?? ""} onChange={(v) => update({ chapter1FrameColor: v })} transparentOption />
                   )}
                 </div>
 
@@ -868,7 +868,7 @@ export function StdHeroForm({
                     </select>
                   </label>
                   {o.chapter2CardFrame && (
-                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.chapter2FrameColor ?? ""} onChange={(v) => update({ chapter2FrameColor: v })} />
+                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.chapter2FrameColor ?? ""} onChange={(v) => update({ chapter2FrameColor: v })} transparentOption />
                   )}
                 </div>
 
@@ -987,7 +987,7 @@ export function StdHeroForm({
                         </select>
                       </label>
                       {o.dateBlockCardFrame && (
-                        <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.dateBlockFrameColor ?? ""} onChange={(v) => update({ dateBlockFrameColor: v })} />
+                        <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.dateBlockFrameColor ?? ""} onChange={(v) => update({ dateBlockFrameColor: v })} transparentOption />
                       )}
                     </div>
 
@@ -1181,7 +1181,7 @@ export function StdHeroForm({
                         </select>
                       </label>
                       {o.monogramCardFrame && (
-                        <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.monogramFrameColor ?? ""} onChange={(v) => update({ monogramFrameColor: v })} />
+                        <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.monogramFrameColor ?? ""} onChange={(v) => update({ monogramFrameColor: v })} transparentOption />
                       )}
                       <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                         Animation — ce bloc

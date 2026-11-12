@@ -15,6 +15,7 @@ export function ColorField({
   value,
   onChange,
   noneOption,
+  transparentOption,
 }: {
   label: string;
   hint?: string;
@@ -22,6 +23,8 @@ export function ColorField({
   onChange: (v: string) => void;
   /** Ajoute un bouton "Aucun fond" — sentinel 'none' (cf. doc de ChapterContent dans HeroScrub.tsx) : neutralise fond ET flou/bordure/ombre de la carte, pas juste un fond transparent. */
   noneOption?: boolean;
+  /** Ajoute seulement le bouton « Transparent » (ex. couleur du cadre : cadre invisible). 12/11/2026. */
+  transparentOption?: boolean;
 }) {
   const isHex = /^#[0-9a-fA-F]{6}$/.test(value);
   return (
@@ -41,7 +44,7 @@ export function ColorField({
           placeholder="Vide = défaut"
           className={cn(inputClass, "font-mono")}
         />
-        {noneOption && (
+        {(noneOption || transparentOption) && (
           <button
             type="button"
             onClick={() => onChange(value === "transparent" ? "" : "transparent")}

@@ -1022,6 +1022,7 @@ function ColorField({
   value,
   onChange,
   bgOptions,
+  transparentOption,
 }: {
   label: string;
   hint?: string;
@@ -1029,6 +1030,8 @@ function ColorField({
   onChange: (v: string) => void;
   /** Fond de carte : boutons « Transparent » (carte invisible, contour et cadre gardés) et « Aucun fond » (texte seul). 12/11/2026. */
   bgOptions?: boolean;
+  /** Ajoute seulement le bouton « Transparent » (ex. couleur du cadre : cadre invisible). 12/11/2026. */
+  transparentOption?: boolean;
 }) {
   const isHex = /^#[0-9a-fA-F]{6}$/.test(value);
   // Vide = « valeur par défaut », pas noir : la pastille native affichait du
@@ -1079,12 +1082,12 @@ function ColorField({
           </button>
         )}
       </div>
-      {bgOptions && (
+      {(bgOptions || transparentOption) && (
         <div className="flex gap-1.5">
           {[
             { v: "transparent", label: "Transparent", title: "Carte transparente, sans flou — le contour et le cadre restent visibles" },
             { v: "none", label: "Aucun fond", title: "Aucun fond, aucun flou, aucune bordure — le texte seul" },
-          ].map((o) => (
+          ].filter((o) => bgOptions || o.v === "transparent").map((o) => (
             <button
               key={o.v}
               type="button"
@@ -1420,7 +1423,7 @@ function CustomCardsEditor({
                     <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
                   </StudioField>
                   {card.cardFrame && (
-                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} transparentOption />
                   )}
                   <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateCard(card.id, { textColor: v })} />
                   <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateCard(card.id, { cardBg: v })} bgOptions />
@@ -1577,7 +1580,7 @@ function CustomCardsEditor({
                     <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
                   </StudioField>
                   {card.cardFrame && (
-                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} transparentOption />
                   )}
                 </div>
 
@@ -1634,7 +1637,7 @@ function CustomCardsEditor({
                     <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
                   </StudioField>
                   {card.cardFrame && (
-                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} transparentOption />
                   )}
                   <ColorField label="Couleur du texte" hint="Vide = couleur du thème" value={card.textColor} onChange={(v) => updateCard(card.id, { textColor: v })} />
                   <ColorField label="Fond de carte" hint="Vide = fond du thème" value={card.cardBg} onChange={(v) => updateCard(card.id, { cardBg: v })} bgOptions />
@@ -1773,7 +1776,7 @@ function CustomCardsEditor({
                     <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
                   </StudioField>
                   {card.cardFrame && (
-                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} transparentOption />
                   )}
                 </div>
                 <div className="mt-2 flex flex-col gap-1">
@@ -1837,7 +1840,7 @@ function CustomCardsEditor({
                     <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
                   </StudioField>
                   {card.cardFrame && (
-                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} transparentOption />
                   )}
                 </div>
               </div>
@@ -1871,7 +1874,7 @@ function CustomCardsEditor({
                     <StudioFrameSelect value={card.cardFrame} onChange={(v) => updateCard(card.id, { cardFrame: v })} />
                   </StudioField>
                   {card.cardFrame && (
-                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} transparentOption />
                   )}
                 </div>
                 <div className="mt-2 flex flex-wrap items-end gap-4">
@@ -3216,7 +3219,7 @@ function StdBlocksEditor({ project, draft }: { project: Project360; draft: Studi
                 <StudioFrameSelect value={palette.stdSaveTheDateCardFrame} onChange={(v) => setField("stdSaveTheDateCardFrame", v)} />
               </StudioField>
               {palette.stdSaveTheDateCardFrame && (
-                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={palette.stdSaveTheDateFrameColor} onChange={(v) => setField("stdSaveTheDateFrameColor", v)} />
+                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={palette.stdSaveTheDateFrameColor} onChange={(v) => setField("stdSaveTheDateFrameColor", v)} transparentOption />
               )}
             </div>
             <div className="mt-3 flex flex-wrap items-end gap-6">
@@ -3348,7 +3351,7 @@ function StdBlocksEditor({ project, draft }: { project: Project360; draft: Studi
                 <StudioFrameSelect value={palette.stdNamesDateCardFrame} onChange={(v) => setField("stdNamesDateCardFrame", v)} />
               </StudioField>
               {palette.stdNamesDateCardFrame && (
-                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={palette.stdNamesDateFrameColor} onChange={(v) => setField("stdNamesDateFrameColor", v)} />
+                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={palette.stdNamesDateFrameColor} onChange={(v) => setField("stdNamesDateFrameColor", v)} transparentOption />
               )}
             </div>
             <div className="mt-3 flex flex-wrap items-end gap-6">

@@ -118,7 +118,7 @@ export function HeroCardsEditor({
                 </select>
               </label>
               {card.cardFrame && (
-                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} transparentOption />
               )}
             </div>
             <div className="mt-2 flex flex-col gap-1">
@@ -207,7 +207,7 @@ export function HeroCardsEditor({
                 </select>
               </label>
               {card.cardFrame && (
-                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} transparentOption />
               )}
             </div>
             <div className="mt-2 flex flex-col gap-1">
@@ -318,7 +318,7 @@ export function HeroCardsEditor({
                 </select>
               </label>
               {card.cardFrame && (
-                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} transparentOption />
               )}
             </div>
 
