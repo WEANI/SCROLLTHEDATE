@@ -46,7 +46,6 @@ import { DateFormatGallery } from "@/components/admin/DateFormatGallery";
 import { type HeroSceneContext } from "@/components/hero-scrub/heroScenes";
 import type { HeroChapter } from "@/components/hero-scrub/types";
 import type { HeroNames } from "@/components/hero-scrub/heroDecor";
-import { type HeroCustomCard } from "@contracts/bespokePalette";
 
 type Push = (kind: "success" | "error", text: string) => void;
 
@@ -103,7 +102,19 @@ export default function ModeleStdDetail() {
   // d'un modèle à un autre sans quitter cette page.
   if (q.data === undefined) return null;
 
-  return <ModeleStdDetailForm key={template.slug} template={template} initialOverrides={parseTemplateOverrides(q.data?.value)} />;
+  const allOverrides = parseTemplateOverrides(q.data?.value);
+  return (
+    <StdHeroForm
+      key={template.slug}
+      template={template}
+      initial={{ ...defaultOverrideFor(template), ...(allOverrides[template.slug] ?? {}) }}
+      toSetting={(o) => ({ key: "saveTheDateTemplates", value: Object.values({ ...allOverrides, [template.slug]: o }) })}
+      publicHref={`/save-the-date-modeles/${template.slug}`}
+      backHref="/admin/parametres"
+      backLabel="Modèles"
+      saveLabel="Enregistrer le modèle"
+    />
+  );
 }
 
 /**
@@ -115,12 +126,39 @@ export default function ModeleStdDetail() {
  * ModeleStdDetail ci-dessus), donc `initialOverrides` est toujours la
  * bonne valeur dès le premier rendu.
  */
-function ModeleStdDetailForm({
-  template,
-  initialOverrides,
+/** Vidéo proposée dans l'onglet Général (écran des vidéos démo uniquement). */
+export interface StdHeroVideoOption {
+  id: string;
+  label: string;
+  desktopSrc: string;
+  posterSrc: string;
+  frames: { baseUrl: string; count: number; fps: number };
+}
+
+/**
+ * Écran à onglets (Général, 1er bloc, 2e bloc, 3e bloc, Logo, Blocs supp.,
+ * Décor & style) — partagé depuis le 12/11/2026 entre les Modèles Save the
+ * Date et les vidéos démo (cf. DemoStdDetail.tsx). `toSetting` dit où
+ * enregistrer ; `videoOptions` ajoute le choix de la vidéo (démos).
+ */
+export function StdHeroForm({
+  template: baseTemplate,
+  initial,
+  toSetting,
+  publicHref,
+  backHref,
+  backLabel,
+  saveLabel,
+  videoOptions,
 }: {
   template: SaveTheDateTemplate;
-  initialOverrides: Record<string, SaveTheDateTemplateOverride>;
+  initial: SaveTheDateTemplateOverride;
+  toSetting: (o: SaveTheDateTemplateOverride) => { key: string; value: unknown };
+  publicHref: string;
+  backHref: string;
+  backLabel: string;
+  saveLabel: string;
+  videoOptions?: StdHeroVideoOption[];
 }) {
   const { toasts, push } = useToasts();
   const save = useSaveSetting(push);
@@ -128,10 +166,11 @@ function ModeleStdDetailForm({
   // Jamais réassigné après le montage (les AUTRES modèles ne changent pas
   // pendant qu'on édite celui-ci) — une constante suffit, plus de setter
   // fantôme depuis la suppression de l'effet de chargement.
-  const allOverrides = initialOverrides;
-  const [o, setO] = useState<SaveTheDateTemplateOverride>(
-    () => ({ ...defaultOverrideFor(template), ...(initialOverrides[template.slug] ?? {}) }),
-  );
+  const [o, setO] = useState<SaveTheDateTemplateOverride>(() => initial);
+  const chosenVideo = videoOptions?.find((v) => v.id === o.videoId);
+  const template: SaveTheDateTemplate = chosenVideo
+    ? { ...baseTemplate, desktopSrc: chosenVideo.desktopSrc, posterSrc: chosenVideo.posterSrc, frames: chosenVideo.frames }
+    : baseTemplate;
 
   const update = (patch: Partial<SaveTheDateTemplateOverride>) =>
     setO((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -142,7 +181,7 @@ function ModeleStdDetailForm({
 
   const persist = () => {
     if (!o || !template) return;
-    save.mutate({ key: "saveTheDateTemplates", value: Object.values({ ...allOverrides, [template.slug]: o }) });
+    save.mutate(toSetting(o));
   };
 
   // ---- lecteur vidéo + timeline (pour caler les textes en les regardant) ----
@@ -354,7 +393,7 @@ function ModeleStdDetailForm({
         actions={
           <>
             <a
-              href={`/save-the-date-modeles/${template.slug}`}
+              href={publicHref}
               target="_blank"
               rel="noreferrer"
               className="text-xs font-medium text-terracotta-500 hover:text-terracotta-400"
@@ -362,10 +401,10 @@ function ModeleStdDetailForm({
               Voir la page publique →
             </a>
             <Link
-              to="/admin/parametres"
+              to={backHref}
               className="flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-ink"
             >
-              <ArrowLeft className="h-3.5 w-3.5" /> Modèles
+              <ArrowLeft className="h-3.5 w-3.5" /> {backLabel}
             </Link>
           </>
         }
@@ -466,6 +505,31 @@ function ModeleStdDetailForm({
           {/* ---- Général ---- */}
           {activeTab === "general" && (
             <Panel>
+              {videoOptions ? (
+                <>
+                  <PanelTitle
+                    title="Réglages généraux"
+                    hint="Vidéo de la démo. Si vous en changez, revérifiez les moments d'apparition des blocs : ils sont en secondes."
+                  />
+                  <div className="p-6">
+                    <label className="flex max-w-md flex-col gap-1 text-xs font-medium text-neutral-500">
+                      Vidéo
+                      <select
+                        value={chosenVideo?.id ?? ""}
+                        onChange={(e) => update({ videoId: e.target.value })}
+                        className={inputClass}
+                      >
+                        {videoOptions.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.label} — {(v.frames.count / v.frames.fps).toFixed(1)} s
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </>
+              ) : (
+              <>
               <PanelTitle title="Réglages généraux" hint="Nom, accroche et description affichés dans la bibliothèque de modèles." />
               <div className="grid gap-4 p-6 md:grid-cols-2">
                 <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
@@ -486,6 +550,8 @@ function ModeleStdDetailForm({
                   />
                 </label>
               </div>
+              </>
+              )}
             </Panel>
           )}
 
@@ -592,7 +658,13 @@ function ModeleStdDetailForm({
                 <div className="grid gap-3 md:grid-cols-4">
                   <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                     Prénoms d'exemple
-                    <input value={o.exampleNames} onChange={(e) => update({ exampleNames: e.target.value })} className={inputClass} />
+                    <input
+                      value={o.exampleNames}
+                      onChange={(e) => update({ exampleNames: e.target.value })}
+                      readOnly={!!videoOptions}
+                      title={videoOptions ? "Démo : se règle dans Paramètres → Faire-part démo" : undefined}
+                      className={cn(inputClass, videoOptions && "opacity-60")}
+                    />
                   </label>
                   <TimecodeField
                     label="Apparaît à (s)"
@@ -656,7 +728,13 @@ function ModeleStdDetailForm({
                     <div className="mt-4 flex flex-col gap-4">
                       <label className="flex max-w-[260px] flex-col gap-1 text-xs font-medium text-neutral-500">
                         Date d'exemple
-                        <input value={o.exampleDate} onChange={(e) => update({ exampleDate: e.target.value })} className={inputClass} />
+                        <input
+                      value={o.exampleDate}
+                      onChange={(e) => update({ exampleDate: e.target.value })}
+                      readOnly={!!videoOptions}
+                      title={videoOptions ? "Démo : se règle dans Paramètres → Faire-part démo" : undefined}
+                      className={cn(inputClass, videoOptions && "opacity-60")}
+                    />
                         <span className="font-normal text-neutral-400">Pour la page d'aperçu du modèle seulement.</span>
                       </label>
                       <div>
@@ -1133,7 +1211,7 @@ function ModeleStdDetailForm({
               <div className="flex flex-col gap-3 p-6">
                 <HeroCardsEditor
                   cards={o.extraCards ?? []}
-                  onChange={(cards) => update({ extraCards: cards as HeroCustomCard[] })}
+                  onChange={(cards) => update({ extraCards: cards })}
                   currentTime={currentTime}
                   duration={duration}
                   themeVars={themeVars}
@@ -1228,7 +1306,7 @@ function ModeleStdDetailForm({
 
           <AdminButton className="self-start" disabled={save.isPending} onClick={persist}>
             {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
-            Enregistrer le modèle
+            {saveLabel}
           </AdminButton>
         </div>
       </div>

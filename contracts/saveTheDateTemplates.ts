@@ -240,6 +240,8 @@ export interface SaveTheDateTemplate {
  */
 export interface SaveTheDateTemplateOverride {
   slug: string
+  /** Vidéos démo uniquement (écran « Faire-part démo », 12/11/2026) : vidéo choisie. Ignoré pour un modèle Save the Date. */
+  videoId?: string
   name: string
   tagline: string
   description: string

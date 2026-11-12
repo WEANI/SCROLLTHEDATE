@@ -101,6 +101,10 @@ export default function DemoFairePart1() {
         chapters={hero.chapters}
         video={hero.video}
         trackHeightVh={hero.trackHeightVh}
+        overlayGraphic={hero.overlayGraphic}
+        fontFamily={hero.fontFamily}
+        textAnimation={hero.textAnimation}
+        filter={hero.filter}
         tailVh={100}
         ariaLabel={`Faire-part — ${coupleNames}`}
       />
