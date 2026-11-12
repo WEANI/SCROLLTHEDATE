@@ -50,7 +50,14 @@ export function serveStaticFiles(app: App) {
    * Les robots qui fabriquent les aperçus de lien envoient `Accept: *\/*`
    * (ou rien) : ils recevaient une 404 en JSON au lieu de la page.
    */
+  // Adresse officielle du site (APP_URL, ex. https://www.scrollthedate.com) pour
+  // l'adresse canonique, le plan du site et les aperçus de partage — quel que
+  // soit le domaine par lequel la page est appelée (12/11/2026 : l'ancienne
+  // adresse ….up.railway.app se déclarait sinon elle-même officielle, ce qui
+  // dédouble le site aux yeux de Google). Repli : le domaine de la requête.
   const originOf = (c: { req: { header: (n: string) => string | undefined } }) => {
+    const official = (process.env.APP_URL ?? "").trim().replace(/\/+$/, "");
+    if (official) return official;
     const proto = (c.req.header("x-forwarded-proto") ?? "https").split(",")[0].trim();
     return `${proto}://${c.req.header("x-forwarded-host") ?? c.req.header("host") ?? ""}`;
   };
@@ -63,9 +70,7 @@ export function serveStaticFiles(app: App) {
   app.get("*", async (c, next) => {
     if (!isPage(c.req.path)) return next();
     baseHtml ??= fs.readFileSync(path.resolve(distPath, "index.html"), "utf-8");
-    const proto = (c.req.header("x-forwarded-proto") ?? "https").split(",")[0].trim();
-    const host = c.req.header("x-forwarded-host") ?? c.req.header("host") ?? "";
-    const page = await buildPageHtml(baseHtml, c.req.path, `${proto}://${host}`);
+    const page = await buildPageHtml(baseHtml, c.req.path, originOf(c));
     return c.html(page.html, page.status);
   });
 
