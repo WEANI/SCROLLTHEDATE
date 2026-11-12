@@ -80,6 +80,8 @@ export interface TemplateHeroChapter {
   accentColorOverride?: string
   /** cf. doc de HeroChapter.cardFrame (src/components/hero-scrub/types.ts) — ajouté le 21/09/2026. */
   cardFrame?: string
+  /** Couleur du cadre décoratif (Halo, liserés…) — vide = couleur d'accent. Ajouté le 12/11/2026. */
+  frameColorOverride?: string
   /** cf. doc de HeroChapter.fontId/textAnimation/bold (src/components/hero-scrub/types.ts) — ajoutés le 21/09/2026 (2e vague). */
   fontId?: string
   textAnimation?: string
@@ -257,6 +259,11 @@ export interface SaveTheDateTemplateOverride {
   chapter1TitleSize: string
   /** cf. doc de TemplateHeroChapter.cardFrame — vide = aucun cadre. Ajouté le 21/09/2026. */
   chapter1CardFrame: string
+  /** Couleur du cadre — vide = couleur d'accent. Ajouté le 12/11/2026 (idem chapter2/dateBlock/monogram). */
+  chapter1FrameColor?: string
+  chapter2FrameColor?: string
+  dateBlockFrameColor?: string
+  monogramFrameColor?: string
   /** cf. doc de TemplateHeroChapter.fontId/textAnimation/bold — vide/false = réglage hero-wide (fontId/textAnimation ci-dessous). Ajoutés le 21/09/2026 (2e vague). */
   chapter1FontId: string
   chapter1TextAnimation: string
@@ -791,6 +798,7 @@ function extraCardsToChapters(cards: HeroCustomCard[], duration: number, names: 
     textColorOverride: card.textColor || undefined,
     titleSize: (card.titleSize || undefined) as TemplateHeroChapter['titleSize'],
     cardFrame: card.cardFrame || undefined,
+    frameColorOverride: card.cardFrameColor || undefined,
     cardBgOverride: card.cardBg || undefined,
   }))
 }
@@ -903,6 +911,7 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         textColorOverride: override.chapter1TextColor || undefined,
         cardBgOverride: override.chapter1CardBg || undefined,
         cardFrame: override.chapter1CardFrame || undefined,
+        frameColorOverride: override.chapter1FrameColor || undefined,
         fontId: override.chapter1FontId || undefined,
         textAnimation: override.chapter1TextAnimation || undefined,
         bold: override.chapter1Bold,
@@ -925,6 +934,7 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
         cardBgOverride: override.chapter2CardBg || undefined,
         accentColorOverride: override.chapter2AccentColor || undefined,
         cardFrame: override.chapter2CardFrame || undefined,
+        frameColorOverride: override.chapter2FrameColor || undefined,
         fontId: override.chapter2FontId || undefined,
         textAnimation: override.chapter2TextAnimation || undefined,
         bold: override.chapter2Bold,
@@ -951,6 +961,7 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
               textColorOverride: override.dateBlockTextColor || undefined,
               cardBgOverride: override.dateBlockCardBg || undefined,
               cardFrame: override.dateBlockCardFrame || undefined,
+              frameColorOverride: override.dateBlockFrameColor || undefined,
               fontId: override.dateBlockFontId || undefined,
               textAnimation: override.dateBlockTextAnimation || undefined,
               bold: override.dateBlockBold,
@@ -973,6 +984,7 @@ export function applyOverride(template: SaveTheDateTemplate, override: SaveTheDa
                 textColorOverride: override.monogramColor || undefined,
                 cardBgOverride: override.monogramCardBg || undefined,
                 cardFrame: override.monogramCardFrame || undefined,
+                frameColorOverride: override.monogramFrameColor || undefined,
                 fontId: override.monogramFontId || undefined,
                 textAnimation: override.monogramTextAnimation || undefined,
                 monogram: {
@@ -1057,10 +1069,12 @@ export function buildFulfillmentData(
       stdSaveTheDateCardBg: o.chapter1CardBg || '',
       stdSaveTheDateTitleSize: o.chapter1TitleSize || '',
       stdSaveTheDateCardFrame: o.chapter1CardFrame || '',
+      stdSaveTheDateFrameColor: o.chapter1FrameColor || '',
       stdNamesDateTextColor: o.chapter2TextColor || '',
       stdNamesDateCardBg: o.chapter2CardBg || '',
       stdNamesDateAccentColor: o.chapter2AccentColor || '',
       stdNamesDateCardFrame: o.chapter2CardFrame || '',
+      stdNamesDateFrameColor: o.chapter2FrameColor || '',
       stdSaveTheDateFontId: o.chapter1FontId || '',
       stdSaveTheDateTextAnimation: o.chapter1TextAnimation || '',
       stdSaveTheDateBold: o.chapter1Bold,
@@ -1103,6 +1117,7 @@ export function buildFulfillmentData(
               bold: o.dateBlockBold,
               titleSize: o.dateBlockTitleSize || '',
               cardFrame: o.dateBlockCardFrame || '',
+              cardFrameColor: o.dateBlockFrameColor || '',
               cardBg: o.dateBlockCardBg || '',
             },
           ]
@@ -1119,6 +1134,7 @@ export function buildFulfillmentData(
               textAnimation: o.monogramTextAnimation || '',
               titleSize: o.monogramSize || '',
               cardFrame: o.monogramCardFrame || '',
+              cardFrameColor: o.monogramFrameColor || '',
               cardBg: o.monogramCardBg || '',
               monogramLayout: o.monogramLayout || 'circle',
               monogramAccent: o.monogramAccent || '',

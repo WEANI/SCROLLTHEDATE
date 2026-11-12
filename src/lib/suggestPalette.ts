@@ -149,6 +149,8 @@ export function suggestPaletteFromColors(
     stdNamesDateAccentColor: "",
     stdSaveTheDateCardFrame: "",
     stdNamesDateCardFrame: "",
+    stdSaveTheDateFrameColor: "",
+    stdNamesDateFrameColor: "",
     stdSaveTheDateFontId: "",
     stdSaveTheDateTextAnimation: "",
     stdSaveTheDateBold: false,

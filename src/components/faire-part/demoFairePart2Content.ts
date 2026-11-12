@@ -231,6 +231,8 @@ export const LAO_PALETTE: BespokePalette = {
   stdNamesDateAccentColor: '',
   stdSaveTheDateCardFrame: '',
   stdNamesDateCardFrame: '',
+  stdSaveTheDateFrameColor: '',
+  stdNamesDateFrameColor: '',
   stdSaveTheDateFontId: '',
   stdSaveTheDateTextAnimation: '',
   stdSaveTheDateBold: false,

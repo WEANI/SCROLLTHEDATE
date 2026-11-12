@@ -279,6 +279,8 @@ export const CA_PALETTE: BespokePalette = {
   stdNamesDateAccentColor: '',
   stdSaveTheDateCardFrame: '',
   stdNamesDateCardFrame: '',
+  stdSaveTheDateFrameColor: '',
+  stdNamesDateFrameColor: '',
   stdSaveTheDateFontId: '',
   stdSaveTheDateTextAnimation: '',
   stdSaveTheDateBold: false,

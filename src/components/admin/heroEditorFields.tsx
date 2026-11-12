@@ -44,6 +44,21 @@ export function ColorField({
         {noneOption && (
           <button
             type="button"
+            onClick={() => onChange(value === "transparent" ? "" : "transparent")}
+            title="Carte transparente, sans flou — le contour et le cadre restent visibles"
+            className={cn(
+              "shrink-0 rounded-md border px-2 py-1.5 text-[10px] font-semibold whitespace-nowrap",
+              value === "transparent"
+                ? "border-terracotta-500 bg-terracotta-500/10 text-terracotta-500"
+                : "border-neutral-200 text-neutral-500 hover:bg-neutral-100",
+            )}
+          >
+            Transparent
+          </button>
+        )}
+        {noneOption && (
+          <button
+            type="button"
             onClick={() => onChange(value === "none" ? "" : "none")}
             title="Aucun fond, aucun flou, aucune bordure — le texte seul"
             className={cn(

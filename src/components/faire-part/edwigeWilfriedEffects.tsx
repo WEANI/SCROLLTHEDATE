@@ -142,6 +142,9 @@ export type BespokePalette = {
   /** Cadre décoratif propre à ce bloc — vide = aucun cadre. Ajouté le 21/09/2026. */
   stdSaveTheDateCardFrame: string
   stdNamesDateCardFrame: string
+  /** Couleur du cadre des 2 blocs — vide = couleur d'accent (12/11/2026). */
+  stdSaveTheDateFrameColor: string
+  stdNamesDateFrameColor: string
   /** Police/animation/gras propres à ce bloc — vide/false = réglage hero-wide. Ajoutés le 21/09/2026 (2e vague). */
   stdSaveTheDateFontId: string
   stdSaveTheDateTextAnimation: string
@@ -234,6 +237,8 @@ export const EW_PALETTE: BespokePalette = {
   stdNamesDateAccentColor: '',
   stdSaveTheDateCardFrame: '',
   stdNamesDateCardFrame: '',
+  stdSaveTheDateFrameColor: '',
+  stdNamesDateFrameColor: '',
   stdSaveTheDateFontId: '',
   stdSaveTheDateTextAnimation: '',
   stdSaveTheDateBold: false,

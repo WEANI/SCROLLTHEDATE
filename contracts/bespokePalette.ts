@@ -127,6 +127,9 @@ export const bespokePaletteSchema = z.object({
   // habille un bloc précis, pas toute la scène comme heroOverlayGraphic).
   stdSaveTheDateCardFrame: z.string().default(""),
   stdNamesDateCardFrame: z.string().default(""),
+  // Couleur du cadre de ces 2 blocs — vide = couleur d'accent (12/11/2026).
+  stdSaveTheDateFrameColor: z.string().default(""),
+  stdNamesDateFrameColor: z.string().default(""),
   // Police / animation / gras propres à CE bloc — prévalent sur
   // heroFontId/heroTextAnimation (hero-wide, plus bas) pour ce bloc
   // seulement, même raisonnement par-bloc que cardFrame ci-dessus. Vide/
@@ -313,6 +316,8 @@ export const heroCustomCardSchema = z.object({
   // pouvoir tout gérer comme pour les autres blocs".
   titleSize: z.string().default(""),
   cardFrame: z.string().default(""),
+  // Couleur du cadre — vide = couleur d'accent (12/11/2026).
+  cardFrameColor: z.string().default(""),
   cardBg: z.string().default(""),
   // Style du compte à rebours (kind "countdown", cf. HERO_COUNTDOWN_STYLES,
   // heroDecor.ts) — vide = 'boxes'. Ignoré pour les autres kinds. Ajouté le
@@ -399,6 +404,7 @@ export function blankHeroCustomCard(id: string, kind: HeroCustomCard["kind"], te
     bold: false,
     titleSize: "",
     cardFrame: "",
+    cardFrameColor: "",
     cardBg: "",
     countdownStyle: kind === "countdown" ? "boxes" : "",
     monogramLayout: kind === "monogram" ? "circle" : "",

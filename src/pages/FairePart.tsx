@@ -467,6 +467,7 @@ export default function FairePart() {
             cardBgOverride: palette.stdSaveTheDateCardBg || 'transparent',
             // Cadre décoratif propre à ce bloc — vide = aucun cadre (comportement historique), cf. échange du 21/09/2026.
             cardFrame: palette.stdSaveTheDateCardFrame || undefined,
+            frameColorOverride: palette.stdSaveTheDateFrameColor || undefined,
             fontId: palette.stdSaveTheDateFontId || undefined,
             textAnimation: palette.stdSaveTheDateTextAnimation || undefined,
             bold: palette.stdSaveTheDateBold,
@@ -491,6 +492,7 @@ export default function FairePart() {
             // (comportement historique), cf. échange du 21/09/2026.
             accentColorOverride: palette.stdNamesDateAccentColor || undefined,
             cardFrame: palette.stdNamesDateCardFrame || undefined,
+            frameColorOverride: palette.stdNamesDateFrameColor || undefined,
             fontId: palette.stdNamesDateFontId || undefined,
             textAnimation: palette.stdNamesDateTextAnimation || undefined,
             bold: palette.stdNamesDateBold,
@@ -517,6 +519,7 @@ export default function FairePart() {
             cardBgOverride: palette.stdSaveTheDateCardBg || 'transparent',
             // Cadre décoratif propre à ce bloc — vide = aucun cadre (comportement historique), cf. échange du 21/09/2026.
             cardFrame: palette.stdSaveTheDateCardFrame || undefined,
+            frameColorOverride: palette.stdSaveTheDateFrameColor || undefined,
             fontId: palette.stdSaveTheDateFontId || undefined,
             textAnimation: palette.stdSaveTheDateTextAnimation || undefined,
             bold: palette.stdSaveTheDateBold,
@@ -540,6 +543,7 @@ export default function FairePart() {
             // (comportement historique), cf. échange du 21/09/2026.
             accentColorOverride: palette.stdNamesDateAccentColor || undefined,
             cardFrame: palette.stdNamesDateCardFrame || undefined,
+            frameColorOverride: palette.stdNamesDateFrameColor || undefined,
             fontId: palette.stdNamesDateFontId || undefined,
             textAnimation: palette.stdNamesDateTextAnimation || undefined,
             bold: palette.stdNamesDateBold,
@@ -638,6 +642,7 @@ export default function FairePart() {
               textColorOverride: card.textColor || undefined,
               cardBgOverride: card.cardBg || undefined,
               cardFrame: card.cardFrame || undefined,
+              frameColorOverride: card.cardFrameColor || undefined,
               fontId: card.fontId || undefined,
               textAnimation: card.textAnimation || undefined,
               // Scène narrative (bibliothèque HERO_SCENES) : prénoms,
@@ -673,6 +678,7 @@ export default function FairePart() {
               textColorOverride: card.textColor || undefined,
               cardBgOverride: card.cardBg || undefined,
               cardFrame: card.cardFrame || undefined,
+              frameColorOverride: card.cardFrameColor || undefined,
               fontId: card.fontId || undefined,
               textAnimation: card.textAnimation || undefined,
               programme: {
@@ -695,6 +701,7 @@ export default function FairePart() {
                 textColorOverride: card.textColor || undefined,
                 cardBgOverride: card.cardBg || undefined,
                 cardFrame: card.cardFrame || undefined,
+                frameColorOverride: card.cardFrameColor || undefined,
                 fontId: card.fontId || undefined,
                 textAnimation: card.textAnimation || undefined,
                 monogram: {
@@ -723,6 +730,7 @@ export default function FairePart() {
               textColorOverride: card.textColor || undefined,
               cardBgOverride: card.cardBg || undefined,
               cardFrame: card.cardFrame || undefined,
+              frameColorOverride: card.cardFrameColor || undefined,
               textAnimation: card.textAnimation || undefined,
             }
           : card.kind === 'date'
@@ -738,6 +746,7 @@ export default function FairePart() {
               textColorOverride: card.textColor || undefined,
               cardBgOverride: card.cardBg || undefined,
               cardFrame: card.cardFrame || undefined,
+              frameColorOverride: card.cardFrameColor || undefined,
               fontId: card.fontId || undefined,
               textAnimation: card.textAnimation || undefined,
               bold: card.bold,
@@ -758,6 +767,7 @@ export default function FairePart() {
               textColorOverride: card.textColor || undefined,
               titleSize: (card.titleSize || undefined) as HeroChapter['titleSize'],
               cardFrame: card.cardFrame || undefined,
+              frameColorOverride: card.cardFrameColor || undefined,
               cardBgOverride: card.cardBg || undefined,
               fontId: card.fontId || undefined,
               textAnimation: card.textAnimation || undefined,

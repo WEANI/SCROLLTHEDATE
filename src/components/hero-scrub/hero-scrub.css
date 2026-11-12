@@ -1489,7 +1489,8 @@
  * animations ci-dessus. Par chapitre (classe posée directement sur
  * `.hs-card` via `chapter.cardFrame`, cf. ChapterContent dans
  * HeroScrub.tsx) — contrairement aux animations/filtres ci-dessus qui sont
- * hero-wide. Couleur d'accent = `--hs-chapter-accent` (repli `--hs-accent`),
+ * hero-wide. Couleur = `--hs-frame-color` (« Couleur du cadre », 12/11/2026),
+ * repli `--hs-chapter-accent` puis `--hs-accent`,
  * jamais une couleur figée, cf. les décors HERO_OVERLAY_GRAPHICS.
  */
 .hs-card.hs-frame-double-rule {
@@ -1499,7 +1500,7 @@
   content: '';
   position: absolute;
   inset: 6px;
-  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  border: 1px solid var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   opacity: 0.55;
   border-radius: 14px;
   pointer-events: none;
@@ -1512,7 +1513,7 @@
   position: absolute;
   width: 22px;
   height: 22px;
-  border: 1.5px solid var(--hs-chapter-accent, var(--hs-accent));
+  border: 1.5px solid var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   opacity: 0.85;
   pointer-events: none;
 }
@@ -1520,7 +1521,7 @@
   content: '❀';
   position: absolute;
   font-size: 11px;
-  color: var(--hs-chapter-accent, var(--hs-accent));
+  color: var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
 }
 .hs-card.hs-frame-floral-corners .hs-frame-corner-1 {
   top: 10px;
@@ -1572,7 +1573,7 @@
   top: -14px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--hs-chapter-accent, var(--hs-accent));
+  background: var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   color: #fff;
   font-size: 10px;
   font-weight: 600;
@@ -1595,7 +1596,7 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--hs-chapter-accent, var(--hs-accent)) 60%, #fff), var(--hs-chapter-accent, var(--hs-accent)) 75%);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent))) 60%, #fff), var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent))) 75%);
   box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
@@ -1621,7 +1622,7 @@
   width: 22px;
   height: 44px;
   opacity: 0.85;
-  color: var(--hs-chapter-accent, var(--hs-accent));
+  color: var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   pointer-events: none;
 }
 .hs-card.hs-frame-laurel .hs-frame-laurel-svg:first-of-type {
@@ -1633,8 +1634,8 @@
 }
 
 .hs-card.hs-frame-art-deco {
-  border-top: 2px solid var(--hs-chapter-accent, var(--hs-accent));
-  border-bottom: 2px solid var(--hs-chapter-accent, var(--hs-accent));
+  border-top: 2px solid var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
+  border-bottom: 2px solid var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   position: relative;
 }
 .hs-card.hs-frame-art-deco::before,
@@ -1645,7 +1646,7 @@
   transform: translateX(-50%) rotate(45deg);
   width: 6px;
   height: 6px;
-  background: var(--hs-chapter-accent, var(--hs-accent));
+  background: var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
 }
 .hs-card.hs-frame-art-deco::before {
   top: -4px;
@@ -1665,7 +1666,7 @@
   transform: translateX(-50%);
   width: 100px;
   height: 20px;
-  color: var(--hs-chapter-accent, var(--hs-accent));
+  color: var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
 }
 
 .hs-card.hs-frame-lace {
@@ -1684,7 +1685,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--hs-chapter-accent, var(--hs-accent));
+  background: var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   opacity: 0.7;
 }
 .hs-card.hs-frame-lace .hs-frame-lace-row.hs-frame-lace-top {
@@ -1717,12 +1718,12 @@
   position: absolute;
   inset: 0;
   transform: translate(7px, 7px);
-  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  border: 1px solid var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   pointer-events: none;
 }
 
 .hs-card.hs-frame-dashed-march {
-  border: 1.5px dashed var(--hs-chapter-accent, var(--hs-accent));
+  border: 1.5px dashed var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   animation: hs-frame-march 12s linear infinite;
 }
 @keyframes hs-frame-march {
@@ -1738,7 +1739,7 @@
   border: 2px solid transparent;
   background:
     linear-gradient(var(--hs-card-bg), var(--hs-card-bg)) padding-box,
-    linear-gradient(120deg, var(--hs-chapter-accent, var(--hs-accent)), var(--hs-text-primary), var(--hs-chapter-accent, var(--hs-accent))) border-box;
+    linear-gradient(120deg, var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent))), var(--hs-text-primary), var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)))) border-box;
   background-size:
     100% 100%,
     300% 300%;
@@ -1775,7 +1776,7 @@
   left: 0;
   width: 0;
   height: 1.5px;
-  background: var(--hs-chapter-accent, var(--hs-accent));
+  background: var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   transition: width 0.6s ease 0.3s;
 }
 .hs-card.hs-frame-draw-in::before {
@@ -1802,7 +1803,7 @@
   top: 0;
   width: 1.5px;
   height: 0;
-  background: var(--hs-chapter-accent, var(--hs-accent));
+  background: var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   transition: height 0.6s ease;
 }
 .hs-card.hs-frame-draw-in .hs-frame-draw-edge::before {
@@ -1818,23 +1819,23 @@
 
 .hs-card.hs-frame-notch {
   clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
-  outline: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  outline: 1px solid var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   outline-offset: -1px;
 }
 
 /* Halo qui pulse en continu tant que le bloc est actif — distinct de
    l'animation de TEXTE "glow" (text-shadow) : ici, tout le cadre respire. */
 .hs-overlay.show .hs-card.hs-frame-pulse-glow {
-  border: 1px solid var(--hs-chapter-accent, var(--hs-accent));
+  border: 1px solid var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   animation: hs-frame-pulseglow 2.4s ease-in-out infinite;
 }
 @keyframes hs-frame-pulseglow {
   0%,
   100% {
-    box-shadow: 0 0 6px 0 var(--hs-chapter-accent, var(--hs-accent));
+    box-shadow: 0 0 6px 0 var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   }
   50% {
-    box-shadow: 0 0 26px 4px var(--hs-chapter-accent, var(--hs-accent));
+    box-shadow: 0 0 26px 4px var(--hs-frame-color, var(--hs-chapter-accent, var(--hs-accent)));
   }
 }
 

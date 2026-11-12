@@ -912,10 +912,21 @@ export function ChapterContent({
           // le 28/09/2026 sur le monogramme Red Door (miroir/porte rouges).
           '--hs-card-saturate': '100%',
         }
-      : chapter.cardBgOverride
-        ? { '--hs-card-bg': chapter.cardBgOverride }
-        : null),
+      : chapter.cardBgOverride === 'transparent'
+        ? {
+            // « Transparent » (12/11/2026) : carte invisible, sans flou ni
+            // ombre, mais son contour et son cadre décoratif restent — à la
+            // différence de « Aucun fond », qui retire aussi le contour.
+            '--hs-card-bg': 'transparent',
+            '--hs-card-shadow': 'none',
+            '--hs-card-blur': '0px',
+            '--hs-card-saturate': '100%',
+          }
+        : chapter.cardBgOverride
+          ? { '--hs-card-bg': chapter.cardBgOverride }
+          : null),
     ...(chapter.accentColorOverride ? { '--hs-chapter-accent': chapter.accentColorOverride } : null),
+    ...(chapter.frameColorOverride ? { '--hs-frame-color': chapter.frameColorOverride } : null),
     // Police propre à CE chapitre — prévaut sur `--hs-font-family` posée
     // hero-wide dans `themeVars` (cascade normale). `getHeroFont` renvoie
     // `null` pour un id vide/inconnu, auquel cas ce spread n'ajoute rien

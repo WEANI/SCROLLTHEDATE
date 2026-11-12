@@ -280,6 +280,7 @@ export function StdHeroForm({
     segments: [{ text: "Save the date" }],
     titleSize: (o.chapter1TitleSize || "sm") as HeroChapter["titleSize"],
     cardFrame: o.chapter1CardFrame || undefined,
+    frameColorOverride: o.chapter1FrameColor || undefined,
     cardBgOverride: o.chapter1CardBg || undefined,
     fontId: o.chapter1FontId || undefined,
     textAnimation: o.chapter1TextAnimation || undefined,
@@ -327,6 +328,7 @@ export function StdHeroForm({
     titleSize: (o.chapter2TitleSize || "sm") as HeroChapter["titleSize"],
     fitOneLine: true,
     cardFrame: o.chapter2CardFrame || undefined,
+    frameColorOverride: o.chapter2FrameColor || undefined,
     cardBgOverride: o.chapter2CardBg || undefined,
     fontId: o.chapter2FontId || undefined,
     textAnimation: o.chapter2TextAnimation || undefined,
@@ -346,6 +348,7 @@ export function StdHeroForm({
     titleSize: (o.dateBlockTitleSize || "sm") as HeroChapter["titleSize"],
     textColorOverride: o.dateBlockTextColor || undefined,
     cardFrame: o.dateBlockCardFrame || undefined,
+    frameColorOverride: o.dateBlockFrameColor || undefined,
     cardBgOverride: o.dateBlockCardBg || undefined,
     fontId: o.dateBlockFontId || undefined,
     textAnimation: o.dateBlockTextAnimation || undefined,
@@ -630,6 +633,9 @@ export function StdHeroForm({
                       ))}
                     </select>
                   </label>
+                  {o.chapter1CardFrame && (
+                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.chapter1FrameColor ?? ""} onChange={(v) => update({ chapter1FrameColor: v })} />
+                  )}
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
@@ -861,6 +867,9 @@ export function StdHeroForm({
                       ))}
                     </select>
                   </label>
+                  {o.chapter2CardFrame && (
+                    <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.chapter2FrameColor ?? ""} onChange={(v) => update({ chapter2FrameColor: v })} />
+                  )}
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
@@ -977,6 +986,9 @@ export function StdHeroForm({
                           ))}
                         </select>
                       </label>
+                      {o.dateBlockCardFrame && (
+                        <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.dateBlockFrameColor ?? ""} onChange={(v) => update({ dateBlockFrameColor: v })} />
+                      )}
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
@@ -1168,6 +1180,9 @@ export function StdHeroForm({
                           ))}
                         </select>
                       </label>
+                      {o.monogramCardFrame && (
+                        <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={o.monogramFrameColor ?? ""} onChange={(v) => update({ monogramFrameColor: v })} />
+                      )}
                       <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
                         Animation — ce bloc
                         <AnimSelect value={o.monogramTextAnimation} onChange={(v) => update({ monogramTextAnimation: v })} defaultLabel="Animation du hero" />
@@ -1187,6 +1202,7 @@ export function StdHeroForm({
                             textColorOverride: o.monogramColor || undefined,
                             cardBgOverride: o.monogramCardBg || undefined,
                             cardFrame: o.monogramCardFrame || undefined,
+                            frameColorOverride: o.monogramFrameColor || undefined,
                             fontId: o.monogramFontId || undefined,
                             monogram: monoData,
                           }}

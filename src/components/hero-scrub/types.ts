@@ -68,6 +68,8 @@ export interface HeroChapter {
    * habille un bloc précis, pas toute la scène — cf. échange du 21/09/2026.
    */
   cardFrame?: string
+  /** Couleur du cadre décoratif (Halo, liserés…) — vide = couleur d'accent. Ajouté le 12/11/2026. */
+  frameColorOverride?: string
   /**
    * Police / animation d'apparition PROPRES à CE chapitre — prévalent sur
    * les props `fontId`/`textAnimation` hero-wide de `HeroScrub` (cf. leur

@@ -117,6 +117,9 @@ export function HeroCardsEditor({
                   ))}
                 </select>
               </label>
+              {card.cardFrame && (
+                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+              )}
             </div>
             <div className="mt-2 flex flex-col gap-1">
               <span className="text-xs font-medium text-neutral-500">Aperçu</span>
@@ -130,6 +133,7 @@ export function HeroCardsEditor({
                     textColorOverride: card.textColor || undefined,
                     cardBgOverride: card.cardBg || undefined,
                     cardFrame: card.cardFrame || undefined,
+                    frameColorOverride: card.cardFrameColor || undefined,
                     fontId: card.fontId || undefined,
                     scene: heroSceneFromCard(card, sceneCtx),
                   }}
@@ -202,6 +206,9 @@ export function HeroCardsEditor({
                   ))}
                 </select>
               </label>
+              {card.cardFrame && (
+                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+              )}
             </div>
             <div className="mt-2 flex flex-col gap-1">
               <span className="text-xs font-medium text-neutral-500">Aperçu (décompte fictif de 100 jours)</span>
@@ -216,6 +223,7 @@ export function HeroCardsEditor({
                     textColorOverride: card.textColor || undefined,
                     cardBgOverride: card.cardBg || undefined,
                     cardFrame: card.cardFrame || undefined,
+                    frameColorOverride: card.cardFrameColor || undefined,
                   }}
                   textAnimation={card.textAnimation || heroAnimation || undefined}
                   className={cn("hs-overlay", animShow && "show", (card.textAnimation || heroAnimation) && `hs-anim-${card.textAnimation || heroAnimation}`)}
@@ -309,6 +317,9 @@ export function HeroCardsEditor({
                   ))}
                 </select>
               </label>
+              {card.cardFrame && (
+                <ColorField label="Couleur du cadre" hint="Vide = couleur d'accent" value={card.cardFrameColor} onChange={(v) => updateCard(card.id, { cardFrameColor: v })} />
+              )}
             </div>
 
             <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
@@ -329,6 +340,7 @@ export function HeroCardsEditor({
                     textColorOverride: card.textColor || undefined,
                     cardBgOverride: card.cardBg || undefined,
                     cardFrame: card.cardFrame || undefined,
+                    frameColorOverride: card.cardFrameColor || undefined,
                     fontId: card.fontId || undefined,
                     bold: card.bold,
                   }}
