@@ -131,10 +131,12 @@ export const ordersRouter = createRouter({
           });
         }
         const existing = await findUserByEmail(email);
-        if (existing?.authUserId) {
+        if (existing?.authUserId || existing?.role === "admin") {
           // Un vrai compte existe déjà pour cette adresse : laisser commander
           // en invité reviendrait à offrir l'accès à l'espace d'autrui à
-          // quiconque connaît son email.
+          // quiconque connaît son email. Même refus pour une ligne admin
+          // sans compte (ex. admin fictif du seed de démo) : le webhook la
+          // rattacherait au nouveau compte, qui deviendrait administrateur.
           throw new TRPCError({
             code: "CONFLICT",
             message:

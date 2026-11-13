@@ -24,9 +24,16 @@ const STORAGE_KEY = 'stdLang'
  * service tiers, détecte la vraie préférence de la personne plutôt que son
  * pays). Repli `'en'` si aucune langue du navigateur ne commence par `fr`,
  * sinon `'fr'`.
+ *
+ * Exception : les robots d'indexation (Googlebot & co.) annoncent un
+ * navigateur anglais — sans ce cas, le site était indexé en anglais. Ils
+ * reçoivent toujours le français, langue de référence du site.
  */
+const CRAWLER_UA = /bot|crawler|spider|slurp|facebookexternalhit|lighthouse|headless/i
+
 function detectBrowserLang(): Lang {
   if (typeof navigator === 'undefined') return 'fr'
+  if (CRAWLER_UA.test(navigator.userAgent)) return 'fr'
   const langs = navigator.languages && navigator.languages.length > 0 ? navigator.languages : [navigator.language]
   return langs.some((l) => l?.toLowerCase().startsWith('fr')) ? 'fr' : 'en'
 }

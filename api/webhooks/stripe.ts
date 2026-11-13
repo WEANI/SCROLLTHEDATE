@@ -48,6 +48,14 @@ const PRODUCT_LABEL: Record<string, string> = {
  * Idempotent : Stripe peut renvoyer le même événement plusieurs fois (retry
  * réseau, etc.) — `order.paymentStatus === "paid"` déjà vrai fait sortir
  * sans rien rejouer (email, audit) une seconde fois.
+ *
+ * Reprise sur erreur : la commande ne passe "paid" qu'en TOUT DERNIER, une
+ * fois les projets livrés et l'email envoyé. Si une étape lève une exception,
+ * le webhook répond 500 (cf. app.onError), Stripe rejoue l'événement, et la
+ * commande encore "pending" est retraitée — les projets déjà livrés
+ * (statut DELIVERED) sont sautés. Avant, "paid" était posé d'abord : une
+ * erreur pendant la livraison laissait un client payé sans rien recevoir,
+ * et le rejeu de Stripe s'arrêtait net sur "déjà payée".
  */
 export async function handleStripeWebhook(c: Context): Promise<Response> {
   if (!isStripeConfigured() || !stripe || !env.stripeWebhookSecret) {
@@ -83,8 +91,6 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
       }
       if (order.paymentStatus === "paid") break; // déjà traitée — idempotence
 
-      await updateOrderPaymentStatus(order.id, "paid");
-
       const user = await findUserById(order.userId);
       // Checkout invité : le compte n'est créé qu'ici, une fois le paiement
       // réellement encaissé. `setPasswordUrl` est null pour un client déjà
@@ -116,7 +122,10 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
         // avec son propre `templateSlug` (ou aucun).
         let publicUrl: string | undefined;
         const templateSlug = project.templateSlug;
-        if (templateSlug) {
+        if (templateSlug && project.status === "DELIVERED") {
+          // Déjà livré lors d'une tentative précédente de ce même événement.
+          publicUrl = `${env.appUrl}/faire-part/${project.slug}`;
+        } else if (templateSlug) {
           const template = getSaveTheDateTemplate(templateSlug);
           if (template) {
             const overrides = parseTemplateOverrides(await getSiteSetting<unknown>("saveTheDateTemplates"));
@@ -174,6 +183,9 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
           }),
         );
       }
+
+      // En dernier : cf. « Reprise sur erreur » en tête de fichier.
+      await updateOrderPaymentStatus(order.id, "paid");
       break;
     }
 

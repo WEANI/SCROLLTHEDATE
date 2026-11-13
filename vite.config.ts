@@ -6,10 +6,13 @@ import { defineConfig } from "vite"
 import { inspectAttr } from 'plugin-inspect-react-code'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     devServer({ entry: "api/boot.ts", exclude: [/^\/(?!api\/).*$/] }),
-    inspectAttr(), react()],
+    // Outil de débogage (chemins des fichiers source dans le HTML) : en
+    // développement seulement, jamais dans le build de production.
+    ...(command === "serve" ? [inspectAttr()] : []),
+    react()],
   server: {
     port: 3000,
   },
@@ -26,4 +29,4 @@ export default defineConfig({
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
   },
-});
+}));

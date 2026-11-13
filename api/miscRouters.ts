@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   adminQuery,
   authedQuery,
@@ -40,6 +41,23 @@ export const notificationsRouter = createRouter({
   }),
 });
 
+/**
+ * Clés lisibles sans être admin : celles qu'affichent les pages publiques
+ * (offres, panier, modèles Save the Date, faire-part de démonstration). Les
+ * autres (modèles d'emails, notifications, réponses rapides…) restent
+ * réservées à l'admin — avant, n'importe qui pouvait toutes les lire.
+ */
+const PUBLIC_SETTING_KEYS = new Set([
+  "products",
+  "options",
+  "texts",
+  "saveTheDateTemplates",
+  "demoFairePart1",
+  "demoFairePart2",
+  "demoFairePart1Std",
+  "demoFairePart2Std",
+]);
+
 export const settingsRouter = createRouter({
   // Public : produits & prix (+ textes) pour les pages offres/checkout.
   get: publicQuery
@@ -48,8 +66,11 @@ export const settingsRouter = createRouter({
         .object({ key: z.string().min(1).max(100).default("products") })
         .optional(),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const key = input?.key ?? "products";
+      if (!PUBLIC_SETTING_KEYS.has(key) && ctx.user?.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Réglage réservé à l'administration" });
+      }
       return { key, value: await getSiteSetting(key) };
     }),
 

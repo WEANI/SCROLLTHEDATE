@@ -54,40 +54,25 @@ async function upsertUser(data: {
   return row;
 }
 
-async function upsertSetting(key: string, value: unknown) {
+/**
+ * Valeur par défaut d'un réglage — n'écrit QUE si la clé n'existe pas encore.
+ * Ce seed tourne à chaque démarrage du serveur (cf. api/db-bootstrap.ts) :
+ * il écrasait avant les prix, options et textes réglés dans l'admin à chaque
+ * mise en ligne.
+ */
+async function ensureSetting(key: string, value: unknown) {
   await getDb()
     .insert(siteSettings)
     .values({ key, value: value as Record<string, unknown> })
-    .onConflictDoUpdate({
-      target: siteSettings.key,
-      set: { value: value as Record<string, unknown> },
-    });
+    .onConflictDoNothing({ target: siteSettings.key });
 }
 
 async function seed() {
   const db = getDb();
   console.log("Seeding database...");
 
-  // --- Utilisateurs ---------------------------------------------------------
-  const admin = await upsertUser({
-    name: "Élise Scroll The Date",
-    email: "elise@scrollthedate.fr",
-    role: "admin",
-  });
-  const annaTheo = await upsertUser({
-    name: "Anna & Théo",
-    email: "anna.theo@demo.scrollthedate.fr",
-    role: "user",
-  });
-  const mehdiSarah = await upsertUser({
-    name: "Mehdi & Sarah",
-    email: "mehdi.sarah@demo.scrollthedate.fr",
-    role: "user",
-  });
-  console.log("Users:", admin.id, annaTheo.id, mehdiSarah.id);
-
   // --- Site settings : produits & prix --------------------------------------
-  await upsertSetting("products", [
+  await ensureSetting("products", [
     {
       id: "FAIRE_PART",
       name: "Faire-part digital",
@@ -116,13 +101,13 @@ async function seed() {
       ],
     },
   ]);
-  await upsertSetting("options", [
+  await ensureSetting("options", [
     { id: "revisions", label: "Révisions illimitées", priceCents: 6000 },
     { id: "sous-titres", label: "Sous-titres FR/EN", priceCents: 4000 },
     { id: "version-courte", label: "Version courte réseaux", priceCents: 9000 },
     { id: "page-infos", label: "Page infos complètes", priceCents: 3000 },
   ]);
-  await upsertSetting("texts", {
+  await ensureSetting("texts", {
     baseline: "Votre histoire, racontée en images.",
     contactWhatsApp: "+33600000000",
     deliveryEstimateDays: 3,
@@ -163,6 +148,33 @@ async function seed() {
       .insert(formTemplates)
       .values({ name: "Questionnaire mariage v2", questions, active: true });
   }
+
+  // --- Données de démonstration ---------------------------------------------
+  // Faux couples, fausses commandes « payées » et compte admin fictif : utiles
+  // en local pour peupler les tableaux de bord, jamais en production. Ne sont
+  // créés que sur demande explicite (SEED_DEMO=1 npx tsx db/seed.ts).
+  if (process.env.SEED_DEMO !== "1") {
+    console.log("Données de démonstration ignorées (SEED_DEMO≠1). Done.");
+    process.exit(0);
+  }
+
+  // --- Utilisateurs ---------------------------------------------------------
+  const admin = await upsertUser({
+    name: "Élise Scroll The Date",
+    email: "elise@scrollthedate.fr",
+    role: "admin",
+  });
+  const annaTheo = await upsertUser({
+    name: "Anna & Théo",
+    email: "anna.theo@demo.scrollthedate.fr",
+    role: "user",
+  });
+  const mehdiSarah = await upsertUser({
+    name: "Mehdi & Sarah",
+    email: "mehdi.sarah@demo.scrollthedate.fr",
+    role: "user",
+  });
+  console.log("Users:", admin.id, annaTheo.id, mehdiSarah.id);
 
   // --- Projet démo complet « Anna & Théo » ----------------------------------
   const existingDemo = await db.query.projects.findFirst({

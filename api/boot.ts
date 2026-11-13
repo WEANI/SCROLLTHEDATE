@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { secureHeaders } from "hono/secure-headers";
 import type { HttpBindings } from "@hono/node-server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./router";
@@ -21,6 +22,20 @@ warnIfEmailMisconfigured();
 warnIfStripeMisconfigured();
 
 const app = new Hono<{ Bindings: HttpBindings }>();
+
+// En-têtes de sécurité standard sur toutes les réponses (HSTS, nosniff,
+// anti-clickjacking, referrer…). Pas de Content-Security-Policy ici : Stripe,
+// Supabase et Google Fonts demanderaient une liste fine, à part. COOP/CORP
+// désactivés : inutiles ici et susceptibles de gêner Stripe (3-D Secure) ou
+// l'affichage des aperçus de lien.
+app.use(
+  "*",
+  secureHeaders({
+    crossOriginOpenerPolicy: false,
+    crossOriginResourcePolicy: false,
+    xFrameOptions: "SAMEORIGIN",
+  }),
+);
 
 // Healthcheck plateforme (Railway) : ne touche pas la DB, doit répondre vite
 // même si Supabase est temporairement indisponible. Sous /api/ pour rester
