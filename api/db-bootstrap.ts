@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { getDb } from "./queries/connection";
+import { alertOwner } from "./lib/alerts";
 
 const MIGRATIONS_FOLDER = path.resolve(process.cwd(), "db/migrations");
 
@@ -57,7 +58,7 @@ export function bootstrapDatabase() {
       await migrate(getDb(), { migrationsFolder: MIGRATIONS_FOLDER });
       console.log("[db-bootstrap] migrations à jour");
     } catch (err) {
-      console.error("[db-bootstrap] ÉCHEC des migrations :", err instanceof Error ? err.message : err);
+      await alertOwner("db-migrations", "Mise à jour de la base échouée au démarrage", err);
       return;
     }
     exec("npx tsx db/seed.ts", { cwd: process.cwd(), env: process.env }, (err, stdout, stderr) => {

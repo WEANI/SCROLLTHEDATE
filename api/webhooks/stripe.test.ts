@@ -59,6 +59,8 @@ vi.mock("../lib/emailTemplates", () => ({
   orderConfirmationEmail: (x: unknown) => x,
 }));
 vi.mock("../lib/guestAccount", () => ({ provisionAccountForGuest: vi.fn(async () => null) }));
+const alerts = vi.hoisted(() => ({ alertOwner: vi.fn() }));
+vi.mock("../lib/alerts", () => alerts);
 
 const { handleStripeWebhook } = await import("./stripe");
 
@@ -119,6 +121,7 @@ describe("webhook Stripe — paiement réussi", () => {
 
     expect(res.status).toBe(200);
     expect(calls).toEqual(["video", "delivered", "email", "paid"]);
+    expect(alerts.alertOwner).not.toHaveBeenCalled();
     expect(orders.updateOrderPaymentStatus).toHaveBeenCalledWith(42, "paid");
     const mail = email.sendEmail.mock.calls[0]![0] as { items: { publicUrl?: string }[] };
     expect(mail.items[0]!.publicUrl).toBe("https://www.scrollthedate.com/faire-part/anna-theo-abc123");
@@ -130,6 +133,11 @@ describe("webhook Stripe — paiement réussi", () => {
 
     await expect(handleStripeWebhook(fakeContext())).rejects.toThrow("base injoignable");
     expect(orders.updateOrderPaymentStatus).not.toHaveBeenCalled();
+    expect(alerts.alertOwner).toHaveBeenCalledWith(
+      "stripe:payment_intent.succeeded",
+      "Paiement Stripe non traité",
+      expect.stringContaining("pi_1"),
+    );
     expect(email.sendEmail).not.toHaveBeenCalled();
   });
 

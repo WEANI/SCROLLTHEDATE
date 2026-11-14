@@ -20,6 +20,7 @@ import { logAudit, notifyUser } from "../queries/helpers";
 import { sendEmail } from "../lib/email";
 import { orderConfirmationEmail } from "../lib/emailTemplates";
 import { provisionAccountForGuest } from "../lib/guestAccount";
+import { alertOwner } from "../lib/alerts";
 import {
   getSaveTheDateTemplate,
   buildFulfillmentData,
@@ -77,6 +78,24 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
     return c.json({ error: "Invalid signature" }, 400);
   }
 
+  try {
+    await processEvent(event);
+  } catch (err) {
+    // Stripe rejouera l'événement (réponse 500, cf. « Reprise sur erreur »),
+    // mais un client a payé sans être servi : à surveiller tout de suite.
+    const pi = event.data.object as { id?: string };
+    await alertOwner(
+      `stripe:${event.type}`,
+      "Paiement Stripe non traité",
+      `Événement ${event.type} (${pi.id ?? event.id}) en échec — Stripe va réessayer.\n\n${err instanceof Error ? `${err.message}\n${err.stack ?? ""}` : String(err)}`,
+    );
+    throw err;
+  }
+
+  return c.json({ received: true });
+}
+
+async function processEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
     case "payment_intent.succeeded": {
       const pi = event.data.object as Stripe.PaymentIntent;
@@ -211,6 +230,4 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
       // le type d'événement envoyé sur cet endpoint.
       break;
   }
-
-  return c.json({ received: true });
 }

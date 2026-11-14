@@ -16,8 +16,12 @@ import { supabaseAdmin } from "./lib/supabaseAdmin";
 import { findUserByAuthId } from "./queries/users";
 import { handleSiteEvent } from "./siteEventsRoute";
 import { externalizeLegacyPhotos } from "./lib/photoStorage";
+import { alertOwner } from "./lib/alerts";
 
 bootstrapDatabase();
+process.on("unhandledRejection", (reason) => {
+  void alertOwner(`unhandled:${String(reason).slice(0, 80)}`, "Erreur serveur non rattrapée", reason);
+});
 ensureVideosBucket();
 void externalizeLegacyPhotos();
 warnIfEmailMisconfigured();
@@ -67,6 +71,12 @@ app.use("/api/trpc/*", async (c) => {
     req: c.req.raw,
     router: appRouter,
     createContext,
+    // Erreurs inattendues seulement (bug, base injoignable…) — pas les
+    // refus normaux (NOT_FOUND, FORBIDDEN, saisie invalide…).
+    onError: ({ error, path }) => {
+      if (error.code !== "INTERNAL_SERVER_ERROR") return;
+      void alertOwner(`trpc:${path}:${error.message.slice(0, 80)}`, `Erreur serveur sur ${path ?? "l'API"}`, error.cause ?? error);
+    },
   });
 });
 
@@ -156,6 +166,7 @@ app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 // le try/catch ci-dessus, généralisée à toute l'API.
 app.onError((err, c) => {
   console.error("[api] exception non rattrapée :", err);
+  void alertOwner(`api:${c.req.path}:${err.message.slice(0, 80)}`, `Erreur serveur sur ${c.req.path}`, err);
   return c.json({ error: "Erreur serveur" }, 500);
 });
 

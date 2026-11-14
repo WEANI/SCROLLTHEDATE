@@ -339,3 +339,24 @@ export function newMessageForAdminEmail(params: {
   const text = `Nouveau message client sur le projet ${params.projectSlug}.\n\nOuvrir la messagerie admin : ${url}`;
   return { to: params.to, subject, html, text };
 }
+
+/** Échappement HTML — le détail d'une alerte technique peut contenir n'importe quoi (message d'erreur, requête…). */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/** Alerte technique (paiement non traité, migration échouée, erreur serveur), cf. api/lib/alerts.ts. */
+export function systemAlertEmail(params: { to: string; title: string; detail: string }): EmailMessage {
+  const subject = `⚠️ Scroll The Date — ${params.title}`;
+  const html = wrap({
+    preheader: params.title,
+    bodyHtml: `
+      <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.accent};">Alerte technique</p>
+      <p style="margin:0 0 16px;font-size:16px;line-height:1.5;color:${BRAND.ink};"><strong>${escapeHtml(params.title)}</strong></p>
+      <pre style="margin:0 0 20px;padding:12px;border-radius:8px;background:#f5f1ec;font-size:12px;line-height:1.5;color:${BRAND.inkSoft};white-space:pre-wrap;word-break:break-word;">${escapeHtml(params.detail)}</pre>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:${BRAND.inkSoft};">Détails complets dans les journaux Railway (onglet Deployments → View logs).</p>
+    `,
+  });
+  const text = `${params.title}\n\n${params.detail}\n\nDétails complets dans les journaux Railway.`;
+  return { to: params.to, subject, html, text };
+}
