@@ -15,9 +15,11 @@ import { extractFrames } from "./lib/videoFrames";
 import { supabaseAdmin } from "./lib/supabaseAdmin";
 import { findUserByAuthId } from "./queries/users";
 import { handleSiteEvent } from "./siteEventsRoute";
+import { externalizeLegacyPhotos } from "./lib/photoStorage";
 
 bootstrapDatabase();
 ensureVideosBucket();
+void externalizeLegacyPhotos();
 warnIfEmailMisconfigured();
 warnIfStripeMisconfigured();
 

@@ -203,9 +203,9 @@ function TabResume({ project }: { project: Project360 }) {
 // ---------------------------------------------------------------------------
 // Onglet Questionnaire
 // ---------------------------------------------------------------------------
-/** Extension de fichier déduite du en-tête MIME d'une data URI ("data:image/png;base64,..." -> "png") — repli "jpg" si absent/non reconnu, jamais d'extension vide. */
+/** Extension de fichier déduite d'une data URI ("data:image/png;base64,..." -> "png") ou d'une URL Storage (".../photos/abc.png" -> "png") — repli "jpg" si absent/non reconnu, jamais d'extension vide. */
 function extensionFromDataUri(dataUri: string): string {
-  const m = /^data:image\/([a-zA-Z0-9.+-]+);base64,/.exec(dataUri);
+  const m = /^data:image\/([a-zA-Z0-9.+-]+);base64,/.exec(dataUri) ?? /\.([a-zA-Z0-9]+)(?:\?.*)?$/.exec(dataUri);
   const type = m?.[1]?.toLowerCase();
   return type === "jpeg" ? "jpg" : (type ?? "jpg");
 }
@@ -220,6 +220,11 @@ function slugifyLabel(label: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/** Réponse de question photo : data URI (anciennes réponses) ou URL Supabase Storage (cf. api/lib/photoStorage.ts). */
+function isPhotoValue(v: unknown): v is string {
+  return typeof v === "string" && (v.startsWith("data:image/") || /^https?:\/\//.test(v));
+}
+
 function TabQuestionnaire({ project }: { project: Project360 }) {
   const { data: template } = trpc.questionnaire.getActiveTemplate.useQuery();
   const answers = (project.questionnaire?.answers as Record<string, unknown> | null) ?? {};
@@ -231,7 +236,7 @@ function TabQuestionnaire({ project }: { project: Project360 }) {
   const photoAnswers = questions
     .filter((q) => q.type === "photo")
     .map((q) => ({ label: q.label, dataUri: answers[q.id] }))
-    .filter((p): p is { label: string; dataUri: string } => typeof p.dataUri === "string" && p.dataUri.startsWith("data:image/"));
+    .filter((p): p is { label: string; dataUri: string } => isPhotoValue(p.dataUri));
 
   const buildBrief = () => {
     const lines = questions.map((q) => {
@@ -243,7 +248,7 @@ function TabQuestionnaire({ project }: { project: Project360 }) {
       // (bouton "Télécharger les photos", juste à côté).
       const text =
         q.type === "photo"
-          ? typeof v === "string" && v.startsWith("data:image/")
+          ? isPhotoValue(v)
             ? "[photo jointe — voir le zip téléchargé]"
             : "—"
           : Array.isArray(v)

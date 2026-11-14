@@ -25,6 +25,7 @@ import {
   updateProjectTemplate,
 } from "./queries/projects";
 import { templateEnum } from "./ordersRouter";
+import { externalizeDataUris } from "./lib/photoStorage";
 
 const answersSchema = z.record(z.string(), z.unknown());
 
@@ -140,7 +141,10 @@ export const questionnaireRouter = createRouter({
       const template = await findActiveFormTemplate();
       const previousAnswers =
         (existing?.answers as Record<string, unknown> | null) ?? {};
-      const merged = { ...previousAnswers, ...input.answers };
+      // Photos : data URI → Supabase Storage, seule l'URL reste en base
+      // (cf. api/lib/photoStorage.ts).
+      const incoming = await externalizeDataUris(project.id, input.answers);
+      const merged = { ...previousAnswers, ...incoming };
       const completionPct = computeCompletionPct(merged, template);
       await upsertQuestionnaire(project.id, merged, completionPct);
       await syncTemplateFromAmbiance(

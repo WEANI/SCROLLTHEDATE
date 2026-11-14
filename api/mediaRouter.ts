@@ -12,6 +12,7 @@ import {
 } from "./queries/domain";
 import { actorOf, findProjectForUser, logAudit } from "./queries/helpers";
 import { findProjectById } from "./queries/projects";
+import { externalizeDataUris } from "./lib/photoStorage";
 
 async function requireCurrentProject(userId: number, projectId?: number) {
   const project = await findProjectForUser(userId, projectId);
@@ -39,10 +40,14 @@ export const mediaRouter = createRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const project = await requireCurrentProject(ctx.user.id, input.projectId);
+      // Data URI → Supabase Storage, seule l'URL reste en base (cf.
+      // api/lib/photoStorage.ts). Renvoyée au client pour qu'il ne
+      // renvoie plus la data URI ensuite (réponse de question photo).
+      const url = await externalizeDataUris(project.id, input.url);
       const mediaId = await addMedia({
         projectId: project.id,
         type: input.type,
-        url: input.url,
+        url,
         filename: input.filename ?? null,
         status: "received",
       });
@@ -51,7 +56,7 @@ export const mediaRouter = createRouter({
         type: input.type,
         filename: input.filename,
       });
-      return { mediaId };
+      return { mediaId, url };
     }),
 
   // Lecture : un client sans projet n'est pas une erreur (ex. juste après

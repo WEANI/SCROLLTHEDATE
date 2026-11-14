@@ -548,8 +548,10 @@ function PhotoQuestionField({
         reader.onerror = () => reject(new Error('read failed'))
         reader.readAsDataURL(file)
       })
-      await addMediaMutation.mutateAsync({ projectId, type: 'photo', url: dataUri, filename: file.name })
-      onChange(dataUri)
+      const res = await addMediaMutation.mutateAsync({ projectId, type: 'photo', url: dataUri, filename: file.name })
+      // URL Storage renvoyée par le serveur (cf. api/lib/photoStorage.ts) :
+      // la réponse du questionnaire ne transporte plus la photo elle-même.
+      onChange(res.url)
     } catch {
       setError(t('espace.questionnaire.photoUploadFailed'))
     } finally {
