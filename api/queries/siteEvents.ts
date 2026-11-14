@@ -74,9 +74,12 @@ const OFFER_PAGES = sql`(path in ('/offres', '/faire-part-digital', '/save-the-d
 
 /** `db` : remplaçable par une transaction (tests). */
 export async function findSiteStats(days: number, db: Pick<ReturnType<typeof getDb>, "execute"> = getDb()) {
-  const since = new Date(Date.now() - days * 86400000);
+  // Chaîne ISO + cast explicite : dans un `sql` brut (sans colonne pour
+  // guider la conversion), le pilote postgres-js refuse un objet Date —
+  // « Failed query » sur tout l'écran Fréquentation.
+  const since = new Date(Date.now() - days * 86400000).toISOString();
   const q = async (query: ReturnType<typeof sql>) => (await db.execute(query)) as unknown as Row[];
-  const inPeriod = sql`"createdAt" >= ${since}`;
+  const inPeriod = sql`"createdAt" >= ${since}::timestamptz`;
 
   const [totals] = await q(sql`
     with v as (
@@ -189,7 +192,7 @@ export async function findSiteStats(days: number, db: Pick<ReturnType<typeof get
     select e."visitorHash" as visit, lv.last_at, e.kind, e.name, e.path, e.target, e.seconds,
            e."createdAt" as at, e."referrerHost" as host, e."utmSource" as utm, e.device, e.browser, e.tz
     from site_events e join last_visits lv on lv."visitorHash" = e."visitorHash"
-    where e."createdAt" >= ${since}
+    where e."createdAt" >= ${since}::timestamptz
     order by lv.last_at desc, e."createdAt" asc`);
   const recentMap = new Map<string, { id: string; source: string; device: string; browser: string; tz: string; startedAt: string; steps: { at: string; kind: string; name: string | null; path: string; target: string | null; seconds: number | null }[] }>();
   for (const r of recentRows) {
