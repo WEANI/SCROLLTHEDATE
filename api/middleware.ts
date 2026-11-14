@@ -9,6 +9,8 @@ const t = initTRPC.context<TrpcContext>().create({
 
 export const createRouter = t.router;
 export const publicQuery = t.procedure;
+/** Appel direct des procédures, sans HTTP — utilisé par les tests (fichiers *.test.ts). */
+export const createCallerFactory = t.createCallerFactory;
 
 const requireAuth = t.middleware(async (opts) => {
   const { ctx, next } = opts;
