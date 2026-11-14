@@ -3,6 +3,26 @@ import { getSaveTheDateTemplate } from "../../contracts/saveTheDateTemplates";
 import { findProjectBySlug } from "../queries/projects";
 import { findVideosByProject } from "../queries/domain";
 import { fr } from "../../src/i18n/translations/fr";
+import { TEMPLATE_PRICE_CENTS, fillPrices, type SeoPrices } from "../../contracts/prices";
+import { FALLBACK_PRODUCTS, getSiteSetting, type ProductSetting } from "../queries/orders";
+
+/** Prix des titres/descriptions ({std}, {fp}, {modele}) — lus dans Réglages → Produits & prix, gardés 1 min en mémoire. */
+let pricesCache: { at: number; value: SeoPrices } | null = null;
+async function seoPrices(): Promise<SeoPrices> {
+  if (pricesCache && Date.now() - pricesCache.at < 60_000) return pricesCache.value;
+  let products: ProductSetting[] = FALLBACK_PRODUCTS;
+  try {
+    const stored = await getSiteSetting<ProductSetting[]>("products");
+    if (Array.isArray(stored)) products = stored;
+  } catch (err) {
+    console.error("[pageMeta] prix de repli faute de base :", err);
+  }
+  const price = (id: ProductSetting["id"]) =>
+    products.find((p) => p.id === id)?.priceCents ?? FALLBACK_PRODUCTS.find((p) => p.id === id)!.priceCents;
+  const value = { std: price("SAVE_THE_DATE"), fp: price("FAIRE_PART"), modele: TEMPLATE_PRICE_CENTS };
+  pricesCache = { at: Date.now(), value };
+  return value;
+}
 
 /**
  * Titre, description et image de partage des pages vitrine, servis dès le
@@ -23,7 +43,28 @@ const STATIC_PAGES: Record<string, PageMeta> = {
   "/cgv": { title: fr.cgv.seoTitle, description: fr.cgv.seoDescription },
   "/mentions-legales": { title: fr.mentionsLegales.seoTitle, description: fr.mentionsLegales.seoDescription },
   "/confidentialite": { title: fr.confidentialite.seoTitle, description: fr.confidentialite.seoDescription },
+  // Mêmes textes que useSeo dans src/pages/Demo.tsx.
+  "/demo": {
+    title: "Anna & Théo — 20 juin 2026 · Scroll The Date (démo)",
+    description:
+      "Exemple réel de faire-part de mariage digital Scroll The Date : vidéo cinématique, programme, RSVP intégré — le rendu que recevront vos invités.",
+  },
 };
+
+/**
+ * Pages privées ou de parcours (espace client, admin, connexion, panier,
+ * confirmation, démo interne) : `noindex` et pas de canonical. Avant, elles
+ * reprenaient le titre de l'accueil et se déclaraient chacune « adresse de
+ * référence » — des doublons de l'accueil aux yeux de Google.
+ */
+const PRIVATE_PAGES = /^\/(admin|espace|login|definir-mot-de-passe|commander|merci|demofairepart)(\/|$)/;
+
+/** Questions fréquentes de l'accueil (composant Faq) — lisibles par Google sous forme de FAQPage. */
+const HOME_FAQ = (["1", "2", "3", "4", "5"] as const).map((n) => ({
+  "@type": "Question",
+  name: fr.home.faq[`q${n}`],
+  acceptedAnswer: { "@type": "Answer", text: fr.home.faq[`a${n}`] },
+}));
 
 /**
  * Balises d'aperçu de partage (Open Graph) et fiche d'identité de la marque,
@@ -76,8 +117,16 @@ const esc = (s: string) =>
 const absolute = (origin: string, url: string) => (/^https?:\/\//i.test(url) ? url : `${origin}${url.startsWith("/") ? "" : "/"}${url}`);
 
 async function routeMeta(pathname: string): Promise<PageMeta> {
+  if (PRIVATE_PAGES.test(pathname)) return { noindex: true };
   const page = STATIC_PAGES[pathname.replace(/(.)\/$/, "$1")];
-  if (page) return { ...page };
+  if (page) {
+    const prices = await seoPrices();
+    return {
+      ...page,
+      title: page.title && fillPrices(page.title, prices),
+      description: page.description && fillPrices(page.description, prices),
+    };
+  }
   const fp = pathname.match(/^\/faire-part\/([^/]+)\/?$/);
   if (fp) {
     const project = await findProjectBySlug(decodeURIComponent(fp[1]));
@@ -164,6 +213,9 @@ function render(baseHtml: string, pathname: string, origin: string, meta: PageMe
     meta.noindex ? `<meta name="robots" content="noindex" />` : "",
     // `<` échappé : une valeur ne peut pas fermer la balise script.
     `<script type="application/ld+json">${JSON.stringify(organization).replace(/</g, "\\u003c")}</script>`,
+    pathname === "/"
+      ? `<script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: HOME_FAQ }).replace(/</g, "\\u003c")}</script>`
+      : "",
   ]
     .filter(Boolean)
     .join("\n    ");

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSeo } from '@/hooks/useSeo'
+import { fillPrices } from '@contracts/prices'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { FadeUp, WordReveal } from '@/components/commerce/Reveal'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
@@ -22,6 +23,7 @@ import {
   productSlug,
   TEMPLATE_PRICE_CENTS,
   usePricing,
+  useSeoPrices,
   type ProductId,
 } from '@/components/commerce/pricing'
 import { SAVE_THE_DATE_TEMPLATES } from '@contracts/saveTheDateTemplates'
@@ -168,11 +170,12 @@ function CompareCell({ cell, highlight }: { cell: Cell; highlight?: boolean }) {
 /* -------------------------------------------------------------------------- */
 
 export default function Offres() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const seoPrices = useSeoPrices()
 
   useSeo({
-    title: t('offres.seo.title'),
-    description: t('offres.seo.description'),
+    title: fillPrices(t('offres.seo.title'), seoPrices, lang),
+    description: fillPrices(t('offres.seo.description'), seoPrices, lang),
     path: '/offres',
   })
 

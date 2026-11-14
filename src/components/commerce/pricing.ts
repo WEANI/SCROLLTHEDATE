@@ -46,15 +46,9 @@ export const FALLBACK_TEXTS: Required<SiteTexts> = {
   deliveryEstimateDays: 3,
 }
 
-/**
- * Commande "sur un modèle" (Red Door…) — prix fixe, aucune option add-on,
- * cf. échange du 12/09/2026. Doit rester identique à `TEMPLATE_PRICE_CENTS`
- * dans `api/ordersRouter.ts` (dupliqué à dessein : ce fichier reste pur
- * frontend et ne peut pas importer de code serveur). Centralisé ICI côté
- * client — Commander.tsx et le panier (cart/CartContext.tsx-consumers) s'en
- * servent tous les deux, pas de 2e duplication locale.
- */
-export const TEMPLATE_PRICE_CENTS = 9900
+/** Prix fixe "sur un modèle" — source unique partagée avec le serveur, cf. contracts/prices.ts. */
+export { TEMPLATE_PRICE_CENTS } from '@contracts/prices'
+import { TEMPLATE_PRICE_CENTS, type SeoPrices } from '@contracts/prices'
 
 /** "349 €" / "49,67 €" (décimales uniquement si nécessaire). */
 export function formatEuros(cents: number, forceDecimals = false): string {
@@ -177,4 +171,14 @@ export function productIdFromSlug(slug: string | null | undefined): ProductId | 
 
 export function productSlug(id: ProductId): string {
   return id === 'FAIRE_PART' ? 'faire-part' : 'save-the-date'
+}
+
+/** Prix des textes Google ({std}, {fp}, {modele} — cf. fillPrices, contracts/prices.ts), lus depuis Réglages → Produits & prix. */
+export function useSeoPrices(): SeoPrices {
+  const { products } = usePricing()
+  return {
+    std: getProduct(products, 'SAVE_THE_DATE').priceCents,
+    fp: getProduct(products, 'FAIRE_PART').priceCents,
+    modele: TEMPLATE_PRICE_CENTS,
+  }
 }

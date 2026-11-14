@@ -3,10 +3,11 @@ import { Link } from 'react-router'
 import { motion } from 'framer-motion'
 import { Check, Clapperboard, Layout, MessageCircle, PenLine, QrCode, Sparkles } from 'lucide-react'
 import { useSeo } from '@/hooks/useSeo'
+import { fillPrices } from '@contracts/prices'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { FadeUp, WordReveal } from '@/components/commerce/Reveal'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
-import { formatEuros, getProduct, productSlug, usePricing } from '@/components/commerce/pricing'
+import { formatEuros, getProduct, productSlug, usePricing, useSeoPrices } from '@/components/commerce/pricing'
 
 /**
  * Page produit dédiée au Save the Date digital — cf. doc de FairePartDigital.tsx
@@ -116,11 +117,12 @@ function OfferPreviewCard({
 }
 
 export default function SaveTheDateDigital() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const seoPrices = useSeoPrices()
 
   useSeo({
-    title: t('saveTheDateDigital.seo.title'),
-    description: t('saveTheDateDigital.seo.description'),
+    title: fillPrices(t('saveTheDateDigital.seo.title'), seoPrices, lang),
+    description: fillPrices(t('saveTheDateDigital.seo.description'), seoPrices, lang),
     path: '/save-the-date-digital',
   })
 

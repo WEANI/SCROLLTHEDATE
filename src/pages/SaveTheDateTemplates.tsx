@@ -4,6 +4,8 @@ import { Link } from 'react-router'
 import { Play } from 'lucide-react'
 import { trpc } from '@/providers/trpc'
 import { useSeo } from '@/hooks/useSeo'
+import { useSeoPrices } from '@/components/commerce/pricing'
+import { fillPrices } from '@contracts/prices'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { parseTemplateOverrides, resolveSaveTheDateTemplates } from '@contracts/saveTheDateTemplates'
 
@@ -28,11 +30,12 @@ const CARD_PREVIEW_SECONDS = 5
  * câblée dans /commander.
  */
 export default function SaveTheDateTemplates() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const seoPrices = useSeoPrices()
 
   useSeo({
-    title: t('saveTheDateTemplates.seo.title'),
-    description: t('saveTheDateTemplates.seo.description'),
+    title: fillPrices(t('saveTheDateTemplates.seo.title'), seoPrices, lang),
+    description: fillPrices(t('saveTheDateTemplates.seo.description'), seoPrices, lang),
     path: '/save-the-date-modeles',
   })
 

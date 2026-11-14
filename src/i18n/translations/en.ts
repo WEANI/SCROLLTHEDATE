@@ -38,7 +38,7 @@ export const en: Translations = {
   },
   home: {
     seo: {
-      title: "Wedding video invitations & digital save the dates | Scroll The Date",
+      title: "Wedding video invitations & save the dates | Scroll The Date",
       description:
         "Wedding invitations and save the dates as interactive videos: your story in pictures, with schedule, venue and built-in RSVP. Original, shared by WhatsApp or email.",
     },
@@ -251,9 +251,9 @@ export const en: Translations = {
   },
   offres: {
     seo: {
-      title: "Digital wedding invitation & video save the date prices | Scroll The Date",
+      title: "Wedding invitation & save the date prices | Scroll The Date",
       description:
-        "Custom video save the date €149 or from a template €99, digital wedding invitation €299 with built-in RSVP. One price, unlimited guests.",
+        "Custom video save the date {std} or from a template {modele}, digital wedding invitation {fp} with built-in RSVP. One price, unlimited guests.",
     },
     hero: {
       kicker: 'Pricing',
@@ -469,9 +469,9 @@ export const en: Translations = {
   },
   saveTheDateDigital: {
     seo: {
-      title: "Video save the date for your wedding — €149 | Scroll The Date",
+      title: "Video save the date — {std} | Scroll The Date",
       description:
-        "Announce your wedding date with a personalised video save the date, shared by WhatsApp, text or email. Custom €149, or from a template from €99.",
+        "Announce your wedding date with a personalised video save the date, shared by WhatsApp, text or email. Custom {std}, or from a template from {modele}.",
     },
     hero: {
       kicker: 'Digital Save the Date',
@@ -517,9 +517,9 @@ export const en: Translations = {
   },
   fairePartDigital: {
     seo: {
-      title: "Digital video wedding invitation — €299 | Scroll The Date",
+      title: "Video wedding invitation — {fp} | Scroll The Date",
       description:
-        "An online wedding invitation that tells your story in video, with schedule, venue, accommodation, dress code and built-in RSVP. €299, unlimited guests.",
+        "An online wedding invitation that tells your story in video, with schedule, venue, accommodation, dress code and built-in RSVP. {fp}, unlimited guests.",
     },
     hero: {
       kicker: 'Digital wedding invitation',
@@ -591,9 +591,9 @@ export const en: Translations = {
   },
   saveTheDateTemplates: {
     seo: {
-      title: "Video save the date templates for weddings — €99 | Scroll The Date",
+      title: "Video save the date templates — {modele} | Scroll The Date",
       description:
-        "Pick a video save the date template for your wedding: your names and date added, ready to share with your guests. €99, delivered as soon as you pay.",
+        "Pick a video save the date template for your wedding: your names and date added, ready to share with your guests. {modele}, delivered as soon as you pay.",
     },
     kicker: 'From a template',
     title: 'The Save the Date templates',

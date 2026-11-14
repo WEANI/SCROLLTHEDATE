@@ -40,7 +40,7 @@ export const fr = {
   },
   home: {
     seo: {
-      title: "Faire-part de mariage vidéo & Save the Date digital | Scroll The Date",
+      title: "Faire-part mariage vidéo & Save the Date | Scroll The Date",
       description:
         "Faire-part de mariage et save the date en vidéo interactive : votre histoire mise en images, avec programme, lieu et RSVP intégré. Original, à partager par WhatsApp ou e-mail.",
     },
@@ -255,9 +255,9 @@ export const fr = {
   },
   offres: {
     seo: {
-      title: "Prix faire-part de mariage digital & save the date vidéo | Scroll The Date",
+      title: "Tarifs faire-part & save the date vidéo | Scroll The Date",
       description:
-        "Save the date vidéo sur mesure à 149 € ou sur modèle à 99 €, faire-part de mariage digital à 299 € avec RSVP intégré. Prix unique, invités illimités.",
+        "Save the date vidéo sur mesure à {std} ou sur modèle à {modele}, faire-part de mariage digital à {fp} avec RSVP intégré. Prix unique, invités illimités.",
     },
     hero: {
       kicker: 'Nos offres',
@@ -474,9 +474,9 @@ export const fr = {
   },
   saveTheDateDigital: {
     seo: {
-      title: "Save the Date vidéo pour votre mariage — 149 € | Scroll The Date",
+      title: "Save the Date vidéo mariage — {std} | Scroll The Date",
       description:
-        "Annoncez la date de votre mariage avec un save the date vidéo personnalisé, à partager par WhatsApp, SMS ou e-mail. Sur mesure 149 €, ou sur modèle dès 99 €.",
+        "Annoncez la date de votre mariage avec un save the date vidéo personnalisé, à partager par WhatsApp, SMS ou e-mail. Sur mesure {std}, ou sur modèle dès {modele}.",
     },
     hero: {
       kicker: 'Save the Date digital',
@@ -522,9 +522,9 @@ export const fr = {
   },
   fairePartDigital: {
     seo: {
-      title: "Faire-part de mariage digital en vidéo — 299 € | Scroll The Date",
+      title: "Faire-part mariage digital vidéo — {fp} | Scroll The Date",
       description:
-        "Un faire-part de mariage en ligne qui raconte votre histoire en vidéo, avec programme, lieu, hébergements, dress code et RSVP intégré. 299 €, invités illimités.",
+        "Un faire-part de mariage en ligne qui raconte votre histoire en vidéo, avec programme, lieu, hébergements, dress code et RSVP intégré. {fp}, invités illimités.",
     },
     hero: {
       kicker: 'Faire-part digital',
@@ -596,9 +596,9 @@ export const fr = {
   },
   saveTheDateTemplates: {
     seo: {
-      title: "Modèles de save the date vidéo pour mariage — 99 € | Scroll The Date",
+      title: "Modèles save the date vidéo — {modele} | Scroll The Date",
       description:
-        "Choisissez un modèle de save the date vidéo pour votre mariage : vos prénoms et votre date ajoutés, prêt à partager à vos invités. 99 €, livré dès le paiement.",
+        "Choisissez un modèle de save the date vidéo pour votre mariage : vos prénoms et votre date ajoutés, prêt à partager à vos invités. {modele}, livré dès le paiement.",
     },
     kicker: 'Sur un modèle',
     title: 'Les modèles Save the Date',

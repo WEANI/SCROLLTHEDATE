@@ -15,10 +15,11 @@ import {
   UtensilsCrossed,
 } from 'lucide-react'
 import { useSeo } from '@/hooks/useSeo'
+import { fillPrices } from '@contracts/prices'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { FadeUp, WordReveal } from '@/components/commerce/Reveal'
 import { EASE_EDITORIAL } from '@/components/commerce/motion'
-import { formatEuros, getProduct, productSlug, usePricing } from '@/components/commerce/pricing'
+import { formatEuros, getProduct, productSlug, usePricing, useSeoPrices } from '@/components/commerce/pricing'
 import { PRODUCTS } from '@/components/home/productsCatalog'
 
 const HERO_FEATURES = PRODUCTS.find((p) => p.id === 'FAIRE_PART')!.features
@@ -75,11 +76,12 @@ function EnvelopeVideoPlaceholder() {
 }
 
 export default function FairePartDigital() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const seoPrices = useSeoPrices()
 
   useSeo({
-    title: t('fairePartDigital.seo.title'),
-    description: t('fairePartDigital.seo.description'),
+    title: fillPrices(t('fairePartDigital.seo.title'), seoPrices, lang),
+    description: fillPrices(t('fairePartDigital.seo.description'), seoPrices, lang),
     path: '/faire-part-digital',
   })
 

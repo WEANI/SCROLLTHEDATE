@@ -19,13 +19,12 @@ import { getSaveTheDateTemplate } from "../contracts/saveTheDateTemplates";
 
 export const productEnum = z.enum(["FAIRE_PART", "SAVE_THE_DATE"]);
 /**
- * Commande "sur un modèle" (Red Door…) — prix fixe, aucune option add-on
- * (révisions/sous-titres n'ont pas de sens sur un montage déjà figé livré
- * instantanément), cf. échange du 12/09/2026. Volontairement indépendant
- * de `site_settings.products` (149 € "sur mesure") : formule distincte,
- * pas une variante du même produit.
+ * Commande "sur un modèle" (Red Door…) — prix fixe, volontairement
+ * indépendant de `site_settings.products` (149 € "sur mesure") : formule
+ * distincte, pas une variante du même produit. Cf. contracts/prices.ts.
  */
-export const TEMPLATE_PRICE_CENTS = 9900;
+export { TEMPLATE_PRICE_CENTS } from "../contracts/prices";
+import { TEMPLATE_PRICE_CENTS } from "../contracts/prices";
 export const projectStatusEnum = z.enum([
   "ONBOARDING",
   "QUESTIONNAIRE",

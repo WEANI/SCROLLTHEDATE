@@ -10,9 +10,8 @@ import { useLanguage } from '@/i18n/LanguageContext'
 import { formatEuros } from '@/components/commerce/pricing'
 import { parseTemplateOverrides, resolveSaveTheDateTemplate } from '@contracts/saveTheDateTemplates'
 import { resolveDateFormatsInChapters } from '@/components/hero-scrub/heroDecor'
+import { TEMPLATE_PRICE_CENTS } from '@contracts/prices'
 
-/** Prix fixe "sur un modèle", cf. TEMPLATE_PRICE_CENTS (api/ordersRouter.ts) — dupliqué à dessein, ce fichier reste pur frontend et ne peut pas importer de code serveur. */
-const TEMPLATE_PRICE_CENTS = 9900
 
 /**
  * Invite à défiler — sans elle, un visiteur qui arrive sur un aperçu de

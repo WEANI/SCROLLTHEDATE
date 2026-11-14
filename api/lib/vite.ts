@@ -69,6 +69,16 @@ export function serveStaticFiles(app: App) {
   const isPage = (p: string) => !p.startsWith("/api/") && !p.startsWith("/assets/") && !/\.[a-z0-9]+$/i.test(p);
   app.get("*", async (c, next) => {
     if (!isPage(c.req.path)) return next();
+    // Adresse technique Railway (*.up.railway.app) : redirection permanente
+    // vers le domaine officiel — sinon le site entier existait en double
+    // aux yeux de Google. Pages seulement : l'API (webhook Stripe compris)
+    // reste joignable aux deux adresses.
+    const official = (process.env.APP_URL ?? "").trim().replace(/\/+$/, "");
+    const host = c.req.header("x-forwarded-host") ?? c.req.header("host") ?? "";
+    if (official && host.endsWith(".up.railway.app")) {
+      const url = new URL(c.req.url);
+      return c.redirect(`${official}${c.req.path}${url.search}`, 301);
+    }
     baseHtml ??= fs.readFileSync(path.resolve(distPath, "index.html"), "utf-8");
     const page = await buildPageHtml(baseHtml, c.req.path, originOf(c));
     return c.html(page.html, page.status);
